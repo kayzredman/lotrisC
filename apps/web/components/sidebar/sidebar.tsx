@@ -9,25 +9,19 @@ import {
   ListOrdered,
   BarChart3,
   FileText,
-  Settings2,
-  Users2,
-  ClipboardList,
   CheckSquare,
   Activity,
 } from 'lucide-react';
 import { cn } from '@lotris/ui';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard',        href: '/dashboard',        icon: LayoutDashboard },
-  { label: 'Tickets',          href: '/tickets',          icon: Ticket          },
-  { label: 'Queue',            href: '/queue',            icon: ListOrdered     },
-  { label: 'KPI Dashboard',    href: '/kpis',             icon: BarChart3       },
-  { label: 'Reports',          href: '/reports',          icon: FileText        },
-  { label: 'KPI Setup',        href: '/kpi-setup',        icon: Settings2       },
-  { label: 'Team KPI Setup',   href: '/team-kpi-setup',   icon: Users2          },
-  { label: 'KPI Agreement',    href: '/kpi-agreement',    icon: ClipboardList   },
-  { label: 'Tasks',            href: '/tasks',            icon: CheckSquare     },
-  { label: 'System Health',    href: '/system-health',    icon: Activity        },
+  { label: 'Dashboard',     href: '/dashboard',      icon: LayoutDashboard },
+  { label: 'Tickets',       href: '/tickets',        icon: Ticket          },
+  { label: 'Queue',         href: '/queue',          icon: ListOrdered     },
+  { label: 'KPI',           href: '/kpis',           icon: BarChart3       },
+  { label: 'Reports',       href: '/reports',        icon: FileText        },
+  { label: 'Tasks',         href: '/tasks',          icon: CheckSquare     },
+  { label: 'System Health', href: '/system-health',  icon: Activity        },
 ] as const;
 
 export function Sidebar() {
