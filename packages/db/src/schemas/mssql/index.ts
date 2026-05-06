@@ -3,3 +3,8 @@ export { roles, type Role } from './roles';
 export { teams, type Team, type NewTeam } from './teams';
 export { users, type User, type NewUser } from './users';
 export { auditLogs, type AuditLog, type NewAuditLog } from './audit-logs';
+export { tickets, type Ticket, type NewTicket } from './tickets';
+export { ticketComments, type TicketComment, type NewTicketComment } from './ticket-comments';
+export { ticketHistory, type TicketHistoryRow, type NewTicketHistoryRow } from './ticket-history';
+export { slaConfigs, type SlaConfig, type NewSlaConfig } from './sla-configs';
+export { attachmentRefs, type AttachmentRef, type NewAttachmentRef } from './attachment-refs';

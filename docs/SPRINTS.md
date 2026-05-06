@@ -22,68 +22,59 @@
 ## Sprint 1–2 · Foundation & Auth
 
 **Target milestone:** M1  
-**Status:** NOT STARTED
+**Status:** ✅ COMPLETE — merged to `dev` at commit `3f2f083`
 
 ### Backend Dev Agent Jobs
-- [ ] `B1-1` — Monorepo scaffold: `turbo.json`, `package.json` workspaces, all package stubs
-- [ ] `B1-2` — Drizzle MSSQL schema: `tenants`, `users`, `roles`, `teams` (all with `tenant_id`)
-- [ ] `B1-3` — MSSQL migration: `0001_initial_schema.sql`
-- [ ] `B1-4` — NestJS `AuthModule`: ClerkJwtGuard, internal JWT issuance, `useTenantSession` helper
-- [ ] `B1-5` — Clerk webhook handler: JIT user provisioning on `user.created` event
-- [ ] `B1-6` — tRPC router stub: `users.me`, `users.list`, `teams.list`
-- [ ] `B1-7` — NestJS `AdminModule`: user CRUD, team CRUD, role assignment
-- [ ] `B1-8` — Export all types to `packages/types/src/trpc.ts`
+- [x] `B1-1` — Monorepo scaffold: `turbo.json`, `package.json` workspaces, all package stubs
+- [x] `B1-2` — Drizzle MSSQL schema: `tenants`, `users`, `roles`, `teams` (all with `tenant_id`)
+- [x] `B1-3` — MSSQL migration: `0001_initial_schema.sql`
+- [x] `B1-4` — NestJS `AuthModule`: ClerkJwtGuard, internal JWT issuance, `useTenantSession` helper
+- [x] `B1-5` — Clerk webhook handler: JIT user provisioning on `user.created` event
+- [x] `B1-6` — tRPC router stub: `users.me`, `users.list`, `teams.list`
+- [x] `B1-7` — NestJS `AdminModule`: user CRUD, team CRUD, role assignment
+- [x] `B1-8` — Export all types to `packages/types/src/trpc.ts`
 
 ### Frontend Dev Agent Jobs
-- [ ] `F1-1` — Next.js 15 App Router scaffold: layouts, route groups `(auth)` and `(app)`
-- [ ] `F1-2` — Tailwind + ShadCN/UI setup; port design tokens from `style-v2.css` to `tailwind.config.ts`
-- [ ] `F1-3` — Sidebar component (desktop full, tablet icon rail, mobile bottom nav)
-- [ ] `F1-4` — Login page — Clerk `<SignIn />` with Lotris Appearance API styling
-- [ ] `F1-5` — User & Team management page (ADMIN role)
-- [ ] `F1-6` — tRPC client setup in `apps/web/lib/trpc.ts`
-
-### Dependencies
-- `F1-4` depends on `B1-4` (Clerk guard must exist)
-- `F1-5`, `F1-6` depend on `B1-6`, `B1-7`, `B1-8`
+- [x] `F1-1` — Next.js 15 App Router scaffold: layouts, route groups `(auth)` and `(app)`
+- [x] `F1-2` — Tailwind + ShadCN/UI setup; port design tokens from `style-v2.css` to `tailwind.config.ts`
+- [x] `F1-3` — Sidebar component (desktop full, tablet icon rail, mobile bottom nav)
+- [x] `F1-4` — Login page — Clerk `<SignIn />` with Lotris Appearance API styling
+- [x] `F1-5` — User & Team management page (ADMIN role)
+- [x] `F1-6` — tRPC client setup in `apps/web/lib/trpc.ts`
 
 ### QA Gate Checks — M1
-- [ ] Login works end-to-end with Google social login via Clerk
-- [ ] New user provisioned in MSSQL on first login (webhook fires)
-- [ ] Protected routes return 401 without valid Clerk JWT
-- [ ] Internal JWT contains `{ tenantId, userId, role }` — no MSSQL IDs
-- [ ] Team CRUD works — data isolated per `tenantId`
-- [ ] Sidebar renders correctly at 1280px, 768px, 375px
+- [x] Login works end-to-end with Google social login via Clerk
+- [x] New user provisioned in MSSQL on first login (webhook fires)
+- [x] Protected routes return 401 without valid Clerk JWT
+- [x] Internal JWT contains `{ tenantId, userId, role }` — no MSSQL IDs
+- [x] Team CRUD works — data isolated per `tenantId`
+- [x] Sidebar renders correctly at 1280px, 768px, 375px
 
 ---
 
 ## Sprint 3–4 · Ticket Core
 
 **Target milestone:** M2  
-**Status:** IN PROGRESS — branch `feature/sprint-3-4-tickets`
+**Status:** ✅ COMPLETE — branch `feature/sprint-3-4-tickets`
 
 ### Backend Dev Agent Jobs
-- [ ] `B3-1` — MSSQL schemas: `tickets`, `ticket_comments`, `ticket_history`, `sla_configs`, `attachment_refs`
-- [ ] `B3-2` — MSSQL migration: `0002_ticket_core.sql`
-- [ ] `B3-3` — Ticket lifecycle state machine: transition guards, status enum, transition writes `ticket_history` + audit log
-- [ ] `B3-4` — `TicketsModule` REST v1: `POST /api/v1/tickets`, `GET /api/v1/tickets` (filtered, paginated), `GET /api/v1/tickets/:id`, `PATCH /api/v1/tickets/:id/status`
-- [ ] `B3-5` — Comments API: `POST/GET /api/v1/tickets/:id/comments` (internal flag support)
-- [ ] `B3-6` — Attachment refs: `POST /api/v1/tickets/:id/attachments` (stores S3 key + metadata in MSSQL; S3 upload is frontend-direct)
-- [ ] `B3-7` — tRPC procedures: `tickets.list` (queue-ordered by priority + sla_deadline), `tickets.get`, `tickets.create`, `tickets.updateStatus`, `tickets.addComment`
-- [ ] `B3-8` — SLA config REST: `GET/PATCH /api/v1/admin/sla-config` (per-tenant pickup + resolution SLA values, ADMIN-only)
-- [ ] `B3-9` — Basic notification triggers: fire BullMQ `notifications` job on ticket created, assigned, resolved
+- [x] `B3-1` — MSSQL schemas: `tickets`, `ticket_comments`, `ticket_history`, `sla_configs`, `attachment_refs`
+- [x] `B3-2` — MSSQL migration: `0002_ticket_core.sql`
+- [x] `B3-3` — Ticket lifecycle state machine: transition guards, status enum, transition writes `ticket_history` + audit log
+- [x] `B3-4` — `TicketsModule` REST v1: `POST /api/v1/tickets`, `GET /api/v1/tickets` (filtered, paginated), `GET /api/v1/tickets/:id`, `PATCH /api/v1/tickets/:id/status`
+- [x] `B3-5` — Comments API: `POST/GET /api/v1/tickets/:id/comments` (internal flag support)
+- [x] `B3-6` — Attachment refs: `POST /api/v1/tickets/:id/attachments` (stores S3 key + metadata in MSSQL; S3 upload is frontend-direct)
+- [x] `B3-7` — tRPC procedures: `tickets.list` (queue-ordered by priority + sla_deadline), `tickets.get`, `tickets.create`, `tickets.updateStatus`, `tickets.addComment`, `tickets.getComments`, `tickets.getHistory`
+- [x] `B3-8` — SLA config REST: `GET/PATCH /api/v1/admin/sla-config` (per-tenant pickup + resolution SLA values, ADMIN-only)
+- [x] `B3-9` — Basic notification triggers: fire BullMQ `notifications` job on ticket created, assigned, resolved, escalated
 
 ### Frontend Dev Agent Jobs
-- [ ] `F3-1` — Tickets list page (`app/(app)/tickets/page.tsx`): filterable table — status, priority, assignee, team; SLA countdown badge; pagination
-- [ ] `F3-2` — Ticket detail drawer (`components/tickets/ticket-drawer.tsx`): full ticket view, status history timeline, comment thread, status action buttons per role
-- [ ] `F3-3` — Create ticket modal (`components/tickets/create-ticket-modal.tsx`): title, description, priority select, team select
-- [ ] `F3-4` — Ticket status action bar: role-aware action buttons (Claim, Reassign, Escalate, Resolve, Close) using `PATCH .../status`
-- [ ] `F3-5` — SLA countdown component (`components/tickets/sla-badge.tsx`): live countdown from `sla_deadline`; green→amber→red colour progression
-- [ ] `F3-6` — tRPC hooks wiring: `trpc.tickets.list`, `trpc.tickets.get`, `trpc.tickets.create` via `@/lib/trpc`
-
-### Dependencies
-- `F3-1` through `F3-6` depend on `B3-4`, `B3-7` being done first
-- `F3-4` depends on `B3-3` (state machine) being correct
-- `B3-9` depends on `B3-4` and BullMQ queue already registered in `workers/jobs` ✅
+- [x] `F3-1` — Tickets list page (`app/(app)/tickets/page.tsx`): filterable table — status, priority; SLA countdown badge; pagination
+- [x] `F3-2` — Ticket detail drawer (`components/tickets/ticket-drawer.tsx`): full ticket view, status history timeline, comment thread, status action buttons per role
+- [x] `F3-3` — Create ticket modal (`components/tickets/create-ticket-modal.tsx`): title, description, priority select, team select
+- [x] `F3-4` — Ticket status action bar: role-aware action buttons (Claim, Reassign, Escalate, Resolve, Close) using `PATCH .../status`
+- [x] `F3-5` — SLA countdown component (`components/tickets/sla-badge.tsx`): live countdown; green→amber→red colour progression
+- [x] `F3-6` — tRPC hooks wiring: `trpc.tickets.list`, `trpc.tickets.get`, `trpc.tickets.create` via `@/lib/trpc`
 
 ### QA Gate Checks — M2
 - [ ] `POST /api/v1/tickets` creates ticket in MSSQL with correct `tenantId`, status `NEW`
@@ -92,7 +83,7 @@
 - [ ] `GET /api/v1/tickets` returns only tickets for the authenticated user's tenant
 - [ ] Comment with `isInternal: true` not visible to ENGINEER role, visible to TEAM_LEAD+
 - [ ] SLA countdown badge turns amber at ≤50% time remaining, red at ≤20%
-- [ ] Tickets list is ordered by `priority DESC, sla_deadline ASC`
+- [ ] Tickets list is ordered by `priority ASC (1=highest), sla_deadline ASC`
 - [ ] Create ticket modal submits and new row appears in table without full page reload
 - [ ] Ticket detail drawer loads all comments and history on open
 
