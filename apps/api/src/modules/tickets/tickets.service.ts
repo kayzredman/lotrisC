@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { getMssqlDb } from '@lotris/db';
+import { getMssqlDb, eq, and, asc, sql } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
-import { eq, and, asc, sql } from 'drizzle-orm';
 import {
   tickets,
   ticketComments,
@@ -33,10 +32,6 @@ import IORedis from 'ioredis';
 export class TicketsService {
   constructor(private readonly notifications: NotificationsService) {}
 
-  private get db() {
-    return getMssqlDb();
-  }
-
   private getSlaTimersQueue(): Queue {
     const env = getEnv();
     const connection = new IORedis(env.REDIS_URL, { maxRetriesPerRequest: null });
@@ -46,7 +41,7 @@ export class TicketsService {
   // ── Create ───────────────────────────────────────────────────────────────
 
   async create(auth: TrpcAuth, dto: CreateTicketDto) {
-    const db = this.db;
+    const db = await getMssqlDb();
     const now = new Date();
     const id = uuidv4();
 
@@ -100,7 +95,7 @@ export class TicketsService {
   // ── List ─────────────────────────────────────────────────────────────────
 
   async list(auth: TrpcAuth, query: TicketListQueryDto) {
-    const db = this.db;
+    const db = await getMssqlDb();
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.min(100, Math.max(1, query.limit ?? 25));
     const offset = (page - 1) * limit;
@@ -135,7 +130,7 @@ export class TicketsService {
   // ── Get by ID ────────────────────────────────────────────────────────────
 
   async findById(auth: TrpcAuth, ticketId: string) {
-    const db = this.db;
+    const db = await getMssqlDb();
     const [ticket] = await db
       .select()
       .from(tickets)
@@ -150,7 +145,7 @@ export class TicketsService {
   // ── Status transition ────────────────────────────────────────────────────
 
   async updateStatus(auth: TrpcAuth, ticketId: string, dto: UpdateTicketStatusDto) {
-    const db = this.db;
+    const db = await getMssqlDb();
     const ticket = await this.findById(auth, ticketId);
     const from = ticket.status as TicketStatus;
     const to = dto.status as TicketStatus;
@@ -258,7 +253,7 @@ export class TicketsService {
   // ── Comments ──────────────────────────────────────────────────────────────
 
   async addComment(auth: TrpcAuth, ticketId: string, dto: CreateCommentDto) {
-    const db = this.db;
+    const db = await getMssqlDb();
     // Ensure ticket exists + belongs to tenant
     await this.findById(auth, ticketId);
 
@@ -266,7 +261,7 @@ export class TicketsService {
     const now = new Date();
 
     // ENGINEER role cannot post internal comments
-    if (dto.isInternal && auth.role === UserRole.ENGINEER) {
+    if (dto.isInternal && auth.role === 'ENGINEER') {
       throw new ForbiddenException('Engineers cannot post internal comments');
     }
 
@@ -293,9 +288,9 @@ export class TicketsService {
 
   async getComments(auth: TrpcAuth, ticketId: string) {
     await this.findById(auth, ticketId);
-    const db = this.db;
+    const db = await getMssqlDb();
 
-    const isEngineer = auth.role === UserRole.ENGINEER;
+    const isEngineer = auth.role === 'ENGINEER';
 
     const rows = await db
       .select()
@@ -317,7 +312,7 @@ export class TicketsService {
 
   async addAttachmentRef(auth: TrpcAuth, ticketId: string, dto: CreateAttachmentRefDto) {
     await this.findById(auth, ticketId);
-    const db = this.db;
+    const db = await getMssqlDb();
     const id = uuidv4();
     const now = new Date();
 
@@ -348,7 +343,7 @@ export class TicketsService {
 
   async getHistory(auth: TrpcAuth, ticketId: string) {
     await this.findById(auth, ticketId);
-    const db = this.db;
+    const db = await getMssqlDb();
 
     return db
       .select()
@@ -360,7 +355,7 @@ export class TicketsService {
   // ── SLA config helper ─────────────────────────────────────────────────────
 
   async getSlaConfig(tenantId: string, teamId?: string) {
-    const db = this.db;
+    const db = await getMssqlDb();
 
     // Try team-specific config first, fall back to tenant default
     if (teamId) {
@@ -391,7 +386,8 @@ export class TicketsService {
     toValue?: string;
     metadata?: string;
   }) {
-    await this.db.insert(ticketHistory).values({
+    const db = await getMssqlDb();
+    await db.insert(ticketHistory).values({
       tenantId: entry.tenantId,
       ticketId: entry.ticketId,
       actorId: entry.actorId ?? null,

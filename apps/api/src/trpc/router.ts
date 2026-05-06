@@ -1,7 +1,5 @@
 import { router, protectedProcedure } from './trpc';
-import { getMssqlDb } from '@lotris/db';
-import { users, teams, roles, tickets, ticketComments, ticketHistory } from '@lotris/db';
-import { eq, and, asc } from 'drizzle-orm';
+import { getMssqlDb, users, teams, roles, tickets, ticketComments, ticketHistory, eq, and, asc } from '@lotris/db';
 import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
 import { QueueService } from '../modules/queue/queue.service';
@@ -17,7 +15,7 @@ export const appRouter = router({
   // ── users ───────────────────────────────────────────────────────────────
 
   'users.me': protectedProcedure.query(async ({ ctx }) => {
-    const db = getMssqlDb();
+    const db = await getMssqlDb();
     const result = await db
       .select({
         id: users.id,
@@ -37,7 +35,7 @@ export const appRouter = router({
   }),
 
   'users.list': protectedProcedure.query(async ({ ctx }) => {
-    const db = getMssqlDb();
+    const db = await getMssqlDb();
     return db
       .select({
         id: users.id,
@@ -57,7 +55,7 @@ export const appRouter = router({
   // ── teams ───────────────────────────────────────────────────────────────
 
   'teams.list': protectedProcedure.query(async ({ ctx }) => {
-    const db = getMssqlDb();
+    const db = await getMssqlDb();
     return db
       .select()
       .from(teams)

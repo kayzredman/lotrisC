@@ -1,7 +1,6 @@
 import { Worker, Job } from 'bullmq';
 import IORedis from 'ioredis';
-import { getMssqlDb, tickets, ticketHistory, users, queueConfigs } from '@lotris/db';
-import { eq, and, count, asc, sql } from 'drizzle-orm';
+import { getMssqlDb, tickets, ticketHistory, users, queueConfigs, eq, and, count, asc, sql } from '@lotris/db';
 
 interface AutoAssignJobData {
   ticketId: string;
@@ -26,7 +25,7 @@ const MUTEX_TTL_MS = 10_000; // 10 second lock per ticket
 async function handleAutoAssign(job: Job<AutoAssignJobData>, redis: IORedis) {
   const { ticketId, tenantId } = job.data;
   const mutexKey = `mutex:auto-assign:${ticketId}`;
-  const db = getMssqlDb();
+  const db = await getMssqlDb();
 
   // ── Acquire mutex ─────────────────────────────────────────────────────────
   const acquired = await redis.set(mutexKey, '1', 'PX', MUTEX_TTL_MS, 'NX');
@@ -187,7 +186,7 @@ async function handleAutoAssign(job: Job<AutoAssignJobData>, redis: IORedis) {
 }
 
 async function getQueueConfig(
-  db: ReturnType<typeof getMssqlDb>,
+  db: Awaited<ReturnType<typeof getMssqlDb>>,
   tenantId: string,
   teamId: string,
 ): Promise<{ maxCapacityPerEngineer: number; resolutionSlaMinutes: number; autoAssignEnabled: number }> {

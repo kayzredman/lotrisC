@@ -13,7 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ClerkJwtGuard } from '../auth/clerk-jwt.guard';
-import { Auth } from '../auth/auth.decorator';
+import { Session as Auth } from '../auth/decorators/session.decorator';
 import type { TrpcAuth } from '@lotris/types';
 import { TasksService } from './tasks.service';
 import {

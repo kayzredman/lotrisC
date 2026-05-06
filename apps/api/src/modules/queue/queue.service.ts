@@ -4,16 +4,16 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { getMssqlDb } from '@lotris/db';
+import { getMssqlDb, eq, and, asc, sql, count } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
-import { eq, and, asc, sql, count } from 'drizzle-orm';
+
 import {
   tickets,
   users,
   queueConfigs,
 } from '@lotris/db';
 import type { TrpcAuth } from '@lotris/types';
-import { UserRole } from '@lotris/types';
+
 import { TICKET_STATUS } from '../tickets/ticket-lifecycle';
 import { NotificationsService } from '../notifications/notifications.service';
 import { getEnv } from '@lotris/config';
@@ -32,7 +32,7 @@ export class QueueService {
   // ── Queue list (UNASSIGNED tickets for the engineer's team) ──────────────
 
   async listQueue(auth: TrpcAuth, query: QueueListQueryDto) {
-    const db = this.db;
+    const db = await getMssqlDb();
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.min(100, Math.max(1, query.limit ?? 25));
     const offset = (page - 1) * limit;
@@ -71,7 +71,7 @@ export class QueueService {
   // ── Claim (controlled pickup) ─────────────────────────────────────────────
 
   async claimTicket(auth: TrpcAuth, ticketId: string) {
-    const db = this.db;
+    const db = await getMssqlDb();
 
     // Fetch the ticket with tenant scope
     const [ticket] = await db
@@ -159,7 +159,7 @@ export class QueueService {
   // ── Queue health ──────────────────────────────────────────────────────────
 
   async getQueueHealth(auth: TrpcAuth) {
-    const db = this.db;
+    const db = await getMssqlDb();
 
     // Count tickets by status for this tenant
     const statusCounts = await db
@@ -227,7 +227,7 @@ export class QueueService {
     resolutionSlaMinutes: number;
     autoAssignEnabled: number;
   }> {
-    const db = this.db;
+    const db = await getMssqlDb();
 
     if (teamId) {
       const [teamCfg] = await db
@@ -251,7 +251,7 @@ export class QueueService {
   }
 
   async upsertQueueConfig(auth: TrpcAuth, dto: UpdateQueueConfigDto) {
-    const db = this.db;
+    const db = await getMssqlDb();
     const now = new Date();
 
     const conditions = [eq(queueConfigs.tenantId, auth.tenantId)];

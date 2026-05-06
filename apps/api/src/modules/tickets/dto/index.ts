@@ -73,8 +73,8 @@ export class TicketListQueryDto {
   status?: string;
 
   @IsOptional()
-  @IsString()
-  priority?: string;
+  @IsInt()
+  priority?: number;
 
   @IsOptional()
   @IsUUID()

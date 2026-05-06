@@ -4,12 +4,9 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { getMssqlDb } from '@lotris/db';
-import { tasks, taskAssignments, taskChecklistItems, users } from '@lotris/db';
-import { eq, and, sql, count, asc, inArray } from 'drizzle-orm';
+import { getMssqlDb, tasks, taskAssignments, taskChecklistItems, users, eq, and, sql, count, asc, inArray } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
 import type { TrpcAuth } from '@lotris/types';
-import { UserRole } from '@lotris/types';
 import type {
   CreateTaskDto,
   UpdateTaskDto,
@@ -24,15 +21,19 @@ export class TasksService {
     return getMssqlDb();
   }
 
+  private async getDb() {
+    return getMssqlDb();
+  }
+
   // ── Create ───────────────────────────────────────────────────────────────
 
   async create(auth: TrpcAuth, dto: CreateTaskDto) {
-    const db = this.db;
+    const db = await this.getDb();
     const now = new Date();
     const id = uuidv4();
 
     // Determine source from role
-    const isLead = auth.role === UserRole.TEAM_LEAD || auth.role === UserRole.IT_MANAGER || auth.role === UserRole.ADMIN;
+    const isLead = auth.role === 'TEAM_LEAD' || auth.role === 'IT_MANAGER' || auth.role === 'ADMIN';
     const hasAssignees = dto.assigneeIds && dto.assigneeIds.length > 0;
     const source = isLead && hasAssignees ? 'LEAD_ASSIGNED' : 'SELF_LOGGED';
 
@@ -77,12 +78,12 @@ export class TasksService {
   // ── List ─────────────────────────────────────────────────────────────────
 
   async list(auth: TrpcAuth, query: TaskListQueryDto) {
-    const db = this.db;
+    const db = await this.getDb();
     const page = query.page ?? 1;
     const limit = query.limit ?? 25;
     const offset = (page - 1) * limit;
 
-    const isLead = auth.role === UserRole.TEAM_LEAD || auth.role === UserRole.IT_MANAGER || auth.role === UserRole.ADMIN;
+    const isLead = auth.role === 'TEAM_LEAD' || auth.role === 'IT_MANAGER' || auth.role === 'ADMIN';
 
     // Build base WHERE conditions
     const conditions: ReturnType<typeof eq>[] = [
@@ -121,7 +122,7 @@ export class TasksService {
             eq(taskAssignments.assigneeId, visibilityFilter),
           ),
         );
-      const assignedIds = assignedTaskIds.map((r) => r.taskId as string);
+      const assignedIds = assignedTaskIds.map((r: { taskId: unknown }) => r.taskId as string);
 
       rows = await db
         .select()
@@ -130,7 +131,7 @@ export class TasksService {
           and(
             eq(tasks.tenantId, auth.tenantId),
             ...(conditions.slice(1)),
-            sql`(${tasks.createdBy} = ${visibilityFilter}${assignedIds.length ? sql` OR ${tasks.id} IN (${sql.join(assignedIds.map((id) => sql`${id}`), sql`, `)})` : sql``})`,
+            sql`(${tasks.createdBy} = ${visibilityFilter}${assignedIds.length ? sql` OR ${tasks.id} IN (${sql.join(assignedIds.map((id: string) => sql`${id}`), sql`, `)})` : sql``})`,
           ),
         )
         .orderBy(asc(tasks.dueDate), asc(tasks.createdAt))
@@ -160,7 +161,7 @@ export class TasksService {
   // ── Get by ID ─────────────────────────────────────────────────────────────
 
   async findById(auth: TrpcAuth, taskId: string) {
-    const db = this.db;
+    const db = await this.getDb();
     const [task] = await db
       .select()
       .from(tasks)
@@ -168,7 +169,7 @@ export class TasksService {
 
     if (!task) throw new NotFoundException(`Task ${taskId} not found`);
 
-    const isLead = auth.role === UserRole.TEAM_LEAD || auth.role === UserRole.IT_MANAGER || auth.role === UserRole.ADMIN;
+    const isLead = auth.role === 'TEAM_LEAD' || auth.role === 'IT_MANAGER' || auth.role === 'ADMIN';
     const isOwner = task.createdBy === auth.userId;
 
     // Check visibility: engineer must be creator or assignee
@@ -191,7 +192,7 @@ export class TasksService {
   // ── Update ────────────────────────────────────────────────────────────────
 
   async update(auth: TrpcAuth, taskId: string, dto: UpdateTaskDto) {
-    const db = this.db;
+    const db = await this.getDb();
     const task = await this.findById(auth, taskId);
     const now = new Date();
 
@@ -224,7 +225,7 @@ export class TasksService {
   async addChecklistItem(auth: TrpcAuth, taskId: string, dto: CreateChecklistItemDto) {
     // Verify access
     await this.findById(auth, taskId);
-    const db = this.db;
+    const db = await this.getDb();
     const now = new Date();
 
     // Next sort order
@@ -255,7 +256,7 @@ export class TasksService {
 
   async toggleChecklistItem(auth: TrpcAuth, taskId: string, itemId: string) {
     await this.findById(auth, taskId);
-    const db = this.db;
+    const db = await this.getDb();
 
     const [item] = await db
       .select()
@@ -288,7 +289,7 @@ export class TasksService {
 
   async deleteChecklistItem(auth: TrpcAuth, taskId: string, itemId: string) {
     await this.findById(auth, taskId);
-    const db = this.db;
+    const db = await this.getDb();
     await db
       .delete(taskChecklistItems)
       .where(
@@ -304,11 +305,11 @@ export class TasksService {
   // ── Assignees ─────────────────────────────────────────────────────────────
 
   async addAssignees(auth: TrpcAuth, taskId: string, dto: AddAssigneesDto) {
-    const isLead = auth.role === UserRole.TEAM_LEAD || auth.role === UserRole.IT_MANAGER || auth.role === UserRole.ADMIN;
+    const isLead = auth.role === 'TEAM_LEAD' || auth.role === 'IT_MANAGER' || auth.role === 'ADMIN';
     if (!isLead) throw new ForbiddenException('Only leads can assign tasks');
 
     await this.findById(auth, taskId);
-    const db = this.db;
+    const db = await this.getDb();
     const now = new Date();
 
     // Upsert — skip existing
@@ -316,7 +317,7 @@ export class TasksService {
       .select({ assigneeId: taskAssignments.assigneeId })
       .from(taskAssignments)
       .where(eq(taskAssignments.taskId, taskId));
-    const existingIds = new Set(existing.map((r) => r.assigneeId as string));
+    const existingIds = new Set(existing.map((r: { assigneeId: unknown }) => r.assigneeId as string));
     const newIds = dto.assigneeIds.filter((id) => !existingIds.has(id));
 
     if (newIds.length > 0) {
@@ -347,7 +348,7 @@ export class TasksService {
   }
 
   async markAssignmentComplete(auth: TrpcAuth, taskId: string) {
-    const db = this.db;
+    const db = await this.getDb();
     const now = new Date();
 
     await db
@@ -384,7 +385,7 @@ export class TasksService {
   // ── Private helpers ───────────────────────────────────────────────────────
 
   private async enrichTask(task: typeof tasks.$inferSelect) {
-    const db = this.db;
+    const db = await this.getDb();
 
     // Checklist items
     const checklistItems = await db
@@ -396,7 +397,7 @@ export class TasksService {
     // Compute progress
     let progress: number;
     if (checklistItems.length > 0) {
-      const completed = checklistItems.filter((i) => i.isCompleted).length;
+      const completed = checklistItems.filter((i: { isCompleted: unknown }) => i.isCompleted).length;
       progress = Math.round((completed / checklistItems.length) * 100);
     } else {
       progress = task.progressOverride ?? 0;
@@ -423,7 +424,7 @@ export class TasksService {
   }
 
   private async recomputeProgress(tenantId: string, taskId: string) {
-    const db = this.db;
+    const db = await this.getDb();
 
     const items = await db
       .select({ isCompleted: taskChecklistItems.isCompleted })
@@ -432,7 +433,7 @@ export class TasksService {
 
     if (items.length === 0) return;
 
-    const completed = items.filter((i) => i.isCompleted).length;
+    const completed = items.filter((i: { isCompleted: unknown }) => i.isCompleted).length;
     const progress = Math.round((completed / items.length) * 100);
     const now = new Date();
 

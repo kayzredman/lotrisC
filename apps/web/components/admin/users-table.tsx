@@ -7,7 +7,8 @@ import type { AdminUser } from '@/lib/admin-api';
 import { listUsers, assignRole, deactivateUser } from '@/lib/admin-api';
 import { InviteUserModal } from './invite-user-modal';
 import type { UserRole } from '@lotris/types';
-import { UserRole as UserRoleEnum } from '@lotris/types';
+
+const USER_ROLES: UserRole[] = ['SUPERADMIN', 'ADMIN', 'IT_MANAGER', 'TEAM_LEAD', 'ENGINEER'];
 
 const ROLE_COLORS: Record<UserRole, string> = {
   SUPERADMIN: 'destructive',
@@ -118,7 +119,7 @@ export function UsersTable() {
                         onChange={(e) => void handleRoleChange(user.id, e.target.value as UserRole)}
                         className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                       >
-                        {Object.values(UserRoleEnum).map((r) => (
+                        {USER_ROLES.map((r) => (
                           <option key={r} value={r}>{r}</option>
                         ))}
                       </select>

@@ -1,7 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { getMssqlDb } from '@lotris/db';
-import { users, teams, auditLogs } from '@lotris/db';
-import { eq, and } from 'drizzle-orm';
+import { getMssqlDb, users, teams, auditLogs, eq, and } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
 import type { CreateUserDto } from './dto/create-user.dto';
 import type { UpdateUserDto } from './dto/update-user.dto';
@@ -55,7 +53,7 @@ export class AdminService {
       .set({ ...dto, updatedAt: new Date() })
       .where(and(eq(users.id, userId), eq(users.tenantId, tenantId)));
 
-    await this.writeAuditLog(db, tenantId, actorId, 'USER_UPDATED', 'User', userId, dto);
+    await this.writeAuditLog(db, tenantId, actorId, 'USER_UPDATED', 'User', userId, dto as Record<string, unknown>);
   }
 
   async deactivateUser(tenantId: string, actorId: string, userId: string) {
@@ -125,7 +123,7 @@ export class AdminService {
       .set({ ...dto, updatedAt: new Date() })
       .where(and(eq(teams.id, teamId), eq(teams.tenantId, tenantId)));
 
-    await this.writeAuditLog(db, tenantId, actorId, 'TEAM_UPDATED', 'Team', teamId, dto);
+    await this.writeAuditLog(db, tenantId, actorId, 'TEAM_UPDATED', 'Team', teamId, dto as Record<string, unknown>);
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────

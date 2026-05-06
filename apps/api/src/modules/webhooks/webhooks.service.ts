@@ -1,7 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { getMssqlDb } from '@lotris/db';
-import { tenants, users } from '@lotris/db';
-import { eq } from 'drizzle-orm';
+import { getMssqlDb, tenants, users, eq } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
