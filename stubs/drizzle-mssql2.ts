@@ -135,7 +135,11 @@ function buildSelectCols(fields?: any): string {
       const p: any[] = [];
       parts.push(`${serializeChunks(expr.queryChunks, p)} AS [${alias}]`);
     } else if (expr?.columnName) {
-      parts.push(`[${expr.columnName}] AS [${alias}]`);
+      if (expr?._tableName) {
+        parts.push(`[${expr._tableName}].[${expr.columnName}] AS [${alias}]`);
+      } else {
+        parts.push(`[${expr.columnName}] AS [${alias}]`);
+      }
     }
   }
   return parts.length > 0 ? parts.join(', ') : '*';

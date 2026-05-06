@@ -68,8 +68,8 @@ export async function createContext({
           .innerJoin(tenants, eq(users.tenantId, tenants.id))
           .where(eq(users.clerkUserId, payload.sub))
           .limit(1);
-      } catch {
-        // Auto-provision failed (demo tenant may not exist) — fall through to auth: null
+      } catch (provErr) {
+        console.error('[ctx] Auto-provision failed:', (provErr as Error).message);
       }
     }
 
@@ -84,7 +84,8 @@ export async function createContext({
     };
 
     return { auth };
-  } catch {
+  } catch (ctxErr) {
+    console.error('[ctx] Context creation error:', (ctxErr as Error).message);
     return { auth: null };
   }
 }

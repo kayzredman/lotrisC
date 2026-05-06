@@ -92,7 +92,7 @@ export function DashboardPageClient() {
         <TicketAnalytics
           ticketTrend={analytics?.ticketTrend}
           slaTrend={analytics?.slaTrend}
-          isLoading={analyticsQ.isLoading}
+          isLoading={analyticsQ.isPending}
         />
 
         {/* Placeholder for future donut chart */}
@@ -111,7 +111,7 @@ export function DashboardPageClient() {
       </div>
 
       {/* Engineer performance */}
-      <EngineerPerfTable rows={engineers} isLoading={engineerQ.isLoading} />
+      <EngineerPerfTable rows={engineers} isLoading={engineerQ.isPending} />
     </div>
   );
 }
