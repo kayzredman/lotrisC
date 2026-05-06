@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
 import { QueueService } from '../modules/queue/queue.service';
 import { NotificationsService } from '../modules/notifications/notifications.service';
+import { TasksService } from '../modules/tasks/tasks.service';
 
 /**
  * tRPC application router.
@@ -169,6 +170,93 @@ export const appRouter = router({
     .query(async ({ ctx }) => {
       const svc = new QueueService(new NotificationsService());
       return svc.getQueueHealth(ctx.auth);
+    }),
+
+  // ── tasks ─────────────────────────────────────────────────────────────────
+
+  'tasks.list': protectedProcedure
+    .input(
+      z.object({
+        status: z.enum(['OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+        source: z.enum(['LEAD_ASSIGNED', 'SELF_LOGGED']).optional(),
+        teamId: z.string().uuid().optional(),
+        assigneeId: z.string().uuid().optional(),
+        page: z.number().int().min(1).default(1),
+        limit: z.number().int().min(1).max(100).default(25),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const svc = new TasksService();
+      return svc.list(ctx.auth, input);
+    }),
+
+  'tasks.get': protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const svc = new TasksService();
+      return svc.findById(ctx.auth, input.id);
+    }),
+
+  'tasks.create': protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        description: z.string().max(4000).optional(),
+        taskType: z.enum(['MAINTENANCE', 'DR_BCP', 'CHANGE_REQUEST', 'DOCUMENTATION', 'TRAINING', 'AD_HOC']).optional(),
+        teamId: z.string().uuid().optional(),
+        assigneeIds: z.array(z.string().uuid()).max(20).optional(),
+        dueDate: z.string().datetime().optional(),
+        progressOverride: z.number().int().min(0).max(100).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const svc = new TasksService();
+      return svc.create(ctx.auth, input);
+    }),
+
+  'tasks.update': protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        title: z.string().min(1).max(500).optional(),
+        description: z.string().max(4000).optional(),
+        taskType: z.enum(['MAINTENANCE', 'DR_BCP', 'CHANGE_REQUEST', 'DOCUMENTATION', 'TRAINING', 'AD_HOC']).optional(),
+        status: z.enum(['OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+        dueDate: z.string().datetime().optional(),
+        progressOverride: z.number().int().min(0).max(100).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...dto } = input;
+      const svc = new TasksService();
+      return svc.update(ctx.auth, id, dto);
+    }),
+
+  'tasks.addChecklistItem': protectedProcedure
+    .input(
+      z.object({
+        taskId: z.string().uuid(),
+        label: z.string().min(1).max(500),
+        sortOrder: z.number().int().min(0).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const svc = new TasksService();
+      return svc.addChecklistItem(ctx.auth, input.taskId, { label: input.label, sortOrder: input.sortOrder });
+    }),
+
+  'tasks.toggleChecklistItem': protectedProcedure
+    .input(z.object({ taskId: z.string().uuid(), itemId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new TasksService();
+      return svc.toggleChecklistItem(ctx.auth, input.taskId, input.itemId);
+    }),
+
+  'tasks.complete': protectedProcedure
+    .input(z.object({ taskId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new TasksService();
+      return svc.markAssignmentComplete(ctx.auth, input.taskId);
     }),
 });
 
