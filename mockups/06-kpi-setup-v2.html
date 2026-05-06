@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotris v2 — KPI Setup</title>
+  <link rel="stylesheet" href="style-v2.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+
+    /* ── Tab bar ── */
+    .setup-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 4px;
+      width: fit-content;
+      margin-bottom: 20px;
+    }
+
+    .setup-tab {
+      padding: 7px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      background: transparent;
+      transition: all 0.13s;
+    }
+
+    .setup-tab svg { width: 13px; height: 13px; stroke-width: 1.8; }
+
+    .setup-tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.6); }
+
+    .setup-tab.active {
+      background: white;
+      color: var(--indigo);
+      font-weight: 600;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .setup-tab .tab-count {
+      background: var(--indigo-dim);
+      color: var(--indigo);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 99px;
+    }
+
+    .setup-tab.active .tab-count { background: var(--indigo); color: white; }
+
+    /* ── KPI table ── */
+    .kpi-name-cell { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .kpi-desc-cell { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+
+    .scope-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .scope-badge svg { width: 9px; height: 9px; stroke-width: 2.5; }
+    .scope-org      { background: var(--indigo-dim);  color: var(--indigo); }
+    .scope-team     { background: var(--blue-bg);      color: var(--blue); }
+    .scope-engineer { background: var(--purple-bg);    color: var(--purple); }
+
+    .direction-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    .direction-chip svg { width: 11px; height: 11px; stroke-width: 2; }
+    .dir-up   { color: var(--green); }
+    .dir-down { color: var(--blue); }
+
+    .weight-chip {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      background: var(--bg-subtle);
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+    }
+
+    /* ── Drawer ── */
+    .drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.24); z-index:200; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+    .drawer-overlay.open { opacity:1; pointer-events:auto; }
+
+    .drawer {
+      position: fixed;
+      top: 0; right: 0;
+      width: 480px;
+      height: 100vh;
+      background: white;
+      z-index: 201;
+      transform: translateX(100%);
+      transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+    }
+    .drawer.open { transform: translateX(0); }
+
+    .drawer-header {
+      padding: 20px 22px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 22px;
+    }
+
+    .drawer-footer {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      flex-shrink: 0;
+    }
+
+    .drawer-close {
+      width: 28px; height: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      background: white;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+    .drawer-close svg { width: 13px; height: 13px; stroke-width: 2; }
+    .drawer-close:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+    /* Form sections */
+    .form-section {
+      margin-bottom: 22px;
+    }
+
+    .form-section-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .form-row.full { grid-template-columns: 1fr; }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+
+    .form-group label {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .form-group label .required { color: var(--red); margin-left: 2px; }
+
+    /* Target builder */
+    .target-builder {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .target-builder select { width: 72px; flex-shrink: 0; }
+    .target-builder input  { flex: 1; }
+    .target-builder .unit-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* Assignee multi-select mock */
+    .assignee-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 6px 8px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      min-height: 36px;
+      cursor: text;
+    }
+
+    .assignee-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--indigo-dim);
+      border: 1px solid var(--indigo-border);
+      color: var(--indigo);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 99px;
+    }
+
+    .assignee-tag svg { width: 9px; height: 9px; stroke-width: 2.5; cursor: pointer; }
+    .assignee-tag svg:hover { color: var(--red); }
+
+    /* Weight slider visual */
+    .weight-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .weight-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 99px;
+      background: linear-gradient(to right, var(--indigo) 20%, var(--bg-subtle) 20%);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .weight-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--indigo);
+      border: 2px solid white;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+    }
+
+    .weight-val-box {
+      width: 48px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--indigo);
+      background: var(--indigo-dim);
+      border: 1px solid var(--indigo-border);
+      border-radius: var(--radius-sm);
+      padding: 4px 6px;
+    }
+
+    /* Toggle switch */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .toggle-row:last-child { border-bottom: none; }
+
+    .toggle-row-left { flex: 1; }
+    .toggle-row-label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .toggle-row-desc  { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+
+    .toggle {
+      position: relative;
+      width: 36px; height: 20px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      border-radius: 99px;
+      background: var(--border-strong);
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: white;
+      top: 3px; left: 3px;
+      transition: transform 0.18s;
+      box-shadow: var(--shadow-xs);
+    }
+    .toggle input:checked + .toggle-slider { background: var(--indigo); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    /* Team target matrix */
+    .matrix-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .matrix-table th {
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text-light);
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .matrix-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .matrix-table tbody tr:last-child td { border-bottom: none; }
+    .matrix-table tbody tr:hover td { background: var(--bg-subtle); }
+
+    .target-input-inline {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .target-input-inline input {
+      width: 64px;
+      padding: 4px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .target-input-inline .unit {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Engineer assignment table */
+    .eng-kpi-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin: 2px;
+    }
+
+    .section-hidden { display: none; }
+    .section-visible { display: block; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Lotris</div>
+          <div class="logo-sub">Performance Platform</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="02-dashboard-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> Dashboard
+      </a>
+      <a href="03-tickets-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="ticket"></i></span> Tickets
+        <span class="nav-badge">12</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="layers"></i></span> Queue
+        <span class="nav-badge">9</span>
+      </a>
+      <a href="09-tasks-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="clipboard-list"></i></span> Tasks
+      </a>
+      <a href="04-kpis-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="bar-chart-2"></i></span> KPIs
+      </a>
+      <a href="05-reports-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="file-bar-chart"></i></span> Reports
+      </a>
+      <div class="nav-section-label">Admin</div>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="users"></i></span> Teams
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="shield"></i></span> Audit Log
+      </a>
+      <a href="06-kpi-setup-v2.html" class="nav-item active">
+        <span class="nav-icon"><i data-lucide="settings-2"></i></span> KPI Setup
+      </a>
+      <a href="10-sysadmin-ops-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="activity"></i></span> System Health
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar">RK</div>
+        <div class="user-info">
+          <div class="user-name">Rowland K.</div>
+          <div class="user-role">IT Manager</div>
+        </div>
+        <div class="sidebar-logout"><i data-lucide="log-out"></i></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="page-title">KPI Setup</span>
+        <span class="breadcrumb">
+          <span>Admin</span><span class="breadcrumb-sep">/</span><span>KPI Configuration</span>
+        </span>
+      </div>
+      <div class="topbar-right">
+        <div class="search-bar">
+          <i data-lucide="search"></i>
+          <input type="text" placeholder="Search KPI definitions...">
+        </div>
+        <div class="icon-btn">
+          <i data-lucide="bell"></i>
+          <span class="notif-dot"></span>
+        </div>
+        <div class="avatar" style="cursor:pointer;">RK</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>KPI Setup</h1>
+          <p>Define KPI targets, assign to teams and engineers, configure weights and alerts</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-secondary"><i data-lucide="download"></i> Export config</button>
+          <button class="btn btn-primary" onclick="openDrawer()">
+            <i data-lucide="plus"></i> New KPI
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary chips -->
+      <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+        <div class="card" style="padding:12px 16px; display:flex; align-items:center; gap:10px; border-left:3px solid var(--indigo);">
+          <div class="stat-icon-box indigo" style="width:32px;height:32px;"><i data-lucide="list-checks"></i></div>
+          <div>
+            <div style="font-size:18px; font-weight:800; letter-spacing:-0.5px; line-height:1;">8</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">KPI Definitions</div>
+          </div>
+        </div>
+        <div class="card" style="padding:12px 16px; display:flex; align-items:center; gap:10px; border-left:3px solid var(--blue);">
+          <div class="stat-icon-box blue" style="width:32px;height:32px;"><i data-lucide="building-2"></i></div>
+          <div>
+            <div style="font-size:18px; font-weight:800; letter-spacing:-0.5px; line-height:1;">5</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Teams configured</div>
+          </div>
+        </div>
+        <div class="card" style="padding:12px 16px; display:flex; align-items:center; gap:10px; border-left:3px solid var(--purple);">
+          <div class="stat-icon-box" style="width:32px;height:32px;background:var(--purple-bg);color:var(--purple);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;"><i data-lucide="user"></i></div>
+          <div>
+            <div style="font-size:18px; font-weight:800; letter-spacing:-0.5px; line-height:1;">18</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Engineers assigned</div>
+          </div>
+        </div>
+        <div class="card" style="padding:12px 16px; display:flex; align-items:center; gap:10px; border-left:3px solid var(--green);">
+          <div class="stat-icon-box green" style="width:32px;height:32px;"><i data-lucide="check-circle-2"></i></div>
+          <div>
+            <div style="font-size:18px; font-weight:800; letter-spacing:-0.5px; line-height:1;">7</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Active KPIs</div>
+          </div>
+        </div>
+        <div class="card" style="padding:12px 16px; display:flex; align-items:center; gap:10px; border-left:3px solid var(--yellow);">
+          <div class="stat-icon-box yellow" style="width:32px;height:32px;"><i data-lucide="pencil"></i></div>
+          <div>
+            <div style="font-size:18px; font-weight:800; letter-spacing:-0.5px; line-height:1;">1</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Draft</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab bar -->
+      <div class="setup-tabs">
+        <button class="setup-tab active" onclick="switchTab('definitions', this)">
+          <i data-lucide="list-checks"></i> KPI Definitions <span class="tab-count">8</span>
+        </button>
+        <button class="setup-tab" onclick="switchTab('team', this)">
+          <i data-lucide="building-2"></i> Team Targets <span class="tab-count">5</span>
+        </button>
+        <button class="setup-tab" onclick="switchTab('engineer', this)">
+          <i data-lucide="user"></i> Engineer Targets <span class="tab-count">18</span>
+        </button>
+      </div>
+
+      <!-- ═══════════ TAB: KPI DEFINITIONS ═══════════ -->
+      <div id="tab-definitions" class="section-visible">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-title">KPI Definitions</div>
+              <div class="card-subtitle">8 definitions · 7 active · sorted by scope</div>
+            </div>
+            <div class="card-header-right">
+              <select class="select-filter" style="font-size:11px; height:28px; padding:4px 8px;">
+                <option>All scopes</option>
+                <option>Organisation</option>
+                <option>Team</option>
+                <option>Engineer</option>
+              </select>
+              <select class="select-filter" style="font-size:11px; height:28px; padding:4px 8px;">
+                <option>All statuses</option>
+                <option>Active</option>
+                <option>Draft</option>
+                <option>Archived</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>KPI Name</th>
+                  <th>Metric Type</th>
+                  <th>Target</th>
+                  <th>Direction</th>
+                  <th>Scope</th>
+                  <th>Weight</th>
+                  <th>Status</th>
+                  <th style="width:80px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <!-- 1 -->
+                <tr onclick="openDrawer()">
+                  <td>
+                    <div class="kpi-name-cell">SLA Compliance Rate</div>
+                    <div class="kpi-desc-cell">% of tickets resolved within agreed SLA</div>
+                  </td>
+                  <td><span style="font-size:12px; color:var(--text-muted);">Percentage</span></td>
+                  <td>
+                    <span style="font-size:12.5px; font-weight:700; color:var(--text-primary);">≥ 95%</span>
+                    <div style="font-size:10.5px; color:var(--text-light); margin-top:1px;">Warning at 90%</div>
+                  </td>
+                  <td>
+                    <span class="direction-chip dir-up"><i data-lucide="trending-up"></i> Higher</span>
+                  </td>
+                  <td><span class="scope-badge scope-team"><i data-lucide="building-2"></i> Team</span></td>
+                  <td><span class="weight-chip">20%</span></td>
+                  <td>
+                    <span><span class="status-dot" style="background:var(--green);"></span>
+                    <span style="font-size:12px; color:var(--green); font-weight:600;">Active</span></span>
+                  </td>
+                  <td>
+                    <div class="row-actions" style="opacity:1;">
+                      <div class="row-action-btn" onclick="openDrawer(); event.stopPropagation();"><i data-lucide="pencil"></i></div>
+                      <div class="row-action-btn"><i data-lucide="more-horizontal"></i></div>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 2 -->
+                <tr>
+                  <td>
+                    <div class="kpi-name-cell">Pickup SLA Adherence</div>
+                    <div class="kpi-desc-cell">% of tickets claimed within pickup time window</div>
+                  </td>
+                  <td><span style="font-size:12px; color:var(--text-muted);">Percentage</span></td>
+                  <td>
+                    <span style="font-size:12.5px; font-weight:700; color:var(--text-primary);">≥ 90%</span>
+                    <div style="font-size:10.5px; color:var(--text-light); margin-top:1px;">Warning at 85%</div>
+                  </td>
+                  <td>
+                    <span class="direction-chip dir-up"><i data-lucide="trending-up"></i> Higher</span>
+                  </td>
+                  <td><span class="scope-badge scope-team"><i data-lucide="building-2"></i> Team</span></td>
+                  <td><span class="weight-chip">15%</span></td>
+                  <td>
+                    <span><span class="status-dot" style="background:var(--green);"></span>
+                    <span style="font-size:12px; color:var(--green); font-weight:600;">Active</span></span>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <div class="row-action-btn"><i data-lucide="pencil"></i></div>
+                      <div class="row-action-btn"><i data-lucide="more-horizontal"></i></div>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 3 -->
+                <tr>
+                  <td>
+                    <div class="kpi-name-cell">First Response Time</div>
+                    <div class="kpi-desc-cell">Avg time from ticket open to first engineer action</div>
+                  </td>
+                  <td><span style="font-size:12px; color:var(--text-muted);">Time (hrs)</span></td>
+                  <td>
+                    <span style="font-size:12.5px; font-weight:700; color:var(--text-primary);">≤ 2 hrs</span>
+                    <div style="font-size:10.5px; color:var(--text-light); margin-top:1px;">Warning at 1.5 hrs</div>
+                  </td>
+                  <td>
+                    <span class="direction-chip dir-down"><i data-lucide="trending-down"></i> Lower</span>
+                  </td>
+                  <td><span class="scope-badge scope-org"><i data-lucide="globe"></i> Org</span></td>
+                  <td><span class="weight-chip">15%</span></td>
+                  <td>
+                    <span><span class="status-dot" style="background:var(--green);"></span>
+                    <span style="font-size:12px; color:var(--green); font-weight:600;">Active</span></span>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <div class="row-action-btn"><i data-lucide="pencil"></i></div>
+                      <div class="row-action-btn"><i data-lucide="more-horizontal"></i></div>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 4 -->
+                <tr>
+                  <td>
+                    <div class="kpi-name-cell">Avg Resolution Time</div>
+                    <div class="kpi-desc-cell">Average time from ticket open to resolved</div>
+                  </td>
+                  <td><span style="font-size:12px; color:var(--text-muted);">Time (hrs)</span></td>
+                  <td>
+                    <span style="font-size:12.5px; font-weight:700; color:var(--text-primary);">≤ 4 hrs</span>
+                    <div style="font-size:10.5px; color:var(--text-light); margin-top:1px;">Warning at 3.5 hrs</div>
+                  </td>
+                  <td>
+                    <span class="direction-chip dir-down"><i data-lucide="trending-down"></i> Lower</span>
+                  </td>
+                  <td><span class="scope-badge scope-team"><i data-lucide="building-2"></i> Team</span></td>
+                  <td><span class="weight-chip">15%</span></td>
+                  <td>
+                    <span><span class="status-dot" style="background:var(--green);"></span>
+                    <span style="font-size:12px; color:var(--green); font-weight:600;">Active</span></span>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <div class="row-action-btn"><i data-lucide="pencil"></i></div>
+                      <div class="row-action-btn"><i data-lucide="more-horizontal"></i></div>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 5 -->
+                <tr>
+                  <td>
+                    <div class="kpi-name-cell">Engineer Productivity</div>
+                    <div class="kpi-desc-cell">Tickets resolved per engineer per month</div>
+                  </td>
+                  <td><span style="font-size:12px; color:var(--text-muted);">Count</span></td>
+                  <td>
+                    <span style="font-size:12.5px; font-weight:700; color:var(--text-primary);">≥ 30 / mo</span>
+                    <div style="font-size:10.5px; color:var(--text-light); margin-top:1px;">Warning at 25</div>
+                  </td>
+                  <td>
+                    <span class="direction-chip dir-up"><i data-lucide="trending-up"></i> Higher</span>
+                  </td>
+                  <td><span class="scope-badge scope-engineer"><i data-lucide="user"></i> Engineer</span></td>
+                  <td><span class="weight-chip">20%</span></td>
+                  <td>
+                    <span><span class="status-dot" style="background:var(--green);"></span>
+                    <span style="font-size:12px; color:var(--green); font-weight:600;">Active</span></span>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <div class="row-action-btn"><i data-lucide="pencil"></i></div>
+                      <div class="row-action-btn"><i data-lucide="more-horizontal"></i></div>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 6 -->
+                <tr>
+                  <td>
+                    <div class="kpi-name-cell">CSAT Score</div>
+                    <div class="kpi-desc-cell">Customer satisfaction rating (1–5 scale)</div>
+                  </td>
+                  <td><span style="font-size:12px; color:var(--text-muted);">Score (1–5)</span></td>
+                  <td>
+                    <span style="font-size:12.5px; font-weight:700; color:var(--text-primary);">≥ 4.2</span>
+                    <div style="font-size:10.5px; color:var(--text-light); margin-top:1px;">Warning at 3.8</div>
+                  </td>
+                  <td>
+                    <span class="direction-chip dir-up"><i data-lucide="trending-up"></i> Higher</span>
+                  </td>
+                  <td><span class="scope-badge scope-team"><i data-lucide="building-2"></i> Team</span></td>
+                  <td><span class="weight-chip">10%</span></td>
+                  <td>
+                    <span><span class="status-dot" style="background:var(--green);"></span>
+                    <span style="font-size:12px; color:var(--green); font-weight:600;">Active</span></span>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <div class="row-action-btn"><i data-lucide="pencil"></i></div>
+                      <div class="row-action-btn"><i data-lucide="more-horizontal"></i></div>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 7 -->
+                <tr>
+                  <td>
+                    <div class="kpi-name-cell">Recurring Incident Rate</div>
+                    <div class="kpi-desc-cell">% of tickets that are repeat / recurring issues</div>
+                  </td>
+                  <td><span style="font-size:12px; color:var(--text-muted);">Percentage</span></td>
+                  <td>
+                    <span style="font-size:12.5px; font-weight:700; color:var(--text-primary);">≤ 10%</span>
+                    <div style="font-size:10.5px; color:var(--text-light); margin-top:1px;">Warning at 15%</div>
+                  </td>
+                  <td>
+                    <span class="direction-chip dir-down"><i data-lucide="trending-down"></i> Lower</span>
+                  </td>
+                  <td><span class="scope-badge scope-org"><i data-lucide="globe"></i> Org</span></td>
+                  <td><span class="weight-chip">5%</span></td>
+                  <td>
+                    <span><span class="status-dot" style="background:var(--green);"></span>
+                    <span style="font-size:12px; color:var(--green); font-weight:600;">Active</span></span>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <div class="row-action-btn"><i data-lucide="pencil"></i></div>
+                      <div class="row-action-btn"><i data-lucide="more-horizontal"></i></div>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 8 — Draft -->
+                <tr style="opacity:0.6;">
+                  <td>
+                    <div class="kpi-name-cell">Workload Distribution Score</div>
+                    <div class="kpi-desc-cell">Balance score across engineers in a team</div>
+                  </td>
+                  <td><span style="font-size:12px; color:var(--text-muted);">Score (0–100)</span></td>
+                  <td>
+                    <span style="font-size:12.5px; font-weight:700; color:var(--text-muted);">≥ 75</span>
+                    <div style="font-size:10.5px; color:var(--text-light); margin-top:1px;">Not configured</div>
+                  </td>
+                  <td>
+                    <span class="direction-chip dir-up"><i data-lucide="trending-up"></i> Higher</span>
+                  </td>
+                  <td><span class="scope-badge scope-team"><i data-lucide="building-2"></i> Team</span></td>
+                  <td><span class="weight-chip" style="color:var(--text-light);">—</span></td>
+                  <td>
+                    <span><span class="status-dot" style="background:var(--yellow);"></span>
+                    <span style="font-size:12px; color:var(--yellow); font-weight:600;">Draft</span></span>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <div class="row-action-btn"><i data-lucide="pencil"></i></div>
+                      <div class="row-action-btn"><i data-lucide="more-horizontal"></i></div>
+                    </div>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Weight total footer -->
+          <div style="padding: 12px 16px; border-top: 1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:12px;">
+            <span style="font-size:12px; color:var(--text-muted);">Total composite weight:</span>
+            <span style="font-size:13px; font-weight:700; color:var(--indigo);">100%</span>
+            <span class="badge badge-green"><i data-lucide="check-circle-2"></i> Balanced</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ TAB: TEAM TARGETS ═══════════ -->
+      <div id="tab-team" class="section-hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-title">Team KPI Targets</div>
+              <div class="card-subtitle">Per-team target overrides — leave blank to use global defaults</div>
+            </div>
+            <div class="card-header-right">
+              <button class="btn btn-secondary btn-sm"><i data-lucide="refresh-cw"></i> Reset to defaults</button>
+              <button class="btn btn-primary btn-sm"><i data-lucide="save"></i> Save changes</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th style="min-width:130px;">Team</th>
+                  <th>SLA Compliance</th>
+                  <th>Pickup SLA</th>
+                  <th>First Response</th>
+                  <th>Avg Resolution</th>
+                  <th>CSAT Score</th>
+                  <th>Overall Weight</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div style="font-size:12.5px; font-weight:700; color:var(--text-primary);">IT Support</div>
+                    <div style="font-size:11px; color:var(--text-muted);">8 engineers</div>
+                  </td>
+                  <td><div class="target-input-inline"><input type="text" value="95" style="width:52px;"><span class="unit">%</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="90" style="width:52px;"><span class="unit">%</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="2.0" style="width:52px;"><span class="unit">hrs</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="4.0" style="width:52px;"><span class="unit">hrs</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="4.2" style="width:52px;"></div></td>
+                  <td><span class="badge badge-green">Active</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="font-size:12.5px; font-weight:700; color:var(--text-primary);">Network Ops</div>
+                    <div style="font-size:11px; color:var(--text-muted);">4 engineers</div>
+                  </td>
+                  <td><div class="target-input-inline"><input type="text" value="97" style="width:52px;"><span class="unit">%</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="92" style="width:52px;"><span class="unit">%</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="1.5" style="width:52px;"><span class="unit">hrs</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="3.0" style="width:52px;"><span class="unit">hrs</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="4.5" style="width:52px;"></div></td>
+                  <td><span class="badge badge-green">Active</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="font-size:12.5px; font-weight:700; color:var(--text-primary);">DB Team</div>
+                    <div style="font-size:11px; color:var(--text-muted);">3 engineers</div>
+                  </td>
+                  <td><div class="target-input-inline"><input type="text" value="93" style="width:52px;"><span class="unit">%</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="88" style="width:52px;"><span class="unit">%</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="2.5" style="width:52px;"><span class="unit">hrs</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="5.0" style="width:52px;"><span class="unit">hrs</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="4.0" style="width:52px;"></div></td>
+                  <td><span class="badge badge-green">Active</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="font-size:12.5px; font-weight:700; color:var(--text-primary);">Security</div>
+                    <div style="font-size:11px; color:var(--text-muted);">2 engineers</div>
+                  </td>
+                  <td><div class="target-input-inline"><input type="text" value="98" style="width:52px;"><span class="unit">%</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="95" style="width:52px;"><span class="unit">%</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="1.0" style="width:52px;"><span class="unit">hrs</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="2.0" style="width:52px;"><span class="unit">hrs</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" value="4.5" style="width:52px;"></div></td>
+                  <td><span class="badge badge-green">Active</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="font-size:12.5px; font-weight:700; color:var(--text-primary);">Service Desk</div>
+                    <div style="font-size:11px; color:var(--text-muted);">4 engineers</div>
+                  </td>
+                  <td><div class="target-input-inline"><input type="text" style="width:52px;" placeholder="—"><span class="unit">%</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" style="width:52px;" placeholder="—"><span class="unit">%</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" style="width:52px;" placeholder="—"><span class="unit">hrs</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" style="width:52px;" placeholder="—"><span class="unit">hrs</span></div></td>
+                  <td><div class="target-input-inline"><input type="text" style="width:52px;" placeholder="—"></div></td>
+                  <td><span class="badge badge-gray" style="background:var(--bg-subtle);color:var(--text-muted);">Default</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="padding:10px 16px; border-top:1px solid var(--border); font-size:11.5px; color:var(--text-muted);">
+            <i data-lucide="info" style="width:11px;height:11px; margin-right:4px;"></i>
+            Blank fields use the global KPI definition target. Team-specific overrides take precedence.
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ TAB: ENGINEER TARGETS ═══════════ -->
+      <div id="tab-engineer" class="section-hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-title">Engineer KPI Assignments</div>
+              <div class="card-subtitle">Assign KPIs and individual targets per engineer</div>
+            </div>
+            <div class="card-header-right">
+              <select class="select-filter" style="font-size:11px; height:28px; padding:4px 8px;">
+                <option>All Teams</option>
+                <option>IT Support</option>
+                <option>Network Ops</option>
+                <option>DB Team</option>
+                <option>Security</option>
+              </select>
+              <button class="btn btn-primary btn-sm"><i data-lucide="save"></i> Save changes</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Engineer</th>
+                  <th>Team</th>
+                  <th>Assigned KPIs</th>
+                  <th>Productivity Target</th>
+                  <th>Period</th>
+                  <th style="width:80px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <div class="avatar-sm">AO</div>
+                      <div>
+                        <div style="font-size:13px;font-weight:600;color:var(--text-primary);">A. Okonkwo</div>
+                        <div style="font-size:11px;color:var(--text-muted);">Senior Engineer</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-blue" style="font-size:11px;">IT Support</span></td>
+                  <td>
+                    <span class="eng-kpi-tag"><i data-lucide="shield-check" style="width:9px;height:9px;"></i> SLA Compliance</span>
+                    <span class="eng-kpi-tag"><i data-lucide="clock" style="width:9px;height:9px;"></i> First Response</span>
+                    <span class="eng-kpi-tag"><i data-lucide="bar-chart-2" style="width:9px;height:9px;"></i> Productivity</span>
+                  </td>
+                  <td>
+                    <div class="target-input-inline"><input type="text" value="35" style="width:52px;"><span class="unit">/ mo</span></div>
+                  </td>
+                  <td>
+                    <select style="font-size:12px; padding:4px 6px;">
+                      <option selected>Monthly</option>
+                      <option>Quarterly</option>
+                      <option>Weekly</option>
+                    </select>
+                  </td>
+                  <td>
+                    <div class="row-actions" style="opacity:1;">
+                      <div class="row-action-btn"><i data-lucide="pencil"></i></div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <div class="avatar-sm" style="background:var(--green-bg);color:var(--green);">FM</div>
+                      <div>
+                        <div style="font-size:13px;font-weight:600;color:var(--text-primary);">F. Mohammed</div>
+                        <div style="font-size:11px;color:var(--text-muted);">Engineer</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-blue" style="font-size:11px;">IT Support</span></td>
+                  <td>
+                    <span class="eng-kpi-tag"><i data-lucide="shield-check" style="width:9px;height:9px;"></i> SLA Compliance</span>
+                    <span class="eng-kpi-tag"><i data-lucide="bar-chart-2" style="width:9px;height:9px;"></i> Productivity</span>
+                    <span class="eng-kpi-tag"><i data-lucide="star" style="width:9px;height:9px;"></i> CSAT</span>
+                  </td>
+                  <td>
+                    <div class="target-input-inline"><input type="text" value="30" style="width:52px;"><span class="unit">/ mo</span></div>
+                  </td>
+                  <td>
+                    <select style="font-size:12px; padding:4px 6px;">
+                      <option selected>Monthly</option>
+                      <option>Quarterly</option>
+                    </select>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <div class="row-action-btn"><i data-lucide="pencil"></i></div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <div class="avatar-sm" style="background:var(--orange-bg);color:var(--orange);">DM</div>
+                      <div>
+                        <div style="font-size:13px;font-weight:600;color:var(--text-primary);">D. Mensah</div>
+                        <div style="font-size:11px;color:var(--text-muted);">Network Engineer</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-indigo" style="font-size:11px;">Network Ops</span></td>
+                  <td>
+                    <span class="eng-kpi-tag"><i data-lucide="shield-check" style="width:9px;height:9px;"></i> SLA Compliance</span>
+                    <span class="eng-kpi-tag"><i data-lucide="layers" style="width:9px;height:9px;"></i> Pickup SLA</span>
+                    <span class="eng-kpi-tag"><i data-lucide="bar-chart-2" style="width:9px;height:9px;"></i> Productivity</span>
+                  </td>
+                  <td>
+                    <div class="target-input-inline"><input type="text" value="28" style="width:52px;"><span class="unit">/ mo</span></div>
+                  </td>
+                  <td>
+                    <select style="font-size:12px; padding:4px 6px;">
+                      <option selected>Monthly</option>
+                      <option>Quarterly</option>
+                    </select>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <div class="row-action-btn"><i data-lucide="pencil"></i></div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <div class="avatar-sm" style="background:var(--purple-bg);color:var(--purple);">NK</div>
+                      <div>
+                        <div style="font-size:13px;font-weight:600;color:var(--text-primary);">N. Kamara</div>
+                        <div style="font-size:11px;color:var(--text-muted);">Junior Engineer</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge badge-blue" style="font-size:11px;">IT Support</span></td>
+                  <td>
+                    <span class="eng-kpi-tag"><i data-lucide="bar-chart-2" style="width:9px;height:9px;"></i> Productivity</span>
+                    <span class="eng-kpi-tag"><i data-lucide="star" style="width:9px;height:9px;"></i> CSAT</span>
+                  </td>
+                  <td>
+                    <div class="target-input-inline"><input type="text" value="25" style="width:52px;"><span class="unit">/ mo</span></div>
+                  </td>
+                  <td>
+                    <select style="font-size:12px; padding:4px 6px;">
+                      <option selected>Monthly</option>
+                      <option>Quarterly</option>
+                    </select>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <div class="row-action-btn"><i data-lucide="pencil"></i></div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="padding:10px 16px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:12px; color:var(--text-muted);">Showing 4 of 18 engineers</span>
+            <div class="pagination" style="gap:4px;">
+              <button class="pg-btn" style="width:28px;height:28px;"><i data-lucide="chevron-left"></i></button>
+              <button class="pg-btn active" style="width:28px;height:28px;">1</button>
+              <button class="pg-btn" style="width:28px;height:28px;">2</button>
+              <button class="pg-btn" style="width:28px;height:28px;">3</button>
+              <button class="pg-btn" style="width:28px;height:28px;"><i data-lucide="chevron-right"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ KPI DEFINITION DRAWER ═══════════ -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer open" id="kpiDrawer">
+  <div class="drawer-header">
+    <div>
+      <div style="font-size:11px; font-weight:600; color:var(--indigo); letter-spacing:0.3px; margin-bottom:3px; text-transform:uppercase;">New KPI Definition</div>
+      <div style="font-size:15px; font-weight:700; color:var(--text-primary); letter-spacing:-0.2px;">Configure KPI</div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()"><i data-lucide="x"></i></button>
+  </div>
+  <div class="drawer-body">
+
+    <!-- Section: Basic info -->
+    <div class="form-section">
+      <div class="form-section-title">Basic info</div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>KPI Name <span class="required">*</span></label>
+          <input type="text" value="SLA Compliance Rate" placeholder="e.g. SLA Compliance Rate">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" value="% of tickets resolved within agreed SLA" placeholder="Short description of what this KPI measures">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Metric Type <span class="required">*</span></label>
+          <select>
+            <option selected>Percentage (%)</option>
+            <option>Time (hours)</option>
+            <option>Count (number)</option>
+            <option>Score (0–5)</option>
+            <option>Score (0–100)</option>
+            <option>Rate</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Data Source</label>
+          <select>
+            <option selected>Automatic (system-calculated)</option>
+            <option>Manual input</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Target -->
+    <div class="form-section">
+      <div class="form-section-title">Target &amp; thresholds</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Direction <span class="required">*</span></label>
+          <select>
+            <option selected>Higher is better (↑)</option>
+            <option>Lower is better (↓)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reporting Period</label>
+          <select>
+            <option selected>Monthly</option>
+            <option>Quarterly</option>
+            <option>Weekly</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full" style="margin-bottom:0;">
+        <div class="form-group">
+          <label>Target Value <span class="required">*</span></label>
+          <div class="target-builder">
+            <select>
+              <option selected>≥</option>
+              <option>≤</option>
+              <option>=</option>
+            </select>
+            <input type="text" value="95" placeholder="value">
+            <span class="unit-label">%</span>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); margin: 8px 0 12px; padding-left:2px;">
+        <i data-lucide="info" style="width:10px;height:10px;"></i> Translated as: SLA Compliance Rate must be ≥ 95%
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Warning threshold</label>
+          <div class="target-builder">
+            <select><option selected>≥</option><option>≤</option></select>
+            <input type="text" value="90" placeholder="value">
+            <span class="unit-label">%</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Critical threshold</label>
+          <div class="target-builder">
+            <select><option selected>≤</option><option>≥</option></select>
+            <input type="text" value="85" placeholder="value">
+            <span class="unit-label">%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Scope & assignment -->
+    <div class="form-section">
+      <div class="form-section-title">Scope &amp; assignment</div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>KPI Scope <span class="required">*</span></label>
+          <select>
+            <option>Organisation</option>
+            <option selected>Team</option>
+            <option>Engineer</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Applies to</label>
+          <div class="assignee-tags">
+            <span class="assignee-tag">IT Support <i data-lucide="x"></i></span>
+            <span class="assignee-tag">Network Ops <i data-lucide="x"></i></span>
+            <span class="assignee-tag">DB Team <i data-lucide="x"></i></span>
+            <span style="font-size:11px; color:var(--text-light); padding:2px 4px; align-self:center;">+ add team…</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Composite weight -->
+    <div class="form-section">
+      <div class="form-section-title">Composite scoring</div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Weight in overall KPI score</label>
+        <div class="weight-row" style="margin-top:6px;">
+          <span style="font-size:11px; color:var(--text-muted); width:24px; flex-shrink:0;">0%</span>
+          <input type="range" class="weight-slider" min="0" max="50" value="20" style="background:linear-gradient(to right, var(--indigo) 40%, var(--bg-subtle) 40%);">
+          <span style="font-size:11px; color:var(--text-muted); width:30px; flex-shrink:0; text-align:right;">50%</span>
+          <div class="weight-val-box">20%</div>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
+          Current total with other KPIs: <strong style="color:var(--indigo);">100%</strong>
+          <span class="badge badge-green" style="margin-left:6px; font-size:10px;">Balanced</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Alerts & notifications -->
+    <div class="form-section">
+      <div class="form-section-title">Alerts &amp; notifications</div>
+      <div class="toggle-row">
+        <div class="toggle-row-left">
+          <div class="toggle-row-label">Alert on warning threshold breach</div>
+          <div class="toggle-row-desc">Notify team lead when KPI drops below warning level</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-row-left">
+          <div class="toggle-row-label">Alert on critical threshold breach</div>
+          <div class="toggle-row-desc">Notify IT Manager and escalate immediately</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-row-left">
+          <div class="toggle-row-label">Weekly trend digest</div>
+          <div class="toggle-row-desc">Include this KPI in weekly performance email</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-secondary" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-secondary">Save as draft</button>
+    <button class="btn btn-primary"><i data-lucide="check-circle-2"></i> Save &amp; activate</button>
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+
+function openDrawer() {
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('kpiDrawer').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.getElementById('kpiDrawer').classList.remove('open');
+}
+
+function switchTab(tab, el) {
+  // Update tab buttons
+  document.querySelectorAll('.setup-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+
+  // Show/hide sections
+  document.getElementById('tab-definitions').className = 'section-hidden';
+  document.getElementById('tab-team').className = 'section-hidden';
+  document.getElementById('tab-engineer').className = 'section-hidden';
+  document.getElementById('tab-' + tab).className = 'section-visible';
+}
+</script>
+</body>
+</html>

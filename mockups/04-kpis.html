@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotris — KPIs</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .kpi-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .kpi-card-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      max-width: 200px;
+      line-height: 1.4;
+    }
+    .kpi-card-big {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .kpi-card-target {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .kpi-card-trend {
+      font-size: 11.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 12px;
+    }
+    .kpi-card-bg-icon {
+      position: absolute;
+      right: 16px;
+      bottom: 12px;
+      font-size: 48px;
+      opacity: 0.06;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    /* Trend sparkline (CSS bars) */
+    .sparkline {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 32px;
+    }
+    .spark-bar {
+      flex: 1;
+      border-radius: 3px 3px 0 0;
+      opacity: 0.7;
+    }
+    /* Month selector */
+    .period-tabs {
+      display: flex;
+      gap: 4px;
+      background: #F1F5F9;
+      padding: 4px;
+      border-radius: var(--radius-sm);
+    }
+    .period-tab {
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: all 0.15s;
+    }
+    .period-tab.active {
+      background: white;
+      color: var(--navy);
+      box-shadow: var(--shadow-sm);
+    }
+    /* Detail table */
+    .kpi-detail-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr 80px;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .kpi-detail-row:last-child { border-bottom: none; }
+    .kpi-detail-row.header {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .kpi-name-cell { font-size: 13px; font-weight: 600; color: var(--navy); }
+    .kpi-name-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-weight: 400; }
+    .kpi-num { font-size: 13px; font-weight: 700; }
+    .kpi-num.green  { color: var(--green); }
+    .kpi-num.yellow { color: var(--yellow); }
+    .kpi-num.red    { color: var(--red); }
+    .kpi-num.teal   { color: var(--teal); }
+    .kpi-num.blue   { color: var(--blue); }
+    .bar-cell { min-width: 0; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Lotris</div>
+          <div class="logo-sub">Performance Platform</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="02-dashboard.html" class="nav-item"><span class="nav-icon">⊞</span> Dashboard</a>
+      <a href="03-tickets.html" class="nav-item"><span class="nav-icon">🎫</span> Tickets <span class="nav-badge">12</span></a>
+      <a href="04-kpis.html" class="nav-item active"><span class="nav-icon">📊</span> KPIs</a>
+      <a href="05-reports.html" class="nav-item"><span class="nav-icon">📋</span> Reports</a>
+      <div class="nav-section-label">Management</div>
+      <a href="#" class="nav-item"><span class="nav-icon">👥</span> Teams</a>
+      <a href="#" class="nav-item"><span class="nav-icon">🔍</span> Audit Log</a>
+      <a href="#" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar">RK</div>
+        <div class="user-info">
+          <div class="user-name">Rowland K.</div>
+          <div class="user-role">IT Manager</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="page-title">KPIs</div>
+        <div class="breadcrumb"><span>Home</span> / <span>KPI Tracking</span></div>
+      </div>
+      <div class="topbar-right">
+        <div class="period-tabs">
+          <button class="period-tab">Q1</button>
+          <button class="period-tab active">Q2</button>
+          <button class="period-tab">YTD</button>
+          <button class="period-tab">Annual</button>
+        </div>
+        <button class="btn btn-primary" style="font-size:12px; padding:8px 14px;">+ Log KPI Entry</button>
+        <div class="icon-btn">🔔 <span class="notif-dot"></span></div>
+        <div class="avatar" style="width:36px;height:36px;cursor:pointer;">RK</div>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>KPI Performance Tracker</h1>
+          <p>Q2 2026 · IT & Database Operations · 8 active KPI areas</p>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-secondary" style="font-size:12px;">⬇ Export Report</button>
+          <button class="btn btn-secondary" style="font-size:12px;">⚙ Configure Targets</button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="kpi-grid">
+
+        <div class="kpi-card" style="border-top: 3px solid var(--green);">
+          <div class="kpi-card-top">
+            <div class="kpi-card-name">DB Availability & Uptime</div>
+            <span class="badge badge-green">On Target</span>
+          </div>
+          <div class="kpi-card-big" style="color:var(--green);">99.8%</div>
+          <div class="kpi-card-target">Target: ≥ 99.9% · Δ −0.1%</div>
+          <div class="progress-bar"><div class="progress-fill green" style="width:99.8%;"></div></div>
+          <div class="kpi-card-trend" style="color:var(--green);">↑ +0.3% vs last month</div>
+          <div class="kpi-card-bg-icon">🖥</div>
+        </div>
+
+        <div class="kpi-card" style="border-top: 3px solid var(--teal);">
+          <div class="kpi-card-top">
+            <div class="kpi-card-name">SLA Compliance Rate</div>
+            <span class="badge badge-yellow">Near Target</span>
+          </div>
+          <div class="kpi-card-big" style="color:var(--teal);">96.0%</div>
+          <div class="kpi-card-target">Target: ≥ 98% · Δ −2.0%</div>
+          <div class="progress-bar"><div class="progress-fill teal" style="width:96%;"></div></div>
+          <div class="kpi-card-trend" style="color:var(--red);">↓ −1.2% vs last month</div>
+          <div class="kpi-card-bg-icon">⏱</div>
+        </div>
+
+        <div class="kpi-card" style="border-top: 3px solid var(--yellow);">
+          <div class="kpi-card-top">
+            <div class="kpi-card-name">Audit Finding Closure</div>
+            <span class="badge badge-yellow">At Risk</span>
+          </div>
+          <div class="kpi-card-big" style="color:var(--yellow);">88.0%</div>
+          <div class="kpi-card-target">Target: 100% · Δ −12%</div>
+          <div class="progress-bar"><div class="progress-fill yellow" style="width:88%;"></div></div>
+          <div class="kpi-card-trend" style="color:var(--yellow);">→ Flat vs last month</div>
+          <div class="kpi-card-bg-icon">📋</div>
+        </div>
+
+        <div class="kpi-card" style="border-top: 3px solid var(--blue);">
+          <div class="kpi-card-top">
+            <div class="kpi-card-name">Recurring Incident Reduction</div>
+            <span class="badge badge-yellow">In Progress</span>
+          </div>
+          <div class="kpi-card-big" style="color:var(--blue);">−22%</div>
+          <div class="kpi-card-target">Target: −30% YoY · Δ −8%</div>
+          <div class="progress-bar"><div class="progress-fill blue" style="width:73%;"></div></div>
+          <div class="kpi-card-trend" style="color:var(--green);">↑ −5% more vs Q1</div>
+          <div class="kpi-card-bg-icon">🔁</div>
+        </div>
+
+        <div class="kpi-card" style="border-top: 3px solid var(--green);">
+          <div class="kpi-card-top">
+            <div class="kpi-card-name">Security Baseline Compliance</div>
+            <span class="badge badge-green">On Target</span>
+          </div>
+          <div class="kpi-card-big" style="color:var(--green);">98.2%</div>
+          <div class="kpi-card-target">Target: ≥ 98% · ✓ Met</div>
+          <div class="progress-bar"><div class="progress-fill green" style="width:98.2%;"></div></div>
+          <div class="kpi-card-trend" style="color:var(--green);">↑ +0.7% vs last month</div>
+          <div class="kpi-card-bg-icon">🔒</div>
+        </div>
+
+        <div class="kpi-card" style="border-top: 3px solid var(--teal);">
+          <div class="kpi-card-top">
+            <div class="kpi-card-name">Cross-functional Advisory Delivery</div>
+            <span class="badge badge-green">On Target</span>
+          </div>
+          <div class="kpi-card-big" style="color:var(--teal);">84%</div>
+          <div class="kpi-card-target">Target: ≥ 80% on-time · ✓ Met</div>
+          <div class="progress-bar"><div class="progress-fill teal" style="width:84%;"></div></div>
+          <div class="kpi-card-trend" style="color:var(--green);">↑ +4% vs last month</div>
+          <div class="kpi-card-bg-icon">🤝</div>
+        </div>
+
+      </div>
+
+      <!-- Detailed KPI Table -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">All KPI Areas — Q2 2026 Detail</div>
+          <div style="display:flex;gap:8px;">
+            <span class="badge badge-green">5 On Target</span>
+            <span class="badge badge-yellow">2 At Risk</span>
+            <span class="badge badge-red">1 Off Track</span>
+          </div>
+        </div>
+        <div class="card-body" style="padding: 0 20px;">
+
+          <div class="kpi-detail-row header">
+            <div>KPI Area</div>
+            <div>Target</div>
+            <div>Current</div>
+            <div>Prev Month</div>
+            <div>Progress</div>
+            <div>Status</div>
+          </div>
+
+          <div class="kpi-detail-row">
+            <div>
+              <div class="kpi-name-cell">Database Availability & Uptime</div>
+              <div class="kpi-name-sub">Measured daily · Auto-collected</div>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted);">≥ 99.9%</div>
+            <div class="kpi-num green">99.8%</div>
+            <div style="font-size:12px; color:var(--text-muted);">99.5%</div>
+            <div class="bar-cell"><div class="progress-bar"><div class="progress-fill green" style="width:99.8%;"></div></div></div>
+            <div><span class="badge badge-yellow">Near</span></div>
+          </div>
+
+          <div class="kpi-detail-row">
+            <div>
+              <div class="kpi-name-cell">SLA Compliance Rate</div>
+              <div class="kpi-name-sub">Tickets resolved within SLA</div>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted);">≥ 98%</div>
+            <div class="kpi-num teal">96.0%</div>
+            <div style="font-size:12px; color:var(--text-muted);">97.2%</div>
+            <div class="bar-cell"><div class="progress-bar"><div class="progress-fill teal" style="width:96%;"></div></div></div>
+            <div><span class="badge badge-yellow">At Risk</span></div>
+          </div>
+
+          <div class="kpi-detail-row">
+            <div>
+              <div class="kpi-name-cell">Audit Finding Closure Rate</div>
+              <div class="kpi-name-sub">All findings closed within deadline</div>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted);">100%</div>
+            <div class="kpi-num red">88.0%</div>
+            <div style="font-size:12px; color:var(--text-muted);">88.0%</div>
+            <div class="bar-cell"><div class="progress-bar"><div class="progress-fill red" style="width:88%;"></div></div></div>
+            <div><span class="badge badge-red">Off Track</span></div>
+          </div>
+
+          <div class="kpi-detail-row">
+            <div>
+              <div class="kpi-name-cell">Recurring Incident Reduction</div>
+              <div class="kpi-name-sub">Year-on-year repeat incident decrease</div>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted);">−30% YoY</div>
+            <div class="kpi-num blue">−22%</div>
+            <div style="font-size:12px; color:var(--text-muted);">−17%</div>
+            <div class="bar-cell"><div class="progress-bar"><div class="progress-fill blue" style="width:73%;"></div></div></div>
+            <div><span class="badge badge-yellow">In Progress</span></div>
+          </div>
+
+          <div class="kpi-detail-row">
+            <div>
+              <div class="kpi-name-cell">Capacity Compliance (CPU/Storage/I/O)</div>
+              <div class="kpi-name-sub">Resources within defined thresholds</div>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted);">≥ 95%</div>
+            <div class="kpi-num green">97.3%</div>
+            <div style="font-size:12px; color:var(--text-muted);">95.8%</div>
+            <div class="bar-cell"><div class="progress-bar"><div class="progress-fill green" style="width:97.3%;"></div></div></div>
+            <div><span class="badge badge-green">On Target</span></div>
+          </div>
+
+          <div class="kpi-detail-row">
+            <div>
+              <div class="kpi-name-cell">Architecture & Security Compliance</div>
+              <div class="kpi-name-sub">Baseline adherence across all systems</div>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted);">≥ 98%</div>
+            <div class="kpi-num green">98.2%</div>
+            <div style="font-size:12px; color:var(--text-muted);">97.5%</div>
+            <div class="bar-cell"><div class="progress-bar"><div class="progress-fill green" style="width:98.2%;"></div></div></div>
+            <div><span class="badge badge-green">On Target</span></div>
+          </div>
+
+          <div class="kpi-detail-row">
+            <div>
+              <div class="kpi-name-cell">Cross-functional Advisory Delivery</div>
+              <div class="kpi-name-sub">On-time advisory to Dev, App, PM teams</div>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted);">≥ 80%</div>
+            <div class="kpi-num teal">84.0%</div>
+            <div style="font-size:12px; color:var(--text-muted);">80.0%</div>
+            <div class="bar-cell"><div class="progress-bar"><div class="progress-fill teal" style="width:84%;"></div></div></div>
+            <div><span class="badge badge-green">On Target</span></div>
+          </div>
+
+          <div class="kpi-detail-row">
+            <div>
+              <div class="kpi-name-cell">Quarterly Report Delivery</div>
+              <div class="kpi-name-sub">Performance reports submitted on schedule</div>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted);">100%</div>
+            <div class="kpi-num green">100%</div>
+            <div style="font-size:12px; color:var(--text-muted);">100%</div>
+            <div class="bar-cell"><div class="progress-bar"><div class="progress-fill green" style="width:100%;"></div></div></div>
+            <div><span class="badge badge-green">On Target</span></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotris v2 — KPIs</title>
+  <link rel="stylesheet" href="style-v2.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Score ring */
+    .score-ring-wrap {
+      position: relative;
+      width: 76px; height: 76px;
+      flex-shrink: 0;
+    }
+    .score-ring-wrap svg { transform: rotate(-90deg); }
+    .score-ring-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .score-ring-val {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .score-ring-lbl {
+      font-size: 8.5px;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-top: 2px;
+    }
+
+    /* Composite score hero */
+    .score-hero {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 20px 22px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-xs);
+      border-left: 3px solid var(--indigo);
+    }
+
+    .score-hero-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .score-hero-val {
+      font-size: 42px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+
+    .score-hero-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .score-divider {
+      width: 1px;
+      height: 56px;
+      background: var(--border);
+    }
+
+    .score-hero-stats {
+      display: flex;
+      gap: 28px;
+    }
+
+    .score-hero-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .shs-val {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+
+    .shs-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .score-hero-right { margin-left: auto; }
+
+    /* KPI metric cards grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .kpi-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .kpi-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .kpi-card-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .kpi-card-title svg { width: 11px; height: 11px; stroke-width: 2; }
+
+    .kpi-main-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .kpi-main-val {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1;
+      color: var(--text-primary);
+    }
+
+    .kpi-main-unit {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .kpi-progress-area { margin-bottom: 10px; }
+
+    .kpi-progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+
+    .kpi-progress-labels strong { color: var(--text-muted); font-weight: 600; }
+
+    .kpi-progress-bg {
+      height: 5px;
+      background: var(--bg-subtle);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .kpi-progress-fill {
+      height: 100%;
+      border-radius: 99px;
+    }
+
+    .kpi-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kpi-vs-target {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .kpi-vs-target .val { font-weight: 700; color: var(--text-primary); }
+
+    /* Sparkline mock */
+    .sparkline-wrap {
+      height: 28px;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .spark-bar {
+      flex: 1;
+      border-radius: 2px 2px 0 0;
+      min-height: 3px;
+    }
+
+    /* Department breakdown table */
+    .dept-score-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .dept-score-row:last-child { border-bottom: none; }
+
+    .dept-name {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      width: 130px;
+      flex-shrink: 0;
+    }
+
+    .dept-bar-wrap {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-subtle);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .dept-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+    }
+
+    .dept-score-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      width: 36px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .dept-trend {
+      width: 54px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* Gauge indicator for CSAT */
+    .gauge-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 0 0;
+    }
+
+    .gauge-val {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -1px;
+      line-height: 1;
+      margin-bottom: 3px;
+    }
+
+    .gauge-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .gauge-stars {
+      display: flex;
+      gap: 3px;
+    }
+
+    .gauge-star svg {
+      width: 14px; height: 14px;
+      stroke-width: 1.5;
+    }
+
+    .gauge-star.filled svg { fill: var(--yellow); stroke: var(--yellow); }
+    .gauge-star.half svg   { fill: none; stroke: var(--yellow); }
+    .gauge-star.empty svg  { fill: none; stroke: var(--text-xlight); }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Lotris</div>
+          <div class="logo-sub">Performance Platform</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="02-dashboard-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> Dashboard
+      </a>
+      <a href="03-tickets-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="ticket"></i></span> Tickets
+        <span class="nav-badge">12</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="layers"></i></span> Queue
+        <span class="nav-badge">9</span>
+      </a>
+      <a href="09-tasks-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="clipboard-list"></i></span> Tasks
+      </a>
+      <a href="04-kpis-v2.html" class="nav-item active">
+        <span class="nav-icon"><i data-lucide="bar-chart-2"></i></span> KPIs
+      </a>
+      <a href="05-reports-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="file-bar-chart"></i></span> Reports
+      </a>
+      <div class="nav-section-label">Admin</div>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="users"></i></span> Teams
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="shield"></i></span> Audit Log
+      </a>
+      <a href="06-kpi-setup-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="settings-2"></i></span> KPI Setup
+      </a>
+      <a href="10-sysadmin-ops-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="activity"></i></span> System Health
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar">RK</div>
+        <div class="user-info">
+          <div class="user-name">Rowland K.</div>
+          <div class="user-role">IT Manager</div>
+        </div>
+        <div class="sidebar-logout"><i data-lucide="log-out"></i></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="page-title">KPIs</span>
+        <span class="breadcrumb">
+          <span>Home</span><span class="breadcrumb-sep">/</span><span>Performance KPIs</span>
+        </span>
+      </div>
+      <div class="topbar-right">
+        <div class="search-bar">
+          <i data-lucide="search"></i>
+          <input type="text" placeholder="Search metrics...">
+        </div>
+        <div class="icon-btn"><i data-lucide="bell"></i><span class="notif-dot"></span></div>
+        <div class="avatar" style="cursor:pointer;">RK</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>KPI Performance</h1>
+          <p>May 2026 · All departments · Live data</p>
+        </div>
+        <div class="page-header-actions">
+          <select class="select-filter">
+            <option>May 2026</option>
+            <option>Apr 2026</option>
+            <option>Q1 2026</option>
+          </select>
+          <select class="select-filter">
+            <option>All Departments</option>
+            <option>IT Support</option>
+            <option>Network Ops</option>
+            <option>DB Team</option>
+          </select>
+          <button class="btn btn-secondary"><i data-lucide="download"></i> Export</button>
+        </div>
+      </div>
+
+      <!-- Composite Score Hero -->
+      <div class="score-hero">
+        <div class="score-hero-main">
+          <div class="score-hero-val">94<span style="font-size:20px; color:var(--text-muted);">%</span></div>
+          <div class="score-hero-label">Overall KPI Score</div>
+          <div style="margin-top:6px;">
+            <span class="stat-trend up" style="font-size:11.5px;"><i data-lucide="trending-up"></i> +2.1%</span>
+            <span style="font-size:11px; color:var(--text-muted); margin-left:6px;">vs April 2026</span>
+          </div>
+        </div>
+
+        <div class="score-divider"></div>
+
+        <div class="score-hero-stats">
+          <div class="score-hero-stat">
+            <div class="shs-val">92%</div>
+            <div class="shs-lbl">SLA Compliance</div>
+          </div>
+          <div class="score-hero-stat">
+            <div class="shs-val">4.7</div>
+            <div class="shs-lbl">Avg CSAT</div>
+          </div>
+          <div class="score-hero-stat">
+            <div class="shs-val">3.2h</div>
+            <div class="shs-lbl">Avg Resolution</div>
+          </div>
+          <div class="score-hero-stat">
+            <div class="shs-val">98%</div>
+            <div class="shs-lbl">First Contact Res.</div>
+          </div>
+        </div>
+
+        <div class="score-hero-right">
+          <div style="display:flex; gap:8px;">
+            <span class="badge badge-green"><i data-lucide="check-circle-2"></i> 5 KPIs on target</span>
+            <span class="badge badge-yellow"><i data-lucide="alert-triangle"></i> 1 below target</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI metric cards -->
+      <div class="kpi-grid">
+
+        <!-- First Response Time -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <div class="kpi-card-title"><i data-lucide="clock"></i> First Response Time</div>
+            <span class="badge badge-green">On Target</span>
+          </div>
+          <div class="kpi-main-row">
+            <div class="kpi-main-val">1.4</div>
+            <div class="kpi-main-unit">hrs</div>
+            <div style="margin-left:auto;">
+              <!-- Sparkline -->
+              <div class="sparkline-wrap">
+                <div class="spark-bar" style="height:60%;background:var(--indigo);opacity:0.4;"></div>
+                <div class="spark-bar" style="height:75%;background:var(--indigo);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:50%;background:var(--indigo);opacity:0.4;"></div>
+                <div class="spark-bar" style="height:80%;background:var(--indigo);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:65%;background:var(--indigo);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:55%;background:var(--indigo);opacity:0.55;"></div>
+                <div class="spark-bar" style="height:70%;background:var(--indigo);"></div>
+              </div>
+            </div>
+          </div>
+          <div class="kpi-progress-area">
+            <div class="kpi-progress-labels">
+              <span>Current: <strong>1.4 hrs</strong></span>
+              <span>Target: <strong>≤ 2 hrs</strong></span>
+            </div>
+            <div class="kpi-progress-bg">
+              <div class="kpi-progress-fill" style="width:70%; background:var(--green);"></div>
+            </div>
+          </div>
+          <div class="kpi-card-footer">
+            <div class="kpi-vs-target">vs target <span class="val" style="color:var(--green);">−0.6 hrs</span></div>
+            <span class="stat-trend up"><i data-lucide="trending-up"></i> 8%</span>
+          </div>
+        </div>
+
+        <!-- SLA Compliance -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <div class="kpi-card-title"><i data-lucide="shield-check"></i> SLA Compliance Rate</div>
+            <span class="badge badge-yellow">Near Target</span>
+          </div>
+          <div class="kpi-main-row">
+            <div class="kpi-main-val">92</div>
+            <div class="kpi-main-unit">%</div>
+            <div style="margin-left:auto;">
+              <div class="sparkline-wrap">
+                <div class="spark-bar" style="height:85%;background:var(--yellow);opacity:0.4;"></div>
+                <div class="spark-bar" style="height:90%;background:var(--yellow);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:80%;background:var(--yellow);opacity:0.45;"></div>
+                <div class="spark-bar" style="height:92%;background:var(--yellow);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:88%;background:var(--yellow);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:85%;background:var(--yellow);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:92%;background:var(--yellow);"></div>
+              </div>
+            </div>
+          </div>
+          <div class="kpi-progress-area">
+            <div class="kpi-progress-labels">
+              <span>Current: <strong>92%</strong></span>
+              <span>Target: <strong>≥ 95%</strong></span>
+            </div>
+            <div class="kpi-progress-bg">
+              <div class="kpi-progress-fill" style="width:92%; background:var(--yellow);"></div>
+            </div>
+          </div>
+          <div class="kpi-card-footer">
+            <div class="kpi-vs-target">gap to target <span class="val" style="color:var(--yellow);">−3%</span></div>
+            <span class="stat-trend down"><i data-lucide="trending-down"></i> 1%</span>
+          </div>
+        </div>
+
+        <!-- Resolution Rate -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <div class="kpi-card-title"><i data-lucide="check-circle-2"></i> Ticket Resolution Rate</div>
+            <span class="badge badge-green">On Target</span>
+          </div>
+          <div class="kpi-main-row">
+            <div class="kpi-main-val">98</div>
+            <div class="kpi-main-unit">%</div>
+            <div style="margin-left:auto;">
+              <div class="sparkline-wrap">
+                <div class="spark-bar" style="height:90%;background:var(--green);opacity:0.4;"></div>
+                <div class="spark-bar" style="height:95%;background:var(--green);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:92%;background:var(--green);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:96%;background:var(--green);opacity:0.55;"></div>
+                <div class="spark-bar" style="height:94%;background:var(--green);opacity:0.55;"></div>
+                <div class="spark-bar" style="height:97%;background:var(--green);opacity:0.6;"></div>
+                <div class="spark-bar" style="height:98%;background:var(--green);"></div>
+              </div>
+            </div>
+          </div>
+          <div class="kpi-progress-area">
+            <div class="kpi-progress-labels">
+              <span>Current: <strong>98%</strong></span>
+              <span>Target: <strong>≥ 95%</strong></span>
+            </div>
+            <div class="kpi-progress-bg">
+              <div class="kpi-progress-fill" style="width:98%; background:var(--green);"></div>
+            </div>
+          </div>
+          <div class="kpi-card-footer">
+            <div class="kpi-vs-target">vs target <span class="val" style="color:var(--green);">+3%</span></div>
+            <span class="stat-trend up"><i data-lucide="trending-up"></i> 12%</span>
+          </div>
+        </div>
+
+        <!-- CSAT -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <div class="kpi-card-title"><i data-lucide="star"></i> CSAT Score</div>
+            <span class="badge badge-green">On Target</span>
+          </div>
+          <div class="kpi-main-row">
+            <div class="kpi-main-val">4.7</div>
+            <div class="kpi-main-unit">/ 5</div>
+          </div>
+          <!-- Stars -->
+          <div style="display:flex; gap:3px; margin-bottom:10px;">
+            <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="#CA8A04" stroke="#CA8A04" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="#CA8A04" stroke="#CA8A04" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="#CA8A04" stroke="#CA8A04" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="#CA8A04" stroke="#CA8A04" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="#CA8A04" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="kpi-progress-area">
+            <div class="kpi-progress-labels">
+              <span>Current: <strong>4.7</strong></span>
+              <span>Target: <strong>≥ 4.2</strong></span>
+            </div>
+            <div class="kpi-progress-bg">
+              <div class="kpi-progress-fill" style="width:94%; background:var(--yellow);"></div>
+            </div>
+          </div>
+          <div class="kpi-card-footer">
+            <div class="kpi-vs-target">248 responses this month</div>
+            <span class="stat-trend up"><i data-lucide="trending-up"></i> 0.3</span>
+          </div>
+        </div>
+
+        <!-- Avg Resolution Time -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <div class="kpi-card-title"><i data-lucide="timer"></i> Avg Resolution Time</div>
+            <span class="badge badge-green">On Target</span>
+          </div>
+          <div class="kpi-main-row">
+            <div class="kpi-main-val">3.2</div>
+            <div class="kpi-main-unit">hrs</div>
+            <div style="margin-left:auto;">
+              <div class="sparkline-wrap">
+                <div class="spark-bar" style="height:70%;background:var(--blue);opacity:0.4;"></div>
+                <div class="spark-bar" style="height:85%;background:var(--blue);opacity:0.4;"></div>
+                <div class="spark-bar" style="height:60%;background:var(--blue);opacity:0.45;"></div>
+                <div class="spark-bar" style="height:75%;background:var(--blue);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:68%;background:var(--blue);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:64%;background:var(--blue);opacity:0.55;"></div>
+                <div class="spark-bar" style="height:64%;background:var(--blue);"></div>
+              </div>
+            </div>
+          </div>
+          <div class="kpi-progress-area">
+            <div class="kpi-progress-labels">
+              <span>Current: <strong>3.2 hrs</strong></span>
+              <span>Target: <strong>≤ 4 hrs</strong></span>
+            </div>
+            <div class="kpi-progress-bg">
+              <div class="kpi-progress-fill" style="width:80%; background:var(--blue);"></div>
+            </div>
+          </div>
+          <div class="kpi-card-footer">
+            <div class="kpi-vs-target">vs target <span class="val" style="color:var(--green);">−0.8 hrs</span></div>
+            <span class="stat-trend up"><i data-lucide="trending-up"></i> 5%</span>
+          </div>
+        </div>
+
+        <!-- Reopened Rate -->
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <div class="kpi-card-title"><i data-lucide="refresh-cw"></i> Ticket Reopen Rate</div>
+            <span class="badge badge-green">On Target</span>
+          </div>
+          <div class="kpi-main-row">
+            <div class="kpi-main-val">2.1</div>
+            <div class="kpi-main-unit">%</div>
+            <div style="margin-left:auto;">
+              <div class="sparkline-wrap">
+                <div class="spark-bar" style="height:50%;background:var(--purple);opacity:0.4;"></div>
+                <div class="spark-bar" style="height:65%;background:var(--purple);opacity:0.4;"></div>
+                <div class="spark-bar" style="height:45%;background:var(--purple);opacity:0.45;"></div>
+                <div class="spark-bar" style="height:55%;background:var(--purple);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:40%;background:var(--purple);opacity:0.5;"></div>
+                <div class="spark-bar" style="height:42%;background:var(--purple);opacity:0.55;"></div>
+                <div class="spark-bar" style="height:42%;background:var(--purple);"></div>
+              </div>
+            </div>
+          </div>
+          <div class="kpi-progress-area">
+            <div class="kpi-progress-labels">
+              <span>Current: <strong>2.1%</strong></span>
+              <span>Target: <strong>≤ 5%</strong></span>
+            </div>
+            <div class="kpi-progress-bg">
+              <div class="kpi-progress-fill" style="width:42%; background:var(--purple);"></div>
+            </div>
+          </div>
+          <div class="kpi-card-footer">
+            <div class="kpi-vs-target">vs target <span class="val" style="color:var(--green);">−2.9%</span></div>
+            <span class="stat-trend up"><i data-lucide="trending-up"></i> Low</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Department breakdown -->
+      <div class="grid-2">
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-title">Department KPI Scores</div>
+              <div class="card-subtitle">Overall score by team · May 2026</div>
+            </div>
+          </div>
+          <div class="card-body" style="padding-top:6px; padding-bottom:6px;">
+            <div class="dept-score-row">
+              <div class="dept-name">IT Support</div>
+              <div class="dept-bar-wrap"><div class="dept-bar-fill" style="width:97%;background:var(--green);"></div></div>
+              <div class="dept-score-val">97%</div>
+              <div class="dept-trend"><span class="stat-trend up" style="font-size:10px;"><i data-lucide="trending-up"></i> 3%</span></div>
+            </div>
+            <div class="dept-score-row">
+              <div class="dept-name">Network Ops</div>
+              <div class="dept-bar-wrap"><div class="dept-bar-fill" style="width:95%;background:var(--green);"></div></div>
+              <div class="dept-score-val">95%</div>
+              <div class="dept-trend"><span class="stat-trend up" style="font-size:10px;"><i data-lucide="trending-up"></i> 1%</span></div>
+            </div>
+            <div class="dept-score-row">
+              <div class="dept-name">Security</div>
+              <div class="dept-bar-wrap"><div class="dept-bar-fill" style="width:93%;background:var(--indigo);"></div></div>
+              <div class="dept-score-val">93%</div>
+              <div class="dept-trend"><span class="stat-trend flat" style="font-size:10px;">→ 0%</span></div>
+            </div>
+            <div class="dept-score-row">
+              <div class="dept-name">DB Team</div>
+              <div class="dept-bar-wrap"><div class="dept-bar-fill" style="width:88%;background:var(--yellow);"></div></div>
+              <div class="dept-score-val">88%</div>
+              <div class="dept-trend"><span class="stat-trend down" style="font-size:10px;"><i data-lucide="trending-down"></i> 4%</span></div>
+            </div>
+            <div class="dept-score-row">
+              <div class="dept-name">Service Desk</div>
+              <div class="dept-bar-wrap"><div class="dept-bar-fill" style="width:91%;background:var(--blue);"></div></div>
+              <div class="dept-score-val">91%</div>
+              <div class="dept-trend"><span class="stat-trend up" style="font-size:10px;"><i data-lucide="trending-up"></i> 2%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SLA breakdown -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-title">SLA Compliance by Priority</div>
+              <div class="card-subtitle">% of tickets met SLA · May 2026</div>
+            </div>
+          </div>
+          <div class="card-body" style="padding-top:6px; padding-bottom:6px;">
+            <div class="dept-score-row">
+              <div class="dept-name" style="display:flex;align-items:center;gap:6px;">
+                <span class="priority-dot critical"></span> Critical
+              </div>
+              <div class="dept-bar-wrap"><div class="dept-bar-fill" style="width:84%;background:var(--red);"></div></div>
+              <div class="dept-score-val" style="color:var(--red);">84%</div>
+              <div class="dept-trend"><span class="badge badge-red" style="font-size:10px;">Below</span></div>
+            </div>
+            <div class="dept-score-row">
+              <div class="dept-name" style="display:flex;align-items:center;gap:6px;">
+                <span class="priority-dot high"></span> High
+              </div>
+              <div class="dept-bar-wrap"><div class="dept-bar-fill" style="width:91%;background:var(--orange);"></div></div>
+              <div class="dept-score-val" style="color:var(--orange);">91%</div>
+              <div class="dept-trend"><span class="badge badge-yellow" style="font-size:10px;">Near</span></div>
+            </div>
+            <div class="dept-score-row">
+              <div class="dept-name" style="display:flex;align-items:center;gap:6px;">
+                <span class="priority-dot medium"></span> Medium
+              </div>
+              <div class="dept-bar-wrap"><div class="dept-bar-fill" style="width:96%;background:var(--green);"></div></div>
+              <div class="dept-score-val" style="color:var(--green);">96%</div>
+              <div class="dept-trend"><span class="badge badge-green" style="font-size:10px;">On Track</span></div>
+            </div>
+            <div class="dept-score-row">
+              <div class="dept-name" style="display:flex;align-items:center;gap:6px;">
+                <span class="priority-dot low"></span> Low
+              </div>
+              <div class="dept-bar-wrap"><div class="dept-bar-fill" style="width:99%;background:var(--green);"></div></div>
+              <div class="dept-score-val" style="color:var(--green);">99%</div>
+              <div class="dept-trend"><span class="badge badge-green" style="font-size:10px;">On Track</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

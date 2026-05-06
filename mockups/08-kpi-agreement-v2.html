@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotris v2 — KPI Agreement Builder</title>
+  <link rel="stylesheet" href="style-v2.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+
+    /* ── Engineer selector bar ── */
+    .eng-bar {
+      display: flex;
+      align-items: stretch;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-xs);
+      overflow: hidden;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .eng-bar-cell {
+      padding: 10px 18px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+    .eng-bar-cell:last-child { border-right: none; margin-left: auto; justify-content: center; padding: 10px 14px; }
+    .eng-bar-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); }
+    .eng-bar-val {
+      font-size: 13px; font-weight: 700; color: var(--text-primary);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .eng-bar-val select {
+      font-size: 13px; font-weight: 700; border: none; background: transparent;
+      padding: 0; color: var(--text-primary); cursor: pointer; max-width: 160px;
+    }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11.5px; font-weight: 600;
+      padding: 3px 8px; border-radius: 99px;
+    }
+    .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+    .status-pill.draft  { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .status-pill.draft .dot { background: #f59e0b; }
+    .status-pill.active { background: var(--green-bg); color: var(--green); border: 1px solid #bbf7d0; }
+    .status-pill.active .dot { background: var(--green); }
+
+    /* ── Tab strip ── */
+    .agr-tabs {
+      display: flex;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 20px;
+      gap: 0;
+    }
+    .agr-tab {
+      padding: 9px 18px;
+      font-size: 13px; font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer; border: none; background: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      display: flex; align-items: center; gap: 6px;
+      transition: color 0.13s;
+    }
+    .agr-tab svg { width: 13px; height: 13px; stroke-width: 1.8; }
+    .agr-tab.active { color: var(--indigo); font-weight: 700; border-bottom-color: var(--indigo); }
+    .agr-tab:hover:not(.active) { color: var(--text-primary); }
+    .agr-tab-count {
+      font-size: 10.5px; font-weight: 700;
+      background: var(--indigo); color: white;
+      padding: 1px 6px; border-radius: 99px;
+    }
+    .agr-tab:not(.active) .agr-tab-count { background: var(--bg-subtle); color: var(--text-muted); }
+
+    /* ── 2-col layout ── */
+    .agr-layout {
+      display: grid;
+      grid-template-columns: 1fr 272px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* ── KPI Area card ── */
+    .area-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-xs);
+      background: white;
+    }
+
+    .area-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .area-num {
+      width: 22px; height: 22px;
+      background: var(--indigo); color: white;
+      border-radius: 50%;
+      font-size: 11px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .area-name-input {
+      flex: 1;
+      font-size: 13.5px; font-weight: 700;
+      border: none; background: transparent;
+      color: var(--text-primary); outline: none;
+      cursor: text;
+    }
+    .area-name-input:focus {
+      background: white;
+      border: 1px solid var(--indigo);
+      border-radius: var(--radius-xs);
+      padding: 2px 8px;
+      box-shadow: 0 0 0 3px #e0e7ff;
+    }
+
+    .area-subtotal-chip {
+      font-size: 11.5px; font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .area-subtotal-chip.ok { color: var(--green); background: var(--green-bg); border-color: #bbf7d0; }
+    .area-subtotal-chip.over { color: var(--red); background: #fef2f2; border-color: #fecaca; }
+
+    .area-header-btn {
+      width: 24px; height: 24px;
+      border: none; background: none; cursor: pointer;
+      color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+      border-radius: var(--radius-xs);
+      flex-shrink: 0;
+    }
+    .area-header-btn:hover { background: var(--border); color: var(--text-primary); }
+    .area-header-btn svg { width: 13px; height: 13px; stroke-width: 2; }
+
+    /* ── Metric table ── */
+    .metric-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+
+    .metric-table th {
+      padding: 7px 10px;
+      background: white;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.5px; text-transform: uppercase;
+      color: var(--text-light);
+      border-bottom: 1px solid var(--border);
+      text-align: left; white-space: nowrap;
+    }
+    .metric-table th.th-weight  { width: 66px;  text-align: center; }
+    .metric-table th.th-period  { width: 108px; }
+    .metric-table th.th-target  { width: 96px;  }
+    .metric-table th.th-del     { width: 32px;  }
+    .metric-table th.th-rownum  { width: 28px;  }
+
+    .metric-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .metric-table tbody tr:last-child td { border-bottom: none; }
+    .metric-table tbody tr:hover td { background: #fafbff; }
+
+    .row-num {
+      width: 18px; height: 18px;
+      background: var(--bg-subtle); border: 1px solid var(--border);
+      border-radius: 3px; font-size: 10px; font-weight: 700;
+      color: var(--text-light);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-top: 3px;
+    }
+
+    .metric-desc {
+      width: 100%; box-sizing: border-box;
+      resize: none;
+      border: 1px solid transparent;
+      border-radius: var(--radius-xs);
+      padding: 4px 6px;
+      font-size: 12.5px; color: var(--text-primary);
+      background: transparent;
+      font-family: inherit; line-height: 1.55;
+      min-height: 54px; outline: none;
+    }
+    .metric-desc:focus {
+      border-color: var(--indigo);
+      background: white;
+      box-shadow: 0 0 0 2px #e0e7ff;
+    }
+    .metric-desc::placeholder { color: var(--text-light); font-style: italic; }
+
+    .weight-inp {
+      width: 52px; padding: 5px 6px;
+      text-align: center;
+      font-size: 13px; font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .period-sel, .target-inp { font-size: 11.5px; padding: 5px 6px; width: 100%; }
+
+    .del-row-btn {
+      width: 24px; height: 24px;
+      border: none; background: none; cursor: pointer;
+      color: var(--text-light); border-radius: var(--radius-xs);
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 3px;
+    }
+    .del-row-btn:hover { background: #fef2f2; color: var(--red); }
+    .del-row-btn svg { width: 12px; height: 12px; stroke-width: 2; }
+
+    /* ── Area footer ── */
+    .area-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 14px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-subtle);
+    }
+
+    .add-metric-btn {
+      font-size: 12px; font-weight: 600;
+      color: var(--indigo); background: none;
+      border: 1px dashed #c7d2fe;
+      border-radius: var(--radius-sm);
+      padding: 5px 12px; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .add-metric-btn svg { width: 11px; height: 11px; stroke-width: 2.5; }
+    .add-metric-btn:hover { background: var(--indigo-dim); }
+
+    .area-total-label { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+    .area-total-label strong { font-size: 13px; font-weight: 800; color: var(--text-primary); }
+
+    /* ── Collapsed area body ── */
+    .area-body.collapsed { display: none; }
+
+    /* ── Add area button ── */
+    .add-area-btn {
+      width: 100%; padding: 14px;
+      border: 2px dashed var(--border);
+      background: none; border-radius: var(--radius-md);
+      cursor: pointer; font-size: 13px; font-weight: 600;
+      color: var(--text-muted);
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: all 0.13s;
+    }
+    .add-area-btn svg { width: 14px; height: 14px; stroke-width: 2; }
+    .add-area-btn:hover { border-color: var(--indigo); color: var(--indigo); background: var(--indigo-dim); }
+
+    /* ── Weight sidebar ── */
+    .weight-sidebar { position: sticky; top: calc(58px + 20px); }
+
+    .weight-total-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .weight-big { font-size: 28px; font-weight: 900; letter-spacing: -1.5px; line-height: 1; }
+    .weight-big.ok   { color: var(--green); }
+    .weight-big.warn { color: var(--yellow); }
+    .weight-big.over { color: var(--red); }
+
+    .weight-track {
+      width: 100%; height: 6px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 99px; overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .weight-track-fill { height: 100%; border-radius: 99px; transition: width 0.3s; }
+
+    .weight-area-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 0; border-bottom: 1px solid var(--border);
+    }
+    .weight-area-row:last-child { border-bottom: none; }
+    .w-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .w-name { flex: 1; font-size: 12px; font-weight: 600; color: var(--text-primary); }
+    .w-metrics { font-size: 10.5px; color: var(--text-muted); }
+    .w-val { font-size: 12.5px; font-weight: 800; color: var(--text-primary); }
+
+    .w-minibar-bg {
+      width: 100%; height: 3px;
+      background: var(--border); border-radius: 99px;
+      overflow: hidden; margin-top: 3px;
+    }
+    .w-minibar-fill { height: 100%; border-radius: 99px; }
+
+    .weight-note {
+      font-size: 11.5px; padding: 9px 11px;
+      border-radius: var(--radius-sm);
+      margin-top: 12px;
+      display: flex; align-items: flex-start; gap: 7px;
+      line-height: 1.5;
+    }
+    .weight-note svg { width: 13px; height: 13px; stroke-width: 2; flex-shrink: 0; margin-top: 1px; }
+    .weight-note.ok   { background: var(--green-bg);   color: #166534; border: 1px solid #bbf7d0; }
+    .weight-note.warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+
+    /* ── Upload tab ── */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-md);
+      padding: 48px 32px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--bg-subtle);
+      transition: all 0.15s;
+      margin-bottom: 20px;
+    }
+    .upload-zone:hover { border-color: var(--indigo); background: var(--indigo-dim); }
+    .upload-icon-box {
+      width: 44px; height: 44px;
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 12px;
+    }
+    .upload-icon-box svg { width: 20px; height: 20px; color: var(--indigo); stroke-width: 1.5; }
+    .upload-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+    .upload-sub { font-size: 12.5px; color: var(--text-muted); }
+    .fmt-pills { display: flex; gap: 6px; justify-content: center; margin-top: 12px; }
+    .fmt-pill {
+      font-size: 10.5px; font-weight: 700;
+      padding: 2px 9px; border-radius: 4px;
+      background: white; border: 1px solid var(--border); color: var(--text-muted);
+    }
+
+    /* Import wizard steps */
+    .wizard-steps { display: flex; align-items: center; margin-bottom: 20px; }
+    .wz-step {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+    }
+    .wz-step-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid var(--border); background: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10.5px; font-weight: 800; flex-shrink: 0;
+    }
+    .wz-step.done .wz-step-num   { background: var(--green); border-color: var(--green); color: white; }
+    .wz-step.active .wz-step-num { background: var(--indigo); border-color: var(--indigo); color: white; }
+    .wz-step.done   { color: var(--green); }
+    .wz-step.active { color: var(--indigo); }
+    .wz-sep { flex: 1; height: 1px; background: var(--border); margin: 0 8px; max-width: 32px; }
+
+    /* Column mapping */
+    .col-map-grid {
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      gap: 8px; align-items: center; margin-bottom: 8px;
+    }
+    .col-map-src {
+      font-size: 12.5px; font-weight: 600; color: var(--text-primary);
+      padding: 7px 10px; background: var(--bg-subtle);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+    }
+    .col-map-src .col-preview {
+      font-size: 10.5px; font-weight: 400; color: var(--text-muted);
+      display: block; margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .col-map-arrow { color: var(--text-light); }
+    .col-map-arrow svg { width: 14px; height: 14px; }
+    .col-map-sel {
+      font-size: 12.5px; padding: 7px 10px;
+      background: var(--indigo-dim); border: 1px solid #c7d2fe;
+      color: var(--indigo); font-weight: 600; border-radius: var(--radius-sm);
+      width: 100%;
+    }
+
+    /* Preview table */
+    .preview-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+    .preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .preview-table th {
+      padding: 7px 10px; background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--text-light); text-align: left;
+    }
+    .preview-table td {
+      padding: 8px 10px; border-bottom: 1px solid var(--border);
+      color: var(--text-primary); vertical-align: top;
+    }
+    .preview-table td.area-span {
+      font-weight: 700; color: var(--indigo);
+      background: var(--indigo-dim);
+      border-right: 2px solid #c7d2fe;
+    }
+    .preview-table tbody tr:last-child td { border-bottom: none; }
+
+    /* ── Action bar ── */
+    .action-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px;
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+      margin-top: 20px;
+    }
+    .action-bar-left { display: flex; align-items: center; gap: 12px; }
+    .action-total-label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .action-weight-pill {
+      font-size: 14px; font-weight: 900; letter-spacing: -0.5px;
+      padding: 4px 10px; border-radius: var(--radius-sm);
+    }
+    .action-weight-pill.ok   { color: var(--green); background: var(--green-bg); border: 1px solid #bbf7d0; }
+    .action-weight-pill.warn { color: #92400e; background: #fffbeb; border: 1px solid #fde68a; }
+    .weight-seg-row { display: flex; gap: 2px; width: 140px; height: 6px; border-radius: 99px; overflow: hidden; }
+    .wseg { height: 100%; }
+
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR (DB Team Lead) -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Lotris</div>
+          <div class="logo-sub">Performance Platform</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="02-dashboard-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> Dashboard
+      </a>
+      <a href="03-tickets-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="ticket"></i></span> Tickets
+        <span class="nav-badge">6</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="layers"></i></span> Queue
+        <span class="nav-badge">4</span>
+      </a>
+      <a href="09-tasks-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="clipboard-list"></i></span> Tasks
+      </a>
+      <a href="04-kpis-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="bar-chart-2"></i></span> KPIs
+      </a>
+      <a href="05-reports-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="file-bar-chart"></i></span> Reports
+      </a>
+      <div class="nav-section-label">My Team</div>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="users"></i></span> Members
+        <span class="nav-badge">3</span>
+      </a>
+      <a href="07-team-kpi-setup-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="settings-2"></i></span> KPI Setup
+      </a>
+      <a href="10-sysadmin-ops-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="activity"></i></span> System Health
+      </a>
+      <a href="08-kpi-agreement-v2.html" class="nav-item active">
+        <span class="nav-icon"><i data-lucide="file-pen-line"></i></span> KPI Agreement
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar" style="background:#dcfce7;color:#16a34a;">SD</div>
+        <div class="user-info">
+          <div class="user-name">S. Diallo</div>
+          <div class="user-role">Team Lead · DB Team</div>
+        </div>
+        <div class="sidebar-logout"><i data-lucide="log-out"></i></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="page-title">KPI Agreement</span>
+        <span class="breadcrumb">
+          <span>DB Team</span>
+          <span class="breadcrumb-sep">/</span>
+          <a href="07-team-kpi-setup-v2.html" style="color:var(--text-muted);text-decoration:none;">KPI Setup</a>
+          <span class="breadcrumb-sep">/</span>
+          <span>Agreement Builder</span>
+        </span>
+      </div>
+      <div class="topbar-right">
+        <div class="search-bar">
+          <i data-lucide="search"></i>
+          <input type="text" placeholder="Search metrics…">
+        </div>
+        <div class="icon-btn"><i data-lucide="bell"></i><span class="notif-dot"></span></div>
+        <div class="avatar" style="background:#dcfce7;color:#16a34a;cursor:pointer;">SD</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- Page header -->
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>KPI Agreement Builder</h1>
+          <p>Define KPI areas, performance standards, and weights for a team member's review period</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-secondary"><i data-lucide="eye"></i> Preview</button>
+          <button class="btn btn-secondary"><i data-lucide="printer"></i> Print / Export</button>
+          <button class="btn btn-secondary"><i data-lucide="save"></i> Save draft</button>
+          <button class="btn btn-primary" id="activateBtn"><i data-lucide="check-circle-2"></i> Activate agreement</button>
+        </div>
+      </div>
+
+      <!-- ── Engineer / period selector bar ── -->
+      <div class="eng-bar">
+        <div class="eng-bar-cell">
+          <div class="eng-bar-label">Team Member</div>
+          <div class="eng-bar-val">
+            <div class="avatar-sm" id="memberAvatar" style="background:#dbeafe;color:#2563eb;font-weight:800;">TO</div>
+            <select id="memberSelect" onchange="updateMember(this)">
+              <option value="TO|T. Osei|Database Engineer|#dbeafe|#2563eb" selected>T. Osei</option>
+              <option value="DM|D. Mensah|DB Analyst|#f0fdf4|#16a34a">D. Mensah</option>
+              <option value="AK|A. Kofi|Junior DBA|#f5f3ff|#7c3aed">A. Kofi</option>
+            </select>
+          </div>
+        </div>
+        <div class="eng-bar-cell">
+          <div class="eng-bar-label">Job Role</div>
+          <div class="eng-bar-val" id="memberRole">Database Engineer · DB Team</div>
+        </div>
+        <div class="eng-bar-cell">
+          <div class="eng-bar-label">Review Period</div>
+          <div class="eng-bar-val">
+            <select style="font-size:13px;font-weight:700;border:none;background:transparent;padding:0;color:var(--text-primary);cursor:pointer;">
+              <option selected>Jan – Dec 2026</option>
+              <option>Q2 2026 (Apr – Jun)</option>
+              <option>Jan – Dec 2025</option>
+            </select>
+          </div>
+        </div>
+        <div class="eng-bar-cell">
+          <div class="eng-bar-label">Agreed on</div>
+          <div class="eng-bar-val" style="font-size:12.5px;">15 Jan 2026 · Lead + Engineer</div>
+        </div>
+        <div class="eng-bar-cell">
+          <div class="eng-bar-label">Status</div>
+          <div class="eng-bar-val">
+            <span class="status-pill draft"><span class="dot"></span>Draft</span>
+          </div>
+        </div>
+        <div class="eng-bar-cell">
+          <button class="btn btn-secondary btn-sm" style="margin-right:4px;"><i data-lucide="copy"></i> Load template</button>
+        </div>
+      </div>
+
+      <!-- ── Tabs ── -->
+      <div class="agr-tabs">
+        <button class="agr-tab active" onclick="switchTab('manual', this)">
+          <i data-lucide="pencil-line"></i>
+          Manual Entry
+          <span class="agr-tab-count">3</span>
+        </button>
+        <button class="agr-tab" onclick="switchTab('upload', this)">
+          <i data-lucide="upload"></i>
+          Upload Document
+        </button>
+      </div>
+
+      <!-- ════════════════ MANUAL ENTRY TAB ════════════════ -->
+      <div id="tab-manual" class="tab-content active">
+        <div class="agr-layout">
+
+          <!-- LEFT: KPI area cards -->
+          <div id="areas-col">
+
+            <!-- ── AREA 1: Product Quality (EXPANDED) ── -->
+            <div class="area-card" id="area-1">
+              <div class="area-card-header" onclick="toggleArea('area-1')">
+                <div class="area-num">1</div>
+                <input class="area-name-input" type="text" value="Product Quality"
+                  onclick="event.stopPropagation()"
+                  placeholder="KPI Area name…">
+                <div class="area-subtotal-chip ok">50.0 / 50.0</div>
+                <button class="area-header-btn" onclick="event.stopPropagation();" title="Delete area">
+                  <i data-lucide="trash-2"></i>
+                </button>
+                <button class="area-header-btn" title="Collapse">
+                  <i data-lucide="chevron-up" id="area-1-chevron"></i>
+                </button>
+              </div>
+              <div class="area-body" id="area-1-body">
+                <table class="metric-table">
+                  <thead>
+                    <tr>
+                      <th class="th-rownum">#</th>
+                      <th>Minimum Performance Metrics Standard</th>
+                      <th class="th-weight">Weight</th>
+                      <th class="th-period">Period</th>
+                      <th class="th-target">Target / Score</th>
+                      <th class="th-del"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><span class="row-num">1</span></td>
+                      <td><textarea class="metric-desc">Audit Rating</textarea></td>
+                      <td><input class="weight-inp" type="number" value="8.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option>Annually</option><option>Quarterly</option><option selected>Annually</option><option>Monthly</option></select></td>
+                      <td><input class="target-inp" type="text" value="Pass / Satisfactory"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                    <tr>
+                      <td><span class="row-num">2</span></td>
+                      <td><textarea class="metric-desc" rows="3">Ensure minimum average database availability and uptime of 99.8% for all assigned production databases throughout the appraisal period.</textarea></td>
+                      <td><input class="weight-inp" type="number" value="12.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option selected>Monthly</option><option>Quarterly</option><option>Annually</option></select></td>
+                      <td><input class="target-inp" type="text" value="≥ 99.8%"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                    <tr>
+                      <td><span class="row-num">3</span></td>
+                      <td><textarea class="metric-desc" rows="3">Maintain database capacity utilisation within approved thresholds (CPU, memory, storage, and I/O not exceeding 75% average utilisation) through proactive monitoring and housekeeping, reviewed monthly.</textarea></td>
+                      <td><input class="weight-inp" type="number" value="5.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option selected>Monthly</option><option>Quarterly</option><option>Annually</option></select></td>
+                      <td><input class="target-inp" type="text" value="≤ 75% avg"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                    <tr>
+                      <td><span class="row-num">4</span></td>
+                      <td><textarea class="metric-desc" rows="3">Achieve at least 95% successful execution rate for scheduled database jobs, including backups, batch processing, and maintenance tasks, measured monthly.</textarea></td>
+                      <td><input class="weight-inp" type="number" value="5.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option selected>Monthly</option><option>Quarterly</option><option>Annually</option></select></td>
+                      <td><input class="target-inp" type="text" value="≥ 95%"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                    <tr>
+                      <td><span class="row-num">5</span></td>
+                      <td><textarea class="metric-desc" rows="3">Resolve 95% of assigned database incidents within agreed SLA timelines, based on incident severity classification, measured quarterly.</textarea></td>
+                      <td><input class="weight-inp" type="number" value="5.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option>Monthly</option><option selected>Quarterly</option><option>Annually</option></select></td>
+                      <td><input class="target-inp" type="text" value="≥ 95%"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                    <tr>
+                      <td><span class="row-num">6</span></td>
+                      <td><textarea class="metric-desc" rows="3">Ensure 100% compliance with approved database backup schedules, with successful daily backups and quarterly restore validation tests.</textarea></td>
+                      <td><input class="weight-inp" type="number" value="5.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option>Monthly</option><option selected>Quarterly</option><option>Annually</option></select></td>
+                      <td><input class="target-inp" type="text" value="100%"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                    <tr>
+                      <td><span class="row-num">7</span></td>
+                      <td><textarea class="metric-desc" rows="3">Maintain a minimum of 95% success rate for database change implementations, in line with IT Governance and Change Management processes, measured annually.</textarea></td>
+                      <td><input class="weight-inp" type="number" value="5.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option>Monthly</option><option>Quarterly</option><option selected>Annually</option></select></td>
+                      <td><input class="target-inp" type="text" value="≥ 95%"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                    <tr>
+                      <td><span class="row-num">8</span></td>
+                      <td><textarea class="metric-desc" rows="3">Ensure all assigned database systems remain compliant with security and audit requirements, with zero high-risk audit findings.</textarea></td>
+                      <td><input class="weight-inp" type="number" value="5.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option>Monthly</option><option selected>Quarterly</option><option>Annually</option></select></td>
+                      <td><input class="target-inp" type="text" value="0 findings"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="area-footer">
+                  <button class="add-metric-btn"><i data-lucide="plus"></i> Add metric</button>
+                  <div class="area-total-label">Area total: <strong>50.0</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── AREA 2: Professional Development (COLLAPSED) ── -->
+            <div class="area-card" id="area-2">
+              <div class="area-card-header" onclick="toggleArea('area-2')">
+                <div class="area-num" style="background:var(--blue);">2</div>
+                <input class="area-name-input" type="text" value="Professional Development"
+                  onclick="event.stopPropagation()"
+                  placeholder="KPI Area name…">
+                <div class="area-subtotal-chip ok">30.0 / 30.0</div>
+                <button class="area-header-btn" onclick="event.stopPropagation();" title="Delete area">
+                  <i data-lucide="trash-2"></i>
+                </button>
+                <button class="area-header-btn">
+                  <i data-lucide="chevron-down" id="area-2-chevron"></i>
+                </button>
+              </div>
+              <div class="area-body collapsed" id="area-2-body">
+                <table class="metric-table">
+                  <thead>
+                    <tr>
+                      <th class="th-rownum">#</th>
+                      <th>Minimum Performance Metrics Standard</th>
+                      <th class="th-weight">Weight</th>
+                      <th class="th-period">Period</th>
+                      <th class="th-target">Target / Score</th>
+                      <th class="th-del"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><span class="row-num">1</span></td>
+                      <td><textarea class="metric-desc">Complete at least 2 relevant technical certifications or accredited training programmes within the appraisal period.</textarea></td>
+                      <td><input class="weight-inp" type="number" value="10.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option>Monthly</option><option>Quarterly</option><option selected>Annually</option></select></td>
+                      <td><input class="target-inp" type="text" value="≥ 2 certs"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                    <tr>
+                      <td><span class="row-num">2</span></td>
+                      <td><textarea class="metric-desc">Actively contribute to internal knowledge sharing sessions and maintain up-to-date technical documentation for assigned systems.</textarea></td>
+                      <td><input class="weight-inp" type="number" value="10.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option>Monthly</option><option selected>Quarterly</option><option>Annually</option></select></td>
+                      <td><input class="target-inp" type="text" value="≥ 2 sessions / qtr"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                    <tr>
+                      <td><span class="row-num">3</span></td>
+                      <td><textarea class="metric-desc">Demonstrate measurable improvement in assigned skill development areas as assessed in mid-year and end-of-year reviews.</textarea></td>
+                      <td><input class="weight-inp" type="number" value="10.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option>Monthly</option><option>Quarterly</option><option selected>Annually</option></select></td>
+                      <td><input class="target-inp" type="text" value="Lead + Self review"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="area-footer">
+                  <button class="add-metric-btn"><i data-lucide="plus"></i> Add metric</button>
+                  <div class="area-total-label">Area total: <strong>30.0</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── AREA 3: Customer Focus (COLLAPSED) ── -->
+            <div class="area-card" id="area-3">
+              <div class="area-card-header" onclick="toggleArea('area-3')">
+                <div class="area-num" style="background:var(--green);">3</div>
+                <input class="area-name-input" type="text" value="Customer Focus"
+                  onclick="event.stopPropagation()"
+                  placeholder="KPI Area name…">
+                <div class="area-subtotal-chip ok">20.0 / 20.0</div>
+                <button class="area-header-btn" onclick="event.stopPropagation();" title="Delete area">
+                  <i data-lucide="trash-2"></i>
+                </button>
+                <button class="area-header-btn">
+                  <i data-lucide="chevron-down" id="area-3-chevron"></i>
+                </button>
+              </div>
+              <div class="area-body collapsed" id="area-3-body">
+                <table class="metric-table">
+                  <thead>
+                    <tr>
+                      <th class="th-rownum">#</th>
+                      <th>Minimum Performance Metrics Standard</th>
+                      <th class="th-weight">Weight</th>
+                      <th class="th-period">Period</th>
+                      <th class="th-target">Target / Score</th>
+                      <th class="th-del"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><span class="row-num">1</span></td>
+                      <td><textarea class="metric-desc">Achieve a minimum customer / internal stakeholder satisfaction rating for database services provided, measured through quarterly surveys.</textarea></td>
+                      <td><input class="weight-inp" type="number" value="10.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option>Monthly</option><option selected>Quarterly</option><option>Annually</option></select></td>
+                      <td><input class="target-inp" type="text" value="≥ 4.0 / 5.0"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                    <tr>
+                      <td><span class="row-num">2</span></td>
+                      <td><textarea class="metric-desc">Respond to all assigned incidents and service requests within defined escalation and response timelines across all severity categories.</textarea></td>
+                      <td><input class="weight-inp" type="number" value="10.0" step="0.5" min="0" max="100"></td>
+                      <td><select class="period-sel"><option selected>Monthly</option><option>Quarterly</option><option>Annually</option></select></td>
+                      <td><input class="target-inp" type="text" value="100% on-time"></td>
+                      <td><button class="del-row-btn"><i data-lucide="x"></i></button></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="area-footer">
+                  <button class="add-metric-btn"><i data-lucide="plus"></i> Add metric</button>
+                  <div class="area-total-label">Area total: <strong>20.0</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Add KPI Area ── -->
+            <button class="add-area-btn">
+              <i data-lucide="plus-circle"></i>
+              Add KPI Area
+            </button>
+
+          </div><!-- /areas-col -->
+
+          <!-- RIGHT: Weight sidebar -->
+          <div class="weight-sidebar">
+
+            <!-- Weight summary card -->
+            <div class="card" style="margin-bottom:14px;">
+              <div class="card-header" style="padding:12px 14px;">
+                <div class="card-title" style="font-size:12.5px;">Weight Summary</div>
+                <div class="card-header-right">
+                  <span style="font-size:10.5px; color:var(--text-muted);">/ 100.0 total</span>
+                </div>
+              </div>
+              <div class="card-body" style="padding:14px;">
+
+                <!-- Total weight big number -->
+                <div class="weight-total-row">
+                  <div>
+                    <div class="weight-big ok">100.0</div>
+                    <div style="font-size:10.5px; color:var(--text-muted); margin-top:2px; text-transform:uppercase; letter-spacing:0.5px; font-weight:700;">Total weight</div>
+                  </div>
+                  <span class="badge badge-green"><i data-lucide="check-circle-2"></i> Balanced</span>
+                </div>
+
+                <!-- Segmented bar -->
+                <div class="weight-seg-row" style="width:100%;height:8px;border-radius:99px;overflow:hidden;display:flex;gap:1px;margin-bottom:14px;">
+                  <div class="wseg" style="width:50%;background:#4f46e5;" title="Product Quality 50%"></div>
+                  <div class="wseg" style="width:30%;background:#2563eb;" title="Professional Development 30%"></div>
+                  <div class="wseg" style="width:20%;background:#16a34a;" title="Customer Focus 20%"></div>
+                </div>
+
+                <!-- Per-area breakdown -->
+                <div>
+                  <!-- Area 1 -->
+                  <div class="weight-area-row">
+                    <div class="w-dot" style="background:#4f46e5;"></div>
+                    <div style="flex:1;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span class="w-name">Product Quality</span>
+                        <span class="w-val">50.0</span>
+                      </div>
+                      <div class="w-minibar-bg">
+                        <div class="w-minibar-fill" style="width:50%;background:#4f46e5;"></div>
+                      </div>
+                      <span class="w-metrics">8 metrics</span>
+                    </div>
+                  </div>
+                  <!-- Area 2 -->
+                  <div class="weight-area-row">
+                    <div class="w-dot" style="background:#2563eb;"></div>
+                    <div style="flex:1;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span class="w-name">Professional Dev.</span>
+                        <span class="w-val">30.0</span>
+                      </div>
+                      <div class="w-minibar-bg">
+                        <div class="w-minibar-fill" style="width:30%;background:#2563eb;"></div>
+                      </div>
+                      <span class="w-metrics">3 metrics</span>
+                    </div>
+                  </div>
+                  <!-- Area 3 -->
+                  <div class="weight-area-row">
+                    <div class="w-dot" style="background:#16a34a;"></div>
+                    <div style="flex:1;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span class="w-name">Customer Focus</span>
+                        <span class="w-val">20.0</span>
+                      </div>
+                      <div class="w-minibar-bg">
+                        <div class="w-minibar-fill" style="width:20%;background:#16a34a;"></div>
+                      </div>
+                      <span class="w-metrics">2 metrics</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Validation note -->
+                <div class="weight-note ok">
+                  <i data-lucide="check-circle-2"></i>
+                  <span>All weights sum to <strong>100.0</strong>. Agreement is ready to activate.</span>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Engineer signature card -->
+            <div class="card" style="margin-bottom:14px;">
+              <div class="card-header" style="padding:12px 14px;">
+                <div class="card-title" style="font-size:12.5px;">Sign-off</div>
+              </div>
+              <div style="padding:12px 14px; display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="avatar-sm" style="background:#dbeafe;color:#2563eb;">TO</div>
+                    <div>
+                      <div style="font-size:12px;font-weight:700;color:var(--text-primary);">T. Osei</div>
+                      <div style="font-size:10.5px;color:var(--text-muted);">Team Member</div>
+                    </div>
+                  </div>
+                  <span style="font-size:11px; color:var(--text-light); font-style:italic;">Pending</span>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="avatar-sm" style="background:#dcfce7;color:#16a34a;">SD</div>
+                    <div>
+                      <div style="font-size:12px;font-weight:700;color:var(--text-primary);">S. Diallo</div>
+                      <div style="font-size:10.5px;color:var(--text-muted);">Team Lead</div>
+                    </div>
+                  </div>
+                  <span class="badge badge-green" style="font-size:10px;">Signed</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;margin-top:4px;">
+                  <i data-lucide="send"></i> Send to member for review
+                </button>
+              </div>
+            </div>
+
+            <!-- Notes card -->
+            <div class="card">
+              <div class="card-header" style="padding:12px 14px;">
+                <div class="card-title" style="font-size:12.5px;">Lead Notes</div>
+                <span style="font-size:10.5px;color:var(--text-muted);">private</span>
+              </div>
+              <div style="padding:10px 14px;">
+                <textarea style="width:100%;box-sizing:border-box;resize:none;height:72px;font-size:12px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-subtle);font-family:inherit;color:var(--text-muted);outline:none;">Targets aligned with DB Team roadmap for 2026. Uptime metric raised from 99.5% to 99.8% given infrastructure upgrade completed in Dec 2025.</textarea>
+              </div>
+            </div>
+
+          </div><!-- /weight-sidebar -->
+
+        </div><!-- /agr-layout -->
+      </div><!-- /tab-manual -->
+
+      <!-- ════════════════ UPLOAD TAB ════════════════ -->
+      <div id="tab-upload" class="tab-content">
+
+        <!-- Wizard steps -->
+        <div class="wizard-steps">
+          <div class="wz-step done">
+            <div class="wz-step-num"><i data-lucide="check" style="width:10px;height:10px;stroke-width:3;"></i></div>
+            Upload file
+          </div>
+          <div class="wz-sep"></div>
+          <div class="wz-step active">
+            <div class="wz-step-num">2</div>
+            Map columns
+          </div>
+          <div class="wz-sep"></div>
+          <div class="wz-step">
+            <div class="wz-step-num">3</div>
+            Preview
+          </div>
+          <div class="wz-sep"></div>
+          <div class="wz-step">
+            <div class="wz-step-num">4</div>
+            Confirm import
+          </div>
+        </div>
+
+        <div class="agr-layout">
+          <div>
+
+            <!-- Uploaded file indicator -->
+            <div class="card" style="margin-bottom:16px; padding:12px 16px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:36px;height:36px;background:#dcfce7;border:1px solid #bbf7d0;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;">
+                  <i data-lucide="file-spreadsheet" style="width:18px;height:18px;color:var(--green);stroke-width:1.5;"></i>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:13px;font-weight:700;color:var(--text-primary);">DB_Engineer_KPI_Agreement_2026.xlsx</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:1px;">Microsoft Excel · 48 KB · Uploaded just now · 14 rows detected</div>
+                </div>
+                <button class="btn btn-ghost btn-sm" style="color:var(--text-muted);"><i data-lucide="x"></i> Remove</button>
+              </div>
+            </div>
+
+            <!-- Or drag a new file -->
+            <div class="upload-zone" style="padding:24px;margin-bottom:16px;">
+              <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
+                <i data-lucide="upload-cloud" style="width:18px;height:18px;color:var(--text-muted);stroke-width:1.5;"></i>
+                <span style="font-size:12.5px;color:var(--text-muted);">Replace file — drag &amp; drop or <span style="color:var(--indigo);font-weight:700;cursor:pointer;">browse</span></span>
+              </div>
+              <div class="fmt-pills" style="margin-top:8px;">
+                <span class="fmt-pill">.xlsx</span>
+                <span class="fmt-pill">.xls</span>
+                <span class="fmt-pill">.csv</span>
+                <span class="fmt-pill">.ods</span>
+              </div>
+            </div>
+
+            <!-- Column mapping -->
+            <div class="card" style="margin-bottom:16px;">
+              <div class="card-header" style="padding:12px 16px;">
+                <div class="card-title">Map Spreadsheet Columns</div>
+                <div class="card-subtitle">Tell Lotris what each column in your file represents</div>
+              </div>
+              <div style="padding:14px 16px;">
+
+                <div style="display:grid;grid-template-columns:1fr 32px 1fr;gap:8px;align-items:center;margin-bottom:6px;">
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);">Your column</div>
+                  <div></div>
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);">Maps to field</div>
+                </div>
+
+                <div class="col-map-grid">
+                  <div class="col-map-src">
+                    KPI Area
+                    <span class="col-preview">e.g. "Product Quality"</span>
+                  </div>
+                  <div class="col-map-arrow"><i data-lucide="arrow-right"></i></div>
+                  <select class="col-map-sel"><option selected>KPI Area</option><option>— ignore —</option></select>
+                </div>
+
+                <div class="col-map-grid">
+                  <div class="col-map-src">
+                    Minimum Performance Metrics Standard
+                    <span class="col-preview">e.g. "Ensure minimum average…"</span>
+                  </div>
+                  <div class="col-map-arrow"><i data-lucide="arrow-right"></i></div>
+                  <select class="col-map-sel"><option selected>Metric Description</option><option>— ignore —</option></select>
+                </div>
+
+                <div class="col-map-grid">
+                  <div class="col-map-src">
+                    Metrics Weight
+                    <span class="col-preview">e.g. "8.0", "12.0"</span>
+                  </div>
+                  <div class="col-map-arrow"><i data-lucide="arrow-right"></i></div>
+                  <select class="col-map-sel"><option selected>Weight</option><option>— ignore —</option></select>
+                </div>
+
+                <div class="col-map-grid" style="opacity:0.5;">
+                  <div class="col-map-src">
+                    (no matching column)
+                    <span class="col-preview">—</span>
+                  </div>
+                  <div class="col-map-arrow"><i data-lucide="arrow-right"></i></div>
+                  <select class="col-map-sel" style="background:var(--bg-subtle);border-color:var(--border);color:var(--text-muted);">
+                    <option selected>— ignore —</option>
+                    <option>Measurement Period</option>
+                    <option>Target Value</option>
+                  </select>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Preview table -->
+            <div class="card">
+              <div class="card-header" style="padding:12px 16px;">
+                <div class="card-title">Preview (first 8 rows)</div>
+                <div class="card-subtitle">Review parsed data before importing</div>
+              </div>
+              <div style="padding:0 0 0 0;">
+                <div class="preview-wrap">
+                  <table class="preview-table">
+                    <thead>
+                      <tr>
+                        <th>KPI Area</th>
+                        <th>Metric Description</th>
+                        <th style="width:70px;text-align:center;">Weight</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="area-span" rowspan="3">Product Quality</td>
+                        <td>Audit Rating</td>
+                        <td style="text-align:center;font-weight:700;">8.0</td>
+                      </tr>
+                      <tr>
+                        <td>Ensure minimum average database availability and uptime of 99.8% for all assigned production databases throughout the appraisal period.</td>
+                        <td style="text-align:center;font-weight:700;">12.0</td>
+                      </tr>
+                      <tr>
+                        <td>Maintain database capacity utilisation within approved thresholds (CPU, memory, storage, and I/O not exceeding 75% average utilisation)…</td>
+                        <td style="text-align:center;font-weight:700;">5.0</td>
+                      </tr>
+                      <tr>
+                        <td class="area-span" rowspan="2" style="background:#dbeafe;border-right-color:#93c5fd;color:#1d4ed8;">Professional Development</td>
+                        <td>Complete at least 2 relevant technical certifications or accredited training programmes within the appraisal period.</td>
+                        <td style="text-align:center;font-weight:700;">10.0</td>
+                      </tr>
+                      <tr>
+                        <td>Actively contribute to internal knowledge sharing sessions and maintain up-to-date technical documentation.</td>
+                        <td style="text-align:center;font-weight:700;">10.0</td>
+                      </tr>
+                      <tr>
+                        <td class="area-span" rowspan="2" style="background:#dcfce7;border-right-color:#86efac;color:#166534;">Customer Focus</td>
+                        <td>Achieve a minimum customer satisfaction rating for database services, measured through quarterly surveys.</td>
+                        <td style="text-align:center;font-weight:700;">10.0</td>
+                      </tr>
+                      <tr>
+                        <td>Respond to all assigned incidents and service requests within defined escalation and response timelines.</td>
+                        <td style="text-align:center;font-weight:700;">10.0</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:12px;color:var(--text-muted);">14 rows detected · 3 KPI areas · total weight: <strong style="color:var(--green);">100.0</strong></span>
+                <button class="btn btn-primary"><i data-lucide="check-circle-2"></i> Confirm import</button>
+              </div>
+            </div>
+
+          </div><!-- /upload left col -->
+
+          <!-- Upload sidebar: weight summary -->
+          <div class="weight-sidebar">
+            <div class="card">
+              <div class="card-header" style="padding:12px 14px;">
+                <div class="card-title" style="font-size:12.5px;">Detected Weights</div>
+              </div>
+              <div style="padding:14px;">
+                <div class="weight-total-row">
+                  <div>
+                    <div class="weight-big ok">100.0</div>
+                    <div style="font-size:10.5px;color:var(--text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Total weight</div>
+                  </div>
+                  <span class="badge badge-green"><i data-lucide="check-circle-2"></i> Balanced</span>
+                </div>
+                <div class="weight-seg-row" style="width:100%;height:8px;border-radius:99px;overflow:hidden;display:flex;gap:1px;margin-bottom:14px;">
+                  <div style="width:50%;background:#4f46e5;height:100%;"></div>
+                  <div style="width:30%;background:#2563eb;height:100%;"></div>
+                  <div style="width:20%;background:#16a34a;height:100%;"></div>
+                </div>
+                <div class="weight-area-row">
+                  <div class="w-dot" style="background:#4f46e5;"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;"><span class="w-name">Product Quality</span><span class="w-val">50.0</span></div>
+                    <div class="w-minibar-bg"><div class="w-minibar-fill" style="width:50%;background:#4f46e5;"></div></div>
+                    <span class="w-metrics">8 metrics</span>
+                  </div>
+                </div>
+                <div class="weight-area-row">
+                  <div class="w-dot" style="background:#2563eb;"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;"><span class="w-name">Professional Dev.</span><span class="w-val">30.0</span></div>
+                    <div class="w-minibar-bg"><div class="w-minibar-fill" style="width:30%;background:#2563eb;"></div></div>
+                    <span class="w-metrics">3 metrics</span>
+                  </div>
+                </div>
+                <div class="weight-area-row">
+                  <div class="w-dot" style="background:#16a34a;"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;"><span class="w-name">Customer Focus</span><span class="w-val">20.0</span></div>
+                    <div class="w-minibar-bg"><div class="w-minibar-fill" style="width:20%;background:#16a34a;"></div></div>
+                    <span class="w-metrics">2 metrics</span>
+                  </div>
+                </div>
+                <div class="weight-note ok">
+                  <i data-lucide="check-circle-2"></i>
+                  <span>File parsed successfully. All weights sum to 100.0.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /agr-layout upload -->
+      </div><!-- /tab-upload -->
+
+      <!-- ── Bottom action bar ── -->
+      <div class="action-bar">
+        <div class="action-bar-left">
+          <span class="action-total-label">Total weight:</span>
+          <span class="action-weight-pill ok">100.0 / 100.0</span>
+          <div style="display:flex;gap:2px;width:120px;height:6px;border-radius:99px;overflow:hidden;">
+            <div style="width:50%;background:#4f46e5;height:100%;"></div>
+            <div style="width:30%;background:#2563eb;height:100%;"></div>
+            <div style="width:20%;background:#16a34a;height:100%;"></div>
+          </div>
+          <span style="font-size:12px;color:var(--text-muted);">3 areas · 13 metrics</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary"><i data-lucide="save"></i> Save draft</button>
+          <button class="btn btn-secondary"><i data-lucide="send"></i> Send for review</button>
+          <button class="btn btn-primary"><i data-lucide="check-circle-2"></i> Activate agreement</button>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+lucide.createIcons();
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.agr-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-manual').classList.remove('active');
+  document.getElementById('tab-upload').classList.remove('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function toggleArea(areaId) {
+  const body = document.getElementById(areaId + '-body');
+  const chevron = document.getElementById(areaId + '-chevron');
+  if (!body) return;
+  const collapsed = body.classList.toggle('collapsed');
+  if (chevron) {
+    chevron.setAttribute('data-lucide', collapsed ? 'chevron-down' : 'chevron-up');
+    lucide.createIcons();
+  }
+}
+
+function updateMember(sel) {
+  const [initials, name, role, bg, fg] = sel.value.split('|');
+  const av = document.getElementById('memberAvatar');
+  av.textContent = initials;
+  av.style.background = bg;
+  av.style.color = fg;
+  document.getElementById('memberRole').textContent = role + ' · DB Team';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotris v2 — Tasks</title>
+  <link rel="stylesheet" href="style-v2.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+
+    /* ── Task priority dot colours ── */
+    .priority-dot.critical { background: #dc2626; }
+    .priority-dot.high     { background: #f97316; }
+    .priority-dot.medium   { background: #f59e0b; }
+    .priority-dot.low      { background: #6b7280; }
+
+    /* ── Status badges ── */
+    .badge-open        { background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd; }
+    .badge-inprogress  { background:var(--indigo-dim); color:var(--indigo); border:1px solid var(--indigo-border); }
+    .badge-done        { background:var(--green-bg); color:var(--green); border:1px solid #bbf7d0; }
+    .badge-blocked     { background:#fef2f2; color:var(--red); border:1px solid #fecaca; }
+    .badge-review      { background:var(--purple-bg); color:var(--purple); border:1px solid #e9d5ff; }
+    .badge-overdue     { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; }
+
+    /* ── Task type chip ── */
+    .type-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10.5px; font-weight: 700; padding: 2px 7px;
+      border-radius: 4px; border: 1px solid var(--border);
+      background: var(--bg-subtle); color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .type-chip svg { width: 10px; height: 10px; stroke-width: 2; }
+
+    /* ── Progress bar cell ── */
+    .progress-cell { display: flex; flex-direction: column; gap: 3px; }
+    .progress-track {
+      width: 80px; height: 5px;
+      background: var(--bg-subtle); border: 1px solid var(--border);
+      border-radius: 99px; overflow: hidden;
+    }
+    .progress-fill { height: 100%; border-radius: 99px; }
+    .progress-pct { font-size: 10.5px; color: var(--text-muted); font-weight: 600; }
+
+    /* ── Due date colouring ── */
+    .due-overdue  { color: var(--red); font-weight: 700; }
+    .due-today    { color: #c2410c; font-weight: 700; }
+    .due-soon     { color: #d97706; font-weight: 600; }
+    .due-ok       { color: var(--text-muted); }
+
+    /* ── Assign drawer ── */
+    .drawer-section-title {
+      font-size: 10.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text-light); margin: 16px 0 8px;
+    }
+    .drawer-field { margin-bottom: 14px; }
+    .drawer-label {
+      font-size: 11px; font-weight: 700; color: var(--text-muted);
+      display: block; margin-bottom: 5px;
+      text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .drawer-input, .drawer-select, .drawer-textarea {
+      width: 100%; box-sizing: border-box;
+      font-size: 13px; padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      background: white; font-family: inherit; outline: none;
+    }
+    .drawer-input:focus, .drawer-select:focus, .drawer-textarea:focus {
+      border-color: var(--indigo); box-shadow: 0 0 0 3px #e0e7ff;
+    }
+    .drawer-textarea { resize: vertical; min-height: 72px; line-height: 1.55; }
+    .drawer-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .assignee-pick {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+    }
+    .assignee-chip {
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 10px 5px 6px;
+      border: 1px solid var(--border); border-radius: 99px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      background: white; color: var(--text-primary);
+      transition: all 0.12s;
+    }
+    .assignee-chip.selected {
+      border-color: var(--indigo); background: var(--indigo-dim); color: var(--indigo);
+    }
+    .assignee-chip .avatar-sm { flex-shrink: 0; }
+
+    /* ── Checklist ── */
+    .checklist { display: flex; flex-direction: column; gap: 6px; }
+    .checklist-item {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12.5px; color: var(--text-primary);
+    }
+    .checklist-item input[type="checkbox"] { accent-color: var(--indigo); width: 14px; height: 14px; flex-shrink: 0; }
+    .checklist-item.done span { text-decoration: line-through; color: var(--text-muted); }
+    .add-checklist-item {
+      font-size: 12px; color: var(--indigo); font-weight: 600;
+      background: none; border: none; cursor: pointer;
+      padding: 4px 0; display: flex; align-items: center; gap: 5px; margin-top: 4px;
+    }
+    .add-checklist-item svg { width: 11px; height: 11px; }
+
+    /* ── Comments strip ── */
+    .comment-item {
+      display: flex; gap: 10px; padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .comment-item:last-child { border-bottom: none; }
+    .comment-body { flex: 1; }
+    .comment-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+    .comment-meta strong { color: var(--text-primary); font-weight: 700; }
+    .comment-text { font-size: 12.5px; color: var(--text-primary); line-height: 1.55; }
+
+    /* ── KPI link banner ── */
+    .kpi-link-banner {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px;
+      background: var(--indigo-dim); border: 1px solid var(--indigo-border);
+      border-radius: var(--radius-sm);
+      font-size: 12px; color: var(--indigo); font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .kpi-link-banner svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+    /* ── Source tag (who created the task) ── */
+    .source-tag {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10.5px; font-weight: 600;
+      color: var(--text-light); margin-top: 3px;
+    }
+    .source-tag svg { width: 10px; height: 10px; stroke-width: 2; }
+    .source-tag.self { color: var(--green); }
+    .source-tag.self svg { color: var(--green); }
+
+    /* ── Self-assign locked chip ── */
+    .self-assignee-box {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px;
+      background: var(--green-bg); border: 1px solid #bbf7d0;
+      border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 700; color: #166534;
+    }
+    .self-assignee-box svg { width: 13px; height: 13px; color: var(--green); }
+
+    /* ── Source toggle ── */
+    .source-toggle {
+      display: flex; gap: 0;
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      overflow: hidden; margin-bottom: 14px;
+    }
+    .source-toggle-btn {
+      flex: 1; padding: 8px 12px;
+      font-size: 12px; font-weight: 600;
+      border: none; background: var(--bg-subtle);
+      color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: all 0.12s;
+    }
+    .source-toggle-btn svg { width: 12px; height: 12px; stroke-width: 2; }
+    .source-toggle-btn.active { background: var(--indigo); color: white; }
+    .source-toggle-btn:first-child { border-right: 1px solid var(--border); }
+
+    /* ── Summary chips row ── */
+    .summary-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+    .s-chip {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); box-shadow: var(--shadow-xs);
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      cursor: pointer; transition: border-color 0.12s;
+    }
+    .s-chip:hover { border-color: var(--indigo); color: var(--indigo); }
+    .s-chip strong { font-size: 14px; font-weight: 900; color: var(--text-primary); }
+    .s-chip .c-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR (Team Lead / IT Support) -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Lotris</div>
+          <div class="logo-sub">Performance Platform</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="02-dashboard-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> Dashboard
+      </a>
+      <a href="03-tickets-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="ticket"></i></span> Tickets
+        <span class="nav-badge">6</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="layers"></i></span> Queue
+        <span class="nav-badge">4</span>
+      </a>
+      <a href="09-tasks-v2.html" class="nav-item active">
+        <span class="nav-icon"><i data-lucide="clipboard-list"></i></span> Tasks
+        <span class="nav-badge">11</span>
+      </a>
+      <a href="04-kpis-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="bar-chart-2"></i></span> KPIs
+      </a>
+      <a href="05-reports-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="file-bar-chart"></i></span> Reports
+      </a>
+      <div class="nav-section-label">My Team</div>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="users"></i></span> Members
+        <span class="nav-badge">5</span>
+      </a>
+      <a href="07-team-kpi-setup-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="settings-2"></i></span> KPI Setup
+      </a>
+      <a href="10-sysadmin-ops-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="activity"></i></span> System Health
+      </a>
+      <a href="08-kpi-agreement-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="file-pen-line"></i></span> KPI Agreement
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar" style="background:#e0e7ff;color:#4f46e5;">KA</div>
+        <div class="user-info">
+          <div class="user-name">K. Adesanya</div>
+          <div class="user-role">Team Lead · IT Support</div>
+        </div>
+        <div class="sidebar-logout"><i data-lucide="log-out"></i></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="page-title">Tasks</span>
+        <span class="breadcrumb">
+          <span>IT Support</span>
+          <span class="breadcrumb-sep">/</span>
+          <span>All Tasks</span>
+        </span>
+      </div>
+      <div class="topbar-right">
+        <div class="search-bar">
+          <i data-lucide="search"></i>
+          <input type="text" placeholder="Search tasks…">
+        </div>
+        <div class="icon-btn"><i data-lucide="bell"></i><span class="notif-dot"></span></div>
+        <div class="avatar" style="background:#e0e7ff;color:#4f46e5;cursor:pointer;">KA</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- Page header -->
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>Tasks</h1>
+          <p>Non-ticket work items — maintenance, DR drills, change requests, documentation, daily jobs</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-secondary"><i data-lucide="download"></i> Export</button>
+          <button class="btn btn-secondary" onclick="openSelfDrawer()">
+            <i data-lucide="plus-circle"></i> Log My Task
+          </button>
+          <button class="btn btn-primary" onclick="openDrawer()">
+            <i data-lucide="plus"></i> Assign Task
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary chips -->
+      <div class="summary-chips">
+        <div class="s-chip"><span class="c-dot" style="background:#4f46e5;"></span> <strong>11</strong> All</div>
+        <div class="s-chip"><span class="c-dot" style="background:#0369a1;"></span> <strong>3</strong> Open</div>
+        <div class="s-chip"><span class="c-dot" style="background:#4f46e5;"></span> <strong>5</strong> In Progress</div>
+        <div class="s-chip"><span class="c-dot" style="background:#7c3aed;"></span> <strong>1</strong> Review</div>
+        <div class="s-chip"><span class="c-dot" style="background:#16a34a;"></span> <strong>2</strong> Done</div>
+        <div class="s-chip"><span class="c-dot" style="background:#dc2626;"></span> <strong>2</strong> Overdue</div>
+        <div class="s-chip"><i data-lucide="user" style="width:11px;height:11px;color:var(--green);stroke-width:2.5;"></i> <strong style="color:var(--green);">3</strong> Self-logged</div>
+        <div class="s-chip" style="margin-left:auto;"><i data-lucide="bar-chart-2" style="width:12px;height:12px;color:var(--indigo);"></i> Team completion: <strong style="color:var(--indigo);">63%</strong></div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <div class="filter-tabs" id="statusTabs">
+          <button class="filter-tab active" onclick="setTab(this)">All</button>
+          <button class="filter-tab" onclick="setTab(this)">Open</button>
+          <button class="filter-tab" onclick="setTab(this)">In Progress</button>
+          <button class="filter-tab" onclick="setTab(this)">Review</button>
+          <button class="filter-tab" onclick="setTab(this)">Done</button>
+          <button class="filter-tab" onclick="setTab(this)">Overdue</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-left:auto;">
+          <select class="select-filter">
+            <option>All Assignees</option>
+            <option>A. Okonkwo</option>
+            <option>F. Mohammed</option>
+            <option>N. Kamara</option>
+            <option>D. Mensah</option>
+            <option>B. Ibrahim</option>
+          </select>
+          <select class="select-filter">
+            <option>All Types</option>
+            <option>Maintenance</option>
+            <option>DR / BCP</option>
+            <option>Change Request</option>
+            <option>Documentation</option>
+            <option>Training</option>
+            <option>Ad Hoc</option>
+          </select>
+          <select class="select-filter">
+            <option>All Priorities</option>
+            <option>Critical</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
+          <button class="btn btn-ghost btn-sm"><i data-lucide="sliders-horizontal"></i></button>
+        </div>
+      </div>
+
+      <!-- Task table -->
+      <div class="card">
+        <div class="table-wrap">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="padding:9px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;">Task</th>
+                <th style="padding:9px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;width:100px;">Type</th>
+                <th style="padding:9px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;width:60px;">Priority</th>
+                <th style="padding:9px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;width:120px;">Assignee</th>
+                <th style="padding:9px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;width:90px;">Status</th>
+                <th style="padding:9px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;width:100px;">Progress</th>
+                <th style="padding:9px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;width:90px;">Due Date</th>
+                <th style="padding:9px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;width:80px;">KPI Link</th>
+                <th style="padding:9px 10px;border-bottom:1px solid var(--border);width:36px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <!-- Row 1 – OVERDUE -->
+              <tr style="cursor:pointer;" onclick="openDrawerView('T-001')">
+                <td style="padding:12px 14px;border-bottom:1px solid var(--border);">
+                  <div style="font-size:13px;font-weight:700;color:var(--text-primary);">Monthly DB Backup Verification</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Verify all prod DB backups completed and restore test passed for Apr</div>
+                  <div class="source-tag"><i data-lucide="user-check"></i> Assigned by K. Adesanya</div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="type-chip"><i data-lucide="database"></i> Maintenance</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#dc2626;">
+                    <span class="priority-dot critical"></span>Critical
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:7px;">
+                    <div class="avatar-sm" style="background:#fef3c7;color:#92400e;">AO</div>
+                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);">A. Okonkwo</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="badge badge-overdue">Overdue</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div class="progress-cell">
+                    <div class="progress-track"><div class="progress-fill" style="width:60%;background:#f59e0b;"></div></div>
+                    <span class="progress-pct">60%</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="due-overdue">30 Apr</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="type-chip" style="background:var(--indigo-dim);color:var(--indigo);border-color:var(--indigo-border);">
+                    <i data-lucide="link-2"></i> Productivity
+                  </span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);" onclick="event.stopPropagation()">
+                  <div class="row-actions">
+                    <button class="row-action-btn"><i data-lucide="more-horizontal"></i></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 2 – IN PROGRESS -->
+              <tr style="cursor:pointer;" onclick="openDrawerView('T-002')">
+                <td style="padding:12px 14px;border-bottom:1px solid var(--border);">
+                  <div style="font-size:13px;font-weight:700;color:var(--text-primary);">DR Failover Drill — Core Banking</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Execute Q2 2026 DR test plan and document RTO/RPO results</div>
+                  <div class="source-tag"><i data-lucide="user-check"></i> Assigned by K. Adesanya</div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="type-chip" style="background:var(--purple-bg);color:var(--purple);border-color:#e9d5ff;"><i data-lucide="shield-check"></i> DR / BCP</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#f97316;">
+                    <span class="priority-dot high"></span>High
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:7px;">
+                    <div class="avatar-sm" style="background:#dbeafe;color:#2563eb;">FM</div>
+                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);">F. Mohammed</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="badge badge-inprogress">In Progress</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div class="progress-cell">
+                    <div class="progress-track"><div class="progress-fill" style="width:40%;background:var(--indigo);"></div></div>
+                    <span class="progress-pct">40%</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="due-soon">9 May</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="type-chip" style="background:var(--indigo-dim);color:var(--indigo);border-color:var(--indigo-border);">
+                    <i data-lucide="link-2"></i> SLA Cmpl.
+                  </span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);" onclick="event.stopPropagation()">
+                  <div class="row-actions">
+                    <button class="row-action-btn"><i data-lucide="more-horizontal"></i></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 3 – OPEN -->
+              <tr style="cursor:pointer;" onclick="openDrawerView('T-003')">
+                <td style="padding:12px 14px;border-bottom:1px solid var(--border);">
+                  <div style="font-size:13px;font-weight:700;color:var(--text-primary);">Update Network Topology Diagrams</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Reflect the Q1 infra changes in Visio and publish to SharePoint</div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="type-chip"><i data-lucide="file-text"></i> Documentation</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#f59e0b;">
+                    <span class="priority-dot medium"></span>Medium
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:7px;">
+                    <div class="avatar-sm" style="background:#dcfce7;color:#16a34a;">NK</div>
+                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);">N. Kamara</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="badge badge-open">Open</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div class="progress-cell">
+                    <div class="progress-track"><div class="progress-fill" style="width:0%;background:var(--indigo);"></div></div>
+                    <span class="progress-pct">0%</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="due-ok">15 May</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span style="font-size:11.5px;color:var(--text-light);">—</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);" onclick="event.stopPropagation()">
+                  <div class="row-actions">
+                    <button class="row-action-btn"><i data-lucide="more-horizontal"></i></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 4 – REVIEW -->
+              <tr style="cursor:pointer;" onclick="openDrawerView('T-004')">
+                <td style="padding:12px 14px;border-bottom:1px solid var(--border);">
+                  <div style="font-size:13px;font-weight:700;color:var(--text-primary);">Patch Tuesday — Server OS Updates</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Apply May patches to 8 dev servers; submit CAB change record</div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="type-chip" style="background:var(--orange-bg);color:var(--orange);border-color:#fed7aa;"><i data-lucide="git-merge"></i> Change Req.</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#f97316;">
+                    <span class="priority-dot high"></span>High
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:7px;">
+                    <div class="avatar-sm" style="background:#f3e8ff;color:#7c3aed;">DM</div>
+                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);">D. Mensah</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="badge badge-review">Review</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div class="progress-cell">
+                    <div class="progress-track"><div class="progress-fill" style="width:90%;background:var(--purple);"></div></div>
+                    <span class="progress-pct">90%</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="due-today">Today</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="type-chip" style="background:var(--indigo-dim);color:var(--indigo);border-color:var(--indigo-border);">
+                    <i data-lucide="link-2"></i> Productivity
+                  </span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);" onclick="event.stopPropagation()">
+                  <div class="row-actions">
+                    <button class="row-action-btn"><i data-lucide="more-horizontal"></i></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 5 – IN PROGRESS -->
+              <tr style="cursor:pointer;" onclick="openDrawerView('T-005')">
+                <td style="padding:12px 14px;border-bottom:1px solid var(--border);">
+                  <div style="font-size:13px;font-weight:700;color:var(--text-primary);">Capacity Planning Report — Q2 2026</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Analyse storage, CPU and memory trends across prod servers; draft report</div>
+                  <div class="source-tag"><i data-lucide="user-check"></i> Assigned by K. Adesanya</div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="type-chip"><i data-lucide="database"></i> Maintenance</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#f59e0b;">
+                    <span class="priority-dot medium"></span>Medium
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:7px;">
+                    <div class="avatar-sm" style="background:#fef3c7;color:#92400e;">AO</div>
+                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);">A. Okonkwo</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="badge badge-inprogress">In Progress</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div class="progress-cell">
+                    <div class="progress-track"><div class="progress-fill" style="width:75%;background:var(--indigo);"></div></div>
+                    <span class="progress-pct">75%</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="due-ok">12 May</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="type-chip" style="background:var(--indigo-dim);color:var(--indigo);border-color:var(--indigo-border);">
+                    <i data-lucide="link-2"></i> Productivity
+                  </span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);" onclick="event.stopPropagation()">
+                  <div class="row-actions">
+                    <button class="row-action-btn"><i data-lucide="more-horizontal"></i></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 5b – SELF-LOGGED, IN PROGRESS -->
+              <tr style="cursor:pointer;" onclick="openSelfDrawerView('T-005b')">
+                <td style="padding:12px 14px;border-bottom:1px solid var(--border);">
+                  <div style="font-size:13px;font-weight:700;color:var(--text-primary);">Personal Study — Oracle 19c Performance Tuning</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Work through OCP tuning module chapters 4–7; notes to shared drive</div>
+                  <div class="source-tag self"><i data-lucide="user"></i> Self-logged · A. Okonkwo</div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="type-chip" style="background:#f0fdf4;color:#15803d;border-color:#bbf7d0;"><i data-lucide="graduation-cap"></i> Training</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#6b7280;">
+                    <span class="priority-dot low"></span>Low
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:7px;">
+                    <div class="avatar-sm" style="background:#fef3c7;color:#92400e;">AO</div>
+                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);">A. Okonkwo</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="badge badge-inprogress">In Progress</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div class="progress-cell">
+                    <div class="progress-track"><div class="progress-fill" style="width:50%;background:var(--indigo);"></div></div>
+                    <span class="progress-pct">50%</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="due-ok">20 May</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="type-chip" style="background:var(--indigo-dim);color:var(--indigo);border-color:var(--indigo-border);">
+                    <i data-lucide="link-2"></i> Prof. Dev.
+                  </span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);" onclick="event.stopPropagation()">
+                  <div class="row-actions">
+                    <button class="row-action-btn"><i data-lucide="more-horizontal"></i></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 6 – DONE -->
+              <tr style="cursor:pointer;opacity:0.72;" onclick="openDrawerView('T-006')">
+                <td style="padding:12px 14px;border-bottom:1px solid var(--border);">
+                  <div style="font-size:13px;font-weight:700;color:var(--text-primary);text-decoration:line-through;">SLA Policy Document v2 — Review</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Review and sign off updated SLA policy before distribution to team</div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="type-chip"><i data-lucide="file-text"></i> Documentation</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#6b7280;">
+                    <span class="priority-dot low"></span>Low
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;align-items:center;gap:7px;">
+                    <div class="avatar-sm" style="background:#dbeafe;color:#2563eb;">FM</div>
+                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);">F. Mohammed</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="badge badge-done">Done</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <div class="progress-cell">
+                    <div class="progress-track"><div class="progress-fill" style="width:100%;background:var(--green);"></div></div>
+                    <span class="progress-pct">100%</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span class="due-ok">28 Apr</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);">
+                  <span style="font-size:11.5px;color:var(--text-light);">—</span>
+                </td>
+                <td style="padding:12px 10px;border-bottom:1px solid var(--border);" onclick="event.stopPropagation()">
+                  <div class="row-actions">
+                    <button class="row-action-btn"><i data-lucide="more-horizontal"></i></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 7 – OVERDUE -->
+              <tr style="cursor:pointer;" onclick="openDrawerView('T-007')">
+                <td style="padding:12px 14px;">
+                  <div style="font-size:13px;font-weight:700;color:var(--text-primary);">SSL Certificate Renewal — Web Proxy</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Renew and deploy SSL cert for proxy.lotris.internal before expiry</div>
+                </td>
+                <td style="padding:12px 10px;">
+                  <span class="type-chip" style="background:var(--orange-bg);color:var(--orange);border-color:#fed7aa;"><i data-lucide="git-merge"></i> Change Req.</span>
+                </td>
+                <td style="padding:12px 10px;">
+                  <div style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#dc2626;">
+                    <span class="priority-dot critical"></span>Critical
+                  </div>
+                </td>
+                <td style="padding:12px 10px;">
+                  <div style="display:flex;align-items:center;gap:7px;">
+                    <div class="avatar-sm" style="background:#f3e8ff;color:#7c3aed;">BI</div>
+                    <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);">B. Ibrahim</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;">
+                  <span class="badge badge-overdue">Overdue</span>
+                </td>
+                <td style="padding:12px 10px;">
+                  <div class="progress-cell">
+                    <div class="progress-track"><div class="progress-fill" style="width:20%;background:#f97316;"></div></div>
+                    <span class="progress-pct">20%</span>
+                  </div>
+                </td>
+                <td style="padding:12px 10px;">
+                  <span class="due-overdue">2 May</span>
+                </td>
+                <td style="padding:12px 10px;">
+                  <span class="type-chip" style="background:var(--indigo-dim);color:var(--indigo);border-color:var(--indigo-border);">
+                    <i data-lucide="link-2"></i> SLA Cmpl.
+                  </span>
+                </td>
+                <td style="padding:12px 10px;" onclick="event.stopPropagation()">
+                  <div class="row-actions">
+                    <button class="row-action-btn"><i data-lucide="more-horizontal"></i></button>
+                  </div>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table footer -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--border);">
+          <span style="font-size:12.5px;color:var(--text-muted);">Showing 7 of 11 tasks</span>
+          <div class="pagination">
+            <button class="pg-btn" disabled><i data-lucide="chevron-left"></i></button>
+            <button class="pg-btn" style="background:var(--indigo);color:white;border-color:var(--indigo);">1</button>
+            <button class="pg-btn">2</button>
+            <button class="pg-btn"><i data-lucide="chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+
+  <!-- ════════════════ ASSIGN / EDIT TASK DRAWER ════════════════ -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="taskDrawer">
+    <div class="drawer-header">
+      <div>
+        <div style="font-size:14px;font-weight:800;color:var(--text-primary);" id="drawerTitle">Assign New Task</div>
+        <div style="font-size:11.5px;color:var(--text-muted);margin-top:1px;" id="drawerSubtitle">IT Support · May 2026</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeDrawer()"><i data-lucide="x"></i></button>
+    </div>
+
+    <div class="drawer-body">
+
+      <!-- ── Source mode toggle (new task only) ── -->
+      <div id="sourceModeSection">
+        <div class="drawer-section-title" style="margin-top:4px;">Task Source</div>
+        <div class="source-toggle">
+          <button class="source-toggle-btn active" id="btnLeadAssign" onclick="setSourceMode('lead')">
+            <i data-lucide="user-check"></i> Lead assigns to engineer
+          </button>
+          <button class="source-toggle-btn" id="btnSelfLog" onclick="setSourceMode('self')">
+            <i data-lucide="user"></i> Engineer logs own task
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Self-assign locked notice ── -->
+      <div id="selfAssignNotice" style="display:none; margin-bottom:14px;">
+        <div class="self-assignee-box">
+          <i data-lucide="user"></i>
+          <div>
+            <div style="font-size:12px;font-weight:800;">Assigned to: You (A. Okonkwo)</div>
+            <div style="font-size:11px;font-weight:400;color:#166534;margin-top:1px;">Self-logged tasks are visible to your team lead and count towards your KPI metrics.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Link banner (shown in view mode) -->
+      <div class="kpi-link-banner" id="kpiLinkBanner" style="display:none;">
+        <i data-lucide="link-2"></i>
+        This task is linked to the <strong>Engineer Productivity</strong> KPI — completion will count towards the monthly metric.
+      </div>
+
+      <!-- ── Basic Info ── -->
+      <div class="drawer-section-title">Task Details</div>
+
+      <div class="drawer-field">
+        <label class="drawer-label">Task Title</label>
+        <input class="drawer-input" type="text" placeholder="e.g. Monthly DB Backup Verification" id="taskTitle">
+      </div>
+
+      <div class="drawer-field">
+        <label class="drawer-label">Description</label>
+        <textarea class="drawer-textarea" placeholder="What needs to be done? Include scope, expected output, and any dependencies." id="taskDesc"></textarea>
+      </div>
+
+      <div class="drawer-row">
+        <div class="drawer-field">
+          <label class="drawer-label">Task Type</label>
+          <select class="drawer-select">
+            <option value="">— Select —</option>
+            <option>Maintenance</option>
+            <option>DR / BCP</option>
+            <option>Change Request</option>
+            <option>Documentation</option>
+            <option>Training</option>
+            <option>Ad Hoc</option>
+          </select>
+        </div>
+        <div class="drawer-field">
+          <label class="drawer-label">Priority</label>
+          <select class="drawer-select">
+            <option value="">— Select —</option>
+            <option>Critical</option>
+            <option>High</option>
+            <option selected>Medium</option>
+            <option>Low</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="drawer-row">
+        <div class="drawer-field">
+          <label class="drawer-label">Due Date</label>
+          <input class="drawer-input" type="date" value="2026-05-15">
+        </div>
+        <div class="drawer-field">
+          <label class="drawer-label">Estimated Hours</label>
+          <input class="drawer-input" type="number" placeholder="e.g. 4" min="0.5" step="0.5">
+        </div>
+      </div>
+
+      <!-- ── Assignee ── -->
+      <div class="drawer-section-title" id="assigneeLabel">Assignee</div>
+      <div id="assigneePickSection">
+        <div class="assignee-pick" id="assigneePick">
+          <div class="assignee-chip selected" onclick="toggleAssignee(this)">
+            <div class="avatar-sm" style="background:#fef3c7;color:#92400e;">AO</div>
+            A. Okonkwo
+          </div>
+          <div class="assignee-chip" onclick="toggleAssignee(this)">
+            <div class="avatar-sm" style="background:#dbeafe;color:#2563eb;">FM</div>
+            F. Mohammed
+          </div>
+          <div class="assignee-chip" onclick="toggleAssignee(this)">
+            <div class="avatar-sm" style="background:#dcfce7;color:#16a34a;">NK</div>
+            N. Kamara
+          </div>
+          <div class="assignee-chip" onclick="toggleAssignee(this)">
+            <div class="avatar-sm" style="background:#f3e8ff;color:#7c3aed;">DM</div>
+            D. Mensah
+          </div>
+          <div class="assignee-chip" onclick="toggleAssignee(this)">
+            <div class="avatar-sm" style="background:#f3e8ff;color:#7c3aed;">BI</div>
+            B. Ibrahim
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:6px;">Select one or more engineers. Tasks with multiple assignees track completion per person.</div>
+      </div>
+
+      <!-- ── KPI Link ── -->
+      <div class="drawer-section-title">KPI Link <span style="font-weight:400;text-transform:none;font-size:10px;color:var(--text-light);">(optional)</span></div>
+      <div class="drawer-field">
+        <label class="drawer-label">Link to KPI Metric</label>
+        <select class="drawer-select">
+          <option value="">— None —</option>
+          <option selected>Engineer Productivity</option>
+          <option>SLA Compliance Rate</option>
+          <option>Pickup SLA Adherence</option>
+          <option>First Response Time</option>
+          <option>CSAT Score</option>
+        </select>
+      </div>
+      <div style="font-size:11.5px;color:var(--text-muted);background:var(--indigo-dim);border:1px solid var(--indigo-border);padding:8px 11px;border-radius:var(--radius-sm);line-height:1.55;">
+        <strong style="color:var(--indigo);">Engineer Productivity KPI</strong> — Completion of this task will be counted in the engineer's monthly productivity metric alongside resolved tickets.
+      </div>
+
+      <!-- ── Checklist ── -->
+      <div class="drawer-section-title">Checklist <span style="font-weight:400;text-transform:none;font-size:10px;color:var(--text-light);">(optional sub-steps)</span></div>
+      <div class="checklist">
+        <div class="checklist-item done">
+          <input type="checkbox" checked> <span>Identify all production DBs in scope</span>
+        </div>
+        <div class="checklist-item done">
+          <input type="checkbox" checked> <span>Verify backup jobs completed in backup tool</span>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox"> <span>Run restore test on staging environment</span>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox"> <span>Document results and any failures</span>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox"> <span>Submit report to team lead</span>
+        </div>
+      </div>
+      <button class="add-checklist-item"><i data-lucide="plus"></i> Add step</button>
+
+      <!-- ── Activity / Comments ── -->
+      <div class="drawer-section-title">Activity</div>
+      <div>
+        <div class="comment-item">
+          <div class="avatar-sm" style="background:#e0e7ff;color:#4f46e5;flex-shrink:0;">KA</div>
+          <div class="comment-body">
+            <div class="comment-meta"><strong>K. Adesanya</strong> · 29 Apr · Team Lead</div>
+            <div class="comment-text">A. please complete the restore test by EOD 30 Apr — critical for audit next week.</div>
+          </div>
+        </div>
+        <div class="comment-item">
+          <div class="avatar-sm" style="background:#fef3c7;color:#92400e;flex-shrink:0;">AO</div>
+          <div class="comment-body">
+            <div class="comment-meta"><strong>A. Okonkwo</strong> · 30 Apr</div>
+            <div class="comment-text">Backup verification done, 14 of 14 jobs passed. Staging restore failed on ERP-DB-02 — investigating disk space issue. Will update by tomorrow.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comment input -->
+      <div style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;">
+        <div class="avatar-sm" style="background:#e0e7ff;color:#4f46e5;flex-shrink:0;margin-top:2px;">KA</div>
+        <div style="flex:1;">
+          <textarea class="drawer-textarea" placeholder="Add a comment or update…" style="min-height:54px;"></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+            <button class="btn btn-secondary btn-sm"><i data-lucide="send"></i> Post</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /drawer-body -->
+
+    <div class="drawer-footer">
+      <button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
+      <div style="display:flex;gap:8px;">
+        <select class="select-filter" style="font-size:12px;">
+          <option>Open</option>
+          <option selected>In Progress</option>
+          <option>Review</option>
+          <option>Done</option>
+          <option>Blocked</option>
+        </select>
+        <button class="btn btn-primary"><i data-lucide="check"></i> Save</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+lucide.createIcons();
+
+function openDrawer() {
+  document.getElementById('drawerTitle').textContent = 'Assign New Task';
+  document.getElementById('drawerSubtitle').textContent = 'IT Support · May 2026';
+  document.getElementById('kpiLinkBanner').style.display = 'none';
+  document.getElementById('sourceModeSection').style.display = 'block';
+  document.getElementById('selfAssignNotice').style.display = 'none';
+  document.getElementById('assigneePickSection').style.display = 'block';
+  document.getElementById('assigneeLabel').textContent = 'Assignee';
+  setSourceMode('lead');
+  document.getElementById('taskDrawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+
+function openSelfDrawer() {
+  document.getElementById('drawerTitle').textContent = 'Log My Own Task';
+  document.getElementById('drawerSubtitle').textContent = 'A. Okonkwo · IT Support · May 2026';
+  document.getElementById('kpiLinkBanner').style.display = 'none';
+  document.getElementById('sourceModeSection').style.display = 'none';
+  document.getElementById('selfAssignNotice').style.display = 'flex';
+  document.getElementById('assigneePickSection').style.display = 'none';
+  document.getElementById('assigneeLabel').style.display = 'none';
+  document.getElementById('taskDrawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+
+function openSelfDrawerView(id) {
+  document.getElementById('drawerTitle').textContent = 'Task · ' + id + ' (Self-logged)';
+  document.getElementById('drawerSubtitle').textContent = 'A. Okonkwo · IT Support';
+  document.getElementById('kpiLinkBanner').style.display = 'flex';
+  document.getElementById('sourceModeSection').style.display = 'none';
+  document.getElementById('selfAssignNotice').style.display = 'flex';
+  document.getElementById('assigneePickSection').style.display = 'none';
+  document.getElementById('assigneeLabel').style.display = 'none';
+  document.getElementById('taskDrawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+
+function openDrawerView(id) {
+  document.getElementById('drawerTitle').textContent = 'Task · ' + id;
+  document.getElementById('drawerSubtitle').textContent = 'IT Support · May 2026';
+  document.getElementById('kpiLinkBanner').style.display = 'flex';
+  document.getElementById('sourceModeSection').style.display = 'none';
+  document.getElementById('selfAssignNotice').style.display = 'none';
+  document.getElementById('assigneePickSection').style.display = 'block';
+  document.getElementById('assigneeLabel').style.display = 'block';
+  document.getElementById('assigneeLabel').textContent = 'Assignee';
+  document.getElementById('taskDrawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+
+function setSourceMode(mode) {
+  document.getElementById('btnLeadAssign').classList.toggle('active', mode === 'lead');
+  document.getElementById('btnSelfLog').classList.toggle('active', mode === 'self');
+  if (mode === 'self') {
+    document.getElementById('selfAssignNotice').style.display = 'flex';
+    document.getElementById('assigneePickSection').style.display = 'none';
+    document.getElementById('assigneeLabel').style.display = 'none';
+  } else {
+    document.getElementById('selfAssignNotice').style.display = 'none';
+    document.getElementById('assigneePickSection').style.display = 'block';
+    document.getElementById('assigneeLabel').style.display = 'block';
+    document.getElementById('assigneeLabel').textContent = 'Assignee';
+  }
+}
+
+function closeDrawer() {
+  document.getElementById('taskDrawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+
+function setTab(el) {
+  document.querySelectorAll('#statusTabs .filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function toggleAssignee(el) {
+  el.classList.toggle('selected');
+}
+</script>
+</body>
+</html>

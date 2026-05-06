@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotris v2 — Reports</title>
+  <link rel="stylesheet" href="style-v2.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Report type tabs (vertical list) */
+    .report-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .report-sidebar {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-xs);
+      overflow: hidden;
+    }
+
+    .report-sidebar-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .report-type-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: all 0.13s;
+      text-decoration: none;
+    }
+
+    .report-type-item svg { width: 14px; height: 14px; stroke-width: 1.8; flex-shrink: 0; }
+
+    .report-type-item:hover {
+      background: var(--bg-subtle);
+      color: var(--text-primary);
+    }
+
+    .report-type-item.active {
+      background: var(--indigo-dim);
+      color: var(--indigo);
+      border-left-color: var(--indigo);
+      font-weight: 600;
+    }
+
+    .report-type-item .rt-count {
+      margin-left: auto;
+      font-size: 10.5px;
+      color: var(--text-light);
+      font-weight: 400;
+    }
+
+    .report-type-item.active .rt-count { color: var(--indigo); opacity: 0.7; }
+
+    /* Report list item */
+    .report-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.12s;
+      cursor: pointer;
+    }
+
+    .report-item:last-child { border-bottom: none; }
+    .report-item:hover { background: #FAFBFD; }
+
+    .report-icon-box {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .report-icon-box svg { width: 16px; height: 16px; stroke-width: 1.8; }
+
+    .report-item-body { flex: 1; min-width: 0; }
+    .report-item-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .report-item-meta {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .report-item-meta svg { width: 10px; height: 10px; stroke-width: 2; }
+
+    .report-item-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.13s;
+    }
+    .report-item:hover .report-item-actions { opacity: 1; }
+
+    /* Generate report panel */
+    .generate-panel {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-xs);
+      margin-bottom: 16px;
+    }
+
+    .gen-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+    }
+
+    /* Schedule badge */
+    .sched-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .sched-badge svg { width: 9px; height: 9px; stroke-width: 2.5; }
+    .sched-weekly  { background: var(--blue-bg);   color: var(--blue);   }
+    .sched-monthly { background: var(--indigo-dim); color: var(--indigo); }
+    .sched-daily   { background: var(--green-bg);  color: var(--green);  }
+    .sched-adhoc   { background: var(--bg-subtle); color: var(--text-muted); }
+
+    /* Format icon chips */
+    .format-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 3px;
+      letter-spacing: 0.3px;
+    }
+    .fmt-pdf  { background: #FEF2F2; color: #DC2626; }
+    .fmt-xlsx { background: #F0FDF4; color: #16A34A; }
+    .fmt-csv  { background: #EFF6FF; color: #2563EB; }
+    .fmt-pptx { background: #FFF7ED; color: #EA580C; }
+
+    /* Stats in header */
+    .report-header-stats {
+      display: flex;
+      gap: 20px;
+    }
+
+    .rhs-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .rhs-val {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+
+    .rhs-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .rhs-divider {
+      width: 1px;
+      background: var(--border);
+      align-self: stretch;
+      margin: 2px 0;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Lotris</div>
+          <div class="logo-sub">Performance Platform</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="02-dashboard-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> Dashboard
+      </a>
+      <a href="03-tickets-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="ticket"></i></span> Tickets
+        <span class="nav-badge">12</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="layers"></i></span> Queue
+        <span class="nav-badge">9</span>
+      </a>
+      <a href="09-tasks-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="clipboard-list"></i></span> Tasks
+      </a>
+      <a href="04-kpis-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="bar-chart-2"></i></span> KPIs
+      </a>
+      <a href="05-reports-v2.html" class="nav-item active">
+        <span class="nav-icon"><i data-lucide="file-bar-chart"></i></span> Reports
+      </a>
+      <div class="nav-section-label">Admin</div>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="users"></i></span> Teams
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="shield"></i></span> Audit Log
+      </a>
+      <a href="06-kpi-setup-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="settings-2"></i></span> KPI Setup
+      </a>
+      <a href="10-sysadmin-ops-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="activity"></i></span> System Health
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar">RK</div>
+        <div class="user-info">
+          <div class="user-name">Rowland K.</div>
+          <div class="user-role">IT Manager</div>
+        </div>
+        <div class="sidebar-logout"><i data-lucide="log-out"></i></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="page-title">Reports</span>
+        <span class="breadcrumb">
+          <span>Home</span><span class="breadcrumb-sep">/</span><span>Reports</span>
+        </span>
+      </div>
+      <div class="topbar-right">
+        <div class="search-bar">
+          <i data-lucide="search"></i>
+          <input type="text" placeholder="Search reports...">
+        </div>
+        <div class="icon-btn"><i data-lucide="bell"></i><span class="notif-dot"></span></div>
+        <div class="avatar" style="cursor:pointer;">RK</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>Reports</h1>
+          <p>24 saved reports · 6 scheduled · Last generated 2 hours ago</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-secondary"><i data-lucide="calendar"></i> Schedules</button>
+          <button class="btn btn-primary" onclick="document.getElementById('genPanel').scrollIntoView({behavior:'smooth'})">
+            <i data-lucide="plus"></i> Generate Report
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary stats -->
+      <div style="display:flex; gap:14px; margin-bottom:18px;">
+        <div class="card" style="flex:1; padding: 14px 18px; display:flex; align-items:center; gap:12px; border-left: 3px solid var(--indigo);">
+          <div class="stat-icon-box indigo"><i data-lucide="file-text"></i></div>
+          <div>
+            <div style="font-size:20px; font-weight:800; color:var(--text-primary); letter-spacing:-0.5px; line-height:1;">24</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Saved Reports</div>
+          </div>
+        </div>
+        <div class="card" style="flex:1; padding: 14px 18px; display:flex; align-items:center; gap:12px; border-left: 3px solid var(--blue);">
+          <div class="stat-icon-box blue"><i data-lucide="calendar-clock"></i></div>
+          <div>
+            <div style="font-size:20px; font-weight:800; color:var(--text-primary); letter-spacing:-0.5px; line-height:1;">6</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Scheduled</div>
+          </div>
+        </div>
+        <div class="card" style="flex:1; padding: 14px 18px; display:flex; align-items:center; gap:12px; border-left: 3px solid var(--green);">
+          <div class="stat-icon-box green"><i data-lucide="download"></i></div>
+          <div>
+            <div style="font-size:20px; font-weight:800; color:var(--text-primary); letter-spacing:-0.5px; line-height:1;">148</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Downloads MTD</div>
+          </div>
+        </div>
+        <div class="card" style="flex:1; padding: 14px 18px; display:flex; align-items:center; gap:12px; border-left: 3px solid var(--yellow);">
+          <div class="stat-icon-box yellow"><i data-lucide="clock"></i></div>
+          <div>
+            <div style="font-size:20px; font-weight:800; color:var(--text-primary); letter-spacing:-0.5px; line-height:1;">2h</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Last Generated</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generate Report Panel -->
+      <div class="generate-panel" id="genPanel">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Generate Report</div>
+            <div class="card-subtitle">Configure and export a new report</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="gen-form-grid">
+            <div>
+              <label>Report Type</label>
+              <select>
+                <option>Ticket Summary</option>
+                <option>SLA Compliance</option>
+                <option>KPI Performance</option>
+                <option>Agent Performance</option>
+                <option>Queue Backlog</option>
+                <option>Queue Pickup Time</option>
+                <option>CSAT Analysis</option>
+              </select>
+            </div>
+            <div>
+              <label>Date Range</label>
+              <select>
+                <option>May 2026 (MTD)</option>
+                <option>April 2026</option>
+                <option>Q1 2026 (Jan–Mar)</option>
+                <option>Last 30 days</option>
+                <option>Custom range</option>
+              </select>
+            </div>
+            <div>
+              <label>Department / Team</label>
+              <select>
+                <option>All Departments</option>
+                <option>IT Support</option>
+                <option>Network Ops</option>
+                <option>DB Team</option>
+                <option>Security</option>
+              </select>
+            </div>
+            <div>
+              <label>Format</label>
+              <select>
+                <option>PDF Document</option>
+                <option>Excel (.xlsx)</option>
+                <option>CSV</option>
+                <option>PowerPoint (.pptx)</option>
+              </select>
+            </div>
+            <div>
+              <label>Group By</label>
+              <select>
+                <option>Category</option>
+                <option>Priority</option>
+                <option>Agent</option>
+                <option>Department</option>
+                <option>Week</option>
+              </select>
+            </div>
+            <div style="display:flex; align-items:flex-end;">
+              <button class="btn btn-primary" style="width:100%; justify-content:center;">
+                <i data-lucide="file-plus"></i> Generate &amp; Download
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports layout -->
+      <div class="report-layout">
+
+        <!-- Report type sidebar -->
+        <div class="report-sidebar">
+          <div class="report-sidebar-header">Report Types</div>
+          <a class="report-type-item active">
+            <i data-lucide="layout-list"></i> All Reports <span class="rt-count">24</span>
+          </a>
+          <a class="report-type-item">
+            <i data-lucide="ticket"></i> Ticket Summary <span class="rt-count">8</span>
+          </a>
+          <a class="report-type-item">
+            <i data-lucide="shield-check"></i> SLA Compliance <span class="rt-count">5</span>
+          </a>
+          <a class="report-type-item">
+            <i data-lucide="bar-chart-2"></i> KPI Performance <span class="rt-count">4</span>
+          </a>
+          <a class="report-type-item">
+            <i data-lucide="users"></i> Agent Performance <span class="rt-count">4</span>
+          </a>
+          <a class="report-type-item">
+            <i data-lucide="star"></i> CSAT Analysis <span class="rt-count">3</span>
+          </a>
+          <a class="report-type-item">
+            <i data-lucide="layers"></i> Queue Reports <span class="rt-count">4</span>
+          </a>
+          <div style="height:1px; background:var(--border); margin: 6px 0;"></div>
+          <div class="report-sidebar-header" style="padding-top:8px;">Quick Actions</div>
+          <a class="report-type-item">
+            <i data-lucide="calendar-clock"></i> Scheduled Reports
+          </a>
+          <a class="report-type-item">
+            <i data-lucide="archive"></i> Archive
+          </a>
+        </div>
+
+        <!-- Reports list -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-title">All Reports</div>
+              <div class="card-subtitle">24 reports · sorted by last generated</div>
+            </div>
+            <div class="card-header-right">
+              <select class="select-filter" style="font-size:11px; height:28px; padding:4px 8px;">
+                <option>All formats</option>
+                <option>PDF</option>
+                <option>Excel</option>
+                <option>CSV</option>
+              </select>
+              <button class="btn btn-ghost btn-sm"><i data-lucide="arrow-up-down"></i> Sort</button>
+            </div>
+          </div>
+
+          <!-- Report list items -->
+          <div class="report-item">
+            <div class="report-icon-box" style="background:var(--red-bg); color:var(--red);">
+              <i data-lucide="file-text"></i>
+            </div>
+            <div class="report-item-body">
+              <div class="report-item-name">SLA Compliance — April 2026</div>
+              <div class="report-item-meta">
+                <i data-lucide="calendar"></i> Generated: 1 May 2026
+                <span style="color:var(--border-strong);">·</span>
+                <i data-lucide="building-2"></i> All Departments
+                <span style="color:var(--border-strong);">·</span>
+                <span class="format-chip fmt-pdf">PDF</span>
+              </div>
+            </div>
+            <span class="sched-badge sched-monthly"><i data-lucide="calendar"></i> Monthly</span>
+            <div class="report-item-actions">
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="download" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="eye" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="more-horizontal" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="report-item">
+            <div class="report-icon-box" style="background:var(--green-bg); color:var(--green);">
+              <i data-lucide="bar-chart-2"></i>
+            </div>
+            <div class="report-item-body">
+              <div class="report-item-name">KPI Performance Report — Q1 2026</div>
+              <div class="report-item-meta">
+                <i data-lucide="calendar"></i> Generated: 2 Apr 2026
+                <span style="color:var(--border-strong);">·</span>
+                <i data-lucide="building-2"></i> All Departments
+                <span style="color:var(--border-strong);">·</span>
+                <span class="format-chip fmt-xlsx">XLSX</span>
+                <span class="format-chip fmt-pdf" style="margin-left:2px;">PDF</span>
+              </div>
+            </div>
+            <span class="sched-badge sched-monthly"><i data-lucide="calendar"></i> Quarterly</span>
+            <div class="report-item-actions">
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="download" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="eye" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="more-horizontal" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="report-item">
+            <div class="report-icon-box" style="background:var(--indigo-dim); color:var(--indigo);">
+              <i data-lucide="users"></i>
+            </div>
+            <div class="report-item-body">
+              <div class="report-item-name">Agent Performance — Week 17</div>
+              <div class="report-item-meta">
+                <i data-lucide="calendar"></i> Generated: 30 Apr 2026
+                <span style="color:var(--border-strong);">·</span>
+                <i data-lucide="building-2"></i> IT Support + DB Team
+                <span style="color:var(--border-strong);">·</span>
+                <span class="format-chip fmt-pdf">PDF</span>
+              </div>
+            </div>
+            <span class="sched-badge sched-weekly"><i data-lucide="calendar"></i> Weekly</span>
+            <div class="report-item-actions">
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="download" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="eye" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="more-horizontal" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="report-item">
+            <div class="report-icon-box" style="background:var(--yellow-bg); color:var(--yellow);">
+              <i data-lucide="star"></i>
+            </div>
+            <div class="report-item-body">
+              <div class="report-item-name">CSAT Monthly Analysis — April 2026</div>
+              <div class="report-item-meta">
+                <i data-lucide="calendar"></i> Generated: 1 May 2026
+                <span style="color:var(--border-strong);">·</span>
+                <i data-lucide="building-2"></i> All Departments
+                <span style="color:var(--border-strong);">·</span>
+                <span class="format-chip fmt-xlsx">XLSX</span>
+              </div>
+            </div>
+            <span class="sched-badge sched-monthly"><i data-lucide="calendar"></i> Monthly</span>
+            <div class="report-item-actions">
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="download" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="eye" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="more-horizontal" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="report-item">
+            <div class="report-icon-box" style="background:var(--blue-bg); color:var(--blue);">
+              <i data-lucide="ticket"></i>
+            </div>
+            <div class="report-item-body">
+              <div class="report-item-name">Ticket Volume by Category — May 2026</div>
+              <div class="report-item-meta">
+                <i data-lucide="calendar"></i> Generated: Today, 08:00
+                <span style="color:var(--border-strong);">·</span>
+                <i data-lucide="building-2"></i> All Departments
+                <span style="color:var(--border-strong);">·</span>
+                <span class="format-chip fmt-csv">CSV</span>
+              </div>
+            </div>
+            <span class="sched-badge sched-daily"><i data-lucide="calendar"></i> Daily</span>
+            <div class="report-item-actions">
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="download" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="eye" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="more-horizontal" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="report-item">
+            <div class="report-icon-box" style="background:var(--purple-bg); color:var(--purple);">
+              <i data-lucide="shield-check"></i>
+            </div>
+            <div class="report-item-body">
+              <div class="report-item-name">SLA Compliance Detail — Network Ops</div>
+              <div class="report-item-meta">
+                <i data-lucide="calendar"></i> Generated: 28 Apr 2026
+                <span style="color:var(--border-strong);">·</span>
+                <i data-lucide="building-2"></i> Network Ops
+                <span style="color:var(--border-strong);">·</span>
+                <span class="format-chip fmt-pdf">PDF</span>
+                <span class="format-chip fmt-xlsx" style="margin-left:2px;">XLSX</span>
+              </div>
+            </div>
+            <span class="sched-badge sched-adhoc"><i data-lucide="file-plus"></i> Ad-hoc</span>
+            <div class="report-item-actions">
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="download" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="eye" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+              <div class="row-action-btn" style="width:26px;height:26px;border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);">
+                <i data-lucide="more-horizontal" style="width:12px;height:12px;stroke-width:1.8;"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-top:1px solid var(--border);">
+            <span style="font-size:12px; color:var(--text-muted);">Showing 6 of 24 reports</span>
+            <div style="display:flex; gap:3px;">
+              <button class="pg-btn"><i data-lucide="chevron-left"></i></button>
+              <button class="pg-btn active">1</button>
+              <button class="pg-btn">2</button>
+              <button class="pg-btn">3</button>
+              <button class="pg-btn">4</button>
+              <button class="pg-btn"><i data-lucide="chevron-right"></i></button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /report-layout -->
+
+    </div>
+  </div>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

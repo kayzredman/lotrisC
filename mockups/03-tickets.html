@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotris — Tickets</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .toolbar-left { display: flex; align-items: center; gap: 10px; }
+    .toolbar-right { display: flex; align-items: center; gap: 10px; }
+
+    .select-filter {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: white;
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px;
+      color: var(--text-primary);
+      cursor: pointer;
+      outline: none;
+    }
+
+    .ticket-row-meta {
+      display: flex;
+      flex-direction: column;
+    }
+    .ticket-subject {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .ticket-cat {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .assignee-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .assignee-chip .av {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--navy-mid);
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    /* Slide-in drawer */
+    .drawer-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+    }
+    .drawer-overlay.open { display: block; }
+    .drawer {
+      position: fixed;
+      top: 0; right: -520px;
+      width: 500px;
+      height: 100vh;
+      background: white;
+      z-index: 300;
+      box-shadow: var(--shadow-lg);
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .drawer.open { right: 0; }
+    .drawer-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+    .drawer-body { padding: 24px; flex: 1; overflow-y: auto; }
+    .drawer-close {
+      width: 30px; height: 30px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .detail-row {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 16px;
+    }
+    .detail-item {
+      flex: 1;
+    }
+    .detail-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .detail-val {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+    .timeline {
+      list-style: none;
+      position: relative;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px; top: 8px; bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    .timeline-item {
+      display: flex;
+      gap: 14px;
+      padding-bottom: 20px;
+      position: relative;
+    }
+    .timeline-dot {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid white;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .timeline-content { flex: 1; padding-top: 1px; }
+    .timeline-title { font-size: 12.5px; font-weight: 600; color: var(--navy); }
+    .timeline-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .timeline-time { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+    .comment-box {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+    }
+    .comment-box textarea {
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      min-height: 60px;
+      padding: 0;
+    }
+    .comment-box textarea:focus { box-shadow: none; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Lotris</div>
+          <div class="logo-sub">Performance Platform</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="02-dashboard.html" class="nav-item"><span class="nav-icon">⊞</span> Dashboard</a>
+      <a href="03-tickets.html" class="nav-item active"><span class="nav-icon">🎫</span> Tickets <span class="nav-badge">12</span></a>
+      <a href="04-kpis.html" class="nav-item"><span class="nav-icon">📊</span> KPIs</a>
+      <a href="05-reports.html" class="nav-item"><span class="nav-icon">📋</span> Reports</a>
+      <div class="nav-section-label">Management</div>
+      <a href="#" class="nav-item"><span class="nav-icon">👥</span> Teams</a>
+      <a href="#" class="nav-item"><span class="nav-icon">🔍</span> Audit Log</a>
+      <a href="#" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar">RK</div>
+        <div class="user-info">
+          <div class="user-name">Rowland K.</div>
+          <div class="user-role">IT Manager</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="page-title">Tickets</div>
+        <div class="breadcrumb"><span>Home</span> / <span>Tickets</span></div>
+      </div>
+      <div class="topbar-right">
+        <div class="icon-btn">🔔 <span class="notif-dot"></span></div>
+        <div class="avatar" style="width:36px;height:36px;cursor:pointer;">RK</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>Ticket Management</h1>
+          <p>247 open tickets · 12 overdue · Last updated 5 min ago</p>
+        </div>
+        <button class="btn btn-primary" onclick="openDrawer()">+ New Ticket</button>
+      </div>
+
+      <!-- Stats row -->
+      <div class="stats-grid" style="grid-template-columns: repeat(5,1fr); margin-bottom:20px;">
+        <div class="stat-card teal" style="padding:16px;">
+          <div class="stat-value" style="font-size:22px;">247</div>
+          <div class="stat-label">Open</div>
+        </div>
+        <div class="stat-card blue" style="padding:16px;">
+          <div class="stat-value" style="font-size:22px;">84</div>
+          <div class="stat-label">In Progress</div>
+        </div>
+        <div class="stat-card yellow" style="padding:16px;">
+          <div class="stat-value" style="font-size:22px;">31</div>
+          <div class="stat-label">Pending Review</div>
+        </div>
+        <div class="stat-card green" style="padding:16px;">
+          <div class="stat-value" style="font-size:22px;">184</div>
+          <div class="stat-label">Resolved (MTD)</div>
+        </div>
+        <div class="stat-card red" style="padding:16px;">
+          <div class="stat-value" style="font-size:22px;">12</div>
+          <div class="stat-label">SLA Breach</div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="filter-tabs">
+            <button class="filter-tab active">All Tickets</button>
+            <button class="filter-tab">Open</button>
+            <button class="filter-tab">In Progress</button>
+            <button class="filter-tab">Overdue</button>
+            <button class="filter-tab">Resolved</button>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Search by ID, subject, assignee...">
+          </div>
+          <select class="select-filter">
+            <option>All Priorities</option>
+            <option>Critical</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
+          <select class="select-filter">
+            <option>All Teams</option>
+            <option>DB Team</option>
+            <option>IT Support</option>
+            <option>Network</option>
+          </select>
+          <button class="btn btn-secondary" style="font-size:12px; padding:8px 12px;">⬇ Export</button>
+        </div>
+      </div>
+
+      <!-- Tickets Table -->
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" style="width:auto; accent-color:var(--teal);"></th>
+                <th>Ticket ID</th>
+                <th>Subject / Category</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Assigned To</th>
+                <th>SLA Status</th>
+                <th>Opened</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox" style="width:auto; accent-color:var(--teal);"></td>
+                <td><span class="ticket-id">TKT-0931</span></td>
+                <td>
+                  <div class="ticket-row-meta">
+                    <div class="ticket-subject">Oracle DB slow query — prod schema</div>
+                    <div class="ticket-cat">Database · Production</div>
+                  </div>
+                </td>
+                <td><div class="priority critical"><div class="priority-dot"></div>Critical</div></td>
+                <td><span class="badge badge-green">Resolved</span></td>
+                <td>
+                  <div class="assignee-chip">
+                    <div class="av">JM</div> J. Mensah
+                  </div>
+                </td>
+                <td><span class="sla-pill sla-ok">✓ Met (2h 14m)</span></td>
+                <td style="color:var(--text-muted);font-size:12px;">05 May, 08:42</td>
+                <td>
+                  <div style="display:flex;gap:6px;">
+                    <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;" onclick="openDrawer()">View</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" style="width:auto; accent-color:var(--teal);"></td>
+                <td><span class="ticket-id">TKT-0930</span></td>
+                <td>
+                  <div class="ticket-row-meta">
+                    <div class="ticket-subject">Backup verification failed — DW server</div>
+                    <div class="ticket-cat">Backup & Recovery · Non-prod</div>
+                  </div>
+                </td>
+                <td><div class="priority high"><div class="priority-dot"></div>High</div></td>
+                <td><span class="badge badge-blue">In Progress</span></td>
+                <td>
+                  <div class="assignee-chip">
+                    <div class="av">AB</div> A. Boateng
+                  </div>
+                </td>
+                <td><span class="sla-pill sla-warning">⏰ 1h 45m left</span></td>
+                <td style="color:var(--text-muted);font-size:12px;">05 May, 07:18</td>
+                <td><button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;" onclick="openDrawer()">View</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" style="width:auto; accent-color:var(--teal);"></td>
+                <td><span class="ticket-id">TKT-0929</span></td>
+                <td>
+                  <div class="ticket-row-meta">
+                    <div class="ticket-subject">User access request — Finance ERP module</div>
+                    <div class="ticket-cat">Access Management · Finance</div>
+                  </div>
+                </td>
+                <td><div class="priority medium"><div class="priority-dot"></div>Medium</div></td>
+                <td><span class="badge badge-blue">In Progress</span></td>
+                <td>
+                  <div class="assignee-chip">
+                    <div class="av">AB</div> A. Boateng
+                  </div>
+                </td>
+                <td><span class="sla-pill sla-ok">✓ On track</span></td>
+                <td style="color:var(--text-muted);font-size:12px;">05 May, 06:55</td>
+                <td><button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;" onclick="openDrawer()">View</button></td>
+              </tr>
+              <tr style="background:#FFF5F5;">
+                <td><input type="checkbox" style="width:auto; accent-color:var(--teal);"></td>
+                <td><span class="ticket-id">TKT-0912</span></td>
+                <td>
+                  <div class="ticket-row-meta">
+                    <div class="ticket-subject">DB connection pool exhaustion — production</div>
+                    <div class="ticket-cat">Database · Production · Recurring</div>
+                  </div>
+                </td>
+                <td><div class="priority critical"><div class="priority-dot"></div>Critical</div></td>
+                <td><span class="badge badge-red">Overdue</span></td>
+                <td>
+                  <div class="assignee-chip" style="color:var(--red);">
+                    <div class="av" style="background:var(--red);">!</div> Unassigned
+                  </div>
+                </td>
+                <td><span class="sla-pill sla-breach">✗ Breached 4h 12m</span></td>
+                <td style="color:var(--text-muted);font-size:12px;">04 May, 21:30</td>
+                <td><button class="btn btn-danger" style="font-size:11px;padding:4px 8px;" onclick="openDrawer()">Escalate</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" style="width:auto; accent-color:var(--teal);"></td>
+                <td><span class="ticket-id">TKT-0908</span></td>
+                <td>
+                  <div class="ticket-row-meta">
+                    <div class="ticket-subject">Quarterly capacity report — Q1 2026</div>
+                    <div class="ticket-cat">Reporting · DB Team</div>
+                  </div>
+                </td>
+                <td><div class="priority low"><div class="priority-dot"></div>Low</div></td>
+                <td><span class="badge badge-yellow">Pending</span></td>
+                <td>
+                  <div class="assignee-chip">
+                    <div class="av">RK</div> R. Kweku
+                  </div>
+                </td>
+                <td><span class="sla-pill sla-ok">✓ On track</span></td>
+                <td style="color:var(--text-muted);font-size:12px;">04 May, 14:00</td>
+                <td><button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;" onclick="openDrawer()">View</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" style="width:auto; accent-color:var(--teal);"></td>
+                <td><span class="ticket-id">TKT-0901</span></td>
+                <td>
+                  <div class="ticket-row-meta">
+                    <div class="ticket-subject">Advisory: Data model review for PM project</div>
+                    <div class="ticket-cat">Advisory · Project Management</div>
+                  </div>
+                </td>
+                <td><div class="priority medium"><div class="priority-dot"></div>Medium</div></td>
+                <td><span class="badge badge-teal">Advisory</span></td>
+                <td>
+                  <div class="assignee-chip">
+                    <div class="av">RK</div> R. Kweku
+                  </div>
+                </td>
+                <td><span class="sla-pill sla-ok">✓ On track</span></td>
+                <td style="color:var(--text-muted);font-size:12px;">03 May, 10:15</td>
+                <td><button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;" onclick="openDrawer()">View</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div style="padding:14px 20px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+          <div style="font-size:12px; color:var(--text-muted);">Showing 6 of 247 tickets</div>
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;">← Prev</button>
+            <button class="btn btn-primary" style="font-size:12px;padding:5px 10px;">1</button>
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;">2</button>
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;">3</button>
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;">Next →</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TICKET DETAIL DRAWER -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="page-tag">Ticket Detail</div>
+      <h3 style="font-size:15px; font-weight:800; color:var(--navy); margin-top:4px;">DB connection pool exhaustion — production</h3>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <span class="ticket-id">TKT-0912</span>
+        <span class="badge badge-red">Overdue</span>
+        <div class="priority critical"><div class="priority-dot"></div>Critical</div>
+      </div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+
+  <div class="drawer-body">
+    <div class="detail-row">
+      <div class="detail-item">
+        <div class="detail-label">Opened</div>
+        <div class="detail-val">04 May 2026, 21:30</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">SLA Deadline</div>
+        <div class="detail-val" style="color:var(--red);">04 May 2026, 23:30 ✗</div>
+      </div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-item">
+        <div class="detail-label">Category</div>
+        <div class="detail-val">Database · Production</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Assigned To</div>
+        <div class="detail-val" style="color:var(--red);">Unassigned</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="margin-bottom:16px;">
+      <div class="detail-label" style="margin-bottom:6px;">Description</div>
+      <p style="font-size:13px; color:var(--text-muted); line-height:1.6;">
+        Production Oracle DB connection pool reached maximum capacity (500/500). New connections are being rejected. ERP and Finance modules are affected. Root cause unknown — potential memory leak or runaway query holding connections.
+      </p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="margin-bottom:16px;">
+      <div class="detail-label" style="margin-bottom:10px;">Activity Timeline</div>
+      <ul class="timeline">
+        <li class="timeline-item">
+          <div class="timeline-dot" style="background:var(--red);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">SLA Breached</div>
+            <div class="timeline-desc">Ticket exceeded 2-hour P1 resolution target</div>
+            <div class="timeline-time">04 May, 23:30</div>
+          </div>
+        </li>
+        <li class="timeline-item">
+          <div class="timeline-dot" style="background:var(--yellow);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Escalation Alert Sent</div>
+            <div class="timeline-desc">Auto-escalation triggered to IT Manager</div>
+            <div class="timeline-time">04 May, 23:00</div>
+          </div>
+        </li>
+        <li class="timeline-item">
+          <div class="timeline-dot" style="background:var(--teal);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Ticket Created</div>
+            <div class="timeline-desc">Logged by monitoring system — auto-detection</div>
+            <div class="timeline-time">04 May, 21:30</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="detail-label" style="margin-bottom:8px;">Add Comment / Update</div>
+      <div class="comment-box">
+        <textarea placeholder="Type an update, resolution note, or comment..."></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
+          <div style="display:flex;gap:6px;">
+            <select class="select-filter" style="font-size:11px;padding:4px 8px;">
+              <option>Set Status...</option>
+              <option>In Progress</option>
+              <option>Pending Review</option>
+              <option>Resolved</option>
+              <option>Closed</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;">Submit Update</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openDrawer() {
+    document.getElementById('drawer').classList.add('open');
+    document.getElementById('drawerOverlay').classList.add('open');
+  }
+  function closeDrawer() {
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('drawerOverlay').classList.remove('open');
+  }
+</script>
+</body>
+</html>

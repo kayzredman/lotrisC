@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotris v2 — Dashboard</title>
+  <link rel="stylesheet" href="style-v2.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Inline summary bar above stats */
+    .summary-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-xs);
+    }
+    .summary-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+    .summary-bar-left svg { width: 13px; height: 13px; color: var(--indigo); }
+    .summary-bar-right { display: flex; align-items: center; gap: 8px; }
+
+    /* SVG Chart container */
+    .chart-area {
+      padding: 0;
+    }
+
+    .chart-svg-wrap {
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* Donut chart */
+    .donut-wrap {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .donut-legend-list {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .donut-legend-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+
+    .donut-legend-left {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--text-muted);
+    }
+
+    .donut-legend-dot {
+      width: 8px; height: 8px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .donut-legend-count {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 12px;
+    }
+
+    .donut-center-label {
+      font-size: 10px;
+      font-weight: 600;
+      fill: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .donut-center-value {
+      font-size: 18px;
+      font-weight: 800;
+      fill: var(--text-primary);
+    }
+
+    /* Chart labels */
+    .chart-x-labels {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0 0;
+    }
+
+    .chart-x-label {
+      font-size: 10px;
+      color: var(--text-light);
+      text-align: center;
+      flex: 1;
+    }
+
+    /* Alert feed card */
+    .alert-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .alert-item:last-child { border-bottom: none; }
+
+    .alert-dot-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      padding-top: 3px;
+    }
+
+    .alert-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .alert-body { flex: 1; }
+    .alert-title { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+    .alert-desc  { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+    .alert-time  { font-size: 10.5px; color: var(--text-light); white-space: nowrap; margin-top: 3px; }
+
+    /* Agent table */
+    .agent-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .agent-row:last-child { border-bottom: none; }
+    .agent-name { font-size: 12.5px; font-weight: 600; color: var(--text-primary); flex: 1; }
+    .agent-tickets { font-size: 12px; color: var(--text-muted); width: 40px; text-align: center; }
+    .agent-score  { font-size: 12px; font-weight: 700; color: var(--text-primary); width: 36px; text-align: right; }
+
+    .mini-bar-wrap {
+      width: 70px;
+      height: 4px;
+      background: var(--bg-subtle);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .mini-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">L</div>
+        <div>
+          <div class="logo-text">Lotris</div>
+          <div class="logo-sub">Performance Platform</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="02-dashboard-v2.html" class="nav-item active">
+        <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> Dashboard
+      </a>
+      <a href="03-tickets-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="ticket"></i></span> Tickets
+        <span class="nav-badge">12</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="layers"></i></span> Queue
+        <span class="nav-badge">9</span>
+      </a>
+      <a href="09-tasks-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="clipboard-list"></i></span> Tasks
+      </a>
+      <a href="04-kpis-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="bar-chart-2"></i></span> KPIs
+      </a>
+      <a href="05-reports-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="file-bar-chart"></i></span> Reports
+      </a>
+      <div class="nav-section-label">Admin</div>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="users"></i></span> Teams
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="shield"></i></span> Audit Log
+      </a>
+      <a href="06-kpi-setup-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="settings-2"></i></span> KPI Setup
+      </a>
+      <a href="10-sysadmin-ops-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="activity"></i></span> System Health
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar">RK</div>
+        <div class="user-info">
+          <div class="user-name">Rowland K.</div>
+          <div class="user-role">IT Manager</div>
+        </div>
+        <div class="sidebar-logout"><i data-lucide="log-out"></i></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="page-title">Dashboard</span>
+        <span class="breadcrumb">
+          <span>Home</span>
+          <span class="breadcrumb-sep">/</span>
+          <span>Overview</span>
+        </span>
+      </div>
+      <div class="topbar-right">
+        <div class="search-bar">
+          <i data-lucide="search"></i>
+          <input type="text" placeholder="Search tickets, KPIs...">
+        </div>
+        <div class="icon-btn">
+          <i data-lucide="bell"></i>
+          <span class="notif-dot"></span>
+        </div>
+        <div class="icon-btn"><i data-lucide="circle-help"></i></div>
+        <div class="avatar" style="cursor:pointer;">RK</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- Page header -->
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1>Good morning, Rowland</h1>
+          <p>Monday, 5 May 2026 · 3 alerts require your attention</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-secondary">
+            <i data-lucide="refresh-cw"></i> Refresh
+          </button>
+          <a href="03-tickets-v2.html" class="btn btn-primary">
+            <i data-lucide="plus"></i> New Ticket
+          </a>
+        </div>
+      </div>
+
+      <!-- Summary bar -->
+      <div class="summary-bar">
+        <div class="summary-bar-left">
+          <i data-lucide="activity"></i>
+          <strong style="color:var(--text-primary);">System Status:</strong>
+          <span class="badge badge-green" style="margin-left:4px;">Operational</span>
+          <span style="margin: 0 8px; color: var(--border-strong);">·</span>
+          <span>Last sync: <strong style="color:var(--text-primary);">2 min ago</strong></span>
+        </div>
+        <div class="summary-bar-right">
+          <span class="chip"><i data-lucide="clock" style="width:10px;height:10px;margin-right:3px;"></i>Avg resolution: <strong style="margin-left:3px; color:var(--text-primary);">3.2 hrs</strong></span>
+          <span class="chip">Open SLA: <strong style="margin-left:3px; color:var(--red);">12 breached</strong></span>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="stats-grid">
+        <div class="stat-card indigo">
+          <div class="stat-row-top">
+            <div class="stat-label-top">Open Tickets</div>
+            <div class="stat-icon-box indigo"><i data-lucide="ticket"></i></div>
+          </div>
+          <div class="stat-value">247</div>
+          <div class="stat-footer">
+            <span class="stat-trend up"><i data-lucide="trending-up"></i> 8 new</span>
+            <span class="stat-meta">vs yesterday</span>
+          </div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-row-top">
+            <div class="stat-label-top">SLA Breached</div>
+            <div class="stat-icon-box red"><i data-lucide="alert-triangle"></i></div>
+          </div>
+          <div class="stat-value">12</div>
+          <div class="stat-footer">
+            <span class="stat-trend down"><i data-lucide="trending-up"></i> +3</span>
+            <span class="stat-meta">from yesterday</span>
+          </div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-row-top">
+            <div class="stat-label-top">Resolved MTD</div>
+            <div class="stat-icon-box green"><i data-lucide="check-circle-2"></i></div>
+          </div>
+          <div class="stat-value">184</div>
+          <div class="stat-footer">
+            <span class="stat-trend up"><i data-lucide="trending-up"></i> 12%</span>
+            <span class="stat-meta">vs last month</span>
+          </div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-row-top">
+            <div class="stat-label-top">KPI Score</div>
+            <div class="stat-icon-box blue"><i data-lucide="gauge"></i></div>
+          </div>
+          <div class="stat-value">94%</div>
+          <div class="stat-footer">
+            <span class="stat-trend flat">→ Target</span>
+            <span class="stat-meta">95%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid-2-1">
+
+        <!-- Bar Chart: Ticket Volume -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-title">Ticket Volume</div>
+              <div class="card-subtitle">Opened vs Resolved · Last 8 months</div>
+            </div>
+            <div class="card-header-right">
+              <div style="display:flex; gap:12px; align-items:center;">
+                <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);">
+                  <span style="width:8px;height:8px;border-radius:2px;background:var(--indigo);display:inline-block;"></span> Opened
+                </span>
+                <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);">
+                  <span style="width:8px;height:8px;border-radius:2px;background:var(--green);display:inline-block;"></span> Resolved
+                </span>
+              </div>
+              <select class="select-filter" style="font-size:11px; padding:4px 8px; height:28px;">
+                <option>8 months</option>
+                <option>6 months</option>
+                <option>3 months</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body chart-area">
+            <!-- SVG Bar Chart -->
+            <svg viewBox="0 0 520 130" style="width:100%;height:130px;overflow:visible;">
+              <!-- Grid lines -->
+              <line x1="0" y1="15"  x2="520" y2="15"  stroke="#E2E8F0" stroke-width="1"/>
+              <line x1="0" y1="45"  x2="520" y2="45"  stroke="#E2E8F0" stroke-width="1"/>
+              <line x1="0" y1="75"  x2="520" y2="75"  stroke="#E2E8F0" stroke-width="1"/>
+              <line x1="0" y1="105" x2="520" y2="105" stroke="#E2E8F0" stroke-width="1"/>
+              <!-- Y-axis labels -->
+              <text x="0" y="13"  font-size="9" fill="#94A3B8">80</text>
+              <text x="0" y="43"  font-size="9" fill="#94A3B8">60</text>
+              <text x="0" y="73"  font-size="9" fill="#94A3B8">40</text>
+              <text x="0" y="103" font-size="9" fill="#94A3B8">20</text>
+
+              <!-- Oct -->
+              <rect x="40"  y="42" width="22" height="63" fill="#4F46E5" rx="3" opacity="0.85"/>
+              <rect x="64"  y="57" width="22" height="48" fill="#16A34A" rx="3" opacity="0.75"/>
+              <!-- Nov -->
+              <rect x="105" y="32" width="22" height="73" fill="#4F46E5" rx="3" opacity="0.85"/>
+              <rect x="129" y="50" width="22" height="55" fill="#16A34A" rx="3" opacity="0.75"/>
+              <!-- Dec -->
+              <rect x="170" y="27" width="22" height="78" fill="#4F46E5" rx="3" opacity="0.85"/>
+              <rect x="194" y="48" width="22" height="57" fill="#16A34A" rx="3" opacity="0.75"/>
+              <!-- Jan -->
+              <rect x="235" y="38" width="22" height="67" fill="#4F46E5" rx="3" opacity="0.85"/>
+              <rect x="259" y="52" width="22" height="53" fill="#16A34A" rx="3" opacity="0.75"/>
+              <!-- Feb -->
+              <rect x="300" y="45" width="22" height="60" fill="#4F46E5" rx="3" opacity="0.85"/>
+              <rect x="324" y="60" width="22" height="45" fill="#16A34A" rx="3" opacity="0.75"/>
+              <!-- Mar -->
+              <rect x="365" y="30" width="22" height="75" fill="#4F46E5" rx="3" opacity="0.85"/>
+              <rect x="389" y="47" width="22" height="58" fill="#16A34A" rx="3" opacity="0.75"/>
+              <!-- Apr -->
+              <rect x="430" y="35" width="22" height="70" fill="#4F46E5" rx="3" opacity="0.85"/>
+              <rect x="454" y="50" width="22" height="55" fill="#16A34A" rx="3" opacity="0.75"/>
+              <!-- May -->
+              <rect x="492" y="22" width="22" height="83" fill="#4F46E5" rx="3"/>
+              <!-- Tooltip label on latest -->
+              <rect x="488" y="4" width="34" height="16" rx="3" fill="#4F46E5"/>
+              <text x="505" y="14.5" font-size="9.5" fill="white" text-anchor="middle" font-weight="600">247</text>
+            </svg>
+            <div class="chart-x-labels" style="padding: 2px 0 0; margin-top:-4px;">
+              <span class="chart-x-label">Oct</span>
+              <span class="chart-x-label">Nov</span>
+              <span class="chart-x-label">Dec</span>
+              <span class="chart-x-label">Jan</span>
+              <span class="chart-x-label">Feb</span>
+              <span class="chart-x-label">Mar</span>
+              <span class="chart-x-label">Apr</span>
+              <span class="chart-x-label">May</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Donut Chart: Category Breakdown -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-title">By Category</div>
+              <div class="card-subtitle">Open tickets breakdown</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="donut-wrap">
+              <!-- SVG Donut -->
+              <svg viewBox="0 0 100 100" style="width:96px;height:96px;flex-shrink:0;" transform="rotate(-90 50 50)">
+                <!-- Hardware 35% → 76.97 of 219.91 -->
+                <circle r="35" cx="50" cy="50" fill="none" stroke="#4F46E5"
+                  stroke-width="14" stroke-dasharray="76.97 219.91"
+                  stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+                <!-- Software 28% → 61.57 -->
+                <circle r="35" cx="50" cy="50" fill="none" stroke="#2563EB"
+                  stroke-width="14" stroke-dasharray="61.57 219.91"
+                  stroke-dashoffset="-76.97" transform="rotate(-90 50 50)"/>
+                <!-- Network 20% → 43.98 -->
+                <circle r="35" cx="50" cy="50" fill="none" stroke="#EA580C"
+                  stroke-width="14" stroke-dasharray="43.98 219.91"
+                  stroke-dashoffset="-138.54" transform="rotate(-90 50 50)"/>
+                <!-- Access 17% → 37.38 -->
+                <circle r="35" cx="50" cy="50" fill="none" stroke="#7C3AED"
+                  stroke-width="14" stroke-dasharray="37.38 219.91"
+                  stroke-dashoffset="-182.52" transform="rotate(-90 50 50)"/>
+                <!-- Center text -->
+                <text x="50" y="46" text-anchor="middle" dominant-baseline="middle"
+                  style="font-size:10px; font-weight:800; fill:#0F172A; font-family:Inter,sans-serif;" transform="rotate(90 50 50)">247</text>
+                <text x="50" y="56" text-anchor="middle" dominant-baseline="middle"
+                  style="font-size:6px; fill:#94A3B8; text-transform:uppercase; font-family:Inter,sans-serif; letter-spacing:0.5px;" transform="rotate(90 50 50)">TICKETS</text>
+              </svg>
+              <div class="donut-legend-list">
+                <div class="donut-legend-row">
+                  <div class="donut-legend-left">
+                    <span class="donut-legend-dot" style="background:#4F46E5;border-radius:2px;"></span> Hardware
+                  </div>
+                  <div class="donut-legend-count">86 <span style="font-weight:400;color:var(--text-light);">35%</span></div>
+                </div>
+                <div class="donut-legend-row">
+                  <div class="donut-legend-left">
+                    <span class="donut-legend-dot" style="background:#2563EB;border-radius:2px;"></span> Software
+                  </div>
+                  <div class="donut-legend-count">69 <span style="font-weight:400;color:var(--text-light);">28%</span></div>
+                </div>
+                <div class="donut-legend-row">
+                  <div class="donut-legend-left">
+                    <span class="donut-legend-dot" style="background:#EA580C;border-radius:2px;"></span> Network
+                  </div>
+                  <div class="donut-legend-count">50 <span style="font-weight:400;color:var(--text-light);">20%</span></div>
+                </div>
+                <div class="donut-legend-row">
+                  <div class="donut-legend-left">
+                    <span class="donut-legend-dot" style="background:#7C3AED;border-radius:2px;"></span> Access
+                  </div>
+                  <div class="donut-legend-count">42 <span style="font-weight:400;color:var(--text-light);">17%</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Queue Health -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-title">Queue Health</div>
+            <div class="card-subtitle">Team queue status · live</div>
+          </div>
+          <button class="btn btn-ghost btn-sm">View queue</button>
+        </div>
+        <div class="card-body" style="padding-top:8px; padding-bottom:8px;">
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;">
+            <div style="text-align:center; padding:12px; background:var(--bg-subtle); border-radius:var(--radius-sm);">
+              <div style="font-size:22px; font-weight:800; color:var(--indigo); letter-spacing:-1px; line-height:1;">9</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Unassigned</div>
+            </div>
+            <div style="text-align:center; padding:12px; background:var(--bg-subtle); border-radius:var(--radius-sm);">
+              <div style="font-size:22px; font-weight:800; color:var(--yellow); letter-spacing:-1px; line-height:1;">4</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Pickup SLA at risk</div>
+            </div>
+            <div style="text-align:center; padding:12px; background:var(--bg-subtle); border-radius:var(--radius-sm);">
+              <div style="font-size:22px; font-weight:800; color:var(--green); letter-spacing:-1px; line-height:1;">1.8m</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Avg pickup time</div>
+            </div>
+            <div style="text-align:center; padding:12px; background:var(--bg-subtle); border-radius:var(--radius-sm);">
+              <div style="font-size:22px; font-weight:800; color:var(--text-primary); letter-spacing:-1px; line-height:1;">3</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Auto-assigned today</div>
+            </div>
+          </div>
+          <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="font-size:12px; font-weight:600; color:var(--text-muted); width:100px; flex-shrink:0;">IT Support</div>
+              <div style="flex:1; height:6px; background:var(--bg-subtle); border-radius:99px; overflow:hidden;"><div style="height:100%; width:72%; background:var(--indigo); border-radius:99px;"></div></div>
+              <div style="font-size:12px; color:var(--text-muted); width:60px; text-align:right;">5 queued</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="font-size:12px; font-weight:600; color:var(--text-muted); width:100px; flex-shrink:0;">Network Ops</div>
+              <div style="flex:1; height:6px; background:var(--bg-subtle); border-radius:99px; overflow:hidden;"><div style="height:100%; width:28%; background:var(--orange); border-radius:99px;"></div></div>
+              <div style="font-size:12px; color:var(--text-muted); width:60px; text-align:right;">2 queued</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="font-size:12px; font-weight:600; color:var(--text-muted); width:100px; flex-shrink:0;">DB Team</div>
+              <div style="flex:1; height:6px; background:var(--bg-subtle); border-radius:99px; overflow:hidden;"><div style="height:100%; width:14%; background:var(--green); border-radius:99px;"></div></div>
+              <div style="font-size:12px; color:var(--text-muted); width:60px; text-align:right;">1 queued</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row: Alerts + Top Agents -->
+      <div class="grid-2">
+
+        <!-- Active Alerts -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-title">Active Alerts</div>
+              <div class="card-subtitle">Requiring attention</div>
+            </div>
+            <button class="btn btn-ghost btn-sm">View all</button>
+          </div>
+          <div class="card-body" style="padding-top:4px; padding-bottom:4px;">
+            <div class="alert-item">
+              <div class="alert-dot-wrap">
+                <span class="alert-dot" style="background:var(--red);"></span>
+              </div>
+              <div class="alert-body">
+                <div class="alert-title">SLA breach — TKT-0491</div>
+                <div class="alert-desc">Critical network outage · assigned to D. Mensah · overdue 2h 40m</div>
+                <div class="alert-time">8 minutes ago</div>
+              </div>
+              <span class="badge badge-red">Critical</span>
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot-wrap">
+                <span class="alert-dot" style="background:var(--orange);"></span>
+              </div>
+              <div class="alert-body">
+                <div class="alert-title">4 tickets at pickup SLA risk</div>
+                <div class="alert-desc">Queue: IT Support · unassigned &gt;3h · auto-assign pending</div>
+                <div class="alert-time">34 minutes ago</div>
+              </div>
+              <span class="badge badge-orange">High</span>
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot-wrap">
+                <span class="alert-dot" style="background:var(--yellow);"></span>
+              </div>
+              <div class="alert-body">
+                <div class="alert-title">CSAT score dipped — DB Team</div>
+                <div class="alert-desc">Score dropped to 3.8 (target: 4.2) this week</div>
+                <div class="alert-time">1 hour ago</div>
+              </div>
+              <span class="badge badge-yellow">Warning</span>
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot-wrap">
+                <span class="alert-dot" style="background:var(--blue);"></span>
+              </div>
+              <div class="alert-body">
+                <div class="alert-title">Scheduled maintenance window</div>
+                <div class="alert-desc">Core DB servers · Saturday 01:00–04:00 WAT</div>
+                <div class="alert-time">3 hours ago</div>
+              </div>
+              <span class="badge badge-blue">Info</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Agents -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-title">Top Agents</div>
+              <div class="card-subtitle">By resolution rate · May 2026</div>
+            </div>
+            <button class="btn btn-ghost btn-sm">Full table</button>
+          </div>
+          <div class="card-body" style="padding-top:4px; padding-bottom:4px;">
+            <div class="agent-row">
+              <div class="avatar-sm">AO</div>
+              <div class="agent-name">A. Okonkwo</div>
+              <div class="agent-tickets">42 tkt</div>
+              <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:98%;background:var(--indigo);"></div></div>
+              <div class="agent-score">98%</div>
+            </div>
+            <div class="agent-row">
+              <div class="avatar-sm" style="background:var(--green-bg);color:var(--green);">FM</div>
+              <div class="agent-name">F. Mohammed</div>
+              <div class="agent-tickets">38 tkt</div>
+              <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:95%;background:var(--green);"></div></div>
+              <div class="agent-score">95%</div>
+            </div>
+            <div class="agent-row">
+              <div class="avatar-sm" style="background:var(--blue-bg);color:var(--blue);">CB</div>
+              <div class="agent-name">C. Boateng</div>
+              <div class="agent-tickets">35 tkt</div>
+              <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:91%;background:var(--blue);"></div></div>
+              <div class="agent-score">91%</div>
+            </div>
+            <div class="agent-row">
+              <div class="avatar-sm" style="background:var(--purple-bg);color:var(--purple);">NK</div>
+              <div class="agent-name">N. Kamara</div>
+              <div class="agent-tickets">29 tkt</div>
+              <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:89%;background:var(--purple);"></div></div>
+              <div class="agent-score">89%</div>
+            </div>
+            <div class="agent-row">
+              <div class="avatar-sm" style="background:var(--orange-bg);color:var(--orange);">DM</div>
+              <div class="agent-name">D. Mensah</div>
+              <div class="agent-tickets">27 tkt</div>
+              <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:82%;background:var(--orange);"></div></div>
+              <div class="agent-score">82%</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

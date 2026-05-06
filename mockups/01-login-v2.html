@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotris v2 — Sign In</title>
+  <link rel="stylesheet" href="style-v2.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { background: var(--bg); margin: 0; }
+
+    .login-shell {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Left panel ── */
+    .login-panel {
+      width: 400px;
+      flex-shrink: 0;
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      padding: 40px 44px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-panel::before {
+      content: '';
+      position: absolute;
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      background: var(--indigo);
+      opacity: 0.06;
+      top: -80px; right: -80px;
+    }
+
+    .login-panel::after {
+      content: '';
+      position: absolute;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: #6366F1;
+      opacity: 0.05;
+      bottom: 60px; left: -60px;
+    }
+
+    .panel-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 56px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel-logo-icon {
+      width: 34px; height: 34px;
+      background: var(--indigo);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: white;
+      letter-spacing: -0.5px;
+    }
+
+    .panel-logo-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: -0.3px;
+    }
+
+    .panel-headline {
+      font-size: 22px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: -0.5px;
+      line-height: 1.3;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.38);
+      line-height: 1.7;
+      margin-bottom: 44px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel-features {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+      flex: 1;
+    }
+
+    .panel-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .feature-icon {
+      width: 32px; height: 32px;
+      border-radius: 7px;
+      background: rgba(99,102,241,0.18);
+      border: 1px solid rgba(99,102,241,0.28);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .feature-icon svg {
+      width: 14px; height: 14px;
+      color: #A5B4FC;
+      stroke-width: 1.8;
+    }
+
+    .feature-text h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 2px;
+    }
+
+    .feature-text p {
+      font-size: 12px;
+      color: rgba(255,255,255,0.32);
+      line-height: 1.5;
+    }
+
+    .panel-footer {
+      margin-top: auto;
+      padding-top: 32px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.18);
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 36px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel-stat {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+
+    .panel-stat-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: white;
+      letter-spacing: -0.8px;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    .panel-stat-lbl {
+      font-size: 10px;
+      color: rgba(255,255,255,0.28);
+      letter-spacing: 0.2px;
+    }
+
+    /* ── Right panel (form) ── */
+    .login-form-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      background: var(--bg);
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .form-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+
+    .form-logo-icon {
+      width: 28px; height: 28px;
+      background: var(--indigo);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: white;
+    }
+
+    .form-logo-text {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+    }
+
+    .form-heading {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .form-subheading {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      display: flex; align-items: center;
+      pointer-events: none;
+    }
+
+    .input-icon svg { width: 14px; height: 14px; stroke-width: 1.8; }
+
+    .input-wrap input {
+      padding-left: 34px;
+    }
+
+    .input-eye {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      cursor: pointer;
+      display: flex; align-items: center;
+      transition: color 0.14s;
+    }
+
+    .input-eye:hover { color: var(--text-muted); }
+    .input-eye svg { width: 14px; height: 14px; stroke-width: 1.8; }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .label-row label { margin-bottom: 0; }
+
+    .forgot-link {
+      font-size: 12px;
+      color: var(--indigo);
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .forgot-link:hover { text-decoration: underline; }
+
+    .btn-login {
+      width: 100%;
+      padding: 10px;
+      font-size: 13.5px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .form-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .form-divider-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .form-divider-text {
+      font-size: 11.5px;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+
+    .sso-btn {
+      width: 100%;
+      padding: 9px 14px;
+      font-size: 13px;
+      justify-content: center;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      color: var(--text-primary);
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.14s;
+    }
+
+    .sso-btn:hover { border-color: var(--border-strong); background: var(--bg-subtle); }
+    .sso-btn svg { width: 16px; height: 16px; stroke-width: 1.5; }
+
+    .form-footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 11.5px;
+      color: var(--text-light);
+    }
+
+    .remember-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+
+    .remember-row input[type="checkbox"] {
+      width: auto;
+      accent-color: var(--indigo);
+    }
+
+    .remember-row label {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .security-note {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 12px;
+      background: var(--green-bg);
+      border: 1px solid var(--green-border);
+      border-radius: var(--radius-sm);
+      margin-top: 16px;
+      font-size: 11.5px;
+      color: var(--green);
+      font-weight: 500;
+    }
+
+    .security-note svg { width: 12px; height: 12px; stroke-width: 2.5; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<div class="login-shell">
+
+  <!-- Left Branding Panel -->
+  <div class="login-panel">
+
+    <div class="panel-logo">
+      <div class="panel-logo-icon">L</div>
+      <div class="panel-logo-text">Lotris</div>
+    </div>
+
+    <div class="panel-headline">Your helpdesk,<br>fully in command.</div>
+    <div class="panel-sub">Track tickets, measure KPI performance, and surface insights — all in one enterprise-grade platform.</div>
+
+    <div class="panel-features">
+      <div class="panel-feature">
+        <div class="feature-icon"><i data-lucide="ticket"></i></div>
+        <div class="feature-text">
+          <h4>Unified Ticket Management</h4>
+          <p>Assign, escalate, and track tickets from a single view with full SLA visibility.</p>
+        </div>
+      </div>
+      <div class="panel-feature">
+        <div class="feature-icon"><i data-lucide="bar-chart-2"></i></div>
+        <div class="feature-text">
+          <h4>Real-Time KPI Dashboards</h4>
+          <p>Monitor resolution rates, CSAT, and agent performance with live data.</p>
+        </div>
+      </div>
+      <div class="panel-feature">
+        <div class="feature-icon"><i data-lucide="shield-check"></i></div>
+        <div class="feature-text">
+          <h4>Audit & Compliance Ready</h4>
+          <p>Full activity logs, role-based access, and exportable audit trails.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-stats">
+      <div class="panel-stat">
+        <div class="panel-stat-val">247</div>
+        <div class="panel-stat-lbl">Open tickets</div>
+      </div>
+      <div class="panel-stat">
+        <div class="panel-stat-val">94%</div>
+        <div class="panel-stat-lbl">SLA rate</div>
+      </div>
+      <div class="panel-stat">
+        <div class="panel-stat-val">4.7</div>
+        <div class="panel-stat-lbl">Avg CSAT</div>
+      </div>
+    </div>
+
+    <div class="panel-footer">© 2026 Lotris · Enterprise Edition · v2.4.1</div>
+  </div>
+
+  <!-- Right Form Area -->
+  <div class="login-form-area">
+    <div class="login-card">
+
+      <div class="form-logo">
+        <div class="form-logo-icon">L</div>
+        <div class="form-logo-text">Lotris</div>
+      </div>
+
+      <div class="form-heading">Welcome back</div>
+      <div class="form-subheading">Sign in to your workspace to continue.</div>
+
+      <form>
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <div class="input-wrap">
+            <span class="input-icon"><i data-lucide="mail"></i></span>
+            <input type="email" id="email" placeholder="you@company.com" value="rowland.k@acme.com">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="label-row">
+            <label for="password">Password</label>
+            <a href="#" class="forgot-link">Forgot password?</a>
+          </div>
+          <div class="input-wrap">
+            <span class="input-icon"><i data-lucide="lock"></i></span>
+            <input type="password" id="password" placeholder="••••••••" value="password123">
+            <span class="input-eye"><i data-lucide="eye-off"></i></span>
+          </div>
+        </div>
+
+        <div class="remember-row">
+          <input type="checkbox" id="remember" checked>
+          <label for="remember">Keep me signed in for 30 days</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-login">
+          <i data-lucide="log-in"></i> Sign in
+        </button>
+      </form>
+
+      <div class="form-divider">
+        <div class="form-divider-line"></div>
+        <span class="form-divider-text">or continue with</span>
+        <div class="form-divider-line"></div>
+      </div>
+
+      <button class="sso-btn">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Sign in with Google
+      </button>
+
+      <div class="security-note">
+        <i data-lucide="shield-check"></i>
+        Secured with TLS 1.3 · SOC 2 Type II certified
+      </div>
+
+      <div class="form-footer">
+        Having trouble? Contact <a href="#" style="color:var(--indigo);">IT Support</a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>
