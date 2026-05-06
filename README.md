@@ -425,10 +425,14 @@ All build work runs through three coordinated AI agents defined in `.github/agen
 ### Git Workflow
 
 ```
-main    ← production releases only (tagged vX.Y.Z)
-dev     ← integration — QA Agent pushes here after sign-off
+dev     ← DEFAULT branch — all development builds land here.
+          Branch off here, PR back here. QA Agent pushes after sign-off.
+main    ← PRODUCTION ONLY — tagged releases (vX.Y.Z).
+          Never commit directly. Only QA merges dev → main at milestone gates.
 feature/sprint-X-Y-<description>  ← work branches, off dev
 ```
+
+> **Rule:** If in doubt, target `dev`. Nothing touches `main` without a QA gate.
 
 **Commit format:** `[Sprint X] type(scope): description`
 
@@ -438,6 +442,7 @@ git checkout -b feature/sprint-1-2-auth
 # ... work ...
 git commit -m "[Sprint 1] feat(auth): wire Clerk JWT guard to NestJS"
 # QA validates → merges to dev
+# At milestone: QA merges dev → main and tags vX.Y.Z
 ```
 
 ### Getting Started (local dev)

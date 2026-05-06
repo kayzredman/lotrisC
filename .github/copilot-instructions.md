@@ -30,10 +30,14 @@ All work is coordinated through three agents:
 ## Git Branch Strategy
 
 ```
-main    ← production releases (tagged vX.Y.Z). QA merges dev → main at milestones only.
-dev     ← integration. QA agent pushes here after quality checks.
-feature/sprint-X-Y-<description>  ← work branches off dev; one per sprint job
+dev     ← DEFAULT branch. All development builds live here.
+          QA agent pushes here after sign-off. PRs target dev.
+main    ← PRODUCTION ONLY. Never commit directly. QA merges dev → main
+          at milestone gates only and tags with vX.Y.Z.
+feature/sprint-X-Y-<description>  ← branch off dev; one per sprint job
 ```
+
+> **Rule:** If in doubt, target `dev`. Nothing goes to `main` without a QA milestone gate.
 
 **Commit format:** `[Sprint X] type(scope): description`  
 Types: `feat` · `fix` · `refactor` · `test` · `chore` · `docs`
