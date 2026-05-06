@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Pre-Sprint 1
+> Last updated: May 6 2026 — Sprint 1–2 kicked off on `feature/sprint-1-2-auth`
 
 ---
 
@@ -9,7 +9,7 @@
 
 | Sprint | Title                        | Status        | Branch               | Gate  |
 | ------ | ---------------------------- | ------------- | -------------------- | ----- |
-| 1–2    | Foundation & Auth            | 🔜 Not started | `feature/sprint-1-2-auth` | M1 |
+| 1–2    | Foundation & Auth            | � In progress | `feature/sprint-1-2-auth` | M1 |
 | 3–4    | Ticket Core                  | ⏳ Blocked on M1 | —                  | M2    |
 | 5–6    | Queue Engine                 | ⏳ Blocked on M2 | —                  | M3    |
 | 7      | Task Management              | ⏳ Blocked on M3 | —                  | M4    |
@@ -22,29 +22,29 @@
 ## Sprint 1–2 · Foundation & Auth
 
 **Target milestone:** M1  
-**Status:** NOT STARTED
+**Status:** IN PROGRESS — branch `feature/sprint-1-2-auth`
 
 ### Backend Dev Agent Jobs
-- [ ] `B1-1` — Monorepo scaffold: `turbo.json`, `package.json` workspaces, all package stubs
-- [ ] `B1-2` — Drizzle MSSQL schema: `tenants`, `users`, `roles`, `teams` (all with `tenant_id`)
-- [ ] `B1-3` — MSSQL migration: `0001_initial_schema.sql`
-- [ ] `B1-4` — NestJS `AuthModule`: ClerkJwtGuard, internal JWT issuance, `useTenantSession` helper
-- [ ] `B1-5` — Clerk webhook handler: JIT user provisioning on `user.created` event
-- [ ] `B1-6` — tRPC router stub: `users.me`, `users.list`, `teams.list`
-- [ ] `B1-7` — NestJS `AdminModule`: user CRUD, team CRUD, role assignment
-- [ ] `B1-8` — Export all types to `packages/types/src/trpc.ts`
+- [x] `B1-1` — Monorepo scaffold: `turbo.json`, `pnpm-workspace.yaml`, `package.json`, all package stubs
+- [x] `B1-2` — Drizzle MSSQL schema: `tenants`, `users`, `roles`, `teams`, `audit_logs` (all with `tenant_id`)
+- [x] `B1-3` — MSSQL migration: `0001_initial_schema.sql`
+- [x] `B1-4` — NestJS `AuthModule`: `ClerkJwtGuard`, `AuthService.resolveSession`, `RoleGuard`, `@Session()` decorator
+- [x] `B1-5` — Clerk webhook handler: JIT user + tenant provisioning (`user.created`, `organization.created`, `organizationMembership.created`)
+- [x] `B1-6` — tRPC router: `users.me`, `users.list`, `teams.list` — all tenantId-filtered
+- [x] `B1-7` — NestJS `AdminModule`: user CRUD + team CRUD + role assignment REST v1; full audit log on every mutation
+- [x] `B1-8` — Shared types: `packages/types/src/context.ts` (TrpcAuth, TrpcContext, all domain enums)
 
 ### Frontend Dev Agent Jobs
-- [ ] `F1-1` — Next.js 15 App Router scaffold: layouts, route groups `(auth)` and `(app)`
-- [ ] `F1-2` — Tailwind + ShadCN/UI setup; port design tokens from `style-v2.css` to `tailwind.config.ts`
-- [ ] `F1-3` — Sidebar component (desktop full, tablet icon rail, mobile bottom nav)
-- [ ] `F1-4` — Login page — Clerk `<SignIn />` with Lotris Appearance API styling
-- [ ] `F1-5` — User & Team management page (ADMIN role)
-- [ ] `F1-6` — tRPC client setup in `apps/web/lib/trpc.ts`
+- [x] `F1-1` — Next.js 15 App Router scaffold: `(auth)` + `(app)` route groups, root layout, root redirect
+- [x] `F1-2` — Tailwind config with design tokens from `style-v2.css`; ShadCN base components (Button, Card, Input, Badge)
+- [x] `F1-3` — Sidebar component: desktop full (240px), tablet icon rail (64px), mobile bottom nav (5 primary items)
+- [x] `F1-4` — Login page with Clerk `<SignIn />` styled to Lotris dark theme
+- [ ] `F1-5` — User & Team management page UI (ADMIN role) — **next up**
+- [x] `F1-6` — tRPC client: `apps/web/lib/trpc.ts` + `Providers` with Clerk token injection
 
 ### Dependencies
-- `F1-4` depends on `B1-4` (Clerk guard must exist)
-- `F1-5`, `F1-6` depend on `B1-6`, `B1-7`, `B1-8`
+- `F1-4` depends on `B1-4` ✅ done
+- `F1-5`, `F1-6` depend on `B1-6`, `B1-7`, `B1-8` ✅ done
 
 ### QA Gate Checks — M1
 - [ ] Login works end-to-end with Google social login via Clerk
