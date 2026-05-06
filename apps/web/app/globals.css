@@ -3,49 +3,40 @@
 @tailwind utilities;
 
 @layer base {
-  /* ── Light theme (default) ── */
   :root {
     --sidebar-width: 240px;
     --sidebar-width-icon: 64px;
     --topbar-height: 56px;
-
     --brand: #f57f20;
     --brand-light: rgba(245, 127, 32, 0.12);
-
-    /* Surfaces */
-    --bg-base:    #f4f5f7;
+    --bg-base: #f4f5f7;
     --bg-surface: #ffffff;
-    --bg-raised:  #f9fafb;
-    --bg-sunken:  #eef0f4;
-
-    /* Sidebar */
-    --sidebar-bg:          #ffffff;
-    --sidebar-border:      #e5e7eb;
-    --sidebar-text:        #6b7280;
+    --bg-raised: #f9fafb;
+    --bg-sunken: #eef0f4;
+    --sidebar-bg: #ffffff;
+    --sidebar-border: #e5e7eb;
+    --sidebar-text: #6b7280;
     --sidebar-text-active: #111827;
-
-    /* Text */
-    --text-primary:   #111827;
+    --text-primary: #111827;
     --text-secondary: #6b7280;
-    --text-muted:     #9ca3af;
-
-    /* Borders */
-    --border:      #e5e7eb;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
     --border-dark: #d1d5db;
   }
 
-  /* ── Dark theme ── */
   .dark {
-    --bg-base:    #0b0e1a;
+    --bg-base: #0b0e1a;
     --bg-surface: #141926;
-    --bg-raised:  #1c2232;
-    --bg-sunken:  #0b0e1a;
-
-    --sidebar-bg:      --sidebar-bg:      --sidebar-bg:      --sidebar-bg:      --sidebar-bg:      --sideba
+    --bg-raised: #1c2232;
+    --bg-sunken: #0b0e1a;
+    --sidebar-bg: #0b0e1a;
+    --sidebar-border: #1a1f2e;
+    --sidebar-text: #8892a4;
     --sidebar-text-active: #f1f5f9;
-
-    --text-primary:   #f1f5f9;
-    --t    --t    --t    --t    --t    --t    --t    #475569;    --t    --t    --t    -3a;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #475569;
+    --border: #1e2a3a;
     --border-dark: #2a3145;
   }
 
@@ -54,22 +45,56 @@
     color: var(--text-primary);
   }
 
-  /* Scrollbar */
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #f57f  ::-webkit-scrollbar-thumb:hover Car  ::-webkit-s top accent bar */
-  .card-accent  .card-accent  .card-accended-  .card-accent  .card-accentgrou  .card-accent--bg  .card-accent  .card-a1px s  .card-accent  .card-a
-  .c rd-a  .c rd-a  .c rd-a  .c rd-t: '';
-  .c rdply  .c rdply  .c rdply  .c ght-0 h-[5px];
+  ::-webkit-scrollbar-thumb:hover { background: #f57f20; }
+}
+
+@layer components {
+  .card-accent {
+    position: relative;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border);
+  }
+
+  .card-accent::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
     background: #f57f20;
   }
 
-  /* Sectio  /* Sectio  /* Sectik "CURRENT" style */
   .section-pill {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm text-[9px] font-bold uppercase tracking-[0.15em] bg-brand text-white;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.125rem 0.625rem;
+    border-radius: 0.125rem;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    background-color: #f57f20;
+    color: #ffffff;
   }
-                                                                                          d-sm text-[9px] font-bold uppercase tracking                                    t-                            count-up               ue {
-    @apply animate-count-up;
+
+  .section-pill-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.125rem 0.625rem;
+    border-radius: 0.125rem;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    border: 1px solid rgba(245, 127, 32, 0.4);
+    color: #f57f20;
   }
 }
