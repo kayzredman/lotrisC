@@ -25,6 +25,9 @@ import type {
   TicketListQueryDto,
 } from './dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { getEnv } from '@lotris/config';
+import { Queue } from 'bullmq';
+import IORedis from 'ioredis';
 
 @Injectable()
 export class TicketsService {
@@ -32,6 +35,12 @@ export class TicketsService {
 
   private get db() {
     return getMssqlDb();
+  }
+
+  private getSlaTimersQueue(): Queue {
+    const env = getEnv();
+    const connection = new IORedis(env.REDIS_URL, { maxRetriesPerRequest: null });
+    return new Queue('sla-timers', { connection });
   }
 
   // ── Create ───────────────────────────────────────────────────────────────
@@ -161,6 +170,22 @@ export class TicketsService {
 
     if (to === TICKET_STATUS.TEAM_ASSIGNED && dto.teamId) {
       updates.teamId = dto.teamId;
+
+      // Start pickup SLA timer if deadline is set
+      const pickupDeadline = ticket.slaPickupDeadline as Date | null;
+      if (pickupDeadline) {
+        const delay = Math.max(0, new Date(pickupDeadline).getTime() - Date.now());
+        void this.getSlaTimersQueue().add(
+          'pickup-sla-check',
+          { ticketId, tenantId: auth.tenantId },
+          {
+            jobId: `pickup-sla-${ticketId}`,
+            delay,
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 5000 },
+          },
+        );
+      }
     }
 
     if (to === TICKET_STATUS.RESOLVED) {
