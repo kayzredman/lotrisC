@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Post-Sprint 10 (KPI Engine complete, M5 gate passed)
+> Last updated: May 2026 — Post-Sprint 13 (System Health complete, M7 gate passed; Layout/UI gap fixes in progress)
 
 ---
 
@@ -15,7 +15,7 @@
 | 7      | Task Management              | ✅ Complete    | `feature/sprint-7-tasks` | M4    |
 | 8–10   | KPI Engine                   | ✅ Complete    | `feature/sprint-8-10-kpi` | M5  |
 | 11–12  | Reporting & Full Dashboard   | ✅ COMPLETE   | `dev` @ `f900bfc`                | M6 |
-| 13     | System Health Monitoring     | 🔓 UNBLOCKED | —                               | M7    |
+| 13     | System Health Monitoring     | ✅ Complete   | `dev` @ `b901271`               | M7    |
 
 ---
 

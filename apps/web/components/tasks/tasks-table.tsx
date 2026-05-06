@@ -101,7 +101,8 @@ export default function TasksTable() {
             <span>No tasks found.</span>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-muted/50 border-b">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Task</th>
@@ -164,6 +165,7 @@ export default function TasksTable() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

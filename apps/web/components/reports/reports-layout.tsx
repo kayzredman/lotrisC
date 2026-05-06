@@ -24,9 +24,43 @@ export function ReportsLayout() {
   const [selectedType, setSelectedType] = useState('TICKET_SUMMARY');
 
   return (
-    <div className="flex h-full min-h-0">
-      {/* Sidebar */}
-      <aside className="w-56 shrink-0 border-r border-slate-700 bg-slate-900 flex flex-col gap-1 p-3">
+    <div className="flex flex-col md:flex-row h-full min-h-0">
+
+      {/* Mobile horizontal tab strip (< md) */}
+      <div className="flex md:hidden overflow-x-auto border-b border-slate-700 bg-slate-900 shrink-0">
+        {REPORT_TYPES.map((rt) => (
+          <button
+            key={rt.key}
+            onClick={() => { setSelectedType(rt.key); setActiveTab('generate'); }}
+            className={`shrink-0 px-4 py-3 text-sm whitespace-nowrap border-b-2 transition ${
+              selectedType === rt.key && activeTab === 'generate'
+                ? 'border-violet-500 text-violet-300'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {rt.label}
+          </button>
+        ))}
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`shrink-0 px-4 py-3 text-sm whitespace-nowrap border-b-2 transition ${
+            activeTab === 'history' ? 'border-violet-500 text-violet-300' : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          History
+        </button>
+        <button
+          onClick={() => setActiveTab('scheduled')}
+          className={`shrink-0 px-4 py-3 text-sm whitespace-nowrap border-b-2 transition ${
+            activeTab === 'scheduled' ? 'border-violet-500 text-violet-300' : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Scheduled
+        </button>
+      </div>
+
+      {/* Desktop Sidebar (>= md) */}
+      <aside className="hidden md:flex w-56 shrink-0 border-r border-slate-700 bg-slate-900 flex-col gap-1 p-3">
         <p className="text-xs text-slate-500 uppercase tracking-wide px-2 py-1">Reports</p>
         {REPORT_TYPES.map((rt) => (
           <button

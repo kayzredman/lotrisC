@@ -6,26 +6,43 @@ import { UserButton } from '@clerk/nextjs';
 import {
   LayoutDashboard,
   Ticket,
-  ListOrdered,
+  Layers,
   BarChart3,
   FileText,
   CheckSquare,
   Activity,
+  Users,
+  ShieldCheck,
+  Settings2,
 } from 'lucide-react';
 import { cn } from '@lotris/ui';
 
-const NAV_ITEMS = [
-  { label: 'Dashboard',     href: '/dashboard',      icon: LayoutDashboard },
-  { label: 'Tickets',       href: '/tickets',        icon: Ticket          },
-  { label: 'Queue',         href: '/queue',          icon: ListOrdered     },
-  { label: 'KPI',           href: '/kpis',           icon: BarChart3       },
-  { label: 'Reports',       href: '/reports',        icon: FileText        },
-  { label: 'Tasks',         href: '/tasks',          icon: CheckSquare     },
-  { label: 'System Health', href: '/system-health',  icon: Activity        },
-] as const;
+type NavItem = {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  badge?: number;
+};
+
+const MAIN_NAV: NavItem[] = [
+  { label: 'Dashboard',  href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Tickets',    href: '/tickets',   icon: Ticket,   badge: 0 },
+  { label: 'Queue',      href: '/queue',     icon: Layers,   badge: 0 },
+  { label: 'Tasks',      href: '/tasks',     icon: CheckSquare },
+  { label: 'KPIs',       href: '/kpis',      icon: BarChart3 },
+  { label: 'Reports',    href: '/reports',   icon: FileText  },
+];
+
+const ADMIN_NAV: NavItem[] = [
+  { label: 'Teams',         href: '/admin',          icon: Users      },
+  { label: 'KPI Setup',     href: '/kpis',           icon: Settings2  },
+  { label: 'System Health', href: '/system-health',  icon: Activity   },
+  { label: 'Audit Log',     href: '/admin',          icon: ShieldCheck },
+];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   return (
     <>
@@ -37,10 +54,19 @@ export function Sidebar() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-3 px-2">
-          {NAV_ITEMS.map((item) => (
-            <NavLink key={item.href} {...item} active={pathname.startsWith(item.href)} />
-          ))}
+        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+          <div>
+            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Main</p>
+            {MAIN_NAV.map((item) => (
+              <NavLink key={item.href + item.label} {...item} active={isActive(item.href)} />
+            ))}
+          </div>
+          <div>
+            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Admin</p>
+            {ADMIN_NAV.map((item) => (
+              <NavLink key={item.href + item.label} {...item} active={isActive(item.href)} />
+            ))}
+          </div>
         </nav>
 
         {/* User */}
@@ -55,8 +81,8 @@ export function Sidebar() {
         <div className="flex items-center justify-center h-10 mb-2">
           <span className="text-sm font-bold text-white">L</span>
         </div>
-        {NAV_ITEMS.map((item) => (
-          <IconNavLink key={item.href} {...item} active={pathname.startsWith(item.href)} />
+        {[...MAIN_NAV, ...ADMIN_NAV].map((item) => (
+          <IconNavLink key={item.href + item.label} {...item} active={isActive(item.href)} />
         ))}
         <div className="mt-auto pb-2">
           <UserButton afterSignOutUrl="/login" />
@@ -65,8 +91,8 @@ export function Sidebar() {
 
       {/* ── Mobile bottom nav ─────────────────────────────────────────────── */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden bg-sidebar-bg border-t border-sidebar-border h-16">
-        {NAV_ITEMS.slice(0, 5).map((item) => (
-          <MobileNavLink key={item.href} {...item} active={pathname.startsWith(item.href)} />
+        {MAIN_NAV.slice(0, 5).map((item) => (
+          <MobileNavLink key={item.href + item.label} {...item} active={isActive(item.href)} />
         ))}
       </nav>
     </>
@@ -76,16 +102,8 @@ export function Sidebar() {
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
 function NavLink({
-  href,
-  label,
-  icon: Icon,
-  active,
-}: {
-  href: string;
-  label: string;
-  icon: React.ElementType;
-  active: boolean;
-}) {
+  href, label, icon: Icon, active, badge,
+}: NavItem & { active: boolean }) {
   return (
     <Link
       href={href}
@@ -97,58 +115,59 @@ function NavLink({
       )}
     >
       <Icon className="w-4 h-4 shrink-0" />
-      {label}
+      <span className="flex-1 truncate">{label}</span>
+      {badge != null && badge > 0 && (
+        <span className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white px-1">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </Link>
   );
 }
 
 function IconNavLink({
-  href,
-  label,
-  icon: Icon,
-  active,
-}: {
-  href: string;
-  label: string;
-  icon: React.ElementType;
-  active: boolean;
-}) {
+  href, label, icon: Icon, active, badge,
+}: NavItem & { active: boolean }) {
   return (
     <Link
       href={href}
       title={label}
       className={cn(
-        'flex items-center justify-center w-10 h-10 rounded-md transition-colors',
+        'relative flex items-center justify-center w-10 h-10 rounded-md transition-colors',
         active
           ? 'bg-sidebar-active text-sidebar-text-active'
           : 'text-sidebar-text hover:bg-sidebar-hover hover:text-sidebar-text-active',
       )}
     >
       <Icon className="w-5 h-5" />
+      {badge != null && badge > 0 && (
+        <span className="absolute top-1 right-1 w-3.5 h-3.5 flex items-center justify-center rounded-full bg-indigo-600 text-[8px] font-bold text-white">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
     </Link>
   );
 }
 
 function MobileNavLink({
-  href,
-  label,
-  icon: Icon,
-  active,
-}: {
-  href: string;
-  label: string;
-  icon: React.ElementType;
-  active: boolean;
-}) {
+  href, label, icon: Icon, active, badge,
+}: NavItem & { active: boolean }) {
   return (
     <Link
       href={href}
       className={cn(
-        'flex flex-1 flex-col items-center justify-center gap-1 text-xs transition-colors',
+        'relative flex flex-1 flex-col items-center justify-center gap-1 text-xs transition-colors',
         active ? 'text-brand' : 'text-sidebar-text',
       )}
     >
-      <Icon className="w-5 h-5" />
+      <div className="relative">
+        <Icon className="w-5 h-5" />
+        {badge != null && badge > 0 && (
+          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 flex items-center justify-center rounded-full bg-indigo-600 text-[8px] font-bold text-white">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
+      </div>
       <span className="truncate max-w-[56px]">{label}</span>
     </Link>
   );

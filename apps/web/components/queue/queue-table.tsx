@@ -64,7 +64,7 @@ export default function QueueTable() {
       )}
 
       {/* Queue table */}
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         {isLoading ? (
           <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">
             Loading queue…
