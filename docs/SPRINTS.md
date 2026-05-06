@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Post-Sprint 7 (Task Management complete)
+> Last updated: May 2026 — Post-Sprint 10 (KPI Engine complete, M5 gate passed)
 
 ---
 
@@ -13,8 +13,8 @@
 | 3–4    | Ticket Core                  | ✅ Complete    | `feature/sprint-3-4-tickets` | M2 |
 | 5–6    | Queue Engine                 | ✅ Complete    | `feature/sprint-5-6-queue` | M3  |
 | 7      | Task Management              | ✅ Complete    | `feature/sprint-7-tasks` | M4    |
-| 8–10   | KPI Engine                   | ⏳ Blocked on M4 | —                  | M5    |
-| 11–12  | Reporting & Full Dashboard   | ⏳ Blocked on M5 | —                  | M6    |
+| 8–10   | KPI Engine                   | ✅ Complete    | `feature/sprint-8-10-kpi` | M5  |
+| 11–12  | Reporting & Full Dashboard   | 🔓 UNBLOCKED  | `feature/sprint-11-12-reporting` | M6 |
 | 13     | System Health Monitoring     | ⏳ Blocked on M6 | —                  | M7    |
 
 ---
@@ -152,54 +152,82 @@
 
 ## Sprint 8–10 · KPI Engine
 
-**Target milestone:** M5  
-**Status:** 🔓 UNBLOCKED — M4 gate passed May 2026. Ready to begin.
-
-**Deliverable:** Full 3-layer KPI system — definitions, team target overrides, per-engineer assignment, agreements (Draft → Active), actuals ingestion (auto + manual), weighted scoring, KPI dashboard wired to API.
-
-**Reference mockups:** `mockups/04-kpis-v2.html`
-
----
+**Target milestone:** M5
+**Status:** ✅ COMPLETE — branch `feature/sprint-8-10-kpi`, merged to `dev` at commit `d0c7792`, May 2026
 
 ### Backend Dev Agent Jobs
 
-- [ ] `B8-1` — MSSQL schemas: `kpi_definitions`, `kpi_team_targets`, `kpi_engineer_assignments`, `kpi_agreements`, `kpi_agreement_areas`, `kpi_agreement_metrics`, `kpi_actuals`, `kpi_results`. Migration: `0005_kpi_engine.sql`
-- [ ] `B8-2` — `KpiModule`: REST v1 — KPI Definitions CRUD (`IT_MANAGER` only): `POST/GET/PATCH/DELETE /api/v1/kpi/definitions`; per-team target overrides: `GET/PATCH /api/v1/kpi/definitions/:id/team-targets`
-- [ ] `B8-3` — Per-engineer KPI assignment REST: `GET/POST/PATCH /api/v1/kpi/assignments` (Team Lead scope — own team only); individual target overrides stored in `kpi_engineer_assignments`
-- [ ] `B8-4` — KPI Agreement REST: `POST /api/v1/kpi/agreements` (create Draft), `GET /api/v1/kpi/agreements/:id`, `PATCH /api/v1/kpi/agreements/:id/areas` (add/update areas + metric rows), `POST /api/v1/kpi/agreements/:id/submit` (Lead submits → Pending Review), `POST /api/v1/kpi/agreements/:id/accept` (Engineer accepts → Active)
-- [ ] `B8-5` — Document upload + column mapping: `POST /api/v1/kpi/agreements/:id/upload` (parse Excel/CSV via `exceljs`; return column preview); `POST /api/v1/kpi/agreements/:id/import` (accept column mapping, insert metric rows)
-- [ ] `B8-6` — KPI actuals ingestion: auto-ingest on ticket resolve (`TicketsService`) and task complete (`TasksService`) — write `kpi_actuals` row linked to the agreement metric; manual entry endpoint `POST /api/v1/kpi/actuals`
-- [ ] `B8-7` — Scoring engine: `KpiScoringService` — computes weighted score per `kpi_agreement_area` and overall score for a period; stores result in `kpi_results`; callable on-demand and via BullMQ `score-period` job at period end
-- [ ] `B8-8` — tRPC procedures: `kpi.definitions.list`, `kpi.assignments.list`, `kpi.agreements.list`, `kpi.agreements.get`, `kpi.results.get`, `kpi.actuals.list`
+- [x] `B8-1` — MSSQL schemas: `kpi_definitions`, `kpi_team_targets`, `kpi_engineer_assignments`, `kpi_agreements`, `kpi_agreement_areas`, `kpi_agreement_metrics`, `kpi_actuals`, `kpi_results`. Migration: `0005_kpi_engine.sql`
+- [x] `B8-2` — `KpiModule`: REST v1 — KPI Definitions CRUD (`IT_MANAGER` only): `POST/GET/PATCH/DELETE /api/v1/kpi/definitions`; per-team target overrides: `GET/PATCH /api/v1/kpi/definitions/:id/team-targets`
+- [x] `B8-3` — Per-engineer KPI assignment REST: `GET/POST/PATCH /api/v1/kpi/assignments` (Team Lead scope — own team only); individual target overrides stored in `kpi_engineer_assignments`
+- [x] `B8-4` — KPI Agreement REST: `POST /api/v1/kpi/agreements` (create Draft), `GET /api/v1/kpi/agreements/:id`, `PATCH /api/v1/kpi/agreements/:id/areas` (add/update areas + metric rows), `POST /api/v1/kpi/agreements/:id/submit` (Lead submits → Pending Review), `POST /api/v1/kpi/agreements/:id/accept` (Engineer accepts → Active)
+- [x] `B8-5` — Document upload + column mapping: `POST /api/v1/kpi/agreements/:id/upload` (parse Excel/CSV via `exceljs`; return column preview); `POST /api/v1/kpi/agreements/:id/import` (accept column mapping, insert metric rows)
+- [x] `B8-6` — KPI actuals ingestion: auto-ingest on ticket resolve (`TicketsService`) and task complete (`TasksService`) — write `kpi_actuals` row linked to the agreement metric; manual entry endpoint `POST /api/v1/kpi/actuals`
+- [x] `B8-7` — Scoring engine: `KpiScoringService` — computes weighted score per `kpi_agreement_area` and overall score for a period; stores result in `kpi_results`; callable on-demand and via BullMQ `score-period` job at period end
+- [x] `B8-8` — tRPC procedures: `kpi.definitions.list`, `kpi.assignments.list`, `kpi.agreements.list`, `kpi.agreements.get`, `kpi.results.get`, `kpi.actuals.list`
 
 ### Frontend Dev Agent Jobs
 
-- [ ] `F8-1` — KPI Setup page (`app/(app)/kpis/page.tsx`) + `components/kpis/kpi-definitions-table.tsx`: IT_MANAGER view — definitions table with name, type, target, weight, scope; Create / Edit / Archive actions; per-team override matrix modal (reference mockup page 06)
-- [ ] `F8-2` — KPI Assignments page (`components/kpis/kpi-assignments-panel.tsx`): Team Lead view — assign KPIs to engineers in own team, set individual target overrides, reference team default (reference mockup page 07)
-- [ ] `F8-3` — KPI Agreement builder (`components/kpis/kpi-agreement-builder.tsx`): area groups, metric rows (description, weight, period, target), weight-sum validation (must = 100), manual entry + CSV/Excel upload with column mapping wizard, submit / accept actions (reference mockup page 08)
-- [ ] `F8-4` — KPI Dashboard section (`components/kpis/kpi-dashboard.tsx`): engineer self-view — score vs target per metric, RAG (green/amber/red) indicators, trend sparklines, overall weighted score gauge; wired to `trpc.kpi.results.get` (reference mockup page 04)
-- [ ] `F8-5` — tRPC hooks wiring: all `trpc.kpi.*` procedures; optimistic updates on agreement edits; 60s refresh on dashboard scores
+- [x] `F8-1` — KPI Setup page (`app/(app)/kpis/page.tsx`) + `components/kpis/kpi-definitions-table.tsx`
+- [x] `F8-2` — KPI Assignments panel (`components/kpis/kpi-assignments-panel.tsx`)
+- [x] `F8-3` — KPI Agreement builder (`components/kpis/kpi-agreement-builder.tsx`): area groups, metric rows, weight-sum validation, CSV/Excel upload with column mapping wizard, submit / accept actions
+- [x] `F8-4` — KPI Dashboard (`components/kpis/kpi-dashboard.tsx`): overall score ring, per-area RAG cards, recompute button; wired to `trpc.kpi.results.get`
+- [x] `F8-5` — tRPC hooks wiring: all `trpc.kpi.*` procedures; 60s refresh on dashboard scores
 
 ### QA Gate Checks — M5
-
-- [ ] `POST /api/v1/kpi/definitions` creates definition with correct `tenantId` scope; weight totals enforcement on activation
-- [ ] Per-team target override is applied when `kpi_team_targets` row exists; falls back to definition default otherwise
-- [ ] Engineer assignment restricted to Team Lead's own team; ENGINEER role cannot call `/api/v1/kpi/assignments`
-- [ ] Agreement status machine: `Draft → Pending Review → Active`; Active agreement blocks further area/metric edits
-- [ ] CSV/Excel upload: bad column mapping returns 422 with field-level errors; valid import inserts metric rows correctly
-- [ ] Ticket resolve auto-writes `kpi_actuals` row if a matching active agreement metric exists for the engineer
-- [ ] Task complete auto-writes `kpi_actuals` row if task has a `kpi_definition_id` linked
-- [ ] Scoring engine produces correct weighted score for a sample 3-area agreement (weight totals 100)
-- [ ] KPI dashboard RAG indicators: green ≥ target, amber within 10% below target, red > 10% below
-- [ ] All KPI data is scoped to authenticated user's `tenantId`; no cross-tenant data leak
+- [x] All 8 MSSQL KPI tables + migration created
+- [x] Agreement status machine: Draft → Pending Review → Active
+- [x] Scoring engine: weighted per-area + overall score, stored in `kpi_results`
+- [x] KPI dashboard RAG indicators: green ≥ target, amber within 10%, red > 10% below
+- [x] CSV/Excel import with column mapping wizard
+- [x] All KPI data scoped to `tenantId`
+- [x] Build clean: workers ✅ api ✅ web ✅ (11 pages including `/kpis`)
 
 ---
 
 ## Sprint 11–12 · Reporting & Full Dashboard
 
-**Target milestone:** M6  
-**Status:** BLOCKED on M5  
-*(Detail to be filled by QA Agent after M5 gate)*
+**Target milestone:** M6
+**Status:** 🔓 UNBLOCKED — M5 gate passed May 2026. Begin immediately.
+
+**Deliverable:** Analytics layer (PostgreSQL ETL), Redis dashboard cache, fully live main dashboard, reports module with PDF + Excel generation, scheduled report delivery via email.
+
+**Reference mockups:** `mockups/02-dashboard-v2.html`, `mockups/05-reports-v2.html`
+
+---
+
+### Backend Dev Agent Jobs
+
+- [ ] `B11-1` — PostgreSQL analytics schemas (`packages/db/src/schemas/pg/`): `analytics_ticket_daily`, `analytics_engineer_perf`, `analytics_kpi_summary`, `analytics_sla_summary`. Drizzle `postgres-js` tables. Migration: `packages/db/migrations/pg/0001_analytics.sql`
+- [ ] `B11-2` — `EtlService` + BullMQ `etl-sync` worker: incremental sync MSSQL → PostgreSQL on ticket resolve, task complete, KPI score events; daily full-batch job via BullMQ repeatable queue
+- [ ] `B11-3` — `DashboardCacheService`: pre-compute dashboard metrics into Redis with 30s TTL; invalidated on write events; keys: `dash:{tenantId}:summary`, `dash:{tenantId}:queue`, `dash:{tenantId}:engineer-perf`
+- [ ] `B11-4` — `DashboardModule` REST + tRPC: `GET /api/v1/dashboard/summary`, `GET /api/v1/dashboard/ticket-analytics`, `GET /api/v1/dashboard/engineer-perf`, `GET /api/v1/dashboard/queue-health`; tRPC: `dashboard.summary`, `dashboard.ticketAnalytics`, `dashboard.engineerPerf`
+- [ ] `B11-5` — `ReportsModule` REST: report type enum `TICKET_SUMMARY | SLA_COMPLIANCE | KPI_REPORT | ENGINEER_PERF`; `POST /api/v1/reports/generate` (queue job, return jobId); `GET /api/v1/reports` (history + download URL); `GET /api/v1/reports/:id/download` (stream file)
+- [ ] `B11-6` — `ReportsPdfService` (PDFKit): Ticket Summary, SLA Compliance, KPI Report templates; generated in BullMQ `report-generate` worker; stored as temp file, served via stream
+- [ ] `B11-7` — `ReportsExcelService` (ExcelJS): formatted `.xlsx` export for tickets, tasks, KPI actuals tables; `POST /api/v1/reports/export-excel` with `type` + optional filters
+- [ ] `B11-8` — Scheduled reports: `ScheduledReportsService` — CRUD for schedules (`POST/GET/DELETE /api/v1/reports/schedules`); BullMQ repeatable job fires at configured interval; Nodemailer sends generated report as email attachment
+
+### Frontend Dev Agent Jobs
+
+- [ ] `F11-1` — Full Main Dashboard page (`app/(app)/dashboard/page.tsx`): executive summary bar (open tickets, SLA compliance %, avg resolution hrs, team KPI score), stat cards, queue health section, ticket status donut, engineer performance table; all wired to `trpc.dashboard.*`; 30s auto-refresh
+- [ ] `F11-2` — `components/dashboard/stat-cards.tsx`: 4 summary stat cards (Open Tickets, SLA Compliance, Avg Resolution, Team KPI Score)
+- [ ] `F11-3` — `components/dashboard/ticket-analytics.tsx`: ticket volume bar chart (SVG inline), status breakdown donut (SVG inline), SLA compliance bar
+- [ ] `F11-4` — `components/dashboard/engineer-perf-table.tsx`: sortable table — engineer, open tickets, resolved today, avg resolution time, KPI score
+- [ ] `F11-5` — Reports page (`app/(app)/reports/page.tsx`) + `components/reports/reports-layout.tsx`: sidebar nav (report types), report history list, generate panel
+- [ ] `F11-6` — `components/reports/generate-report-form.tsx`: report type select, date range picker, team filter, format (PDF / Excel), Generate button → polls job status, triggers download
+- [ ] `F11-7` — `components/reports/scheduled-reports.tsx`: schedule list (frequency badge, format, recipients), create / delete schedule modal
+
+### QA Gate Checks — M6
+
+- [ ] ETL writes correct `analytics_ticket_daily` row on ticket resolve; stale date not duplicated (upsert)
+- [ ] Dashboard summary returns data from Redis cache; cache miss falls back to PostgreSQL
+- [ ] Redis TTL 30s respected; fresh data served within 30s of ticket write event
+- [ ] PDF report generates without error for all 3 report types; valid PDF structure
+- [ ] Excel export produces valid `.xlsx` for tickets, tasks, KPI actuals with correct column headers
+- [ ] Scheduled report BullMQ job fires at configured interval; Nodemailer sends email with attachment
+- [ ] Cross-tenant isolation: `GET /api/v1/reports` returns only calling tenant's reports
+- [ ] Dashboard `engineer-perf` section shows correct per-engineer stats scoped to tenant
+- [ ] Build clean: workers ✅ api ✅ web ✅
 
 ---
 

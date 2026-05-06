@@ -8,6 +8,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { QueueModule } from './modules/queue/queue.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { KpiModule } from './modules/kpi/kpi.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { KpiModule } from './modules/kpi/kpi.module';
     QueueModule,
     TasksModule,
     KpiModule,
+    AnalyticsModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}

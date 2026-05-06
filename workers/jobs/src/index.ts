@@ -3,6 +3,7 @@ import { Queue, Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import { createSlaTimersWorker } from './sla-timers.worker';
 import { createAutoAssignWorker } from './auto-assign.worker';
+import { createEtlSyncWorker, registerEtlRepeatableJob } from './etl-sync.worker';
 
 const env = getEnv();
 
@@ -28,14 +29,23 @@ export const notificationsQueue = new Queue('notifications', { connection });
 /** Report generation (PDF + Excel) and email delivery (Sprint 11-12) */
 export const reportGenQueue = new Queue('report-gen', { connection });
 
+/** ETL sync — incremental and daily batch MSSQL → PostgreSQL (Sprint 11-12) */
+export const etlSyncQueue = new Queue('etl-sync', { connection });
+
 // ── Active workers ──────────────────────────────────────────────────────────
 
 const slaTimersWorker = createSlaTimersWorker(connection);
 const autoAssignWorker = createAutoAssignWorker(connection);
+const etlSyncWorker = createEtlSyncWorker(connection);
+
+// Register ETL repeatable daily job (idempotent — BullMQ deduplicates by jobId)
+registerEtlRepeatableJob(etlSyncQueue).catch((err) =>
+  console.error('Failed to register ETL repeatable job:', err),
+);
 
 console.log('⚙️   Lotris BullMQ Worker process starting…');
-console.log('   Queues registered: sla-timers, auto-assign, notifications, report-gen');
-console.log('   Workers active: sla-timers, auto-assign');
+console.log('   Queues registered: sla-timers, auto-assign, notifications, report-gen, etl-sync');
+console.log('   Workers active: sla-timers, auto-assign, etl-sync');
 
 // ── Graceful shutdown ──────────────────────────────────────────────────────
 async function shutdown() {
@@ -43,10 +53,12 @@ async function shutdown() {
   await Promise.all([
     slaTimersWorker.close(),
     autoAssignWorker.close(),
+    etlSyncWorker.close(),
     slaTimersQueue.close(),
     autoAssignQueue.close(),
     notificationsQueue.close(),
     reportGenQueue.close(),
+    etlSyncQueue.close(),
     connection.quit(),
   ]);
   process.exit(0);
