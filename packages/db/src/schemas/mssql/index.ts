@@ -12,3 +12,11 @@ export { queueConfigs, type QueueConfig, type NewQueueConfig } from './queue-con
 export { tasks, type Task, type NewTask } from './tasks';
 export { taskAssignments, type TaskAssignment, type NewTaskAssignment } from './task-assignments';
 export { taskChecklistItems, type TaskChecklistItem, type NewTaskChecklistItem } from './task-checklist-items';
+export { kpiDefinitions, type KpiDefinition, type NewKpiDefinition } from './kpi-definitions';
+export { kpiTeamTargets, type KpiTeamTarget, type NewKpiTeamTarget } from './kpi-team-targets';
+export { kpiEngineerAssignments, type KpiEngineerAssignment, type NewKpiEngineerAssignment } from './kpi-engineer-assignments';
+export { kpiAgreements, type KpiAgreement, type NewKpiAgreement } from './kpi-agreements';
+export { kpiAgreementAreas, type KpiAgreementArea, type NewKpiAgreementArea } from './kpi-agreement-areas';
+export { kpiAgreementMetrics, type KpiAgreementMetric, type NewKpiAgreementMetric } from './kpi-agreement-metrics';
+export { kpiActuals, type KpiActual, type NewKpiActual } from './kpi-actuals';
+export { kpiResults, type KpiResult, type NewKpiResult } from './kpi-results';

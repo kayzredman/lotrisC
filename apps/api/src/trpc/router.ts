@@ -5,6 +5,7 @@ import { TicketsService } from '../modules/tickets/tickets.service';
 import { QueueService } from '../modules/queue/queue.service';
 import { NotificationsService } from '../modules/notifications/notifications.service';
 import { TasksService } from '../modules/tasks/tasks.service';
+import { KpiService } from '../modules/kpi/kpi.service';
 
 /**
  * tRPC application router.
@@ -255,6 +256,77 @@ export const appRouter = router({
     .mutation(async ({ ctx, input }) => {
       const svc = new TasksService();
       return svc.markAssignmentComplete(ctx.auth, input.taskId);
+    }),
+
+  // ── kpi ───────────────────────────────────────────────────────────────────
+
+  'kpi.definitions.list': protectedProcedure.query(async ({ ctx }) => {
+    const svc = new KpiService();
+    return svc.listDefinitions(ctx.auth);
+  }),
+
+  'kpi.definitions.get': protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const svc = new KpiService();
+      return svc.getDefinition(ctx.auth, input.id);
+    }),
+
+  'kpi.assignments.list': protectedProcedure
+    .input(
+      z.object({
+        engineerId: z.string().uuid().optional(),
+        periodKey: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const svc = new KpiService();
+      return svc.listAssignments(ctx.auth, input.engineerId, input.periodKey);
+    }),
+
+  'kpi.agreements.list': protectedProcedure
+    .input(
+      z.object({
+        engineerId: z.string().uuid().optional(),
+        periodKey: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const svc = new KpiService();
+      return svc.listAgreements(ctx.auth, input.engineerId, input.periodKey);
+    }),
+
+  'kpi.agreements.get': protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const svc = new KpiService();
+      return svc.getAgreementWithAreas(ctx.auth, input.id);
+    }),
+
+  'kpi.actuals.list': protectedProcedure
+    .input(
+      z.object({
+        engineerId: z.string().uuid().optional(),
+        metricId: z.string().uuid().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const svc = new KpiService();
+      return svc.listActuals(ctx.auth, input.engineerId, input.metricId);
+    }),
+
+  'kpi.results.get': protectedProcedure
+    .input(z.object({ agreementId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const svc = new KpiService();
+      return svc.getResult(ctx.auth, input.agreementId);
+    }),
+
+  'kpi.score.compute': protectedProcedure
+    .input(z.object({ agreementId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new KpiService();
+      return svc.computeScore(ctx.auth, input.agreementId);
     }),
 });
 

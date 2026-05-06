@@ -153,8 +153,45 @@
 ## Sprint 8–10 · KPI Engine
 
 **Target milestone:** M5  
-**Status:** BLOCKED on M4  
-*(Detail to be filled by QA Agent after M4 gate)*
+**Status:** 🔓 UNBLOCKED — M4 gate passed May 2026. Ready to begin.
+
+**Deliverable:** Full 3-layer KPI system — definitions, team target overrides, per-engineer assignment, agreements (Draft → Active), actuals ingestion (auto + manual), weighted scoring, KPI dashboard wired to API.
+
+**Reference mockups:** `mockups/04-kpis-v2.html`
+
+---
+
+### Backend Dev Agent Jobs
+
+- [ ] `B8-1` — MSSQL schemas: `kpi_definitions`, `kpi_team_targets`, `kpi_engineer_assignments`, `kpi_agreements`, `kpi_agreement_areas`, `kpi_agreement_metrics`, `kpi_actuals`, `kpi_results`. Migration: `0005_kpi_engine.sql`
+- [ ] `B8-2` — `KpiModule`: REST v1 — KPI Definitions CRUD (`IT_MANAGER` only): `POST/GET/PATCH/DELETE /api/v1/kpi/definitions`; per-team target overrides: `GET/PATCH /api/v1/kpi/definitions/:id/team-targets`
+- [ ] `B8-3` — Per-engineer KPI assignment REST: `GET/POST/PATCH /api/v1/kpi/assignments` (Team Lead scope — own team only); individual target overrides stored in `kpi_engineer_assignments`
+- [ ] `B8-4` — KPI Agreement REST: `POST /api/v1/kpi/agreements` (create Draft), `GET /api/v1/kpi/agreements/:id`, `PATCH /api/v1/kpi/agreements/:id/areas` (add/update areas + metric rows), `POST /api/v1/kpi/agreements/:id/submit` (Lead submits → Pending Review), `POST /api/v1/kpi/agreements/:id/accept` (Engineer accepts → Active)
+- [ ] `B8-5` — Document upload + column mapping: `POST /api/v1/kpi/agreements/:id/upload` (parse Excel/CSV via `exceljs`; return column preview); `POST /api/v1/kpi/agreements/:id/import` (accept column mapping, insert metric rows)
+- [ ] `B8-6` — KPI actuals ingestion: auto-ingest on ticket resolve (`TicketsService`) and task complete (`TasksService`) — write `kpi_actuals` row linked to the agreement metric; manual entry endpoint `POST /api/v1/kpi/actuals`
+- [ ] `B8-7` — Scoring engine: `KpiScoringService` — computes weighted score per `kpi_agreement_area` and overall score for a period; stores result in `kpi_results`; callable on-demand and via BullMQ `score-period` job at period end
+- [ ] `B8-8` — tRPC procedures: `kpi.definitions.list`, `kpi.assignments.list`, `kpi.agreements.list`, `kpi.agreements.get`, `kpi.results.get`, `kpi.actuals.list`
+
+### Frontend Dev Agent Jobs
+
+- [ ] `F8-1` — KPI Setup page (`app/(app)/kpis/page.tsx`) + `components/kpis/kpi-definitions-table.tsx`: IT_MANAGER view — definitions table with name, type, target, weight, scope; Create / Edit / Archive actions; per-team override matrix modal (reference mockup page 06)
+- [ ] `F8-2` — KPI Assignments page (`components/kpis/kpi-assignments-panel.tsx`): Team Lead view — assign KPIs to engineers in own team, set individual target overrides, reference team default (reference mockup page 07)
+- [ ] `F8-3` — KPI Agreement builder (`components/kpis/kpi-agreement-builder.tsx`): area groups, metric rows (description, weight, period, target), weight-sum validation (must = 100), manual entry + CSV/Excel upload with column mapping wizard, submit / accept actions (reference mockup page 08)
+- [ ] `F8-4` — KPI Dashboard section (`components/kpis/kpi-dashboard.tsx`): engineer self-view — score vs target per metric, RAG (green/amber/red) indicators, trend sparklines, overall weighted score gauge; wired to `trpc.kpi.results.get` (reference mockup page 04)
+- [ ] `F8-5` — tRPC hooks wiring: all `trpc.kpi.*` procedures; optimistic updates on agreement edits; 60s refresh on dashboard scores
+
+### QA Gate Checks — M5
+
+- [ ] `POST /api/v1/kpi/definitions` creates definition with correct `tenantId` scope; weight totals enforcement on activation
+- [ ] Per-team target override is applied when `kpi_team_targets` row exists; falls back to definition default otherwise
+- [ ] Engineer assignment restricted to Team Lead's own team; ENGINEER role cannot call `/api/v1/kpi/assignments`
+- [ ] Agreement status machine: `Draft → Pending Review → Active`; Active agreement blocks further area/metric edits
+- [ ] CSV/Excel upload: bad column mapping returns 422 with field-level errors; valid import inserts metric rows correctly
+- [ ] Ticket resolve auto-writes `kpi_actuals` row if a matching active agreement metric exists for the engineer
+- [ ] Task complete auto-writes `kpi_actuals` row if task has a `kpi_definition_id` linked
+- [ ] Scoring engine produces correct weighted score for a sample 3-area agreement (weight totals 100)
+- [ ] KPI dashboard RAG indicators: green ≥ target, amber within 10% below target, red > 10% below
+- [ ] All KPI data is scoped to authenticated user's `tenantId`; no cross-tenant data leak
 
 ---
 
