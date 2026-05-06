@@ -1,4 +1,5 @@
-import { router, protectedProcedure } from './trpc';
+import { router, protectedProcedure, adminProcedure } from './trpc';
+import { HealthService } from '../modules/health/health.service';
 import { getMssqlDb, users, teams, roles, tickets, ticketComments, ticketHistory, eq, and, asc } from '@lotris/db';
 import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
@@ -351,6 +352,36 @@ export const appRouter = router({
     const svc = new DashboardCacheService();
     return svc.getQueueHealth(ctx.auth.tenantId);
   }),
+
+  // ── health (ADMIN only) ──────────────────────────────────────────────────
+
+  'health.getSnapshot': adminProcedure.query(async () => {
+    const svc = new HealthService();
+    return svc.getSnapshot();
+  }),
+
+  'health.getIncidents': adminProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(100).default(20) }))
+    .query(async ({ input }) => {
+      const svc = new HealthService();
+      return svc.getIncidents(input.limit);
+    }),
+
+  'health.restartService': adminProcedure
+    .input(z.object({
+      serviceName: z.enum([
+        'nestjs-api',
+        'nextjs-web',
+        'bullmq-workers',
+        'mssql-db',
+        'redis',
+        'postgres-analytics',
+      ]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new HealthService();
+      return svc.requestRestart(input.serviceName, ctx.auth.userId, ctx.auth.tenantId);
+    }),
 });
 
 export type AppRouter = typeof appRouter;
