@@ -7,6 +7,7 @@ import { TicketsModule } from './modules/tickets/tickets.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { KpiModule } from './modules/kpi/kpi.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
     NotificationsModule,
     QueueModule,
     TasksModule,
+    KpiModule,
   ],
 })
 export class AppModule {}
