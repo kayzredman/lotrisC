@@ -11,7 +11,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, sub, trend, color = 'default', accentColor }: StatCardProps) {
   const colorClass = {
-    default: 'text-slate-100',
+    default: 'text-[#f57f20]',
     green: 'text-emerald-400',
     amber: 'text-amber-400',
     red: 'text-rose-400',
@@ -21,10 +21,10 @@ function StatCard({ label, value, sub, trend, color = 'default', accentColor }: 
 
   return (
     <div className="relative rounded-xl bg-[#141926] border border-slate-800/80 p-5 flex flex-col gap-1 overflow-hidden hover:border-slate-700 transition-colors">
-      {/* Accent top bar */}
+      {/* Accent top bar — solid, thick */}
       <div
-        className="absolute top-0 left-0 right-0 h-[3px]"
-        style={{ background: accentColor ?? 'linear-gradient(90deg, #f57f20 0%, rgba(245,127,32,0.2) 100%)' }}
+        className="absolute top-0 left-0 right-0 h-[5px]"
+        style={{ background: accentColor ?? '#f57f20' }}
       />
       <p className="text-[10px] text-slate-500 uppercase tracking-widest font-medium pt-1">{label}</p>
       <p className={`text-3xl font-bold animate-count-up ${colorClass}`}>
@@ -62,11 +62,7 @@ export function StatCards({ openTickets, slaCompliancePct, avgResolutionHours, t
   const slaColor: StatCardProps['color'] =
     slaCompliancePct >= 95 ? 'green' : slaCompliancePct >= 85 ? 'amber' : 'red';
   const slaAccent =
-    slaCompliancePct >= 95
-      ? 'linear-gradient(90deg,#22c55e,rgba(34,197,94,0.2))'
-      : slaCompliancePct >= 85
-      ? 'linear-gradient(90deg,#eab308,rgba(234,179,8,0.2))'
-      : 'linear-gradient(90deg,#ef4444,rgba(239,68,68,0.2))';
+    slaCompliancePct >= 95 ? '#22c55e' : slaCompliancePct >= 85 ? '#eab308' : '#ef4444';
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -74,8 +70,8 @@ export function StatCards({ openTickets, slaCompliancePct, avgResolutionHours, t
         label="Open Tickets"
         value={openTickets}
         sub="currently unresolved"
-        color={openTickets > 50 ? 'amber' : 'default'}
-        accentColor={openTickets > 50 ? 'linear-gradient(90deg,#f97316,rgba(249,115,22,0.2))' : undefined}
+        color="default"
+        accentColor="#f57f20"
       />
       <StatCard
         label="SLA Compliance"
@@ -88,8 +84,8 @@ export function StatCards({ openTickets, slaCompliancePct, avgResolutionHours, t
         label="Avg Resolution"
         value={`${avgResolutionHours}h`}
         sub="last 30 days"
-        color={avgResolutionHours > 48 ? 'amber' : 'default'}
-        accentColor="linear-gradient(90deg,#376cc6,rgba(55,108,198,0.2))"
+        color="default"
+        accentColor="#376cc6"
       />
       <StatCard
         label="Team KPI Score"
@@ -98,7 +94,7 @@ export function StatCards({ openTickets, slaCompliancePct, avgResolutionHours, t
         color={
           teamKpiScore == null ? 'default' : teamKpiScore >= 80 ? 'green' : teamKpiScore >= 60 ? 'amber' : 'red'
         }
-        accentColor="linear-gradient(90deg,#8aac11,rgba(138,172,17,0.2))"
+        accentColor="#8aac11"
       />
     </div>
   );

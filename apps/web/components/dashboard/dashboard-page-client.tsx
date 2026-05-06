@@ -6,10 +6,11 @@ import { TicketAnalytics } from './ticket-analytics';
 import { EngineerPerfTable } from './engineer-perf-table';
 
 export function DashboardPageClient() {
-  const summaryQ = trpc['dashboard.summary'].useQuery(undefined, { refetchInterval: 30_000 });
-  const analyticsQ = trpc['dashboard.ticketAnalytics'].useQuery(undefined, { refetchInterval: 30_000 });
-  const engineerQ = trpc['dashboard.engineerPerf'].useQuery(undefined, { refetchInterval: 30_000 });
-  const queueQ = trpc['dashboard.queueHealth'].useQuery(undefined, { refetchInterval: 30_000 });
+  const queryOpts = { refetchInterval: 30_000, staleTime: 25_000, placeholderData: (prev: unknown) => prev };
+  const summaryQ = trpc['dashboard.summary'].useQuery(undefined, queryOpts);
+  const analyticsQ = trpc['dashboard.ticketAnalytics'].useQuery(undefined, queryOpts);
+  const engineerQ = trpc['dashboard.engineerPerf'].useQuery(undefined, queryOpts);
+  const queueQ = trpc['dashboard.queueHealth'].useQuery(undefined, queryOpts);
 
   const summary = summaryQ.data as {
     openTickets: number;
@@ -43,18 +44,18 @@ export function DashboardPageClient() {
     resolvedLast3Days: number;
   } | undefined;
 
-  const isLoadingSummary = summaryQ.isLoading;
+  const isLoadingSummary = summaryQ.isPending;
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-100">Dashboard</h1>
+        <div className="border-l-4 border-brand pl-4">
+          <h1 className="text-2xl font-bold text-slate-100">Dashboard</h1>
           <p className="mt-0.5 text-sm text-slate-400">Live performance overview · auto-refreshes every 30s</p>
         </div>
         {(summaryQ.isFetching || analyticsQ.isFetching) && (
-          <span className="text-xs text-slate-500 animate-pulse">Refreshing…</span>
+          <span className="text-xs text-brand/70 animate-pulse font-medium tracking-wide uppercase">Refreshing…</span>
         )}
       </div>
 
@@ -68,10 +69,10 @@ export function DashboardPageClient() {
 
       {/* Queue health banner */}
       {queue && (
-        <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-4 flex flex-wrap gap-6 text-sm">
+        <div className="rounded-xl bg-surface border border-slate-700/60 p-4 flex flex-wrap gap-6 text-sm border-l-4 border-l-brand">
           <span className="text-slate-400">
             Queue Health:
-            <span className="ml-2 font-semibold text-slate-100">{queue.openTickets} open</span>
+            <span className="ml-2 font-semibold text-brand">{queue.openTickets} open</span>
           </span>
           <span className="text-slate-400">
             SLA breaches (3d):
@@ -81,7 +82,7 @@ export function DashboardPageClient() {
           </span>
           <span className="text-slate-400">
             Resolved (3d):
-            <span className="ml-2 font-semibold text-slate-100">{queue.resolvedLast3Days}</span>
+            <span className="ml-2 font-semibold text-accent-green">{queue.resolvedLast3Days}</span>
           </span>
         </div>
       )}

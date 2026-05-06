@@ -49,9 +49,16 @@ export function Sidebar() {
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
       <aside className="hidden lg:flex flex-col w-[240px] shrink-0 bg-[#0b0e1a] border-r border-[#1a1f2e]">
         {/* Logo */}
-        <div className="flex items-center h-14 px-5 border-b border-[#1a1f2e] shrink-0 gap-2">
-          <span className="w-7 h-7 rounded-md bg-brand flex items-center justify-center text-white text-xs font-bold shrink-0">L</span>
-          <span className="text-[15px] font-bold text-white tracking-tight">Lotris</span>
+        <div className="flex items-center h-14 px-5 border-b border-[#1a1f2e] shrink-0 gap-2.5">
+          {/* Diamond logo — Access Bank-inspired */}
+          <span className="relative flex items-center justify-center w-8 h-8 shrink-0">
+            <span className="absolute w-6 h-6 bg-brand rotate-45 rounded-sm" />
+            <span className="relative z-10 text-white text-[11px] font-black tracking-tight">L</span>
+          </span>
+          <div className="flex flex-col leading-none">
+            <span className="text-[15px] font-bold text-white tracking-tight">Lotris</span>
+            <span className="text-[9px] text-brand/70 uppercase tracking-[0.15em] font-medium">Helpdesk</span>
+          </div>
         </div>
 
         {/* Nav */}
@@ -79,8 +86,11 @@ export function Sidebar() {
 
       {/* ── Tablet icon rail ──────────────────────────────────────────────── */}
       <aside className="hidden md:flex lg:hidden flex-col w-16 shrink-0 bg-[#0b0e1a] border-r border-[#1a1f2e] items-center py-3 gap-1">
-        <div className="flex items-center justify-center w-8 h-8 mb-2 rounded-md bg-brand">
-          <span className="text-xs font-bold text-white">L</span>
+        <div className="flex items-center justify-center w-9 h-9 mb-2">
+          <span className="relative flex items-center justify-center w-8 h-8">
+            <span className="absolute w-6 h-6 bg-brand rotate-45 rounded-sm" />
+            <span className="relative z-10 text-white text-[11px] font-black">L</span>
+          </span>
         </div>
         {[...MAIN_NAV, ...ADMIN_NAV].map((item) => (
           <IconNavLink key={item.href + item.label} {...item} active={isActive(item.href)} />
@@ -109,15 +119,15 @@ function NavLink({
     <Link
       href={href}
       className={cn(
-        'relative flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+        'relative flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all',
         active
-          ? 'bg-brand/10 text-white'
+          ? 'bg-brand/15 text-brand'
           : 'text-[#8892a4] hover:bg-white/5 hover:text-slate-200',
       )}
     >
       {/* Active left bar */}
       {active && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-brand" />
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-brand shadow-[0_0_8px_rgba(245,127,32,0.6)]" />
       )}
       <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-brand' : '')} />
       <span className="flex-1 truncate">{label}</span>

@@ -29,12 +29,16 @@
   }
   .card-accent::before {
     content: '';
-    @apply absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand to-brand/40;
+    @apply absolute top-0 left-0 right-0 h-[5px];
+    background: #f57f20;
   }
 
-  /* Pill section label */
+  /* Pill section label — Access Bank "CURRENT" style */
   .section-pill {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-widest bg-brand/10 text-brand border border-brand/20;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm text-[9px] font-bold uppercase tracking-[0.15em] bg-brand text-white;
+  }
+  .section-pill-outline {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm text-[9px] font-bold uppercase tracking-[0.15em] border border-brand/40 text-brand;
   }
 
   /* Stat value count-up animation */
