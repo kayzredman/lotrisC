@@ -54,3 +54,41 @@ export type KpiScope = 'ORG' | 'TEAM' | 'ENGINEER';
 export type KpiAgreementStatus = 'DRAFT' | 'PENDING_SIGN_OFF' | 'ACTIVE' | 'CLOSED';
 
 export type ServiceStatus = 'UP' | 'DEGRADED' | 'DOWN';
+
+export interface ServiceHealthEntry {
+  id: string;
+  name: string;
+  sub: string;
+  status: ServiceStatus;
+  cpu: number;
+  memUsedMb: number;
+  memTotalMb: number;
+  uptimeSeconds: number;
+  lastPingMs: number;
+  checkedAt: string;
+}
+
+export interface QueueDepthEntry {
+  name: string;
+  sub: string;
+  waiting: number;
+  active: number;
+  failed: number;
+  delayed: number;
+  completedLastHour: number;
+}
+
+export interface HealthSnapshot {
+  services: ServiceHealthEntry[];
+  queues: QueueDepthEntry[];
+  timestamp: string;
+}
+
+export interface IncidentEntry {
+  id: number;
+  title: string;
+  service: string;
+  resolvedAt: string | null;
+  createdAt: string;
+  details: string | null;
+}
