@@ -270,6 +270,9 @@ export function drizzle(pool: sql_pkg.ConnectionPool, _config?: { schema?: any }
             then(resolve: any, reject: any) {
               return _exec().then(resolve, reject);
             },
+            catch(reject: any) {
+              return _exec().then(undefined, reject);
+            },
           };
         },
       };

@@ -4,12 +4,41 @@
 
 @layer base {
   html {
-    @apply bg-slate-950 text-slate-100;
+    @apply bg-[#0b0e1a] text-slate-100;
   }
 
   :root {
     --sidebar-width: 240px;
     --sidebar-width-icon: 64px;
     --topbar-height: 56px;
+    --brand: #f57f20;
+    --brand-light: rgba(245, 127, 32, 0.12);
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a3145; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3d4a66; }
+}
+
+@layer components {
+  /* Card with orange top accent line — Access Bank inspired */
+  .card-accent {
+    @apply relative rounded-xl border border-slate-800 bg-surface overflow-hidden;
+  }
+  .card-accent::before {
+    content: '';
+    @apply absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand to-brand/40;
+  }
+
+  /* Pill section label */
+  .section-pill {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-widest bg-brand/10 text-brand border border-brand/20;
+  }
+
+  /* Stat value count-up animation */
+  .stat-value {
+    @apply animate-count-up;
   }
 }

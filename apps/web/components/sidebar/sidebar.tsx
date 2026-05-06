@@ -47,22 +47,23 @@ export function Sidebar() {
   return (
     <>
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col w-[240px] shrink-0 bg-sidebar-bg border-r border-sidebar-border">
+      <aside className="hidden lg:flex flex-col w-[240px] shrink-0 bg-[#0b0e1a] border-r border-[#1a1f2e]">
         {/* Logo */}
-        <div className="flex items-center h-14 px-5 border-b border-sidebar-border shrink-0">
-          <span className="text-lg font-bold text-white tracking-tight">Lotris</span>
+        <div className="flex items-center h-14 px-5 border-b border-[#1a1f2e] shrink-0 gap-2">
+          <span className="w-7 h-7 rounded-md bg-brand flex items-center justify-center text-white text-xs font-bold shrink-0">L</span>
+          <span className="text-[15px] font-bold text-white tracking-tight">Lotris</span>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
           <div>
-            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Main</p>
+            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#3d4a66]">Main</p>
             {MAIN_NAV.map((item) => (
               <NavLink key={item.href + item.label} {...item} active={isActive(item.href)} />
             ))}
           </div>
           <div>
-            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Admin</p>
+            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#3d4a66]">Admin</p>
             {ADMIN_NAV.map((item) => (
               <NavLink key={item.href + item.label} {...item} active={isActive(item.href)} />
             ))}
@@ -70,16 +71,16 @@ export function Sidebar() {
         </nav>
 
         {/* User */}
-        <div className="shrink-0 flex items-center gap-3 px-4 py-4 border-t border-sidebar-border">
+        <div className="shrink-0 flex items-center gap-3 px-4 py-4 border-t border-[#1a1f2e]">
           <UserButton afterSignOutUrl="/login" />
-          <span className="text-xs text-sidebar-text truncate">Account</span>
+          <span className="text-xs text-[#8892a4] truncate">Account</span>
         </div>
       </aside>
 
       {/* ── Tablet icon rail ──────────────────────────────────────────────── */}
-      <aside className="hidden md:flex lg:hidden flex-col w-16 shrink-0 bg-sidebar-bg border-r border-sidebar-border items-center py-3 gap-1">
-        <div className="flex items-center justify-center h-10 mb-2">
-          <span className="text-sm font-bold text-white">L</span>
+      <aside className="hidden md:flex lg:hidden flex-col w-16 shrink-0 bg-[#0b0e1a] border-r border-[#1a1f2e] items-center py-3 gap-1">
+        <div className="flex items-center justify-center w-8 h-8 mb-2 rounded-md bg-brand">
+          <span className="text-xs font-bold text-white">L</span>
         </div>
         {[...MAIN_NAV, ...ADMIN_NAV].map((item) => (
           <IconNavLink key={item.href + item.label} {...item} active={isActive(item.href)} />
@@ -90,7 +91,7 @@ export function Sidebar() {
       </aside>
 
       {/* ── Mobile bottom nav ─────────────────────────────────────────────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden bg-sidebar-bg border-t border-sidebar-border h-16">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden bg-[#0b0e1a] border-t border-[#1a1f2e] h-16">
         {MAIN_NAV.slice(0, 5).map((item) => (
           <MobileNavLink key={item.href + item.label} {...item} active={isActive(item.href)} />
         ))}
@@ -108,16 +109,20 @@ function NavLink({
     <Link
       href={href}
       className={cn(
-        'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+        'relative flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
         active
-          ? 'bg-sidebar-active text-sidebar-text-active'
-          : 'text-sidebar-text hover:bg-sidebar-hover hover:text-sidebar-text-active',
+          ? 'bg-brand/10 text-white'
+          : 'text-[#8892a4] hover:bg-white/5 hover:text-slate-200',
       )}
     >
-      <Icon className="w-4 h-4 shrink-0" />
+      {/* Active left bar */}
+      {active && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full bg-brand" />
+      )}
+      <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-brand' : '')} />
       <span className="flex-1 truncate">{label}</span>
       {badge != null && badge > 0 && (
-        <span className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white px-1">
+        <span className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-brand text-[10px] font-bold text-white px-1">
           {badge > 99 ? '99+' : badge}
         </span>
       )}
@@ -135,13 +140,13 @@ function IconNavLink({
       className={cn(
         'relative flex items-center justify-center w-10 h-10 rounded-md transition-colors',
         active
-          ? 'bg-sidebar-active text-sidebar-text-active'
-          : 'text-sidebar-text hover:bg-sidebar-hover hover:text-sidebar-text-active',
+          ? 'bg-brand/10 text-brand'
+          : 'text-[#8892a4] hover:bg-white/5 hover:text-slate-200',
       )}
     >
       <Icon className="w-5 h-5" />
       {badge != null && badge > 0 && (
-        <span className="absolute top-1 right-1 w-3.5 h-3.5 flex items-center justify-center rounded-full bg-indigo-600 text-[8px] font-bold text-white">
+        <span className="absolute top-1 right-1 w-3.5 h-3.5 flex items-center justify-center rounded-full bg-brand text-[8px] font-bold text-white">
           {badge > 9 ? '9+' : badge}
         </span>
       )}
@@ -157,7 +162,7 @@ function MobileNavLink({
       href={href}
       className={cn(
         'relative flex flex-1 flex-col items-center justify-center gap-1 text-xs transition-colors',
-        active ? 'text-brand' : 'text-sidebar-text',
+        active ? 'text-brand' : 'text-[#8892a4]',
       )}
     >
       <div className="relative">

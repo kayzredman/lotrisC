@@ -3,10 +3,10 @@
  *
  * Usage:
  *   cd apps/api
- *   npx tsx src/scripts/seed.ts
+ *   ./node_modules/.bin/tsx src/scripts/seed.ts
  *
- * Prerequisites: Docker services running (MSSQL on 1433, Redis on 6379).
- * Safe to re-run — checks for existing tenant before inserting.
+ * Prerequisites: Docker services running (MSSQL on 1433).
+ * Safe to re-run — uses INSERT ... catch to skip duplicates.
  */
 import 'dotenv/config';
 import { randomUUID } from 'node:crypto';
@@ -44,7 +44,8 @@ async function main() {
 
   console.log('🌱 Seeding Lotris demo data…\n');
 
-  // ── 1. Tenant ────────────────────────────────────────────────────────────  await db.insert(tenants).values({
+  // ── 1. Tenant ────────────────────────────────────────────────────────────
+  await db.insert(tenants).values({
     id:          TENANT_ID,
     clerkOrgId:  CLERK_ORG,
     name:        'Lotris Demo Corp',
