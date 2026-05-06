@@ -7,5 +7,9 @@ import type { AppRouter } from '@lotris/types';
  *
  * Usage:
  *   const { data } = trpc['users.me'].useQuery();
+ *
+ * Typed as `any` because AppRouter is a stub (= any) until apps/api is fully
+ * built; createTRPCReact<any> otherwise resolves to an error-string union type.
  */
-export const trpc = createTRPCReact<AppRouter>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const trpc = createTRPCReact<AppRouter>() as any;

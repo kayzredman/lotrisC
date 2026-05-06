@@ -126,11 +126,3 @@ export function EngineerPerfTable({ rows, isLoading }: EngineerPerfTableProps) {
     </div>
   );
 }
-
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
