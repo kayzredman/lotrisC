@@ -6,6 +6,7 @@ import { QueueService } from '../modules/queue/queue.service';
 import { NotificationsService } from '../modules/notifications/notifications.service';
 import { TasksService } from '../modules/tasks/tasks.service';
 import { KpiService } from '../modules/kpi/kpi.service';
+import { DashboardCacheService } from '../modules/analytics/dashboard-cache.service';
 
 /**
  * tRPC application router.
@@ -328,6 +329,28 @@ export const appRouter = router({
       const svc = new KpiService();
       return svc.computeScore(ctx.auth, input.agreementId);
     }),
+
+  // ── dashboard ─────────────────────────────────────────────────────────────
+
+  'dashboard.summary': protectedProcedure.query(async ({ ctx }) => {
+    const svc = new DashboardCacheService();
+    return svc.getSummary(ctx.auth.tenantId);
+  }),
+
+  'dashboard.ticketAnalytics': protectedProcedure.query(async ({ ctx }) => {
+    const svc = new DashboardCacheService();
+    return svc.getTicketAnalytics(ctx.auth.tenantId);
+  }),
+
+  'dashboard.engineerPerf': protectedProcedure.query(async ({ ctx }) => {
+    const svc = new DashboardCacheService();
+    return svc.getEngineerPerf(ctx.auth.tenantId);
+  }),
+
+  'dashboard.queueHealth': protectedProcedure.query(async ({ ctx }) => {
+    const svc = new DashboardCacheService();
+    return svc.getQueueHealth(ctx.auth.tenantId);
+  }),
 });
 
 export type AppRouter = typeof appRouter;
