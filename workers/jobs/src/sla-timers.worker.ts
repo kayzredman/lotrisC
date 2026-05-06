@@ -1,7 +1,6 @@
 import { Worker, Job } from 'bullmq';
 import IORedis from 'ioredis';
-import { getMssqlDb, tickets, ticketHistory, users } from '@lotris/db';
-import { eq, and, count, sql } from 'drizzle-orm';
+import { getMssqlDb, tickets, ticketHistory, users, eq, and, count, sql } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
 
 interface SlaJobData {
@@ -17,7 +16,7 @@ interface SlaJobData {
  */
 async function handlePickupSlaCheck(job: Job<SlaJobData>) {
   const { ticketId, tenantId } = job.data;
-  const db = getMssqlDb();
+  const db = await getMssqlDb();
 
   const [ticket] = await db
     .select()
@@ -76,7 +75,7 @@ async function handlePickupSlaCheck(job: Job<SlaJobData>) {
  */
 async function handleResolutionSlaCheck(job: Job<SlaJobData>) {
   const { ticketId, tenantId } = job.data;
-  const db = getMssqlDb();
+  const db = await getMssqlDb();
 
   const [ticket] = await db
     .select()

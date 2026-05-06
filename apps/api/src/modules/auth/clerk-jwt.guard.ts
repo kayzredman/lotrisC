@@ -4,7 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { createClerkClient } from '@clerk/backend';
+import { createClerkClient, verifyToken } from '@clerk/backend';
 import { getEnv } from '@lotris/config';
 import { AuthService } from './auth.service';
 
@@ -30,7 +30,7 @@ export class ClerkJwtGuard implements CanActivate {
     const token = authHeader.slice(7);
 
     try {
-      const payload = await this.clerk.verifyToken(token);
+      const payload = await verifyToken(token, { secretKey: getEnv().CLERK_SECRET_KEY });
 
       if (!payload.org_id) {
         throw new UnauthorizedException('No organisation in token — user must belong to a Clerk org');

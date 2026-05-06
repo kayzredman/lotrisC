@@ -1,9 +1,7 @@
 import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
-import { createClerkClient } from '@clerk/backend';
+import { createClerkClient, verifyToken } from '@clerk/backend';
 import { getEnv } from '@lotris/config';
-import { getMssqlDb } from '@lotris/db';
-import { users, roles, tenants } from '@lotris/db';
-import { eq } from 'drizzle-orm';
+import { getMssqlDb, users, roles, tenants, eq } from '@lotris/db';
 import type { TrpcAuth, TrpcContext } from '@lotris/types';
 
 const clerk = createClerkClient({ secretKey: getEnv().CLERK_SECRET_KEY });
@@ -24,7 +22,7 @@ export async function createContext({
   const token = authHeader.slice(7);
 
   try {
-    const payload = await clerk.verifyToken(token);
+    const payload = await verifyToken(token, { secretKey: getEnv().CLERK_SECRET_KEY });
     if (!payload.org_id) return { auth: null };
 
     const db = await getMssqlDb();

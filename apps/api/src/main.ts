@@ -41,13 +41,13 @@ async function bootstrap() {
     trpcOptions: {
       router: appRouter,
       createContext,
-      onError({ path, error }) {
+      onError({ path, error }: { path?: string; error: { code: string; message: string } }) {
         // Log server errors; surface only safe messages to clients
         if (error.code === 'INTERNAL_SERVER_ERROR') {
           console.error(`[tRPC] Error on ${path}:`, error);
         }
       },
-    } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
+    },
   });
 
   // ── OpenAPI (REST v1) ─────────────────────────────────────────────────────

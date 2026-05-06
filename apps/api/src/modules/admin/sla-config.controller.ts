@@ -4,8 +4,7 @@ import { RoleGuard } from '../auth/role.guard';
 import { Session } from '../auth/decorators/session.decorator';
 import type { TrpcAuth } from '@lotris/types';
 import { TicketsService } from '../tickets/tickets.service';
-import { getMssqlDb, slaConfigs } from '@lotris/db';
-import { eq, and, sql } from 'drizzle-orm';
+import { getMssqlDb, slaConfigs, eq, and, sql } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
 import { IsInt, IsOptional, Min } from 'class-validator';
 
@@ -36,7 +35,7 @@ export class SlaConfigController {
 
   @Patch('sla-config')
   async update(@Session() auth: TrpcAuth, @Body() dto: UpdateSlaConfigDto) {
-    const db = getMssqlDb();
+    const db = await getMssqlDb();
     const now = new Date();
 
     const conditions = [eq(slaConfigs.tenantId, auth.tenantId)];

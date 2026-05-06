@@ -1,7 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { getMssqlDb } from '@lotris/db';
-import { users, roles, tenants } from '@lotris/db';
-import { eq } from 'drizzle-orm';
+import { getMssqlDb, users, roles, tenants, eq } from '@lotris/db';
 import type { TrpcAuth } from '@lotris/types';
 
 @Injectable()

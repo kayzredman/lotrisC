@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Post-Sprint 5-6 (Queue Engine complete)
+> Last updated: May 2026 — Post-Sprint 7 (Task Management complete)
 
 ---
 
@@ -12,7 +12,7 @@
 | 1–2    | Foundation & Auth            | ✅ Complete    | `feature/sprint-1-2-auth` | M1 |
 | 3–4    | Ticket Core                  | ✅ Complete    | `feature/sprint-3-4-tickets` | M2 |
 | 5–6    | Queue Engine                 | ✅ Complete    | `feature/sprint-5-6-queue` | M3  |
-| 7      | Task Management              | ⏳ Blocked on M3 | —                  | M4    |
+| 7      | Task Management              | ✅ Complete    | `feature/sprint-7-tasks` | M4    |
 | 8–10   | KPI Engine                   | ⏳ Blocked on M4 | —                  | M5    |
 | 11–12  | Reporting & Full Dashboard   | ⏳ Blocked on M5 | —                  | M6    |
 | 13     | System Health Monitoring     | ⏳ Blocked on M6 | —                  | M7    |
@@ -124,8 +124,29 @@
 ## Sprint 7 · Task Management
 
 **Target milestone:** M4  
-**Status:** BLOCKED on M3  
-*(Detail to be filled by QA Agent after M3 gate)*
+**Status:** ✅ COMPLETE — branch `feature/sprint-7-tasks`
+
+### Backend Dev Agent Jobs
+- [x] `B7-1` — MSSQL schemas: `tasks`, `task_assignments`, `task_checklist_items`. Migration: `0004_task_management.sql`
+- [x] `B7-2` — `TasksModule` REST v1: `POST /api/v1/tasks`, `GET /api/v1/tasks`, `GET /api/v1/tasks/:id`, `PATCH /api/v1/tasks/:id`, `POST /api/v1/tasks/:id/checklist`, `PATCH /api/v1/tasks/:id/checklist/:itemId/toggle`, `DELETE /api/v1/tasks/:id/checklist/:itemId`, `POST /api/v1/tasks/:id/assignees`, `POST /api/v1/tasks/:id/complete`
+- [x] `B7-3` — Task business logic: `LEAD_ASSIGNED` vs `SELF_LOGGED` source determination from role; visibility rules (engineer sees own tasks + assigned tasks; lead sees team); progress computed from checklist completion or `progressOverride`; auto-complete when all checklist items + all assignment rows done
+- [x] `B7-4` — tRPC procedures: `tasks.list`, `tasks.get`, `tasks.create`, `tasks.update`, `tasks.addChecklistItem`, `tasks.toggleChecklistItem`, `tasks.complete`
+
+### Frontend Dev Agent Jobs
+- [x] `F7-1` — Tasks page (`app/(app)/tasks/page.tsx`) + `components/tasks/tasks-table.tsx`: filterable table by status + source, progress bar inline, 60s refresh, row-click opens drawer
+- [x] `F7-2` — `components/tasks/task-drawer.tsx`: full task view, progress bar, live checklist with toggle + add item, assignees list per-completion, status action footer (Start / Mark Complete / Cancel)
+- [x] `F7-3` — `components/tasks/create-task-modal.tsx`: two-mode form (Self-log / Assign to engineers), task type select, due date picker, assignee UUID list builder
+
+### QA Gate Checks — M4
+- [ ] `POST /api/v1/tasks` with no `assigneeIds` creates `SELF_LOGGED` task owned by caller
+- [ ] `POST /api/v1/tasks` with `assigneeIds` from TEAM_LEAD+ creates `LEAD_ASSIGNED` task + `Task_Assignments` rows
+- [ ] Engineer attempting to assign task to others receives 400
+- [ ] Engineer cannot view tasks they did not create or are not assigned to (401/403)
+- [ ] Toggling all checklist items to complete sets task `status = COMPLETED`, `progress_override = 100`
+- [ ] Marking own assignment complete when all assignees done → task auto-completes
+- [ ] Self-logged tasks are visible to the team lead in `GET /api/v1/tasks`
+- [ ] `PATCH /api/v1/tasks/:id/status = CANCELLED` blocks further updates
+- [ ] Task drawer checklist items reflect server state immediately after toggle (optimistic invalidation)
 
 ---
 

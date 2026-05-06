@@ -9,3 +9,6 @@ export { ticketHistory, type TicketHistoryRow, type NewTicketHistoryRow } from '
 export { slaConfigs, type SlaConfig, type NewSlaConfig } from './sla-configs';
 export { attachmentRefs, type AttachmentRef, type NewAttachmentRef } from './attachment-refs';
 export { queueConfigs, type QueueConfig, type NewQueueConfig } from './queue-config';
+export { tasks, type Task, type NewTask } from './tasks';
+export { taskAssignments, type TaskAssignment, type NewTaskAssignment } from './task-assignments';
+export { taskChecklistItems, type TaskChecklistItem, type NewTaskChecklistItem } from './task-checklist-items';
