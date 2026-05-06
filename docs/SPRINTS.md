@@ -239,8 +239,48 @@
 ## Sprint 13 · System Health Monitoring
 
 **Target milestone:** M7  
-**Status:** 🔓 UNBLOCKED — M6 gate passed. Begin immediately.  
-*(Detail to be filled by QA Agent at sprint start)*
+**Status:** ✅ COMPLETE — M7 gate passed. Merged to `dev`.
+
+**Deliverable:** SysAdmin ops dashboard at `/system-health` — live SSE stream of 6-service health checks, BullMQ queue depths, incident log, per-service detail panel, restart controls with 60s cooldown enforcement.
+
+**Reference mockup:** `mockups/10-sysadmin-ops-v2.html`
+
+---
+
+### Backend Dev Agent Jobs
+
+- [x] `B13-1` — `HealthService` (`apps/api/src/modules/health/health.service.ts`): 6-service checks — `nestjs-api` (process metrics), `nextjs-web` (HTTP probe), `mssql-db` (SELECT 1 latency), `postgres-analytics` (SELECT 1 latency), `redis` (PING + memory), `bullmq-workers` (queue reachability); all return `ServiceHealthEntry` with UP/DEGRADED/DOWN status
+- [x] `B13-2` — Queue depths: `getQueueDepths()` polls 4 queues (sla-timers, auto-assign, notifications, report-gen) via BullMQ `getJobCounts()`; returns `QueueDepthEntry[]`
+- [x] `B13-3` — Incident log: `getIncidents(limit)` queries `Audit_Logs` WHERE `action LIKE 'SERVICE_%'` ordered by `createdAt DESC`
+- [x] `B13-4` — Restart API: `requestRestart(serviceName, actorId, tenantId)` — Redis NX cooldown key (60s TTL), writes audit log; for `nestjs-api` schedules `process.exit(0)` after 1500ms
+- [x] `B13-5` — `HealthController` — `GET /health/snapshot` (ADMIN, full snapshot), `GET /health/sse` (ADMIN, 1s SSE stream via `reply.hijack()`), `POST /health/restart/:serviceName` (ADMIN, 6-service allow-list)
+- [x] `B13-6` — tRPC: `health.getSnapshot`, `health.getIncidents`, `health.restartService` procedures (all `adminProcedure`)
+- [x] `B13-7` — `packages/types`: `ServiceHealthEntry`, `QueueDepthEntry`, `HealthSnapshot`, `IncidentEntry` interfaces exported
+
+### Frontend Dev Agent Jobs
+
+- [x] `F13-1` — `apps/web/hooks/useEventSource.ts`: fetch-based SSE hook with Clerk JWT auth, auto-reconnect, `enabled` control
+- [x] `F13-2` — `apps/web/app/(app)/system-health/page.tsx`: server component, ADMIN/SUPERADMIN auth guard, redirects otherwise
+- [x] `F13-3` — `apps/web/components/system-health/system-health-client.tsx`: SSE + polling hybrid, summary chips, 2-col layout, service selection, restart flow wiring
+- [x] `F13-4` — `apps/web/components/system-health/service-table.tsx`: service rows with status badge (pulse dot), CPU/memory mini bars, uptime, ping, action buttons
+- [x] `F13-5` — `apps/web/components/system-health/queue-depths.tsx`: 6-column queue table (Waiting, Active, Failed, Delayed, Completed 1h) with color-coded counts
+- [x] `F13-6` — `apps/web/components/system-health/incident-log.tsx`: incident entries with colored dot, title, service, timestamp, resolved/open badge
+- [x] `F13-7` — `apps/web/components/system-health/detail-panel.tsx`: service stat grid (CPU, Memory, Uptime, Ping), restart/test buttons, cooldown note; reuses `StatusBadge`
+- [x] `F13-8` — `apps/web/components/system-health/restart-modal.tsx`: confirmation modal requiring exact service-id typed to unlock confirm button, Escape-to-close
+
+### QA Gate Checks — M7
+
+- [x] SSE stream uses `reply.hijack()` — no Fastify response auto-finalization conflict
+- [x] SSE client uses `fetch` (not `EventSource`) — supports `Authorization: Bearer` header
+- [x] All 6 service checks gate on correct DEGRADED thresholds (MSSQL >200ms, PG >300ms, Redis >50ms)
+- [x] Restart cooldown enforced via Redis NX key (60s TTL) — duplicate requests return 409
+- [x] Restart allow-list enum in tRPC schema prevents arbitrary service names
+- [x] Incident log scoped to `SERVICE_` prefix audit actions
+- [x] `/system-health` server component redirects non-ADMIN roles to `/dashboard`
+- [x] TypeScript clean for new files in both `apps/api` and `apps/web`
+
+**Feature branch:** `feature/sprint-13-system-health-monitoring` at `b901271`  
+**Merge commit:** on `dev`
 
 ---
 

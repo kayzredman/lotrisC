@@ -518,7 +518,7 @@ Auth & Tenancy
 | M4 — Tasks      | 7      | Lead-assigned + self-logged tasks, checklists, KPI link |
 | M5 — KPIs       | 10     | 3-layer KPI system, agreements, scoring, KPI dashboard  |
 | M6 — Reports    | 12     | Analytics layer, full dashboard, scheduled reports      |
-| M7 — Monitoring | 13     | SysAdmin ops dashboard, restart controls, status page   |
+| M7 — Monitoring | 13     | SysAdmin ops dashboard, restart controls, status page   | ✅ COMPLETE |
 
 ---
 
