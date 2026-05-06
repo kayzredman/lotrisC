@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Pre-Sprint 1
+> Last updated: May 2026 — Post-Sprint 5-6 (Queue Engine complete)
 
 ---
 
@@ -10,8 +10,8 @@
 | Sprint | Title                        | Status        | Branch               | Gate  |
 | ------ | ---------------------------- | ------------- | -------------------- | ----- |
 | 1–2    | Foundation & Auth            | ✅ Complete    | `feature/sprint-1-2-auth` | M1 |
-| 3–4    | Ticket Core                  | 🔨 In progress | `feature/sprint-3-4-tickets` | M2 |
-| 5–6    | Queue Engine                 | ⏳ Blocked on M2 | —                  | M3    |
+| 3–4    | Ticket Core                  | ✅ Complete    | `feature/sprint-3-4-tickets` | M2 |
+| 5–6    | Queue Engine                 | ✅ Complete    | `feature/sprint-5-6-queue` | M3  |
 | 7      | Task Management              | ⏳ Blocked on M3 | —                  | M4    |
 | 8–10   | KPI Engine                   | ⏳ Blocked on M4 | —                  | M5    |
 | 11–12  | Reporting & Full Dashboard   | ⏳ Blocked on M5 | —                  | M6    |
@@ -92,8 +92,32 @@
 ## Sprint 5–6 · Queue Engine
 
 **Target milestone:** M3  
-**Status:** BLOCKED on M2  
-*(Detail to be filled by QA Agent after M2 gate)*
+**Status:** ✅ COMPLETE — branch `feature/sprint-5-6-queue`
+
+### Backend Dev Agent Jobs
+- [x] `B5-1` — MSSQL schema: `queue_configs` table (`max_capacity_per_engineer`, `pickup_sla_minutes`, `resolution_sla_minutes`, `auto_assign_enabled`, nullable `team_id`). Migration: `0003_queue_engine.sql`
+- [x] `B5-2` — `QueueModule` REST v1: `GET /api/v1/queue` (engineer queue), `POST /api/v1/queue/claim/:ticketId` (controlled pickup with capacity check), `GET /api/v1/queue/health` (status counts + SLA breach + workload), `GET|PATCH /api/v1/queue/config` (ADMIN)
+- [x] `B5-3` — `sla-timers.worker.ts`: BullMQ worker handling `pickup-sla-check` (marks breach, triggers auto-assign) and `resolution-sla-check` (marks breach, escalates, notifies manager)
+- [x] `B5-4` — `auto-assign.worker.ts`: least-loaded engineer algorithm, Redis mutex `SET auto-assign:lock:{ticketId} NX EX 10000`, fallback on all-at-capacity, enqueues resolution SLA + TICKET_ASSIGNED notification
+- [x] `B5-5` — Wire pickup SLA timer in `TicketsService.updateStatus` when transitioning to `TEAM_ASSIGNED`
+- [x] `B5-6` — `workers/jobs/src/index.ts` updated: starts `slaTimersWorker` and `autoAssignWorker` on process boot, includes both in graceful shutdown
+- [x] `B5-7` — tRPC procedures: `queue.list`, `queue.claim`, `queue.health`
+
+### Frontend Dev Agent Jobs
+- [x] `F5-1` — Queue page (`app/(app)/queue/page.tsx`) + `components/queue/queue-table.tsx`: engineer queue view, Claim button (disabled at capacity), workload indicator `X / max`, pagination, 30s auto-refresh, reuses `SlaBadge`
+- [x] `F5-2` — `components/dashboard/queue-health-panel.tsx`: status distribution bars, SLA breach badges (amber pickup / red resolution), top-5 engineer workload list, 60s auto-refresh
+
+### QA Gate Checks — M3
+- [ ] `GET /api/v1/queue` returns only UNASSIGNED/TEAM_ASSIGNED tickets for the auth user's team, ordered priority ASC → sla_pickup_deadline ASC
+- [ ] `POST /api/v1/queue/claim/:id` blocks if engineer is at max capacity
+- [ ] Claiming a ticket sets status → ASSIGNED, records history, fires TICKET_ASSIGNED notification, enqueues resolution SLA timer
+- [ ] Pickup SLA timer fires after deadline; marks `sla_pickup_breached = 1`, triggers auto-assign job
+- [ ] Auto-assign worker assigns to least-loaded engineer; does not exceed `max_capacity_per_engineer`
+- [ ] Redis mutex prevents double-assignment when two pickup timers fire simultaneously
+- [ ] Resolution SLA timer marks `sla_resolution_breached = 1`, transitions ticket → ESCALATED, notifies manager
+- [ ] Queue config (per-tenant, per-team) is respected by claim and auto-assign logic
+- [ ] Queue health panel shows accurate status counts and SLA breach numbers
+- [ ] Claim button is disabled for engineer at capacity and while claim is in-flight
 
 ---
 

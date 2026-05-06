@@ -4,6 +4,8 @@ import { users, teams, roles, tickets, ticketComments, ticketHistory } from '@lo
 import { eq, and, asc } from 'drizzle-orm';
 import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
+import { QueueService } from '../modules/queue/queue.service';
+import { NotificationsService } from '../modules/notifications/notifications.service';
 
 /**
  * tRPC application router.
@@ -75,14 +77,14 @@ export const appRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const svc = new TicketsService();
+      const svc = new TicketsService(new NotificationsService());
       return svc.list(ctx.auth, input);
     }),
 
   'tickets.get': protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const svc = new TicketsService();
+      const svc = new TicketsService(new NotificationsService());
       return svc.findById(ctx.auth, input.id);
     }),
 
@@ -96,7 +98,7 @@ export const appRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const svc = new TicketsService();
+      const svc = new TicketsService(new NotificationsService());
       return svc.create(ctx.auth, input);
     }),
 
@@ -110,7 +112,7 @@ export const appRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const svc = new TicketsService();
+      const svc = new TicketsService(new NotificationsService());
       return svc.updateStatus(ctx.auth, input.id, input);
     }),
 
@@ -123,22 +125,50 @@ export const appRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const svc = new TicketsService();
+      const svc = new TicketsService(new NotificationsService());
       return svc.addComment(ctx.auth, input.ticketId, input);
     }),
 
   'tickets.getComments': protectedProcedure
     .input(z.object({ ticketId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const svc = new TicketsService();
+      const svc = new TicketsService(new NotificationsService());
       return svc.getComments(ctx.auth, input.ticketId);
     }),
 
   'tickets.getHistory': protectedProcedure
     .input(z.object({ ticketId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const svc = new TicketsService();
+      const svc = new TicketsService(new NotificationsService());
       return svc.getHistory(ctx.auth, input.ticketId);
+    }),
+
+  // ── queue ─────────────────────────────────────────────────────────────────
+
+  'queue.list': protectedProcedure
+    .input(
+      z.object({
+        teamId: z.string().uuid().optional(),
+        page: z.number().int().min(1).default(1),
+        limit: z.number().int().min(1).max(100).default(25),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const svc = new QueueService(new NotificationsService());
+      return svc.listQueue(ctx.auth, input);
+    }),
+
+  'queue.claim': protectedProcedure
+    .input(z.object({ ticketId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new QueueService(new NotificationsService());
+      return svc.claimTicket(ctx.auth, input.ticketId);
+    }),
+
+  'queue.health': protectedProcedure
+    .query(async ({ ctx }) => {
+      const svc = new QueueService(new NotificationsService());
+      return svc.getQueueHealth(ctx.auth);
     }),
 });
 

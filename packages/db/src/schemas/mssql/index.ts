@@ -8,3 +8,4 @@ export { ticketComments, type TicketComment, type NewTicketComment } from './tic
 export { ticketHistory, type TicketHistoryRow, type NewTicketHistoryRow } from './ticket-history';
 export { slaConfigs, type SlaConfig, type NewSlaConfig } from './sla-configs';
 export { attachmentRefs, type AttachmentRef, type NewAttachmentRef } from './attachment-refs';
+export { queueConfigs, type QueueConfig, type NewQueueConfig } from './queue-config';
