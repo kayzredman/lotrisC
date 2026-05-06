@@ -1,0 +1,72 @@
+version: '3.9'
+
+# ── Lotris local development services ──────────────────────────────────────
+# Start all: docker compose -f docker/docker-compose.yml up -d
+# Stop all:  docker compose -f docker/docker-compose.yml down
+# Reset data: docker compose -f docker/docker-compose.yml down -v
+
+services:
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: lotris_mssql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-Lotris@Dev2024!}"
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${MSSQL_SA_PASSWORD:-Lotris@Dev2024!}" -Q "SELECT 1" -b
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: lotris_postgres
+    environment:
+      POSTGRES_DB: lotris_analytics
+      POSTGRES_USER: lotris
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-lotris_dev}"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lotris -d lotris_analytics"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: lotris_redis
+    command: >
+      redis-server
+      --requirepass "${REDIS_PASSWORD:-lotris_dev}"
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-lotris_dev}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  mssql_data:
+    name: lotris_mssql_data
+  postgres_data:
+    name: lotris_postgres_data
+  redis_data:
+    name: lotris_redis_data
