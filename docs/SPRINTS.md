@@ -39,7 +39,7 @@
 - [x] `F1-2` — Tailwind config with design tokens from `style-v2.css`; ShadCN base components (Button, Card, Input, Badge)
 - [x] `F1-3` — Sidebar component: desktop full (240px), tablet icon rail (64px), mobile bottom nav (5 primary items)
 - [x] `F1-4` — Login page with Clerk `<SignIn />` styled to Lotris dark theme
-- [ ] `F1-5` — User & Team management page UI (ADMIN role) — **next up**
+- [x] `F1-5` — User & Team management page UI (ADMIN role) — Users table + Teams table + Invite/Create modals
 - [x] `F1-6` — tRPC client: `apps/web/lib/trpc.ts` + `Providers` with Clerk token injection
 
 ### Dependencies
