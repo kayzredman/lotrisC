@@ -47,16 +47,16 @@ export function Sidebar() {
   return (
     <>
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col w-[240px] shrink-0 bg-[#0b0e1a] border-r border-[#1a1f2e]">
+      <aside className="hidden lg:flex flex-col w-[240px] shrink-0 border-r" style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}>
         {/* Logo */}
-        <div className="flex items-center h-14 px-5 border-b border-[#1a1f2e] shrink-0 gap-2.5">
+        <div className="flex items-center h-14 px-5 shrink-0 gap-2.5 border-b" style={{ borderColor: 'var(--sidebar-border)' }}>
           {/* Diamond logo — Access Bank-inspired */}
           <span className="relative flex items-center justify-center w-8 h-8 shrink-0">
             <span className="absolute w-6 h-6 bg-brand rotate-45 rounded-sm" />
             <span className="relative z-10 text-white text-[11px] font-black tracking-tight">L</span>
           </span>
           <div className="flex flex-col leading-none">
-            <span className="text-[15px] font-bold text-white tracking-tight">Lotris</span>
+            <span className="text-[15px] font-bold tracking-tight" style={{ color: 'var(--sidebar-text-active)' }}>Lotris</span>
             <span className="text-[9px] text-brand/70 uppercase tracking-[0.15em] font-medium">Helpdesk</span>
           </div>
         </div>
@@ -64,13 +64,13 @@ export function Sidebar() {
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
           <div>
-            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#3d4a66]">Main</p>
+            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Main</p>
             {MAIN_NAV.map((item) => (
               <NavLink key={item.href + item.label} {...item} active={isActive(item.href)} />
             ))}
           </div>
           <div>
-            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#3d4a66]">Admin</p>
+            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Admin</p>
             {ADMIN_NAV.map((item) => (
               <NavLink key={item.href + item.label} {...item} active={isActive(item.href)} />
             ))}
@@ -78,14 +78,14 @@ export function Sidebar() {
         </nav>
 
         {/* User */}
-        <div className="shrink-0 flex items-center gap-3 px-4 py-4 border-t border-[#1a1f2e]">
+        <div className="shrink-0 flex items-center gap-3 px-4 py-4 border-t" style={{ borderColor: 'var(--sidebar-border)' }}>
           <UserButton afterSignOutUrl="/login" />
-          <span className="text-xs text-[#8892a4] truncate">Account</span>
+          <span className="text-xs truncate" style={{ color: 'var(--sidebar-text)' }}>Account</span>
         </div>
       </aside>
 
       {/* ── Tablet icon rail ──────────────────────────────────────────────── */}
-      <aside className="hidden md:flex lg:hidden flex-col w-16 shrink-0 bg-[#0b0e1a] border-r border-[#1a1f2e] items-center py-3 gap-1">
+      <aside className="hidden md:flex lg:hidden flex-col w-16 shrink-0 border-r items-center py-3 gap-1" style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}>
         <div className="flex items-center justify-center w-9 h-9 mb-2">
           <span className="relative flex items-center justify-center w-8 h-8">
             <span className="absolute w-6 h-6 bg-brand rotate-45 rounded-sm" />
@@ -101,7 +101,7 @@ export function Sidebar() {
       </aside>
 
       {/* ── Mobile bottom nav ─────────────────────────────────────────────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden bg-[#0b0e1a] border-t border-[#1a1f2e] h-16">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden border-t h-16" style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}>
         {MAIN_NAV.slice(0, 5).map((item) => (
           <MobileNavLink key={item.href + item.label} {...item} active={isActive(item.href)} />
         ))}
@@ -118,11 +118,12 @@ function NavLink({
   return (
     <Link
       href={href}
+      style={active ? undefined : { color: 'var(--sidebar-text)' }}
       className={cn(
         'relative flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all',
         active
           ? 'bg-brand/15 text-brand'
-          : 'text-[#8892a4] hover:bg-white/5 hover:text-slate-200',
+          : 'hover:bg-black/5 dark:hover:bg-white/5',
       )}
     >
       {/* Active left bar */}
@@ -147,11 +148,12 @@ function IconNavLink({
     <Link
       href={href}
       title={label}
+      style={active ? undefined : { color: 'var(--sidebar-text)' }}
       className={cn(
         'relative flex items-center justify-center w-10 h-10 rounded-md transition-colors',
         active
           ? 'bg-brand/10 text-brand'
-          : 'text-[#8892a4] hover:bg-white/5 hover:text-slate-200',
+          : 'hover:bg-black/5 dark:hover:bg-white/5',
       )}
     >
       <Icon className="w-5 h-5" />
@@ -172,7 +174,7 @@ function MobileNavLink({
       href={href}
       className={cn(
         'relative flex flex-1 flex-col items-center justify-center gap-1 text-xs transition-colors',
-        active ? 'text-brand' : 'text-[#8892a4]',
+        active ? 'text-brand' : '',
       )}
     >
       <div className="relative">

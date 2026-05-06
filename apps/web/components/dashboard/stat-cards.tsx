@@ -20,13 +20,15 @@ function StatCard({ label, value, sub, trend, color = 'default', accentColor }: 
   const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : null;
 
   return (
-    <div className="relative rounded-xl bg-[#141926] border border-slate-800/80 p-5 flex flex-col gap-1 overflow-hidden hover:border-slate-700 transition-colors">
-      {/* Accent top bar — solid, thick */}
+    <div
+      className="relative rounded-xl p-5 flex flex-col gap-1 overflow-hidden transition-colors"
+      style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+    >      {/* Accent top bar — solid, thick */}
       <div
         className="absolute top-0 left-0 right-0 h-[5px]"
         style={{ background: accentColor ?? '#f57f20' }}
       />
-      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-medium pt-1">{label}</p>
+      <p className="text-[10px] uppercase tracking-widest font-medium pt-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
       <p className={`text-3xl font-bold animate-count-up ${colorClass}`}>
         {trendIcon && (
           <span className={`mr-1 text-lg ${trend === 'up' ? 'text-emerald-400' : 'text-rose-400'}`}>
@@ -35,7 +37,7 @@ function StatCard({ label, value, sub, trend, color = 'default', accentColor }: 
         )}
         {value}
       </p>
-      {sub && <p className="text-[11px] text-slate-600">{sub}</p>}
+      {sub && <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{sub}</p>}
     </div>
   );
 }
@@ -53,7 +55,7 @@ export function StatCards({ openTickets, slaCompliancePct, avgResolutionHours, t
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="rounded-xl bg-[#141926] border border-slate-800 p-5 animate-pulse h-24" />
+          <div key={i} className="rounded-xl p-5 animate-pulse h-24" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }} />
         ))}
       </div>
     );

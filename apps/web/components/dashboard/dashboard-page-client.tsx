@@ -51,8 +51,8 @@ export function DashboardPageClient() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="border-l-4 border-brand pl-4">
-          <h1 className="text-2xl font-bold text-slate-100">Dashboard</h1>
-          <p className="mt-0.5 text-sm text-slate-400">Live performance overview · auto-refreshes every 30s</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Dashboard</h1>
+          <p className="mt-0.5 text-sm" style={{ color: 'var(--text-secondary)' }}>Live performance overview · auto-refreshes every 30s</p>
         </div>
         {(summaryQ.isFetching || analyticsQ.isFetching) && (
           <span className="text-xs text-brand/70 animate-pulse font-medium tracking-wide uppercase">Refreshing…</span>
@@ -69,20 +69,20 @@ export function DashboardPageClient() {
 
       {/* Queue health banner */}
       {queue && (
-        <div className="rounded-xl bg-surface border border-slate-700/60 p-4 flex flex-wrap gap-6 text-sm border-l-4 border-l-brand">
-          <span className="text-slate-400">
+        <div className="rounded-xl p-4 flex flex-wrap gap-6 text-sm border-l-4 border-l-brand" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderLeftWidth: '4px', borderLeftColor: '#f57f20' }}>
+          <span style={{ color: 'var(--text-secondary)' }}>
             Queue Health:
             <span className="ml-2 font-semibold text-brand">{queue.openTickets} open</span>
           </span>
-          <span className="text-slate-400">
+          <span style={{ color: 'var(--text-secondary)' }}>
             SLA breaches (3d):
             <span className={`ml-2 font-semibold ${queue.recentBreaches > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
               {queue.recentBreaches}
             </span>
           </span>
-          <span className="text-slate-400">
+          <span style={{ color: 'var(--text-secondary)' }}>
             Resolved (3d):
-            <span className="ml-2 font-semibold text-accent-green">{queue.resolvedLast3Days}</span>
+            <span className="ml-2 font-semibold text-emerald-400">{queue.resolvedLast3Days}</span>
           </span>
         </div>
       )}
@@ -96,16 +96,16 @@ export function DashboardPageClient() {
         />
 
         {/* Placeholder for future donut chart */}
-        <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-5 flex flex-col justify-center items-center text-center gap-2">
-          <p className="text-slate-400 text-sm font-medium">Status Breakdown</p>
+        <div className="rounded-xl p-5 flex flex-col justify-center items-center text-center gap-2" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Status Breakdown</p>
           {queue ? (
             <div className="space-y-1 text-sm">
-              <p className="text-slate-300">Open: <span className="font-semibold text-violet-400">{queue.openTickets}</span></p>
-              <p className="text-slate-300">Resolved (3d): <span className="font-semibold text-emerald-400">{queue.resolvedLast3Days}</span></p>
-              <p className="text-slate-300">SLA Breaches (3d): <span className={`font-semibold ${queue.recentBreaches > 0 ? 'text-rose-400' : 'text-slate-400'}`}>{queue.recentBreaches}</span></p>
+              <p style={{ color: 'var(--text-primary)' }}>Open: <span className="font-semibold text-[#f57f20]">{queue.openTickets}</span></p>
+              <p style={{ color: 'var(--text-primary)' }}>Resolved (3d): <span className="font-semibold text-emerald-500">{queue.resolvedLast3Days}</span></p>
+              <p style={{ color: 'var(--text-primary)' }}>SLA Breaches (3d): <span className={`font-semibold ${queue.recentBreaches > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>{queue.recentBreaches}</span></p>
             </div>
           ) : (
-            <p className="text-xs text-slate-500">Loading…</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Loading…</p>
           )}
         </div>
       </div>

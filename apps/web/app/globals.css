@@ -3,46 +3,73 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    @apply bg-[#0b0e1a] text-slate-100;
-  }
-
+  /* ── Light theme (default) ── */
   :root {
     --sidebar-width: 240px;
     --sidebar-width-icon: 64px;
     --topbar-height: 56px;
+
     --brand: #f57f20;
     --brand-light: rgba(245, 127, 32, 0.12);
+
+    /* Surfaces */
+    --bg-base:    #f4f5f7;
+    --bg-surface: #ffffff;
+    --bg-raised:  #f9fafb;
+    --bg-sunken:  #eef0f4;
+
+    /* Sidebar */
+    --sidebar-bg:          #ffffff;
+    --sidebar-border:      #e5e7eb;
+    --sidebar-text:        #6b7280;
+    --sidebar-text-active: #111827;
+
+    /* Text */
+    --text-primary:   #111827;
+    --text-secondary: #6b7280;
+    --text-muted:     #9ca3af;
+
+    /* Borders */
+    --border:      #e5e7eb;
+    --border-dark: #d1d5db;
   }
 
-  /* Scrollbar styling */
+  /* ── Dark theme ── */
+  .dark {
+    --bg-base:    #0b0e1a;
+    --bg-surface: #141926;
+    --bg-raised:  #1c2232;
+    --bg-sunken:  #0b0e1a;
+
+    --sidebar-bg:      --sidebar-bg:      --sidebar-bg:      --sidebar-bg:      --sidebar-bg:      --sideba
+    --sidebar-text-active: #f1f5f9;
+
+    --text-primary:   #f1f5f9;
+    --t    --t    --t    --t    --t    --t    --t    #475569;    --t    --t    --t    -3a;
+    --border-dark: #2a3145;
+  }
+
+  html {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+  }
+
+  /* Scrollbar */
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #2a3145; border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #3d4a66; }
-}
-
-@layer components {
-  /* Card with orange top accent line — Access Bank inspired */
-  .card-accent {
-    @apply relative rounded-xl border border-slate-800 bg-surface overflow-hidden;
-  }
-  .card-accent::before {
-    content: '';
-    @apply absolute top-0 left-0 right-0 h-[5px];
+  ::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #f57f  ::-webkit-scrollbar-thumb:hover Car  ::-webkit-s top accent bar */
+  .card-accent  .card-accent  .card-accended-  .card-accent  .card-accentgrou  .card-accent--bg  .card-accent  .card-a1px s  .card-accent  .card-a
+  .c rd-a  .c rd-a  .c rd-a  .c rd-t: '';
+  .c rdply  .c rdply  .c rdply  .c ght-0 h-[5px];
     background: #f57f20;
   }
 
-  /* Pill section label — Access Bank "CURRENT" style */
+  /* Sectio  /* Sectio  /* Sectik "CURRENT" style */
   .section-pill {
     @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm text-[9px] font-bold uppercase tracking-[0.15em] bg-brand text-white;
   }
-  .section-pill-outline {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm text-[9px] font-bold uppercase tracking-[0.15em] border border-brand/40 text-brand;
-  }
-
-  /* Stat value count-up animation */
-  .stat-value {
+                                                                                          d-sm text-[9px] font-bold uppercase tracking                                    t-                            count-up               ue {
     @apply animate-count-up;
   }
 }
