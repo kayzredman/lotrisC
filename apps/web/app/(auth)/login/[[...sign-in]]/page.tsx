@@ -34,6 +34,7 @@ export default function LoginPage() {
           },
         }}
         redirectUrl="/dashboard"
+        afterSignInUrl="/dashboard"
       />
     </div>
   );

@@ -50,8 +50,8 @@ async function bootstrap() {
     },
   });
 
-  // ── OpenAPI (REST v1) ─────────────────────────────────────────────────────
-  if (env.NODE_ENV !== 'production') {
+  // ── OpenAPI (REST v1) — skip in tsx/dev (emitDecoratorMetadata not available) ──
+  if (env.NODE_ENV !== 'production' && process.env['ENABLE_SWAGGER'] === 'true') {
     const config = new DocumentBuilder()
       .setTitle('Lotris API')
       .setDescription('Lotris REST v1 — for third-party integrations')

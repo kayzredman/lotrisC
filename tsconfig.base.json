@@ -15,8 +15,8 @@
     "target": "ES2022",
     "baseUrl": ".",
     "paths": {
-      "drizzle-orm/mssql-core": ["./stubs/drizzle-mssql-core.d.ts"],
-      "drizzle-orm/mssql2": ["./stubs/drizzle-mssql2.d.ts"]
+      "drizzle-orm/mssql-core": ["./stubs/drizzle-mssql-core.ts"],
+      "drizzle-orm/mssql2": ["./stubs/drizzle-mssql2.ts"]
     }
   }
 }

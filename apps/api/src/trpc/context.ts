@@ -1,10 +1,8 @@
 import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
-import { createClerkClient, verifyToken } from '@clerk/backend';
+import { verifyToken } from '@clerk/backend';
 import { getEnv } from '@lotris/config';
 import { getMssqlDb, users, roles, tenants, eq } from '@lotris/db';
 import type { TrpcAuth, TrpcContext } from '@lotris/types';
-
-const clerk = createClerkClient({ secretKey: getEnv().CLERK_SECRET_KEY });
 
 /**
  * tRPC request context.
