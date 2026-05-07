@@ -5,12 +5,11 @@ import { Topbar } from '@/components/layout/topbar';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <Providers>
-      <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--bg-base)' }}>
+      <div className="v2-app">
         <Sidebar />
-        {/* Main area: topbar on top, scrollable content below */}
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <div className="v2-main">
           <Topbar />
-          <main className="flex-1 overflow-y-auto pb-16 md:pb-0" style={{ backgroundColor: 'var(--bg-base)' }}>
+          <main className="v2-content">
             {children}
           </main>
         </div>

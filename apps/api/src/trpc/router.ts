@@ -1,6 +1,6 @@
 import { router, protectedProcedure, adminProcedure } from './trpc';
 import { HealthService } from '../modules/health/health.service';
-import { getMssqlDb, users, teams, roles, tickets, ticketComments, ticketHistory, eq, and, asc } from '@lotris/db';
+import { getMssqlDb, users, teams, roles, tickets, ticketComments, ticketHistory, auditLogs, eq, and, asc, desc } from '@lotris/db';
 import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
 import { QueueService } from '../modules/queue/queue.service';
@@ -381,6 +381,28 @@ export const appRouter = router({
     .mutation(async ({ ctx, input }) => {
       const svc = new HealthService();
       return svc.requestRestart(input.serviceName, ctx.auth.userId, ctx.auth.tenantId);
+    }),
+
+  // ── audit logs (ADMIN only) ──────────────────────────────────────────────
+
+  'auditLogs.list': adminProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(200).default(50) }))
+    .query(async ({ ctx, input }) => {
+      const db = await getMssqlDb();
+      return db
+        .select({
+          id: auditLogs.id,
+          userId: auditLogs.userId,
+          action: auditLogs.action,
+          entityType: auditLogs.entityType,
+          entityId: auditLogs.entityId,
+          details: auditLogs.details,
+          createdAt: auditLogs.createdAt,
+        })
+        .from(auditLogs)
+        .where(eq(auditLogs.tenantId, ctx.auth.tenantId))
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(input.limit);
     }),
 });
 

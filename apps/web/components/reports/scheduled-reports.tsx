@@ -39,7 +39,7 @@ export function ScheduledReports() {
 
   async function loadSchedules() {
     const token = await getToken();
-    const res = await fetch('/api/v1/reports/schedules', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/reports/schedules`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
@@ -54,7 +54,7 @@ export function ScheduledReports() {
     try {
       const token = await getToken();
       const emails = recipients.split(',').map((e) => e.trim()).filter(Boolean);
-      await fetch('/api/v1/reports/schedules', {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/reports/schedules`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ export function ScheduledReports() {
 
   async function handleDelete(id: string) {
     const token = await getToken();
-    await fetch(`/api/v1/reports/schedules/${id}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/reports/schedules/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
