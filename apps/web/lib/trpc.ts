@@ -1,15 +1,6 @@
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '@lotris/types';
-
 /**
- * tRPC React client.
- * Import `trpc` from this file in all client components.
- *
- * Usage:
- *   const { data } = trpc['users.me'].useQuery();
- *
- * Typed as `any` because AppRouter is a stub (= any) until apps/api is fully
- * built; createTRPCReact<any> otherwise resolves to an error-string union type.
+ * Re-export the single tRPC React client instance.
+ * All components must import from either this file or '@/lib/trpc/client' —
+ * both resolve to the same singleton so they share the Provider context.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const trpc = createTRPCReact<AppRouter>() as any;
+export { trpc } from './trpc/client';
