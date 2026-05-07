@@ -9,61 +9,6 @@ import { DetailPanel } from './detail-panel';
 import { RestartModal } from './restart-modal';
 import { trpc } from '@/lib/trpc';
 import type { HealthSnapshot, ServiceHealthEntry } from '@lotris/types';
-import { Pause, Play, Globe, Activity } from 'lucide-react';
-
-export function SystemHealthClient() {
-  const [paused, setPaused]           = useState(false);
-  const [selectedService, setSelected] = useState<ServiceHealthEntry | null>(null);
-  const [restartTarget, setRestart]    = useState<ServiceHealthEntry | null>(null);
-
-  // ── SSE live stream ──────────────────────────────────────────────────────
-  const { data: liveSnapshot, status: sseStatus } = useEventSource<HealthSnapshot>(
-    'health/sse',
-    { enabled: !paused },
-  );
-
-  // ── Polling fallback via tRPC (also seeds initial data) ──────────────────
-  const { data: polledSnapshot } = (trpc as any)['health.getSnapshot'].useQuery(undefined, {
-    refetchInterval: paused ? false : 5000,
-    staleTime: 1000,
-  });
-
-  // Prefer SSE data; fall back to polled
-  const snapshot: HealthSnapshot | null = liveSnapshot ?? polledSnapshot ?? null;
-
-  // ── Incident log ─────────────────────────────────────────────────────────
-  const { data: incidents } = (trpc as any)['health.getIncidents'].useQuery(
-    { limit: 20 },
-    { refetchInterval: 30_000 },
-  );
-
-  // ── Derived summary ──────────────────────────────────────────────────────
-  const upCount       = snapshot?.services.filter((s) => s.status === 'UP').length   ?? 0;
-  const degradedCount = snapshot?.services.filter((s) => s.status === 'DEGRADED').length ?? 0;
-  const downCount     = snapshot?.services.filter((s) => s.status === 'DOWN').length ?? 0;
-
-  // ── Restart mutation ─────────────────────────────────────────────────────
-  const restartMutation = (trpc as any)['health.restartService'].useMutation();
-
-  const handleRestartConfirm = useCallback(
-    (serviceName: string) => {
-      restartMutation.mutate({ serviceName });
-      setRestart(null);
-    },
-    [restartMutation],
-  );
-
-'use client';
-
-import { useState, useCallback } from 'react';
-import { useEventSource } from '@/hooks/useEventSource';
-import { ServiceTable } from './service-table';
-import { QueueDepths } from './queue-depths';
-import { IncidentLog } from './incident-log';
-import { DetailPanel } from './detail-panel';
-import { RestartModal } from './restart-modal';
-import { trpc } from '@/lib/trpc';
-import type { HealthSnapshot, ServiceHealthEntry } from '@lotris/types';
 import { Pause, Play, Globe, Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
 
 export function SystemHealthClient() {
