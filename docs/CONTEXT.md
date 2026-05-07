@@ -1,6 +1,6 @@
 # Lotris — Project Context
 
-> Last updated: May 2026
+> Last updated: May 2026 — Sprint 14–15 complete (UI polish, dark mode, tickets page full repair, ticket assignment by role)
 
 ---
 
@@ -76,6 +76,12 @@ NEW → TEAM_ASSIGNED → UNASSIGNED → ASSIGNED → IN_PROGRESS → ESCALATED 
 
 - Engineers can claim tickets from the queue
 - System enforces: max workload, queue visibility, priority ordering
+
+**Phase 2b — Admin / Team Lead Direct Assign**
+
+- `ADMIN`, `SUPERADMIN`, and `TEAM_LEAD` roles can directly assign any ticket to an engineer from the ticket detail drawer
+- The system auto-walks the state machine: `NEW → TEAM_ASSIGNED → UNASSIGNED → ASSIGNED` — all intermediate steps fire their normal SLA timers, history entries, and notifications
+- Re-assigning an already-`ASSIGNED` ticket is supported; triggers a fresh `TICKET_ASSIGNED` notification
 
 **Phase 3 — Auto-Assignment (SLA fallback)**
 
@@ -332,6 +338,7 @@ KPI_Definitions · KPI_Team_Targets · KPI_Engineer_Assignments · KPI_Agreement
 | Client state      | **Zustand**                  | ~1 KB; UI state (drawers, filters, sidebar, selections)              |
 | Charts            | **Tremor**                   | Tailwind-native dashboard charts; KPI and report visualisations      |
 | Live data         | **SSE** (Server-Sent Events) | Queue counts, live ticket updates, KPI stream                        |
+| Dark mode         | **next-themes**              | `ThemeProvider attribute="class"`; `localStorage`-backed; Moon/Sun toggle in topbar |
 
 **Rendering strategy:**
 
@@ -518,7 +525,8 @@ Auth & Tenancy
 | M4 — Tasks      | 7      | Lead-assigned + self-logged tasks, checklists, KPI link |
 | M5 — KPIs       | 10     | 3-layer KPI system, agreements, scoring, KPI dashboard  |
 | M6 — Reports    | 12     | Analytics layer, full dashboard, scheduled reports      |
-| M7 — Monitoring | 13     | SysAdmin ops dashboard, restart controls, status page   | ✅ COMPLETE |
+| M7 — Monitoring | 13     | SysAdmin ops dashboard, restart controls, status page   |
+| M8 — UI Quality | 15     | Dark mode, dashboard accuracy, tickets page fully functional, role-gated assign |
 
 ---
 
@@ -571,6 +579,7 @@ Auth & Tenancy
 | Client state | Zustand        | ~1 KB; drawers, filters, sidebar, selections                   |
 | Charts       | Tremor         | Tailwind-native; KPI dashboard and report visualisations       |
 | Live data    | SSE            | Queue counts, live ticket feed, KPI updates                    |
+| Dark mode    | next-themes    | `ThemeProvider attribute="class"`; localStorage-backed; Moon/Sun toggle in topbar |
 
 ### Backend
 

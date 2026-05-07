@@ -1,155 +1,186 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { UserButton } from '@clerk/nextjs';
+import { usePathname, useRouter } from 'next/navigation';
+import { useUser, useClerk } from '@clerk/nextjs';
+import { useState, useRef, useEffect } from 'react';
 import {
   LayoutDashboard,
   Ticket,
-  ListOrdered,
+  Layers,
   BarChart3,
   FileText,
   CheckSquare,
   Activity,
+  Users,
+  ShieldCheck,
+  Settings2,
+  FilePenLine,
+  ChevronRight,
+  LogOut,
 } from 'lucide-react';
-import { cn } from '@lotris/ui';
 
-const NAV_ITEMS = [
-  { label: 'Dashboard',     href: '/dashboard',      icon: LayoutDashboard },
-  { label: 'Tickets',       href: '/tickets',        icon: Ticket          },
-  { label: 'Queue',         href: '/queue',          icon: ListOrdered     },
-  { label: 'KPI',           href: '/kpis',           icon: BarChart3       },
-  { label: 'Reports',       href: '/reports',        icon: FileText        },
-  { label: 'Tasks',         href: '/tasks',          icon: CheckSquare     },
-  { label: 'System Health', href: '/system-health',  icon: Activity        },
-] as const;
+type NavItem = {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  badge?: number;
+};
+
+const MAIN_NAV: NavItem[] = [
+  { label: 'Dashboard', href: '/dashboard',  icon: LayoutDashboard },
+  { label: 'Tickets',   href: '/tickets',    icon: Ticket,   badge: 12 },
+  { label: 'Queue',     href: '/queue',      icon: Layers,   badge: 9  },
+  { label: 'Tasks',     href: '/tasks',      icon: CheckSquare },
+  { label: 'KPIs',      href: '/kpis',       icon: BarChart3 },
+  { label: 'Reports',   href: '/reports',    icon: FileText  },
+];
+
+const ADMIN_NAV: NavItem[] = [
+  { label: 'Teams',           href: '/admin',               icon: Users      },
+  { label: 'KPI Setup',       href: '/admin/kpi-setup',     icon: Settings2  },
+  { label: 'KPI Agreement',   href: '/kpis/agreements',     icon: FilePenLine },
+  { label: 'System Health',   href: '/system-health',       icon: Activity   },
+  { label: 'Audit Log',       href: '/audit-log',           icon: ShieldCheck },
+];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
+
+  const initials = user
+    ? ((user.firstName?.[0] ?? '') + (user.lastName?.[0] ?? '')).toUpperCase() || 'U'
+    : 'RK';
+  const fullName = user ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() : 'Rowland K.';
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
+
+  async function handleSignOut() {
+    await signOut();
+    router.push('/login');
+  }
 
   return (
-    <>
-      {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col w-[240px] shrink-0 bg-sidebar-bg border-r border-sidebar-border">
-        {/* Logo */}
-        <div className="flex items-center h-14 px-5 border-b border-sidebar-border shrink-0">
-          <span className="text-lg font-bold text-white tracking-tight">Lotris</span>
+    <aside className="v2-sidebar">
+      {/* Logo */}
+      <div className="v2-sidebar-logo">
+        <div className="v2-logo-mark">
+          <div className="v2-logo-icon">Lo</div>
+          <div>
+            <div className="v2-logo-text">Lotris</div>
+            <div className="v2-logo-sub">IT Help Desk</div>
+          </div>
         </div>
+      </div>
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-3 px-2">
-          {NAV_ITEMS.map((item) => (
-            <NavLink key={item.href} {...item} active={pathname.startsWith(item.href)} />
-          ))}
-        </nav>
+      {/* Nav */}
+      <nav className="v2-sidebar-nav">
+        <div className="v2-nav-section-label">Main</div>
+        {MAIN_NAV.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.href + item.label}
+              href={item.href}
+              className={`v2-nav-item${active ? ' active' : ''}`}
+            >
+              <span className="v2-nav-icon">
+                <item.icon size={14} />
+              </span>
+              {item.label}
+              {item.badge != null && item.badge > 0 && (
+                <span className="v2-nav-badge">{item.badge}</span>
+              )}
+            </Link>
+          );
+        })}
 
-        {/* User */}
-        <div className="shrink-0 flex items-center gap-3 px-4 py-4 border-t border-sidebar-border">
-          <UserButton afterSignOutUrl="/login" />
-          <span className="text-xs text-sidebar-text truncate">Account</span>
-        </div>
-      </aside>
-
-      {/* ── Tablet icon rail ──────────────────────────────────────────────── */}
-      <aside className="hidden md:flex lg:hidden flex-col w-16 shrink-0 bg-sidebar-bg border-r border-sidebar-border items-center py-3 gap-1">
-        <div className="flex items-center justify-center h-10 mb-2">
-          <span className="text-sm font-bold text-white">L</span>
-        </div>
-        {NAV_ITEMS.map((item) => (
-          <IconNavLink key={item.href} {...item} active={pathname.startsWith(item.href)} />
-        ))}
-        <div className="mt-auto pb-2">
-          <UserButton afterSignOutUrl="/login" />
-        </div>
-      </aside>
-
-      {/* ── Mobile bottom nav ─────────────────────────────────────────────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden bg-sidebar-bg border-t border-sidebar-border h-16">
-        {NAV_ITEMS.slice(0, 5).map((item) => (
-          <MobileNavLink key={item.href} {...item} active={pathname.startsWith(item.href)} />
-        ))}
+        <div className="v2-nav-section-label">Admin</div>
+        {ADMIN_NAV.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.href + item.label}
+              href={item.href}
+              className={`v2-nav-item${active ? ' active' : ''}`}
+            >
+              <span className="v2-nav-icon">
+                <item.icon size={14} />
+              </span>
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
-    </>
-  );
-}
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
-
-function NavLink({
-  href,
-  label,
-  icon: Icon,
-  active,
-}: {
-  href: string;
-  label: string;
-  icon: React.ElementType;
-  active: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-        active
-          ? 'bg-sidebar-active text-sidebar-text-active'
-          : 'text-sidebar-text hover:bg-sidebar-hover hover:text-sidebar-text-active',
-      )}
-    >
-      <Icon className="w-4 h-4 shrink-0" />
-      {label}
-    </Link>
-  );
-}
-
-function IconNavLink({
-  href,
-  label,
-  icon: Icon,
-  active,
-}: {
-  href: string;
-  label: string;
-  icon: React.ElementType;
-  active: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      title={label}
-      className={cn(
-        'flex items-center justify-center w-10 h-10 rounded-md transition-colors',
-        active
-          ? 'bg-sidebar-active text-sidebar-text-active'
-          : 'text-sidebar-text hover:bg-sidebar-hover hover:text-sidebar-text-active',
-      )}
-    >
-      <Icon className="w-5 h-5" />
-    </Link>
-  );
-}
-
-function MobileNavLink({
-  href,
-  label,
-  icon: Icon,
-  active,
-}: {
-  href: string;
-  label: string;
-  icon: React.ElementType;
-  active: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        'flex flex-1 flex-col items-center justify-center gap-1 text-xs transition-colors',
-        active ? 'text-brand' : 'text-sidebar-text',
-      )}
-    >
-      <Icon className="w-5 h-5" />
-      <span className="truncate max-w-[56px]">{label}</span>
-    </Link>
+      {/* User card */}
+      <div className="v2-sidebar-footer" ref={menuRef} style={{ position: 'relative' }}>
+        {menuOpen && (
+          <div style={{
+            position: 'absolute',
+            bottom: 'calc(100% + 8px)',
+            left: '12px',
+            right: '12px',
+            background: '#1A1D2E',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '8px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+            zIndex: 50,
+            overflow: 'hidden',
+          }}>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '11px 14px',
+                background: 'none',
+                border: 'none',
+                color: '#F87171',
+                fontSize: '13px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(248,113,113,0.08)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              <LogOut size={13} />
+              Sign out
+            </button>
+          </div>
+        )}
+        <button
+          type="button"
+          className="v2-user-card"
+          onClick={() => setMenuOpen(o => !o)}
+          style={{ cursor: 'pointer', width: '100%', background: 'none', border: 'none', textAlign: 'left', padding: 0 }}
+        >
+          <div className="v2-avatar">{initials}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="v2-user-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fullName}</div>
+            <div className="v2-user-role">IT Manager</div>
+          </div>
+          <ChevronRight size={12} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0, transform: menuOpen ? 'rotate(90deg)' : undefined, transition: 'transform 0.15s' }} />
+        </button>
+      </div>
+    </aside>
   );
 }

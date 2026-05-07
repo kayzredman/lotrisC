@@ -1,6 +1,6 @@
 import { router, protectedProcedure, adminProcedure } from './trpc';
 import { HealthService } from '../modules/health/health.service';
-import { getMssqlDb, users, teams, roles, tickets, ticketComments, ticketHistory, eq, and, asc } from '@lotris/db';
+import { getMssqlDb, users, teams, roles, tickets, ticketComments, ticketHistory, auditLogs, eq, and, asc, desc } from '@lotris/db';
 import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
 import { QueueService } from '../modules/queue/queue.service';
@@ -74,6 +74,7 @@ export const appRouter = router({
         priority: z.number().int().min(1).max(4).optional(),
         teamId: z.string().uuid().optional(),
         assigneeId: z.string().uuid().optional(),
+        search: z.string().optional(),
         page: z.number().int().min(1).default(1),
         limit: z.number().int().min(1).max(100).default(25),
       }),
@@ -102,6 +103,17 @@ export const appRouter = router({
     .mutation(async ({ ctx, input }) => {
       const svc = new TicketsService(new NotificationsService());
       return svc.create(ctx.auth, input);
+    }),
+
+  'tickets.assign': protectedProcedure
+    .input(z.object({ id: z.string().uuid(), assigneeId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const ALLOWED = ['ADMIN', 'SUPERADMIN', 'TEAM_LEAD'];
+      if (!ALLOWED.includes(ctx.auth.role)) {
+        throw new Error('Forbidden: only Admins and Team Leads can assign tickets');
+      }
+      const svc = new TicketsService(new NotificationsService());
+      return svc.assign(ctx.auth, input.id, input.assigneeId);
     }),
 
   'tickets.updateStatus': protectedProcedure
@@ -353,6 +365,11 @@ export const appRouter = router({
     return svc.getQueueHealth(ctx.auth.tenantId);
   }),
 
+  'dashboard.teamWorkload': protectedProcedure.query(async ({ ctx }) => {
+    const svc = new DashboardCacheService();
+    return svc.getTeamWorkload(ctx.auth.tenantId);
+  }),
+
   // ── health (ADMIN only) ──────────────────────────────────────────────────
 
   'health.getSnapshot': adminProcedure.query(async () => {
@@ -381,6 +398,28 @@ export const appRouter = router({
     .mutation(async ({ ctx, input }) => {
       const svc = new HealthService();
       return svc.requestRestart(input.serviceName, ctx.auth.userId, ctx.auth.tenantId);
+    }),
+
+  // ── audit logs (ADMIN only) ──────────────────────────────────────────────
+
+  'auditLogs.list': adminProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(200).default(50) }))
+    .query(async ({ ctx, input }) => {
+      const db = await getMssqlDb();
+      return db
+        .select({
+          id: auditLogs.id,
+          userId: auditLogs.userId,
+          action: auditLogs.action,
+          entityType: auditLogs.entityType,
+          entityId: auditLogs.entityId,
+          details: auditLogs.details,
+          createdAt: auditLogs.createdAt,
+        })
+        .from(auditLogs)
+        .where(eq(auditLogs.tenantId, ctx.auth.tenantId))
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(input.limit);
     }),
 });
 

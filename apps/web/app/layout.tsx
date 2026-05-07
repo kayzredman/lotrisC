@@ -21,8 +21,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={inter.className}>
-        <body>{children}</body>
+      <html lang="en" className={inter.className} suppressHydrationWarning>
+        <body suppressHydrationWarning>{children}</body>
       </html>
     </ClerkProvider>
   );

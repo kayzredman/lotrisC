@@ -85,6 +85,10 @@ export class TicketListQueryDto {
   assigneeId?: string;
 
   @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
   page?: number = 1;
 
   @IsOptional()

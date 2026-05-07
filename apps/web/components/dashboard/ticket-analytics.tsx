@@ -19,7 +19,7 @@ interface TicketAnalyticsProps {
 }
 
 function BarChart({ data, maxVal }: { data: { label: string; created: number; resolved: number }[]; maxVal: number }) {
-  if (data.length === 0) return <p className="text-sm text-slate-500 py-4">No data for this period.</p>;
+  if (data.length === 0) return <p className="text-sm py-4" style={{ color: 'var(--text-muted)' }}>No data for this period.</p>;
 
   return (
     <div className="flex items-end gap-1 h-32">
@@ -38,7 +38,7 @@ function BarChart({ data, maxVal }: { data: { label: string; created: number; re
                 style={{ height: `${resolvedH}%` }}
               />
             </div>
-            <span className="text-[9px] text-slate-500 truncate w-full text-center">
+            <span className="text-[9px] truncate w-full text-center" style={{ color: 'var(--text-muted)' }}>
               {d.label.slice(5)}
             </span>
           </div>
@@ -51,7 +51,7 @@ function BarChart({ data, maxVal }: { data: { label: string; created: number; re
 function SlaBar({ pct }: { pct: number }) {
   const color = pct >= 95 ? 'bg-emerald-500' : pct >= 85 ? 'bg-amber-500' : 'bg-rose-500';
   return (
-    <div className="w-full bg-slate-700 rounded h-2">
+    <div className="w-full rounded h-2" style={{ backgroundColor: 'var(--border-dark)' }}>
       <div className={`${color} h-2 rounded transition-all`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -60,7 +60,7 @@ function SlaBar({ pct }: { pct: number }) {
 export function TicketAnalytics({ ticketTrend, slaTrend, isLoading }: TicketAnalyticsProps) {
   if (isLoading) {
     return (
-      <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-5 animate-pulse h-48" />
+      <div className="rounded-xl p-5 animate-pulse h-48" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }} />
     );
   }
 
@@ -74,20 +74,20 @@ export function TicketAnalytics({ ticketTrend, slaTrend, isLoading }: TicketAnal
       : 100;
 
   return (
-    <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-5 space-y-4">
-      <h2 className="text-sm font-semibold text-slate-200">Ticket Volume — Last 7 Days</h2>
+    <div className="rounded-xl p-5 space-y-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Ticket Volume — Last 7 Days</h2>
 
       <BarChart data={barData} maxVal={maxVal} />
 
-      <div className="flex gap-4 text-xs text-slate-400">
+      <div className="flex gap-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
         <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-violet-500/70" /> Created</span>
         <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-emerald-500/70" /> Resolved</span>
       </div>
 
       <div>
-        <div className="flex justify-between text-xs text-slate-400 mb-1">
+        <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>
           <span>SLA Compliance (7-day avg)</span>
-          <span className={avgSla >= 95 ? 'text-emerald-400' : avgSla >= 85 ? 'text-amber-400' : 'text-rose-400'}>
+          <span className={avgSla >= 95 ? 'text-emerald-500' : avgSla >= 85 ? 'text-amber-500' : 'text-rose-500'}>
             {avgSla.toFixed(1)}%
           </span>
         </div>

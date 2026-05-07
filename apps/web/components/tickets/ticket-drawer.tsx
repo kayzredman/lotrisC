@@ -17,14 +17,30 @@ const PRIORITY_LABELS: Record<number, string> = {
   4: 'Low',
 };
 
+const ASSIGNABLE_ROLES = ['ADMIN', 'SUPERADMIN', 'TEAM_LEAD'];
+
 export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
   const [commentBody, setCommentBody] = useState('');
   const [isInternal, setIsInternal] = useState(false);
+  const [selectedAssignee, setSelectedAssignee] = useState('');
   const utils = trpc.useUtils();
 
   const ticketQuery = trpc['tickets.get'].useQuery({ id: ticketId });
   const commentsQuery = trpc['tickets.getComments'].useQuery({ ticketId });
   const historyQuery = trpc['tickets.getHistory'].useQuery({ ticketId });
+  const meQuery = trpc['users.me'].useQuery();
+  const usersQuery = trpc['users.list'].useQuery();
+
+  const canAssign = ASSIGNABLE_ROLES.includes(meQuery.data?.roleName ?? '');
+
+  const assignMutation = trpc['tickets.assign'].useMutation({
+    onSuccess: () => {
+      setSelectedAssignee('');
+      void ticketQuery.refetch();
+      void historyQuery.refetch();
+      void utils['tickets.list'].invalidate();
+    },
+  });
 
   const addCommentMutation = trpc['tickets.addComment'].useMutation({
     onSuccess: () => {
@@ -76,7 +92,7 @@ export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
               <p className="text-sm text-gray-500">Loading…</p>
             )}
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-200 text-xl leading-none shrink-0">×</button>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-200 text-xl leading-none shrink-0">×</button>
         </div>
 
         {/* Body — scrollable */}
@@ -104,6 +120,47 @@ export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
                   <p className="text-gray-300">{new Date(ticket.createdAt as string).toLocaleString()}</p>
                 </div>
               </section>
+
+              {/* Assign To — Admins and Team Leads only */}
+              {canAssign && (
+                <section className="rounded-lg border border-gray-700 bg-[#131c2e] p-4">
+                  <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-3">Assign To</h3>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={selectedAssignee}
+                      onChange={e => setSelectedAssignee(e.target.value)}
+                      className="flex-1 rounded-md border border-gray-700 bg-[#0f172a] px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value="">
+                        {ticket.assigneeId
+                          ? `Currently: ${(usersQuery.data?.find(u => u.id === ticket.assigneeId)?.fullName ?? 'Assigned')}`
+                          : '— Select engineer —'}
+                      </option>
+                      {usersQuery.data
+                        ?.filter(u => u.roleName === 'ENGINEER' || u.roleName === 'TEAM_LEAD')
+                        .map(u => (
+                          <option key={u.id as string} value={u.id as string}>
+                            {u.fullName as string}{u.isUnavailable ? ' (unavailable)' : ''}
+                          </option>
+                        ))}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={!selectedAssignee || assignMutation.isPending}
+                      onClick={() => assignMutation.mutate({ id: ticketId, assigneeId: selectedAssignee })}
+                      className="h-9 rounded-md bg-indigo-600 px-4 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-40"
+                    >
+                      {assignMutation.isPending ? 'Assigning…' : 'Assign'}
+                    </button>
+                  </div>
+                  {assignMutation.isError && (
+                    <p className="mt-2 text-xs text-red-400">{assignMutation.error.message}</p>
+                  )}
+                  {assignMutation.isSuccess && (
+                    <p className="mt-2 text-xs text-green-400">Ticket assigned successfully.</p>
+                  )}
+                </section>
+              )}
 
               {/* Status action bar */}
               <TicketStatusBar

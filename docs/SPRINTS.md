@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Post-Sprint 10 (KPI Engine complete, M5 gate passed)
+> Last updated: May 2026 — Post-Sprint 15 (Dashboard QA + Tickets page full repair + Ticket assign complete; merged to `dev`)
 
 ---
 
@@ -15,7 +15,8 @@
 | 7      | Task Management              | ✅ Complete    | `feature/sprint-7-tasks` | M4    |
 | 8–10   | KPI Engine                   | ✅ Complete    | `feature/sprint-8-10-kpi` | M5  |
 | 11–12  | Reporting & Full Dashboard   | ✅ COMPLETE   | `dev` @ `f900bfc`                | M6 |
-| 13     | System Health Monitoring     | 🔓 UNBLOCKED | —                               | M7    |
+| 13     | System Health Monitoring     | ✅ Complete   | `dev` @ `b901271`               | M7    |
+| 14–15  | UI Polish + Dashboard QA + Tickets Repair | ✅ COMPLETE | `feature/sprint-14-layout-polish` | M8 |
 
 ---
 
@@ -281,6 +282,55 @@
 
 **Feature branch:** `feature/sprint-13-system-health-monitoring` at `b901271`  
 **Merge commit:** on `dev`
+
+---
+
+## Sprint 14–15 · UI Polish + Dashboard QA + Tickets Page Repair
+
+**Target milestone:** M8  
+**Status:** ✅ COMPLETE — branch `feature/sprint-14-layout-polish`
+
+**Deliverable:** Full UI consistency pass against v2 mockups; dark mode; dashboard chart accuracy; tickets page fully functional (search, filters, pagination, team column, drawer); role-gated ticket assignment.
+
+**Reference mockups:** `mockups/02-dashboard-v2.html`, `mockups/03-tickets-v2.html`, `mockups/style-v2.css`
+
+---
+
+### Backend Dev Agent Jobs
+
+- [x] `B14-1` — `TicketListQueryDto`: add `search?: string` field (validated with `@IsOptional`, `@IsString`)
+- [x] `B14-2` — `TicketsService.list()`: rewrite using raw SQL with `COUNT(*) OVER()` window function — returns `{ rows, total, page, limit }`; LEFT JOIN `teams` for `teamName`; LIKE search on title + id (sanitised `''` escaping); all conditions applied to both count and data query
+- [x] `B14-3` — tRPC `tickets.list`: add `search: z.string().optional()` to input schema
+- [x] `B14-4` — tRPC `tickets.assign`: new `protectedProcedure` — `ADMIN`/`SUPERADMIN`/`TEAM_LEAD` role guard; calls new `TicketsService.assign()`
+- [x] `B14-5` — `TicketsService.assign()`: auto-walks state machine from any starting status to `ASSIGNED` — `NEW → TEAM_ASSIGNED → UNASSIGNED → ASSIGNED` — preserving all SLA timer, history, and notification side-effects at each step; handles re-assignment of already-assigned tickets
+
+### Frontend Dev Agent Jobs
+
+- [x] `F14-1` — **Dark mode**: `next-themes` `ThemeProvider` wired in `Providers`; `.dark` CSS class block added to `globals.css` with full token overrides (background, surface, text, border, status tints); Moon/Sun toggle button in topbar
+- [x] `F14-2` — **Ticket Volume chart** (`dashboard-page-client.tsx`): rebuilt to dual-bar (Opened = indigo, Resolved = green) matching mockup — legend, 8-month filter `<select>`, Y-axis labels, grid lines at 25%/50%/75%/100%, floating "247" badge on in-progress last bar
+- [x] `F14-3` — **Tickets search**: `debouncedSearch` state (350ms); passed as `search` param to tRPC query; resets `page` to 1 on change
+- [x] `F14-4` — **Priority filter**: controlled `<select>` with `value={priority ?? ''}` and `onChange` wired to `setPriority` + `setPage(1)`; option values are numeric strings `"1"–"4"`
+- [x] `F14-5` — **Pagination fix**: `totalPages = Math.ceil(liveData.total / 25)`; sliding window of up to 5 page buttons; prev/next disabled at bounds; footer shows real `Showing X–Y of N tickets`
+- [x] `F14-6` — **Team column**: added `<th>Team</th>` header + `<td>` with indigo pill badge; `teamName` sourced from API response `rows[n].teamName`
+- [x] `F14-7` — **Ticket drawer UUID fix**: `setSelectedTicketId(t.rawId ?? t.id)` — passes raw UUID to drawer instead of display ID `TKT-XXXX`; `liveRows` mapping now retains `rawId` field; DEMO fallback rows get `rawId: t.id`
+- [x] `F14-8` — **Tab change page reset**: `setPage(1)` added to tab `onClick` alongside `setActiveTab`
+- [x] `F14-9` — **Assign To section in ticket drawer** (`ticket-drawer.tsx`): queries `users.me` for role check and `users.list` for engineer dropdown; `canAssign = role ∈ {ADMIN, SUPERADMIN, TEAM_LEAD}`; section renders conditionally; engineer `<select>` filters to `ENGINEER` and `TEAM_LEAD` roles; shows `(unavailable)` suffix; calls `tickets.assign` mutation; inline success/error feedback; refetches ticket + history on success and invalidates ticket list
+
+### QA Gate Checks — M8
+
+- [x] Dark mode toggle persists across page reloads (localStorage via `next-themes`)
+- [x] All surface/text/border tokens correct in `.dark` — no hardcoded white or `#fff` bleed-through
+- [x] Ticket Volume chart matches `02-dashboard-v2.html` mockup: dual bars, legend, last-bar badge, Y-axis
+- [x] Search input debounced — no query fired until 350ms after last keystroke
+- [x] Priority filter `<select>` correctly controlled — changing value re-queries immediately
+- [x] Pagination footer shows accurate `Showing X–Y of N` using real `total` from API
+- [x] Team column visible in tickets table; shows indigo pill with team name or `–` for unassigned
+- [x] Clicking ticket row opens drawer with correct UUID — no `400 Bad Request` on `tickets.get`
+- [x] Assigning a `NEW` ticket auto-walks `NEW → TEAM_ASSIGNED → UNASSIGNED → ASSIGNED` — no state machine error
+- [x] Assign section hidden for `ENGINEER` and `EXECUTIVE` roles
+- [x] Re-assigning an already-`ASSIGNED` ticket works without error
+- [x] `tenantId` filter present in all new SQL — multi-tenancy invariant maintained
+- [x] TypeScript clean: no `any`, no suppressed errors across all modified files
 
 ---
 

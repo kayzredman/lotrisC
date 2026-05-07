@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { UsersTable } from './users-table';
 import { TeamsTable } from './teams-table';
-import { cn } from '@lotris/ui';
 
 type Tab = 'users' | 'teams';
 
@@ -12,20 +11,28 @@ export function AdminTabs() {
 
   return (
     <div>
-      {/* Tab bar */}
-      <div className="flex border-b border-slate-700 mb-6">
+      {/* Tab bar — v2 design system */}
+      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
         {(['users', 'teams'] as const).map((tab) => (
           <button
             key={tab}
+            type="button"
             onClick={() => setActive(tab)}
-            className={cn(
-              'px-5 py-2.5 text-sm font-medium border-b-2 transition-colors capitalize',
-              active === tab
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200',
-            )}
+            style={{
+              padding: '8px 18px',
+              fontSize: 13,
+              fontWeight: 600,
+              background: 'none',
+              border: 'none',
+              borderBottom: active === tab ? '2px solid var(--indigo)' : '2px solid transparent',
+              color: active === tab ? 'var(--indigo)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              textTransform: 'capitalize',
+              transition: 'color 0.15s, border-color 0.15s',
+              marginBottom: -1,
+            }}
           >
-            {tab}
+            {tab === 'users' ? 'Users' : 'Teams'}
           </button>
         ))}
       </div>

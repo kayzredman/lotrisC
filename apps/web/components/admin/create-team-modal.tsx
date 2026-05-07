@@ -2,13 +2,25 @@
 
 import { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { Button, Input } from '@lotris/ui';
 import { createTeam } from '@/lib/admin-api';
 
 interface Props {
   onClose: () => void;
   onSuccess: () => void;
 }
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', boxSizing: 'border-box',
+  padding: '7px 10px', fontSize: 13,
+  border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
+  background: 'var(--bg-subtle)', color: 'var(--text-primary)',
+  outline: 'none', fontFamily: 'inherit',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: 11, fontWeight: 700,
+  color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.4px',
+};
 
 export function CreateTeamModal({ onClose, onSuccess }: Props) {
   const { getToken } = useAuth();
@@ -37,53 +49,61 @@ export function CreateTeamModal({ onClose, onSuccess }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-700 rounded-lg w-full max-w-md p-6 shadow-2xl">
-        <h2 className="text-lg font-semibold text-slate-100 mb-4">Create Team</h2>
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(4px)',
+    }}>
+      <div className="v2-card" style={{ width: '100%', maxWidth: 440, padding: 0, boxShadow: 'var(--shadow-lg)' }}>
+        {/* Header */}
+        <div className="v2-card-header" style={{ padding: '16px 20px' }}>
+          <div className="v2-card-title">Create Team</div>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 18, lineHeight: 1 }}>×</button>
+        </div>
 
-        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+        <form onSubmit={(e) => void handleSubmit(e)} style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Team Name</label>
-            <Input
+            <span style={labelStyle}>Team Name</span>
+            <input
               required
+              style={inputStyle}
               placeholder="e.g. Infrastructure Team"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Max Tickets per Engineer</label>
-            <Input
-              type="number"
-              min={1}
-              max={50}
+            <span style={labelStyle}>Max Tickets per Engineer</span>
+            <input
+              type="number" min={1} max={50}
+              style={inputStyle}
               value={form.maxTicketsPerEngineer}
-              onChange={(e) =>
-                setForm({ ...form, maxTicketsPerEngineer: Number(e.target.value) })
-              }
+              onChange={(e) => setForm({ ...form, maxTicketsPerEngineer: Number(e.target.value) })}
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Pickup SLA (minutes)</label>
-            <Input
-              type="number"
-              min={5}
+            <span style={labelStyle}>Pickup SLA (minutes)</span>
+            <input
+              type="number" min={5}
+              style={inputStyle}
               value={form.pickupSlaMinutes}
-              onChange={(e) =>
-                setForm({ ...form, pickupSlaMinutes: Number(e.target.value) })
-              }
+              onChange={(e) => setForm({ ...form, pickupSlaMinutes: Number(e.target.value) })}
             />
           </div>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && (
+            <div style={{ fontSize: 12.5, color: 'var(--red)', padding: '6px 10px', background: '#fef2f2', borderRadius: 'var(--radius-xs)' }}>
+              {error}
+            </div>
+          )}
 
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+          <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
+            <button type="button" className="v2-btn v2-btn-ghost v2-btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>
               Cancel
-            </Button>
-            <Button type="submit" className="flex-1" disabled={submitting}>
+            </button>
+            <button type="submit" className="v2-btn v2-btn-primary v2-btn-sm" style={{ flex: 1, justifyContent: 'center' }} disabled={submitting}>
               {submitting ? 'Creating…' : 'Create Team'}
-            </Button>
+            </button>
           </div>
         </form>
       </div>

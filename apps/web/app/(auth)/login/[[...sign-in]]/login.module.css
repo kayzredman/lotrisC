@@ -1,0 +1,307 @@
+/* ── Outer viewport wrapper ── */
+.loginOuter {
+  min-height: 100vh;
+  background: #EEF2F7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Two-panel card shell ── */
+.loginShell {
+  display: flex;
+  width: 100%;
+  max-width: 980px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.13), 0 4px 16px rgba(0, 0, 0, 0.06);
+  min-height: 580px;
+}
+
+/* ── Left branding panel ── */
+.loginPanel {
+  width: 380px;
+  flex-shrink: 0;
+  background: #0C0E1A;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 44px;
+  position: relative;
+  overflow: hidden;
+}
+
+.loginPanel::before {
+  content: '';
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: #4F46E5;
+  opacity: 0.06;
+  top: -80px;
+  right: -80px;
+}
+
+.loginPanel::after {
+  content: '';
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: #6366F1;
+  opacity: 0.05;
+  bottom: 60px;
+  left: -60px;
+}
+
+.panelLogo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 56px;
+  position: relative;
+  z-index: 1;
+}
+
+.panelLogoIcon {
+  width: 34px;
+  height: 34px;
+  background: #4F46E5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.5px;
+  flex-shrink: 0;
+}
+
+.panelLogoText {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.3px;
+}
+
+.panelHeadline {
+  font-size: 22px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.5px;
+  line-height: 1.3;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.panelSub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.38);
+  line-height: 1.7;
+  margin-bottom: 44px;
+  position: relative;
+  z-index: 1;
+}
+
+.panelFeatures {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+.panelFeature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.featureIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #A5B4FC;
+}
+
+.featureText h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 2px;
+  margin-top: 0;
+}
+
+.featureText p {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.32);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.panelStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-top: 36px;
+  position: relative;
+  z-index: 1;
+}
+
+.panelStat {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.panelStatVal {
+  font-size: 18px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.8px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.panelStatLbl {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.28);
+  letter-spacing: 0.2px;
+}
+
+.panelFooter {
+  margin-top: 32px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.18);
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Right form area ── */
+.loginFormArea {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 52px;
+  background: #FFFFFF;
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 380px;
+}
+
+/* Card wrapping the Clerk widget */
+.clerkCard {
+  width: 100%;
+  overflow: hidden;
+  background: #FFFFFF;
+  border: 1px solid #E8EDF3;
+  border-radius: 10px;
+  padding: 28px 28px 20px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* Security note below card */
+.securityNote {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+  font-size: 11.5px;
+  color: #16A34A;
+  font-weight: 500;
+}
+
+.securityNote svg {
+  flex-shrink: 0;
+}
+
+/* Welcome copy above Clerk widget */
+.formWelcome {
+  margin-bottom: 20px;
+}
+
+.formWelcomeHeading {
+  font-size: 21px;
+  font-weight: 700;
+  color: #0F172A;
+  letter-spacing: -0.5px;
+  margin: 0 0 4px 0;
+}
+
+.formWelcomeSub {
+  font-size: 13px;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.formLogo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.formLogoIcon {
+  width: 28px;
+  height: 28px;
+  background: #4F46E5;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: white;
+}
+
+.formLogoText {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+  letter-spacing: -0.2px;
+}
+
+/* Responsive */
+@media (max-width: 780px) {
+  .loginPanel {
+    display: none;
+  }
+
+  .loginFormArea {
+    padding: 40px 28px;
+  }
+
+  .loginShell {
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .loginOuter {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .loginShell {
+    border-radius: 0;
+    min-height: 100vh;
+  }
+}

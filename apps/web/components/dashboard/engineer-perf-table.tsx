@@ -24,7 +24,7 @@ export function EngineerPerfTable({ rows, isLoading }: EngineerPerfTableProps) {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   if (isLoading) {
-    return <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-5 animate-pulse h-40" />;
+    return <div className="rounded-xl p-5 animate-pulse h-40" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }} />;
   }
 
   const data = rows ?? [];
@@ -56,7 +56,8 @@ export function EngineerPerfTable({ rows, isLoading }: EngineerPerfTableProps) {
     return (
       <button
         onClick={() => handleSort(col)}
-        className={`flex items-center gap-1 ${active ? 'text-violet-400' : 'text-slate-400'} hover:text-slate-200 transition`}
+        style={{ color: active ? '#f57f20' : 'var(--text-secondary)' }}
+        className="flex items-center gap-1 hover:opacity-80 transition"
       >
         {label}
         <span className="text-xs">{active ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}</span>
@@ -64,25 +65,25 @@ export function EngineerPerfTable({ rows, isLoading }: EngineerPerfTableProps) {
     );
   }
 
-  function kpiColor(score: string | null) {
-    if (!score) return 'text-slate-500';
+  function kpiColor(score: string | null): string {
+    if (!score) return 'var(--text-muted)';
     const n = parseFloat(score);
-    return n >= 80 ? 'text-emerald-400' : n >= 60 ? 'text-amber-400' : 'text-rose-400';
+    return n >= 80 ? '#22c55e' : n >= 60 ? '#f59e0b' : '#f87171';
   }
 
   return (
-    <div className="rounded-xl bg-slate-800/60 border border-slate-700 overflow-hidden">
-      <div className="px-5 py-3 border-b border-slate-700">
-        <h2 className="text-sm font-semibold text-slate-200">Engineer Performance — Current Week</h2>
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      <div className="px-5 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Engineer Performance — Current Week</h2>
       </div>
 
       {sorted.length === 0 ? (
-        <p className="text-sm text-slate-500 p-5">No performance data for this period.</p>
+        <p className="text-sm p-5" style={{ color: 'var(--text-muted)' }}>No performance data for this period.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-700 text-xs">
+              <tr className="text-xs" style={{ borderBottom: '1px solid var(--border)' }}>
                 <th className="text-left px-4 py-2.5">
                   <SortBtn col="engineerId" label="Engineer" />
                 </th>
@@ -102,18 +103,18 @@ export function EngineerPerfTable({ rows, isLoading }: EngineerPerfTableProps) {
             </thead>
             <tbody>
               {sorted.map((r) => (
-                <tr key={`${r.engineerId}-${r.weekKey}`} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition">
-                  <td className="px-4 py-2.5 text-slate-300 font-mono text-xs">{r.engineerId.slice(0, 8)}…</td>
-                  <td className="px-4 py-2.5 text-right text-slate-200">{r.ticketsResolved}</td>
+                <tr key={`${r.engineerId}-${r.weekKey}`} className="hover:opacity-80 transition" style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--text-primary)' }}>{r.engineerId.slice(0, 8)}…</td>
+                  <td className="px-4 py-2.5 text-right" style={{ color: 'var(--text-primary)' }}>{r.ticketsResolved}</td>
                   <td className="px-4 py-2.5 text-right">
-                    <span className={r.slaBreaches > 0 ? 'text-rose-400' : 'text-slate-400'}>
+                    <span style={{ color: r.slaBreaches > 0 ? '#f87171' : 'var(--text-secondary)' }}>
                       {r.slaBreaches}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 text-right text-slate-400">
+                  <td className="px-4 py-2.5 text-right" style={{ color: 'var(--text-secondary)' }}>
                     {r.avgResolutionHours ? `${parseFloat(r.avgResolutionHours).toFixed(1)}h` : '—'}
                   </td>
-                  <td className={`px-4 py-2.5 text-right font-semibold ${kpiColor(r.kpiScore)}`}>
+                  <td className="px-4 py-2.5 text-right font-semibold" style={{ color: kpiColor(r.kpiScore) }}>
                     {r.kpiScore ? parseFloat(r.kpiScore).toFixed(1) : '—'}
                   </td>
                 </tr>

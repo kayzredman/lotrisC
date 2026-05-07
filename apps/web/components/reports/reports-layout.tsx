@@ -1,105 +1,253 @@
 'use client';
 
 import { useState } from 'react';
-import { GenerateReportForm } from './generate-report-form';
-import { ScheduledReports } from './scheduled-reports';
+import { useAuth } from '@clerk/nextjs';
+import { FileText, Download, Clock, Calendar, Plus, Search, BarChart2, CheckCircle, AlertCircle } from 'lucide-react';
 
-type Tab = 'generate' | 'history' | 'scheduled';
-
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'generate', label: 'Generate Report' },
-  { key: 'history', label: 'Report History' },
-  { key: 'scheduled', label: 'Scheduled Reports' },
+// ── Marketing demo data (match 05-reports-v2.html exactly) ──────────────────
+const REPORT_TYPE_TABS = [
+  { label: 'All',               count: 24 },
+  { label: 'Ticket Summary',    count: 8  },
+  { label: 'SLA Compliance',    count: 5  },
+  { label: 'KPI Performance',   count: 4  },
+  { label: 'Agent Performance', count: 4  },
+  { label: 'CSAT Analysis',     count: 3  },
+  { label: 'Queue Reports',     count: 4  },
 ];
 
-const REPORT_TYPES = [
-  { key: 'TICKET_SUMMARY', label: 'Ticket Summary' },
-  { key: 'SLA_COMPLIANCE', label: 'SLA Compliance' },
-  { key: 'KPI_REPORT', label: 'KPI Report' },
-  { key: 'ENGINEER_PERF', label: 'Engineer Performance' },
+const DEMO_REPORTS = [
+  { name: 'SLA Compliance Report – April 2026',      type: 'SLA Compliance',    formats: ['PDF'],        freq: 'Monthly',   date: '1 May 2026, 06:00', size: '2.4 MB', downloads: 18 },
+  { name: 'KPI Performance Report – Q1 2026',        type: 'KPI Performance',   formats: ['XLSX','PDF'], freq: 'Quarterly', date: '2 Apr 2026, 08:15', size: '5.1 MB', downloads: 42 },
+  { name: 'Agent Performance Report – Week 17',      type: 'Agent Performance', formats: ['PDF'],        freq: 'Weekly',    date: '28 Apr 2026, 07:00', size: '1.8 MB', downloads: 9  },
+  { name: 'CSAT Monthly Report – April 2026',        type: 'CSAT Analysis',     formats: ['XLSX'],       freq: 'Monthly',   date: '1 May 2026, 06:00', size: '890 KB', downloads: 7  },
+  { name: 'Ticket Volume by Category – May 2026',    type: 'Ticket Summary',    formats: ['CSV'],        freq: 'Daily',     date: '5 May 2026, 00:00', size: '340 KB', downloads: 3  },
+  { name: 'SLA Compliance Detail – Network Ops',     type: 'SLA Compliance',    formats: ['PDF','XLSX'], freq: 'Ad-hoc',    date: '4 May 2026, 14:22', size: '1.2 MB', downloads: 5  },
 ];
+
+const FORMAT_COLORS: Record<string, string> = {
+  PDF:  'v2-badge-red',
+  XLSX: 'v2-badge-green',
+  CSV:  'v2-badge-blue',
+};
 
 export function ReportsLayout() {
-  const [activeTab, setActiveTab] = useState<Tab>('generate');
-  const [selectedType, setSelectedType] = useState('TICKET_SUMMARY');
+  const [activeType, setActiveType] = useState('All');
+  const [showGenerate, setShowGenerate] = useState(false);
+  const [reportType, setReportType] = useState('TICKET_SUMMARY');
+  const [format, setFormat] = useState('PDF');
+  const [dateRange, setDateRange] = useState('last_30');
+  const [generating, setGenerating] = useState(false);
+  const [genStatus, setGenStatus] = useState<{ ok: boolean; message: string } | null>(null);
+  const { getToken } = useAuth();
 
-  return (
-    <div className="flex h-full min-h-0">
-      {/* Sidebar */}
-      <aside className="w-56 shrink-0 border-r border-slate-700 bg-slate-900 flex flex-col gap-1 p-3">
-        <p className="text-xs text-slate-500 uppercase tracking-wide px-2 py-1">Reports</p>
-        {REPORT_TYPES.map((rt) => (
-          <button
-            key={rt.key}
-            onClick={() => {
-              setSelectedType(rt.key);
-              setActiveTab('generate');
-            }}
-            className={`text-left px-3 py-2 rounded-lg text-sm transition ${
-              selectedType === rt.key && activeTab === 'generate'
-                ? 'bg-violet-600 text-white'
-                : 'text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            {rt.label}
-          </button>
-        ))}
+  const dateRangeParams = (range: string): { dateFrom: string; dateTo: string } => {
+    const to = new Date();
+    const from = new Date();
+    if (range === 'last_7')  from.setDate(to.getDate() - 7);
+    else if (range === 'last_30') from.setDate(to.getDate() - 30);
+    else if (range === 'this_month') from.setDate(1);
+    else if (range === 'last_month') { from.setMonth(from.getMonth() - 1); from.setDate(1); to.setDate(0); }
+    else from.setDate(to.getDate() - 30);
+    return { dateFrom: from.toISOString().slice(0, 10), dateTo: to.toISOString().slice(0, 10) };
+  };
 
-        <div className="mt-4 border-t border-slate-700 pt-3 flex flex-col gap-1">
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`text-left px-3 py-2 rounded-lg text-sm transition ${
-              activeTab === 'history' ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:bg-slate-800'
-            }`}
-          >
-            History
-          </button>
-          <button
-            onClick={() => setActiveTab('scheduled')}
-            className={`text-left px-3 py-2 rounded-lg text-sm transition ${
-              activeTab === 'scheduled' ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:bg-slate-800'
-            }`}
-          >
-            Scheduled
-          </button>
-        </div>
-      </aside>
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setGenStatus(null);
+    try {
+      const token = await getToken();
+      const { dateFrom, dateTo } = dateRangeParams(dateRange);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/reports/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ reportType, format: format === 'XLSX' ? 'EXCEL' : format, dateFrom, dateTo }),
+      });
+      if (res.ok || res.status === 202) {
+        setGenStatus({ ok: true, message: 'Report generation queued. It will appear in your list shortly.' });
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setGenStatus({ ok: false, message: (body as { message?: string }).message ?? 'Generation failed. Please try again.' });
+      }
+    } catch {
+      setGenStatus({ ok: false, message: 'Network error — could not reach the API.' });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
-      {/* Main panel */}
-      <div className="flex-1 overflow-y-auto p-6">
-        {/* Tab bar */}
-        <div className="flex gap-1 mb-6 border-b border-slate-700 pb-1">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              className={`px-4 py-1.5 text-sm rounded-t transition ${
-                activeTab === t.key
-                  ? 'text-violet-400 border-b-2 border-violet-500'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+  const filtered = activeType === 'All' ? DEMO_REPORTS : DEMO_REPORTS.filter(r => r.type === activeType);
 
-        {activeTab === 'generate' && <GenerateReportForm initialType={selectedType} />}
-        {activeTab === 'history' && <ReportHistoryPanel />}
-        {activeTab === 'scheduled' && <ScheduledReports />}
-      </div>
-    </div>
-  );
-}
-
-function ReportHistoryPanel() {
-  // Fetch from REST API directly since tRPC doesn't have a list procedure yet
   return (
     <div>
-      <h2 className="text-base font-semibold text-slate-100 mb-4">Report History</h2>
-      <p className="text-sm text-slate-500">
-        Previously generated reports appear here. Download links are available for 24 hours.
-      </p>
+      {/* Page header */}
+      <div className="v2-page-header">
+        <div>
+          <h1>Reports</h1>
+          <p>Generate, schedule and download performance reports</p>
+        </div>
+        <div className="v2-page-header-actions">
+          <button type="button" className="v2-btn v2-btn-secondary v2-btn-sm" onClick={() => setShowGenerate(false)}>
+            <Clock size={12} /> Scheduled (6)
+          </button>
+          <button type="button" className="v2-btn v2-btn-primary v2-btn-sm" onClick={() => setShowGenerate(true)}>
+            <Plus size={12} /> Generate Report
+          </button>
+        </div>
+      </div>
+
+      {/* Stats bar */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        {[
+          { value: '24', label: 'Saved Reports',    icon: <FileText size={13} />,  color: 'var(--indigo)' },
+          { value: '6',  label: 'Scheduled',         icon: <Calendar size={13} />,  color: 'var(--blue)'   },
+          { value: '148',label: 'Downloads MTD',     icon: <Download size={13} />,  color: 'var(--green)'  },
+          { value: '2h', label: 'Last Generated',    icon: <Clock size={13} />,     color: 'var(--text-muted)' },
+        ].map(s => (
+          <div key={s.label} className="v2-card" style={{ flex: '1 1 120px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ color: s.color }}>{s.icon}</div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: s.color, letterSpacing: -0.5 }}>{s.value}</div>
+              <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500 }}>{s.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {showGenerate ? (
+        /* Generate form */
+        <div className="v2-card">
+          <div className="v2-card-header">
+            <div className="v2-card-title">Generate New Report</div>
+            <button type="button" className="v2-btn v2-btn-ghost v2-btn-sm" onClick={() => setShowGenerate(false)}>← Back</button>
+          </div>
+          <div className="v2-card-body">
+            {genStatus && (
+              <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8,
+                background: genStatus.ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                border: `1px solid ${genStatus.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                color: genStatus.ok ? '#16a34a' : '#dc2626', fontSize: 13 }}>
+                {genStatus.ok ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+                {genStatus.message}
+              </div>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div>
+                <label htmlFor="rt-select" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 5 }}>Report Type</label>
+                <select id="rt-select" className="v2-select" style={{ width: '100%' }} value={reportType} onChange={e => setReportType(e.target.value)}>
+                  <option value="TICKET_SUMMARY">Ticket Summary</option>
+                  <option value="SLA_COMPLIANCE">SLA Compliance</option>
+                  <option value="KPI_REPORT">KPI Performance</option>
+                  <option value="ENGINEER_PERF">Agent Performance</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="dept-select" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 5 }}>Department / Team</label>
+                <select id="dept-select" className="v2-select" style={{ width: '100%' }}>
+                  <option>All Departments</option>
+                  <option>IT Support</option>
+                  <option>Network Ops</option>
+                  <option>DB Team</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="dr-select" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 5 }}>Date Range</label>
+                <select id="dr-select" className="v2-select" style={{ width: '100%' }} value={dateRange} onChange={e => setDateRange(e.target.value)}>
+                  <option value="last_30">Last 30 days</option>
+                  <option value="last_7">Last 7 days</option>
+                  <option value="this_month">This month</option>
+                  <option value="last_month">Last month</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="fmt-select" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 5 }}>Format</label>
+                <select id="fmt-select" className="v2-select" style={{ width: '100%' }} value={format} onChange={e => setFormat(e.target.value)}>
+                  <option value="PDF">PDF</option>
+                  <option value="XLSX">XLSX</option>
+                  <option value="CSV">CSV</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ marginTop: 20, display: 'flex', gap: 8 }}>
+              <button type="button" className="v2-btn v2-btn-primary" onClick={handleGenerate} disabled={generating}>
+                <BarChart2 size={13} /> {generating ? 'Generating…' : 'Generate Now'}
+              </button>
+              <button type="button" className="v2-btn v2-btn-secondary"><Calendar size={13} /> Schedule</button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Report list */
+        <>
+          <div className="v2-filter-bar">
+            <div className="v2-filter-tabs">
+              {REPORT_TYPE_TABS.map(tab => (
+                <button
+                  key={tab.label}
+                  type="button"
+                  className={`v2-filter-tab${activeType === tab.label ? ' active' : ''}`}
+                  onClick={() => setActiveType(tab.label)}
+                >
+                  {tab.label}
+                  <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-light)' }}>{tab.count}</span>
+                </button>
+              ))}
+            </div>
+            <div className="v2-search-bar" style={{ width: 200 }}>
+              <Search size={12} style={{ color: 'var(--text-light)', flexShrink: 0 }} />
+              <input type="text" placeholder="Search reports…" />
+            </div>
+          </div>
+
+          <div className="v2-card">
+            <div className="v2-table-wrap">
+              <table className="v2-table">
+                <thead>
+                  <tr>
+                    <th>Report Name</th>
+                    <th>Type</th>
+                    <th>Format</th>
+                    <th>Frequency</th>
+                    <th>Generated</th>
+                    <th>Size</th>
+                    <th>Downloads</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(r => (
+                    <tr key={r.name}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <FileText size={14} style={{ color: 'var(--indigo)', flexShrink: 0 }} />
+                          <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{r.name}</span>
+                        </div>
+                      </td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.type}</span></td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          {r.formats.map(f => <span key={f} className={`v2-badge ${FORMAT_COLORS[f] ?? 'v2-badge-gray'}`}>{f}</span>)}
+                        </div>
+                      </td>
+                      <td><span className="v2-badge v2-badge-indigo">{r.freq}</span></td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.date}</span></td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-light)' }}>{r.size}</span></td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.downloads}</span></td>
+                      <td>
+                        <div className="v2-row-actions">
+                          <button type="button" className="v2-row-action-btn" title="Download"><Download size={11} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
