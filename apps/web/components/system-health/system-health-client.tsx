@@ -111,8 +111,9 @@ export function SystemHealthClient() {
           </div>
           <ServiceTable
             services={snapshot?.services ?? []}
-            onSelectService={setSelected}
-            onRestartService={setRestart}
+            selected={selectedService}
+            onSelect={setSelected}
+            onRestart={setRestart}
           />
         </div>
         <div className="v2-card">
@@ -133,95 +134,8 @@ export function SystemHealthClient() {
 
       {/* Drawers / modals */}
       {selectedService && (
-        <DetailPanel service={selectedService} onClose={() => setSelected(null)} />
+        <DetailPanel service={selectedService} onRestart={setRestart} />
       )}
-      {restartTarget && (
-        <RestartModal
-          service={restartTarget}
-          onConfirm={handleRestartConfirm}
-          onCancel={() => setRestart(null)}
-        />
-      )}
-    </div>
-  );
-}
-
-      <div className="flex items-center justify-between mb-5 gap-4 flex-wrap">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-100">System Health</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Admin / System Health</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Live indicator */}
-          {isLive && (
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-green-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              Live · 1s refresh
-            </span>
-          )}
-          {paused && (
-            <span className="text-xs text-slate-500 font-medium">Paused</span>
-          )}
-          <button
-            onClick={() => setPaused((p) => !p)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-700 bg-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-700 transition-colors"
-          >
-            {paused
-              ? <><Play className="w-3.5 h-3.5" /> Resume</>
-              : <><Pause className="w-3.5 h-3.5" /> Pause</>
-            }
-          </button>
-          <a
-            href="https://status.lotris.io"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-colors"
-          >
-            <Globe className="w-3.5 h-3.5" /> Status Page
-          </a>
-        </div>
-      </div>
-
-      {/* ── Summary chips ────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        {upCount > 0 && (
-          <SummaryChip color="green" label={`${upCount} Service${upCount !== 1 ? 's' : ''} UP`} />
-        )}
-        {degradedCount > 0 && (
-          <SummaryChip color="yellow" label={`${degradedCount} Degraded`} />
-        )}
-        {downCount > 0 && (
-          <SummaryChip color="red" label={`${downCount} Down`} />
-        )}
-        {!snapshot && (
-          <SummaryChip color="gray" label="Loading…" />
-        )}
-      </div>
-
-      {/* ── Main grid ────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-4 items-start">
-        {/* Left column */}
-        <div className="flex flex-col gap-4">
-          <ServiceTable
-            services={snapshot?.services ?? []}
-            selected={selectedService}
-            onSelect={setSelected}
-            onRestart={setRestart}
-          />
-          <QueueDepths queues={snapshot?.queues ?? []} />
-          <IncidentLog incidents={incidents ?? []} />
-        </div>
-
-        {/* Right column — Detail panel */}
-        <div>
-          <DetailPanel
-            service={selectedService}
-            onRestart={setRestart}
-          />
-        </div>
-      </div>
-
-      {/* ── Restart confirm modal ─────────────────────────────────────────── */}
       {restartTarget && (
         <RestartModal
           service={restartTarget}
@@ -230,26 +144,6 @@ export function SystemHealthClient() {
           isPending={restartMutation.isPending}
         />
       )}
-    </div>
-  );
-}
-
-// ── Summary chip ──────────────────────────────────────────────────────────────
-
-function SummaryChip({ color, label }: { color: 'green' | 'yellow' | 'red' | 'gray'; label: string }) {
-  const colors = {
-    green:  'bg-green-950 text-green-400 border-green-800',
-    yellow: 'bg-yellow-950 text-yellow-400 border-yellow-800',
-    red:    'bg-red-950   text-red-400   border-red-800',
-    gray:   'bg-slate-800 text-slate-400 border-slate-700',
-  };
-  const dotColors = {
-    green: 'bg-green-400', yellow: 'bg-yellow-400', red: 'bg-red-400', gray: 'bg-slate-400',
-  };
-  return (
-    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${colors[color]}`}>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColors[color]}`} />
-      {label}
     </div>
   );
 }

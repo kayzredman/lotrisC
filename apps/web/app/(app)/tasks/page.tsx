@@ -8,5 +8,3 @@ export const metadata: Metadata = {
 export default function TasksPage() {
   return <TasksTable />;
 }
-
-}

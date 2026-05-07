@@ -176,7 +176,7 @@ export default function TasksTable() {
       </div>
 
       {selectedTaskId && <TaskDrawer taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />}
-      <CreateTaskModal open={showCreate} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); void utils['tasks.list'].invalidate(); }} />
+      {showCreate && <CreateTaskModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); void utils['tasks.list'].invalidate(); }} />}
     </div>
   );
 }
