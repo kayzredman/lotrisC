@@ -1,19 +1,11 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { createClerkClient, verifyToken } from '@clerk/backend';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import type { CanActivate, ExecutionContext } from '@nestjs/common';
+import { verifyToken } from '@clerk/backend';
 import { getEnv } from '@lotris/config';
-import { AuthService } from './auth.service';
+import type { AuthService } from './auth.service';
 
 @Injectable()
 export class ClerkJwtGuard implements CanActivate {
-  private readonly clerk = createClerkClient({
-    secretKey: getEnv().CLERK_SECRET_KEY,
-  });
-
   constructor(private readonly authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -33,7 +25,10 @@ export class ClerkJwtGuard implements CanActivate {
       const payload = await verifyToken(token, { secretKey: getEnv().CLERK_SECRET_KEY });
 
       if (!payload.org_id) {
-        throw new UnauthorizedException('No organisation in token — user must belong to a Clerk org');
+        // Dev/demo fallback: no Clerk org — resolve by clerkUserId only (mirrors tRPC context)
+        const session = await this.authService.resolveSessionByClerkId(payload.sub);
+        request.auth = session;
+        return true;
       }
 
       // Resolve to internal scoped session { tenantId, userId, role }

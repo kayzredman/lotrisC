@@ -74,6 +74,7 @@ export const appRouter = router({
         priority: z.number().int().min(1).max(4).optional(),
         teamId: z.string().uuid().optional(),
         assigneeId: z.string().uuid().optional(),
+        search: z.string().optional(),
         page: z.number().int().min(1).default(1),
         limit: z.number().int().min(1).max(100).default(25),
       }),
@@ -102,6 +103,17 @@ export const appRouter = router({
     .mutation(async ({ ctx, input }) => {
       const svc = new TicketsService(new NotificationsService());
       return svc.create(ctx.auth, input);
+    }),
+
+  'tickets.assign': protectedProcedure
+    .input(z.object({ id: z.string().uuid(), assigneeId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const ALLOWED = ['ADMIN', 'SUPERADMIN', 'TEAM_LEAD'];
+      if (!ALLOWED.includes(ctx.auth.role)) {
+        throw new Error('Forbidden: only Admins and Team Leads can assign tickets');
+      }
+      const svc = new TicketsService(new NotificationsService());
+      return svc.assign(ctx.auth, input.id, input.assigneeId);
     }),
 
   'tickets.updateStatus': protectedProcedure
@@ -351,6 +363,11 @@ export const appRouter = router({
   'dashboard.queueHealth': protectedProcedure.query(async ({ ctx }) => {
     const svc = new DashboardCacheService();
     return svc.getQueueHealth(ctx.auth.tenantId);
+  }),
+
+  'dashboard.teamWorkload': protectedProcedure.query(async ({ ctx }) => {
+    const svc = new DashboardCacheService();
+    return svc.getTeamWorkload(ctx.auth.tenantId);
   }),
 
   // ── health (ADMIN only) ──────────────────────────────────────────────────

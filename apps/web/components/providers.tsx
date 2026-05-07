@@ -3,7 +3,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink } from '@trpc/client';
 import { useState } from 'react';
-import superjson from 'superjson';
 import { ThemeProvider } from 'next-themes';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@clerk/nextjs';
@@ -25,7 +24,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       links: [
         httpBatchLink({
           url: `${process.env.NEXT_PUBLIC_API_URL}/trpc`,
-          transformer: superjson,
           async headers() {
             const token = await getToken();
             return token ? { Authorization: `Bearer ${token}` } : {};
@@ -36,7 +34,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
           {children}

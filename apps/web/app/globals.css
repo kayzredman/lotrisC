@@ -23,15 +23,15 @@
 
   /* Surfaces */
   --white:      #FFFFFF;
-  --bg:         #F8FAFC;
-  --bg-subtle:  #F1F5F9;
+  --bg:         #E2EAF2;
+  --bg-subtle:  #D6E0EC;
   --bg-card:    #FFFFFF;
 
   /* Legacy aliases used by existing components */
-  --bg-base:    #F8FAFC;
+  --bg-base:    #E2EAF2;
   --bg-surface: #FFFFFF;
-  --bg-raised:  #F1F5F9;
-  --bg-sunken:  #F8FAFC;
+  --bg-raised:  #D6E0EC;
+  --bg-sunken:  #E2EAF2;
 
   /* Text */
   --text-primary:   #0F172A;
@@ -105,6 +105,17 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--text-light); }
+}
+
+/* ─── Clerk widget overrides ──────────────────────────── */
+/* Hide "Secured by Clerk" branding and "Development mode" badge */
+.cl-badge,
+.cl-footerPages,
+.cl-footerPagesLink,
+.cl-poweredByClerk,
+[data-localization-key="badge__dev"],
+[data-clerk-badge] {
+  display: none !important;
 }
 
 /* ─── v2 Component Styles ──────────────────────────────── */
@@ -259,7 +270,7 @@
 .v2-btn-sm { padding: 5px 10px; font-size: 11.5px; }
 
 /* Cards */
-.v2-card { background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border); box-shadow: var(--shadow-xs); }
+.v2-card { background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
 .v2-card-header { padding: 14px 18px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .v2-card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.1px; }
 .v2-card-subtitle { font-size: 11.5px; color: var(--text-muted); }
@@ -267,7 +278,7 @@
 
 /* Stat cards */
 .v2-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-.v2-stat-card { background: white; border-radius: var(--radius-md); border: 1px solid var(--border); padding: 18px; box-shadow: var(--shadow-xs); border-left: 3px solid transparent; }
+.v2-stat-card { background: white; border-radius: var(--radius-md); border: 1px solid var(--border); padding: 18px; box-shadow: var(--shadow-sm); border-left: 3px solid transparent; }
 .v2-stat-card.indigo { border-left-color: var(--indigo); }
 .v2-stat-card.green  { border-left-color: var(--green); }
 .v2-stat-card.yellow { border-left-color: var(--yellow); }
@@ -376,3 +387,76 @@
 tbody tr:hover .v2-row-actions { opacity: 1; }
 .v2-row-action-btn { width: 26px; height: 26px; border: 1px solid var(--border); border-radius: var(--radius-xs); background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: all 0.14s; }
 .v2-row-action-btn:hover { border-color: var(--indigo); color: var(--indigo); }
+
+/* ============================================================
+   DARK MODE — .dark class applied to <html> by next-themes
+   ============================================================ */
+
+.dark {
+  /* Surfaces */
+  --bg:         #0D1117;
+  --bg-subtle:  #161B22;
+  --bg-card:    #1C2130;
+  --white:      #1C2130;
+
+  /* Legacy aliases */
+  --bg-base:    #0D1117;
+  --bg-surface: #1C2130;
+  --bg-raised:  #161B22;
+  --bg-sunken:  #0D1117;
+
+  /* Text */
+  --text-primary:   #E2E8F0;
+  --text-secondary: #94A3B8;
+  --text-muted:     #64748B;
+  --text-light:     #475569;
+  --text-xlight:    #334155;
+
+  /* Borders */
+  --border:        rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.14);
+  --border-dark:   rgba(255,255,255,0.14);
+
+  /* Status bg — darkened tints */
+  --green-bg:       rgba(22,163,74,0.12);
+  --green-border:   rgba(22,163,74,0.28);
+  --yellow-bg:      rgba(202,138,4,0.12);
+  --yellow-border:  rgba(202,138,4,0.28);
+  --red-bg:         rgba(220,38,38,0.12);
+  --red-border:     rgba(220,38,38,0.28);
+  --blue-bg:        rgba(37,99,235,0.12);
+  --blue-border:    rgba(37,99,235,0.28);
+  --orange-bg:      rgba(234,88,12,0.12);
+  --orange-border:  rgba(234,88,12,0.28);
+  --purple-bg:      rgba(124,58,237,0.12);
+  --purple-border:  rgba(124,58,237,0.28);
+  --indigo-dim:     rgba(79,70,229,0.15);
+  --indigo-border:  rgba(79,70,229,0.32);
+
+  /* Shadows (heavier on dark) */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.7);
+}
+
+/* Component-level dark overrides (hardcoded `white` backgrounds) */
+.dark .v2-topbar             { background: var(--bg-card); border-bottom-color: var(--border); }
+.dark .v2-icon-btn           { background: var(--bg-card); border-color: var(--border); }
+.dark .v2-search-bar         { background: var(--bg-subtle); border-color: var(--border); }
+.dark .v2-search-bar:focus-within { background: var(--bg-card); }
+.dark .v2-stat-card          { background: var(--bg-card); }
+.dark .v2-btn-secondary      { background: var(--bg-card); border-color: var(--border); color: var(--text-primary); }
+.dark .v2-btn-secondary:hover { background: var(--bg-subtle); }
+.dark .v2-btn-ghost:hover    { background: var(--bg-subtle); }
+.dark .v2-filter-tab.active  { background: var(--bg-card); box-shadow: none; }
+.dark .v2-pg-btn             { background: var(--bg-card); border-color: var(--border); }
+.dark .v2-drawer             { background: var(--bg-card); }
+.dark .v2-drawer-header, .dark .v2-drawer-footer { border-color: var(--border); }
+.dark .v2-summary-bar        { background: var(--bg-card); border-color: var(--border); }
+.dark .v2-row-action-btn     { background: var(--bg-card); }
+.dark .v2-select             { background: var(--bg-card); border-color: var(--border); color: var(--text-primary); }
+.dark .v2-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+.dark .v2-table thead th     { background: var(--bg-subtle); }
+.dark .v2-notif-dot          { border-color: var(--bg-card); }
+.dark .v2-timeline-dot       { border-color: var(--bg-card); }

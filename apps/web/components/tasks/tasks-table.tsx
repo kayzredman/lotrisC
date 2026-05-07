@@ -6,7 +6,7 @@ import TaskDrawer from './task-drawer';
 import CreateTaskModal from './create-task-modal';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
-// ── Marketing demo data (match 09-tasks-v2.html exactly) ────────────────────
+// ── Marketing demo data (fallback) ──────────────────────────────────────────
 const DEMO_TASKS = [
   { id: 't1', title: 'Monthly DB Backup Verification',      type: 'Maintenance',  priority: 'Critical', assignee: 'A. Okonkwo',  status: 'Overdue',     progress: 60,  dueDate: '30 Apr',  selfLogged: false },
   { id: 't2', title: 'DR Failover Drill – Core Banking',    type: 'DR/BCP',       priority: 'High',     assignee: 'F. Mohammed', status: 'In Progress', progress: 40,  dueDate: '9 May',   selfLogged: false },
@@ -18,15 +18,29 @@ const DEMO_TASKS = [
   { id: 't8', title: 'SSL Certificate Renewal – Web Proxy', type: 'Change Req.',  priority: 'Critical', assignee: 'B. Ibrahim',  status: 'Overdue',     progress: 20,  dueDate: '2 May',   selfLogged: false },
 ];
 
-const STATUS_TABS = [
-  { label: 'All',         count: 11 },
-  { label: 'Open',        count: 3  },
-  { label: 'In Progress', count: 5  },
-  { label: 'Review',      count: 1  },
-  { label: 'Done',        count: 2  },
-  { label: 'Overdue',     count: 2  },
-  { label: 'Self-logged', count: 3  },
-];
+// ── Live task type → display label ────────────────────────────────────────────
+const TASK_TYPE_LABEL: Record<string, string> = {
+  MAINTENANCE: 'Maintenance', DR_BCP: 'DR/BCP', CHANGE_REQUEST: 'Change Req.',
+  DOCUMENTATION: 'Documentation', TRAINING: 'Training', AD_HOC: 'Ad Hoc',
+};
+
+// ── Live task status → display label ─────────────────────────────────────────
+const TASK_STATUS_LABEL: Record<string, string> = {
+  OPEN: 'Open', IN_PROGRESS: 'In Progress', REVIEW: 'Review',
+  COMPLETED: 'Done', OVERDUE: 'Overdue',
+};
+
+// ── Demo user ID → short name (matches seed.ts) ───────────────────────────────
+const USER_SHORT: Record<string, string> = {
+  '30000001-0000-0000-0000-000000000005': 'A. Okonkwo',
+  '30000001-0000-0000-0000-000000000006': 'F. Mohammed',
+  '30000001-0000-0000-0000-000000000007': 'C. Boateng',
+  '30000001-0000-0000-0000-000000000008': 'N. Kamara',
+  '30000001-0000-0000-0000-000000000009': 'D. Mensah',
+  '30000001-0000-0000-0000-000000000010': 'B. Ibrahim',
+  '30000001-0000-0000-0000-000000000003': 'K. Boateng (Lead)',
+  '30000001-0000-0000-0000-000000000004': 'A. Darko (Lead)',
+};
 
 const STATUS_BADGE: Record<string, string> = {
   'Overdue':     'v2-badge-red',
@@ -48,15 +62,73 @@ export default function TasksTable() {
   const [activeTab, setActiveTab] = useState('All');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page] = useState(1);
 
   const utils = trpc.useUtils();
 
+  // Live tasks from MSSQL
+  const { data: liveData } = trpc['tasks.list'].useQuery(
+    { page, limit: 25 },
+    { staleTime: 25_000 },
+  );
+
+  // Map live rows → display format
+  const liveRows = liveData?.items.map((t) => {
+    const statusRaw = t.status.toUpperCase();
+    // Determine if overdue: OPEN/IN_PROGRESS with past dueDate
+    const isOverdue = (statusRaw === 'OPEN' || statusRaw === 'IN_PROGRESS') && t.dueDate && new Date(t.dueDate) < new Date();
+    const displayStatus = isOverdue ? 'Overdue' : (TASK_STATUS_LABEL[statusRaw] ?? t.status);
+    const dueDateStr = t.dueDate
+      ? new Date(t.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+      : '–';
+    return {
+      id: t.id,
+      title: t.title,
+      type: TASK_TYPE_LABEL[t.taskType] ?? t.taskType,
+      priority: 'Medium' as string, // tasks schema has no priority; use Medium default
+      assignee: USER_SHORT[t.createdBy] ?? 'Engineer',
+      status: displayStatus,
+      progress: t.progress ?? 0,
+      dueDate: dueDateStr,
+      selfLogged: t.source === 'SELF_LOGGED',
+    };
+  });
+
+  const allRows = (liveRows && liveRows.length > 0) ? liveRows : DEMO_TASKS;
+
+  // Build dynamic STATUS_TABS from live data
+  const countByStatus = (status: string) => allRows.filter(t => t.status === status).length;
+  const selfLoggedCount = allRows.filter(t => t.selfLogged).length;
+
+  const STATUS_TABS = [
+    { label: 'All',         count: allRows.length },
+    { label: 'Open',        count: countByStatus('Open') },
+    { label: 'In Progress', count: countByStatus('In Progress') },
+    { label: 'Review',      count: countByStatus('Review') },
+    { label: 'Done',        count: countByStatus('Done') },
+    { label: 'Overdue',     count: countByStatus('Overdue') },
+    { label: 'Self-logged', count: selfLoggedCount },
+  ];
+
   const filtered = activeTab === 'All'
-    ? DEMO_TASKS
+    ? allRows
     : activeTab === 'Self-logged'
-      ? DEMO_TASKS.filter(t => t.selfLogged)
-      : DEMO_TASKS.filter(t => t.status === activeTab);
+      ? allRows.filter(t => t.selfLogged)
+      : allRows.filter(t => t.status === activeTab);
+
+  // Summary stat counts
+  const stats = [
+    { value: allRows.length,                    label: 'All Tasks',   color: 'var(--text-primary)' },
+    { value: countByStatus('Open'),             label: 'Open',        color: 'var(--indigo)'       },
+    { value: countByStatus('In Progress'),      label: 'In Progress', color: 'var(--blue)'         },
+    { value: countByStatus('Review'),           label: 'Review',      color: 'var(--yellow)'       },
+    { value: countByStatus('Done'),             label: 'Done',        color: 'var(--green)'        },
+    { value: countByStatus('Overdue'),          label: 'Overdue',     color: 'var(--red)'          },
+    { value: selfLoggedCount,                   label: 'Self-logged', color: 'var(--purple)'       },
+  ];
+
+  const doneCount = countByStatus('Done');
+  const completionPct = allRows.length > 0 ? Math.round((doneCount / allRows.length) * 100) : 0;
 
   return (
     <div>
@@ -67,7 +139,7 @@ export default function TasksTable() {
           <p>Team tasks, maintenance schedules, and self-logged items</p>
         </div>
         <div className="v2-page-header-actions">
-          <button className="v2-btn v2-btn-primary v2-btn-sm" onClick={() => setShowCreate(true)}>
+          <button type="button" className="v2-btn v2-btn-primary v2-btn-sm" onClick={() => setShowCreate(true)}>
             <Plus size={12} /> New Task
           </button>
         </div>
@@ -75,15 +147,7 @@ export default function TasksTable() {
 
       {/* Summary stats */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-        {[
-          { value: 11, label: 'All Tasks',       color: 'var(--text-primary)' },
-          { value: 3,  label: 'Open',             color: 'var(--indigo)'       },
-          { value: 5,  label: 'In Progress',      color: 'var(--blue)'         },
-          { value: 1,  label: 'Review',            color: 'var(--yellow)'       },
-          { value: 2,  label: 'Done',              color: 'var(--green)'        },
-          { value: 2,  label: 'Overdue',           color: 'var(--red)'          },
-          { value: 3,  label: 'Self-logged',       color: 'var(--purple)'       },
-        ].map(s => (
+        {stats.map(s => (
           <div key={s.label} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', minWidth: 80, flex: '1 1 70px', boxShadow: 'var(--shadow-xs)' }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: s.color, letterSpacing: -0.5 }}>{s.value}</div>
             <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500, marginTop: 2 }}>{s.label}</div>
@@ -95,7 +159,7 @@ export default function TasksTable() {
       <div className="v2-filter-bar">
         <div className="v2-filter-tabs">
           {STATUS_TABS.map(t => (
-            <button key={t.label} className={`v2-filter-tab${activeTab === t.label ? ' active' : ''}`} onClick={() => setActiveTab(t.label)}>
+            <button type="button" key={t.label} className={`v2-filter-tab${activeTab === t.label ? ' active' : ''}`} onClick={() => setActiveTab(t.label)}>
               {t.label}
               <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-light)' }}>{t.count}</span>
             </button>
@@ -157,7 +221,7 @@ export default function TasksTable() {
                   </td>
                   <td>
                     <div className="v2-row-actions">
-                      <button className="v2-row-action-btn" title="View">→</button>
+                      <button type="button" className="v2-row-action-btn" title="View">→</button>
                     </div>
                   </td>
                 </tr>
@@ -166,11 +230,11 @@ export default function TasksTable() {
           </table>
         </div>
         <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Showing {filtered.length} tasks · Team completion 63%</span>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Showing {filtered.length} tasks · Team completion {completionPct}%</span>
           <div className="v2-pagination">
-            <button className="v2-pg-btn"><ChevronLeft size={12} /></button>
-            <button className="v2-pg-btn active">1</button>
-            <button className="v2-pg-btn"><ChevronRight size={12} /></button>
+            <button type="button" className="v2-pg-btn"><ChevronLeft size={12} /></button>
+            <button type="button" className="v2-pg-btn active">1</button>
+            <button type="button" className="v2-pg-btn"><ChevronRight size={12} /></button>
           </div>
         </div>
       </div>

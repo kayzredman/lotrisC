@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { getPostgresDb, analyticsTicketDaily, analyticsSlaDaily, analyticsEngineerPerf, eq, and, desc, sql } from '@lotris/db';
+import {
+  getMssqlDb, getPostgresDb,
+  tickets, kpiResults,
+  analyticsTicketDaily, analyticsSlaDaily, analyticsEngineerPerf,
+  eq, and, desc, inArray, isNotNull, sql,
+} from '@lotris/db';
 import type Redis from 'ioredis';
 
 const TTL_SECONDS = 30;
@@ -63,55 +68,70 @@ export class DashboardCacheService {
     const cached = await this.getCached<object>(cacheKey);
     if (cached) return cached;
 
-    const pg = getPostgresDb();
+    const db = await getMssqlDb();
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Last 30 days of ticket daily rows
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const dateStr = thirtyDaysAgo.toISOString().split('T')[0]!;
+    // Count tickets by status — single scan
+    const statusCounts = await db
+      .select({
+        status: tickets.status,
+        total: sql<number>`COUNT(*)`,
+      })
+      .from(tickets)
+      .where(eq(tickets.tenantId, tenantId))
+      .groupBy(tickets.status);
 
-    const rows = await pg
-      .select()
-      .from(analyticsTicketDaily)
+    const countOf = (status: string) =>
+      statusCounts.find((r) => r.status === status)?.total ?? 0;
+
+    const openTickets =
+      countOf('NEW') + countOf('TEAM_ASSIGNED') + countOf('ASSIGNED') +
+      countOf('IN_PROGRESS') + countOf('ESCALATED');
+
+    // Resolved this calendar month
+    const resolvedMTD = await db
+      .select({ total: sql<number>`COUNT(*)` })
+      .from(tickets)
       .where(
         and(
-          eq(analyticsTicketDaily.tenantId, tenantId),
-          sql`${analyticsTicketDaily.date} >= ${dateStr}`,
+          eq(tickets.tenantId, tenantId),
+          inArray(tickets.status, ['RESOLVED', 'CLOSED']),
+          sql`${tickets.resolvedAt} >= ${monthStart.toISOString()}`,
         ),
       )
-      .orderBy(desc(analyticsTicketDaily.date))
-      .limit(30);
+      .then((r) => r[0]?.total ?? 0);
 
-    const totalOpen = rows[0]?.totalOpen ?? 0;
-    const avgResolutionHours =
-      rows.length > 0
-        ? rows.reduce((s, r) => s + parseFloat(r.avgResolutionHours ?? '0'), 0) / rows.length
+    // SLA breached (open tickets only)
+    const slaBreached = await db
+      .select({ total: sql<number>`COUNT(*)` })
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.tenantId, tenantId),
+          inArray(tickets.status, ['NEW', 'TEAM_ASSIGNED', 'ASSIGNED', 'IN_PROGRESS', 'ESCALATED']),
+          eq(tickets.slaResolutionBreached, 1),
+        ),
+      )
+      .then((r) => r[0]?.total ?? 0);
+
+    // Latest avg KPI score across all engineers for this tenant
+    const kpiScoreRows = await db
+      .select({ score: kpiResults.overallScore })
+      .from(kpiResults)
+      .where(eq(kpiResults.tenantId, tenantId))
+      .orderBy(desc(kpiResults.computedAt))
+      .limit(20);
+
+    const kpiScore =
+      kpiScoreRows.length > 0
+        ? Math.round(
+            kpiScoreRows.reduce((s, r) => s + parseFloat(r.score ?? '0'), 0) /
+              kpiScoreRows.length,
+          )
         : 0;
 
-    const slaRows = await pg
-      .select()
-      .from(analyticsSlaDaily)
-      .where(
-        and(
-          eq(analyticsSlaDaily.tenantId, tenantId),
-          sql`${analyticsSlaDaily.date} >= ${dateStr}`,
-        ),
-      )
-      .orderBy(desc(analyticsSlaDaily.date))
-      .limit(30);
-
-    const slaCompliancePct =
-      slaRows.length > 0
-        ? slaRows.reduce((s, r) => s + parseFloat(r.compliancePct ?? '100'), 0) / slaRows.length
-        : 100;
-
-    const result = {
-      openTickets: Number(totalOpen),
-      slaCompliancePct: Math.round(slaCompliancePct * 10) / 10,
-      avgResolutionHours: Math.round(avgResolutionHours * 10) / 10,
-      ticketDaily: rows.slice(0, 7),
-    };
-
+    const result = { openTickets, resolvedMTD, slaBreached, kpiScore };
     await this.setCache(cacheKey, result);
     return result;
   }
@@ -155,9 +175,9 @@ export class DashboardCacheService {
     return result;
   }
 
-  async getEngineerPerf(tenantId: string) {
+  async getEngineerPerf(tenantId: string): Promise<{ name: string; team: string; tickets: number; score: number }[]> {
     const cacheKey = `dash:${tenantId}:engineer-perf`;
-    const cached = await this.getCached<object[]>(cacheKey);
+    const cached = await this.getCached<{ name: string; team: string; tickets: number; score: number }[]>(cacheKey);
     if (cached) return cached;
 
     const pg = getPostgresDb();
@@ -168,18 +188,117 @@ export class DashboardCacheService {
       return `${d.getFullYear()}-W${String(week).padStart(2, '0')}`;
     })();
 
-    const rows = await pg
-      .select()
+    // Pull Postgres perf rows that have actual activity
+    const perfRows = await pg
+      .select({
+        engineerId: analyticsEngineerPerf.engineerId,
+        ticketsResolved: analyticsEngineerPerf.ticketsResolved,
+        kpiScore: analyticsEngineerPerf.kpiScore,
+      })
       .from(analyticsEngineerPerf)
       .where(
         and(
           eq(analyticsEngineerPerf.tenantId, tenantId),
           eq(analyticsEngineerPerf.weekKey, currentWeek),
+          isNotNull(analyticsEngineerPerf.kpiScore),
         ),
-      );
+      )
+      .orderBy(desc(analyticsEngineerPerf.kpiScore))
+      .limit(10);
 
-    await this.setCache(cacheKey, rows);
-    return rows;
+    if (perfRows.length === 0) return [];
+
+    // Look up engineer names + team from MSSQL using raw SQL to avoid Drizzle inArray quirks
+    const db = await getMssqlDb();
+    const engineerIds = perfRows.map(r => r.engineerId);
+    const idList = engineerIds.map(id => `'${id}'`).join(',');
+    const userRows = await db.execute<{ id: string; full_name: string; team_name: string | null }>(
+      sql.raw(`SELECT u.id, u.full_name, t.name AS team_name FROM users u LEFT JOIN teams t ON u.team_id = t.id WHERE u.id IN (${idList})`),
+    ) as unknown as { id: string; full_name: string; team_name: string | null }[];
+
+    const TAG_MAP: Record<string, string> = {
+      'Infrastructure':       'Infra',
+      'App Development':      'App Dev',
+      'Applications Support': 'App Supp',
+      'IT Security':          'IT Sec',
+      'Project Management':   'Proj Mgmt',
+      'IT Governance':        'IT Gov',
+    };
+
+    const infoMap = new Map(userRows.map(u => [u.id, {
+      name: u.full_name ?? '–',
+      team: u.team_name ? (TAG_MAP[u.team_name] ?? u.team_name.slice(0, 8)) : '–',
+    }]));
+
+    // Abbreviate "Akosua Appiah" → "A. Appiah"
+    const abbreviate = (full: string) => {
+      const parts = full.trim().split(/\s+/);
+      if (parts.length < 2) return full;
+      return `${parts[0]?.[0] ?? '?'}. ${parts.slice(1).join(' ')}`;
+    };
+
+    const result = perfRows.map(r => {
+      const info = infoMap.get(r.engineerId) ?? { name: '–', team: '–' };
+      return {
+        name: abbreviate(info.name),
+        team: info.team,
+        tickets: r.ticketsResolved,
+        score: Math.round(parseFloat(r.kpiScore ?? '0')),
+      };
+    });
+
+    await this.setCache(cacheKey, result);
+    return result;
+  }
+
+  async getTeamWorkload(tenantId: string): Promise<{ id: string; name: string; tag: string; queued: number; pct: number }[]> {
+    const cacheKey = `dash:${tenantId}:team-workload`;
+    const cached = await this.getCached<{ id: string; name: string; tag: string; queued: number; pct: number }[]>(cacheKey);
+    if (cached) return cached;
+
+    const db = await getMssqlDb();
+
+    // Open ticket count per team (tickets assigned to engineers in that team)
+    const rows = await db.execute<{ team_id: string; team_name: string; queued: number }>(
+      sql.raw(`
+        SELECT
+          t.id        AS team_id,
+          t.name      AS team_name,
+          COUNT(tk.id) AS queued
+        FROM teams t
+        LEFT JOIN users u  ON u.team_id  = t.id AND u.tenant_id = t.tenant_id
+        LEFT JOIN tickets tk ON tk.assignee_id = u.id
+          AND tk.tenant_id = t.tenant_id
+          AND tk.status NOT IN ('RESOLVED','CLOSED')
+        WHERE t.tenant_id = '${tenantId}'
+          AND t.is_active = 1
+        GROUP BY t.id, t.name
+        ORDER BY queued DESC
+      `),
+    ) as unknown as { team_id: string; team_name: string; queued: number }[];
+
+    // Short tag map — derive from name, fall back to first 8 chars
+    const TAG_MAP: Record<string, string> = {
+      'Infrastructure':     'Infra',
+      'App Development':    'App Dev',
+      'Applications Support': 'App Supp',
+      'IT Security':        'IT Sec',
+      'Project Management': 'Proj Mgmt',
+      'IT Governance':      'IT Gov',
+    };
+
+    const maxQueued = Math.max(...rows.map(r => Number(r.queued)), 1);
+
+    const result = rows.map(r => ({
+      id:     r.team_id,
+      name:   r.team_name,
+      tag:    TAG_MAP[r.team_name] ?? r.team_name.slice(0, 8),
+      queued: Number(r.queued),
+      pct:    Math.round((Number(r.queued) / maxQueued) * 100),
+    }));
+
+    await this.setCache(cacheKey, result);
+    return result;
   }
 
   async getQueueHealth(tenantId: string) {
@@ -187,28 +306,56 @@ export class DashboardCacheService {
     const cached = await this.getCached<object>(cacheKey);
     if (cached) return cached;
 
-    // Queue health is computed from ticket daily: recent breach + open counts
-    const pg = getPostgresDb();
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    const dateStr = threeDaysAgo.toISOString().split('T')[0]!;
+    const db = await getMssqlDb();
+    const now = new Date();
+    const atRiskCutoff = new Date(now.getTime() + 30 * 60 * 1000); // 30 min from now
 
-    const rows = await pg
-      .select()
-      .from(analyticsTicketDaily)
+    // Unassigned tickets (NEW + TEAM_ASSIGNED with no assignee)
+    const unassignedRows = await db
+      .select({ total: sql<number>`COUNT(*)` })
+      .from(tickets)
       .where(
         and(
-          eq(analyticsTicketDaily.tenantId, tenantId),
-          sql`${analyticsTicketDaily.date} >= ${dateStr}`,
+          eq(tickets.tenantId, tenantId),
+          inArray(tickets.status, ['NEW', 'TEAM_ASSIGNED']),
         ),
       )
-      .orderBy(desc(analyticsTicketDaily.date))
-      .limit(3);
+      .then((r) => r[0]?.total ?? 0);
+
+    // At-risk: SLA pickup deadline within 30 minutes
+    const atRiskRows = await db
+      .select({ total: sql<number>`COUNT(*)` })
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.tenantId, tenantId),
+          inArray(tickets.status, ['NEW', 'TEAM_ASSIGNED', 'ASSIGNED']),
+          sql`${tickets.slaPickupDeadline} <= ${atRiskCutoff.toISOString()}`,
+          sql`${tickets.slaPickupDeadline} > ${now.toISOString()}`,
+          eq(tickets.slaPickupBreached, 0),
+        ),
+      )
+      .then((r) => r[0]?.total ?? 0);
+
+    // Auto-assigned today (ASSIGNED status, assignedAt today)
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const autoAssignedToday = await db
+      .select({ total: sql<number>`COUNT(*)` })
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.tenantId, tenantId),
+          inArray(tickets.status, ['ASSIGNED', 'IN_PROGRESS']),
+          isNotNull(tickets.assignedAt),
+          sql`${tickets.assignedAt} >= ${todayStart.toISOString()}`,
+        ),
+      )
+      .then((r) => r[0]?.total ?? 0);
 
     const result = {
-      openTickets: rows[0]?.totalOpen ?? 0,
-      recentBreaches: rows.reduce((s, r) => s + (r.slaBreachCount ?? 0), 0),
-      resolvedLast3Days: rows.reduce((s, r) => s + (r.totalResolved ?? 0), 0),
+      unassigned: Number(unassignedRows),
+      atRisk: Number(atRiskRows),
+      autoAssignedToday: Number(autoAssignedToday),
     };
 
     await this.setCache(cacheKey, result);

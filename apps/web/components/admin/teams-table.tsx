@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { Badge, Button, Card } from '@lotris/ui';
 import type { AdminTeam } from '@/lib/admin-api';
 import { listTeams, updateTeam } from '@/lib/admin-api';
 import { CreateTeamModal } from './create-team-modal';
@@ -47,65 +46,79 @@ export function TeamsTable() {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-slate-400">{teams.length} team{teams.length !== 1 ? 's' : ''}</p>
-        <Button size="sm" onClick={() => setShowCreate(true)}>Create Team</Button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>
+          {teams.length} team{teams.length !== 1 ? 's' : ''}
+        </span>
+        <button type="button" className="v2-btn v2-btn-primary v2-btn-sm" onClick={() => setShowCreate(true)}>
+          + Create Team
+        </button>
       </div>
 
-      <Card className="overflow-hidden">
+      <div className="v2-card">
         {loading && (
-          <div className="p-8 text-center text-slate-400 text-sm">Loading teams…</div>
+          <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+            Loading teams…
+          </div>
         )}
         {error && (
-          <div className="p-8 text-center text-red-400 text-sm">{error}</div>
+          <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--red)', fontSize: 13 }}>
+            {error}
+          </div>
         )}
         {!loading && !error && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="v2-table-wrap">
+            <table className="v2-table">
               <thead>
-                <tr className="border-b border-slate-700 text-left">
-                  <th className="px-4 py-3 text-slate-400 font-medium">Team Name</th>
-                  <th className="px-4 py-3 text-slate-400 font-medium">Members</th>
-                  <th className="px-4 py-3 text-slate-400 font-medium">Max Tickets</th>
-                  <th className="px-4 py-3 text-slate-400 font-medium">Pickup SLA</th>
-                  <th className="px-4 py-3 text-slate-400 font-medium">Status</th>
-                  <th className="px-4 py-3 text-slate-400 font-medium">Actions</th>
+                <tr>
+                  <th>Team Name</th>
+                  <th>Members</th>
+                  <th>Max Tickets / Eng</th>
+                  <th>Pickup SLA</th>
+                  <th>Status</th>
+                  <th style={{ width: 100 }} />
                 </tr>
               </thead>
               <tbody>
                 {teams.map((team) => (
-                  <tr key={team.id} className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
-                    <td className="px-4 py-3 text-slate-100 font-medium">{team.name}</td>
-                    <td className="px-4 py-3 text-slate-300">{team.memberCount}</td>
-                    <td className="px-4 py-3 text-slate-300">{team.maxTicketsPerEngineer}</td>
-                    <td className="px-4 py-3 text-slate-300">{team.pickupSlaMinutes} min</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={team.isActive ? 'success' : 'secondary'}>
+                  <tr key={team.id} style={{ opacity: updatingId === team.id ? 0.6 : 1 }}>
+                    <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{team.name}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{team.memberCount}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{team.maxTicketsPerEngineer}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{team.pickupSlaMinutes} min</td>
+                    <td>
+                      <span
+                        className={team.isActive ? 'v2-badge v2-badge-green' : 'v2-badge'}
+                        style={{ fontSize: 10.5 }}
+                      >
                         {team.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
+                      </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
+                    <td>
+                      <button
+                        type="button"
+                        className="v2-btn v2-btn-ghost v2-btn-sm"
+                        style={{ fontSize: 11 }}
                         disabled={updatingId === team.id}
                         onClick={() => void handleToggleActive(team)}
                       >
                         {team.isActive ? 'Deactivate' : 'Reactivate'}
-                      </Button>
+                      </button>
                     </td>
                   </tr>
                 ))}
                 {teams.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500">No teams found.</td>
+                    <td colSpan={6} style={{ padding: '28px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      No teams found. Create one to get started.
+                    </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
         )}
-      </Card>
+      </div>
 
       {showCreate && (
         <CreateTeamModal

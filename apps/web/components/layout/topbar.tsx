@@ -2,7 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { Search, Bell } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { Search, Bell, Moon, Sun } from 'lucide-react';
 import { useState } from 'react';
 
 const PAGE_META: Record<string, { title: string; breadcrumb: string[] }> = {
@@ -11,6 +12,7 @@ const PAGE_META: Record<string, { title: string; breadcrumb: string[] }> = {
   '/queue':             { title: 'Queue',           breadcrumb: ['Home', 'Team Queue'] },
   '/tasks':             { title: 'Tasks',           breadcrumb: ['Home', 'Task Management'] },
   '/kpis':              { title: 'KPIs',            breadcrumb: ['Home', 'Performance KPIs'] },
+  '/kpis/agreements':   { title: 'KPI Agreement',   breadcrumb: ['KPIs', 'Agreement Builder'] },
   '/reports':           { title: 'Reports',         breadcrumb: ['Home', 'Reports'] },
   '/system-health':     { title: 'System Health',  breadcrumb: ['Admin', 'Operations'] },
   '/admin/kpi-setup':   { title: 'KPI Setup',      breadcrumb: ['Admin', 'KPI Configuration'] },
@@ -30,6 +32,7 @@ export function Topbar() {
   const meta = getPageMeta(pathname);
   const [searchFocused, setSearchFocused] = useState(false);
   const { user } = useUser();
+  const { theme, setTheme } = useTheme();
 
   const initials = user
     ? ((user.firstName?.[0] ?? '') + (user.lastName?.[0] ?? '')).toUpperCase() || 'U'
@@ -56,7 +59,7 @@ export function Topbar() {
       <div className="v2-topbar-right">
         <div
           className="v2-search-bar"
-          style={searchFocused ? { borderColor: 'var(--indigo)', boxShadow: 'var(--shadow-focus)', background: 'white' } : undefined}
+          style={searchFocused ? { borderColor: 'var(--indigo)', boxShadow: 'var(--shadow-focus)', background: 'var(--bg-card)' } : undefined}
         >
           <Search size={12} style={{ color: 'var(--text-light)', flexShrink: 0 }} />
           <input
@@ -67,7 +70,16 @@ export function Topbar() {
           />
         </div>
 
-        <button className="v2-icon-btn" aria-label="Notifications">
+        <button
+          type="button"
+          className="v2-icon-btn"
+          aria-label="Toggle dark mode"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        >
+          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+        </button>
+
+        <button type="button" className="v2-icon-btn" aria-label="Notifications">
           <Bell size={15} />
           <span className="v2-notif-dot" />
         </button>

@@ -9,7 +9,6 @@ import {
   attachmentRefs,
 } from '@lotris/db';
 import type { TrpcAuth } from '@lotris/types';
-import { UserRole } from '@lotris/types';
 import {
   assertTransition,
   HISTORY_EVENT,
@@ -23,7 +22,7 @@ import type {
   CreateAttachmentRefDto,
   TicketListQueryDto,
 } from './dto';
-import { NotificationsService } from '../notifications/notifications.service';
+import type { NotificationsService } from '../notifications/notifications.service';
 import { getEnv } from '@lotris/config';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
@@ -100,31 +99,71 @@ export class TicketsService {
     const limit = Math.min(100, Math.max(1, query.limit ?? 25));
     const offset = (page - 1) * limit;
 
-    const conditions = [eq(tickets.tenantId, auth.tenantId)];
+    // Build WHERE clause with raw SQL to support LIKE search
+    const whereParts: string[] = [`tk.tenant_id = '${auth.tenantId}'`];
+    if (query.status)   whereParts.push(`tk.status = '${query.status}'`);
+    if (query.priority) whereParts.push(`tk.priority = ${Number(query.priority)}`);
+    if (query.teamId)   whereParts.push(`tk.team_id = '${query.teamId}'`);
+    if (query.assigneeId) whereParts.push(`tk.assignee_id = '${query.assigneeId}'`);
+    if (query.search?.trim()) {
+      const term = query.search.trim().replace(/'/g, "''");
+      whereParts.push(`(tk.title LIKE '%${term}%' OR tk.id LIKE '%${term}%')`);
+    }
+    const where = whereParts.join(' AND ');
 
-    if (query.status) {
-      conditions.push(eq(tickets.status, query.status));
-    }
-    if (query.teamId) {
-      conditions.push(eq(tickets.teamId, query.teamId));
-    }
-    if (query.assigneeId) {
-      conditions.push(eq(tickets.assigneeId, query.assigneeId));
-    }
-    if (query.priority) {
-      conditions.push(eq(tickets.priority, Number(query.priority)));
-    }
+    type TicketRow = {
+      id: string; title: string; description: string | null;
+      status: string; priority: number; tenantId: string;
+      teamId: string | null; assigneeId: string | null;
+      slaPickupDeadline: string | null; slaPickupBreached: number;
+      slaResolutionDeadline: string | null; slaResolutionBreached: number;
+      createdAt: string; updatedAt: string;
+      teamName: string | null;
+      total: number;
+    };
 
-    const rows = await db
-      .select()
-      .from(tickets)
-      .where(and(...conditions))
-      // Queue ordering invariant: priority ASC (1=highest), sla_resolution_deadline ASC
-      .orderBy(asc(tickets.priority), asc(tickets.slaResolutionDeadline))
-      .limit(limit)
-      .offset(offset);
+    const rawRows = await db.execute<TicketRow>(
+      sql.raw(`
+        SELECT
+          tk.id, tk.title, tk.description, tk.status, tk.priority,
+          tk.tenant_id AS tenantId, tk.team_id AS teamId, tk.assignee_id AS assigneeId,
+          tk.sla_pickup_deadline AS slaPickupDeadline, tk.sla_pickup_breached AS slaPickupBreached,
+          tk.sla_resolution_deadline AS slaResolutionDeadline, tk.sla_resolution_breached AS slaResolutionBreached,
+          tk.created_at AS createdAt, tk.updated_at AS updatedAt,
+          t.name AS teamName,
+          COUNT(*) OVER() AS total
+        FROM tickets tk
+        LEFT JOIN teams t ON t.id = tk.team_id AND t.tenant_id = tk.tenant_id
+        WHERE ${where}
+        ORDER BY tk.priority ASC, tk.sla_resolution_deadline ASC
+        OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY
+      `),
+    ) as unknown as TicketRow[];
 
-    return rows;
+    const total = rawRows.length > 0 ? Number(rawRows[0]?.total ?? 0) : 0;
+
+    return {
+      total,
+      page,
+      limit,
+      rows: rawRows.map(r => ({
+        id: r.id,
+        title: r.title,
+        description: r.description,
+        status: r.status,
+        priority: r.priority,
+        tenantId: r.tenantId,
+        teamId: r.teamId,
+        teamName: r.teamName,
+        assigneeId: r.assigneeId,
+        slaPickupDeadline: r.slaPickupDeadline,
+        slaPickupBreached: r.slaPickupBreached,
+        slaResolutionDeadline: r.slaResolutionDeadline,
+        slaResolutionBreached: r.slaResolutionBreached,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+      })),
+    };
   }
 
   // ── Get by ID ────────────────────────────────────────────────────────────
@@ -248,6 +287,39 @@ export class TicketsService {
     }
 
     return updated;
+  }
+
+  // ── Assign (multi-step auto-transition) ──────────────────────────────────
+  // Walks whatever chain is needed to reach ASSIGNED from the ticket's
+  // current status: NEW → TEAM_ASSIGNED → UNASSIGNED → ASSIGNED.
+
+  async assign(auth: TrpcAuth, ticketId: string, assigneeId: string) {
+    const ticket = await this.findById(auth, ticketId);
+    const status = ticket.status as string;
+
+    // Step: NEW → TEAM_ASSIGNED (preserve existing teamId, or null is fine)
+    if (status === 'NEW') {
+      await this.updateStatus(auth, ticketId, {
+        status: 'TEAM_ASSIGNED',
+        teamId: (ticket.teamId as string | null) ?? undefined,
+      });
+    }
+
+    // Step: TEAM_ASSIGNED → UNASSIGNED
+    const afterFirst = await this.findById(auth, ticketId);
+    if ((afterFirst.status as string) === 'TEAM_ASSIGNED') {
+      await this.updateStatus(auth, ticketId, { status: 'UNASSIGNED' });
+    }
+
+    // Step: UNASSIGNED → ASSIGNED
+    const afterSecond = await this.findById(auth, ticketId);
+    if ((afterSecond.status as string) === 'UNASSIGNED') {
+      return this.updateStatus(auth, ticketId, { status: 'ASSIGNED', assigneeId });
+    }
+
+    // Ticket is already ASSIGNED or further — just re-assign directly
+    // (covers re-assigning an already-assigned ticket by going through ASSIGNED again)
+    return this.updateStatus(auth, ticketId, { status: 'ASSIGNED', assigneeId });
   }
 
   // ── Comments ──────────────────────────────────────────────────────────────

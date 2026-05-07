@@ -113,8 +113,21 @@ export function createEtlSyncWorker(connection: ConnectionOptions): Worker {
 }
 
 export async function registerEtlRepeatableJob(queue: Queue): Promise<void> {
-  await queue.add('daily-batch', {}, {
-    repeat: { pattern: '5 0 * * *' },
-    jobId: 'etl-daily-batch',
+  // Remove legacy once-daily job if it exists
+  await queue.removeRepeatable('daily-batch', { pattern: '5 0 * * *', jobId: 'etl-daily-batch' }).catch(() => {});
+
+  // Twice-daily: 06:00 UTC and 18:00 UTC (idempotent — BullMQ deduplicates by jobId)
+  await queue.add('daily-batch-morning', {}, {
+    repeat: { pattern: '0 6 * * *' },
+    jobId: 'etl-daily-0600',
   });
+  await queue.add('daily-batch-evening', {}, {
+    repeat: { pattern: '0 18 * * *' },
+    jobId: 'etl-daily-1800',
+  });
+
+  // Run an immediate backfill for today so data shows up without waiting for cron
+  await queue.add('daily-batch-now', {}, { jobId: 'etl-backfill-today' });
+
+  console.log('[ETL] Repeatable jobs registered: 06:00 UTC + 18:00 UTC + immediate backfill');
 }

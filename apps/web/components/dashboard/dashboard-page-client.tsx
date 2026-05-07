@@ -3,7 +3,7 @@
 import { trpc } from '../../lib/trpc/client';
 import {
   Ticket, AlertTriangle, CheckCircle2, TrendingUp,
-  Users, Clock, Activity, ArrowUpRight, RefreshCw,
+  Clock, Activity, ArrowUpRight, RefreshCw,
 } from 'lucide-react';
 
 // ── Marketing demo values (match 02-dashboard-v2.html exactly) ───────────────
@@ -25,11 +25,11 @@ const DEMO = {
     { name: 'DB Team',      queued: 1, pct: 14 },
   ],
   agents: [
-    { name: 'A. Okonkwo',  tickets: 42, score: 98 },
-    { name: 'F. Mohammed', tickets: 38, score: 95 },
-    { name: 'C. Boateng',  tickets: 35, score: 91 },
-    { name: 'N. Kamara',   tickets: 29, score: 89 },
-    { name: 'D. Mensah',   tickets: 27, score: 82 },
+    { name: 'A. Appiah',   tickets: 44, score: 98 },
+    { name: 'J. Osei',     tickets: 41, score: 96 },
+    { name: 'Y. Owusu',   tickets: 37, score: 93 },
+    { name: 'E. Amponsah',tickets: 31, score: 88 },
+    { name: 'F. Quansah', tickets: 26, score: 84 },
   ],
   alerts: [
     { level: 'red',    text: 'SLA breach — TKT-0491 Critical, D.Mensah, overdue 2h 40m' },
@@ -38,9 +38,14 @@ const DEMO = {
     { level: 'gray',   text: 'Scheduled maintenance Saturday 01:00–04:00 WAT' },
   ],
   trend: [
-    { month: 'Oct', val: 198 }, { month: 'Nov', val: 215 }, { month: 'Dec', val: 189 },
-    { month: 'Jan', val: 231 }, { month: 'Feb', val: 244 }, { month: 'Mar', val: 226 },
-    { month: 'Apr', val: 238 }, { month: 'May', val: 247 },
+    { month: 'Oct', opened: 198, resolved: 152 },
+    { month: 'Nov', opened: 215, resolved: 175 },
+    { month: 'Dec', opened: 189, resolved: 141 },
+    { month: 'Jan', opened: 231, resolved: 188 },
+    { month: 'Feb', opened: 244, resolved: 194 },
+    { month: 'Mar', opened: 226, resolved: 179 },
+    { month: 'Apr', opened: 238, resolved: 185 },
+    { month: 'May', opened: 247, resolved: null },
   ],
 };
 
@@ -52,13 +57,34 @@ const ALERT_COLORS: Record<string, { dot: string; text: string; bg: string }> = 
 };
 
 export function DashboardPageClient() {
-  // Live data from tRPC (used to hydrate over demo values)
-  const summaryQ = trpc['dashboard.summary'].useQuery(undefined, { staleTime: 25_000, refetchInterval: 30_000 });
-  const queueQ   = trpc['dashboard.queueHealth'].useQuery(undefined, { staleTime: 25_000 });
+  // Live data from tRPC (all queries stale 25s, refetch every 30s)
+  const summaryQ      = trpc['dashboard.summary'].useQuery(undefined, { staleTime: 25_000, refetchInterval: 30_000 });
+  const queueQ        = trpc['dashboard.queueHealth'].useQuery(undefined, { staleTime: 25_000, refetchInterval: 30_000 });
+  const engPerfQ      = trpc['dashboard.engineerPerf'].useQuery(undefined, { staleTime: 60_000 });
+  const teamWorkloadQ = trpc['dashboard.teamWorkload'].useQuery(undefined, { staleTime: 30_000, refetchInterval: 60_000 });
 
-  const liveOpen     = (summaryQ.data as { openTickets?: number } | undefined)?.openTickets;
-  const openTickets  = liveOpen ?? DEMO.openTickets;
-  const trendMax     = Math.max(...DEMO.trend.map(t => t.val));
+  // Live values with DEMO fallbacks
+  const openTickets  = summaryQ.data?.openTickets  ?? DEMO.openTickets;
+  const slaBreached  = summaryQ.data?.slaBreached  ?? DEMO.slaBreached;
+  const resolvedMTD  = summaryQ.data?.resolvedMTD  ?? DEMO.resolvedMTD;
+  const kpiScore     = summaryQ.data?.kpiScore     ?? DEMO.kpiScore;
+  const unassigned   = queueQ.data?.unassigned     ?? DEMO.queueStats.unassigned;
+  const atRisk       = queueQ.data?.atRisk         ?? DEMO.queueStats.pickupRisk;
+  const autoAssigned = queueQ.data?.autoAssignedToday ?? DEMO.queueStats.autoAssigned;
+
+  // Engineers — use live perf if available, else DEMO
+  const liveAgents = (engPerfQ.data as { name?: string; team?: string; tickets?: number; score?: number }[] | undefined);
+  const agents = (liveAgents && liveAgents.length > 0)
+    ? liveAgents.map(a => ({ name: a.name ?? '–', team: a.team ?? '–', tickets: a.tickets ?? 0, score: a.score ?? 0 }))
+    : DEMO.agents.map(a => ({ ...a, team: '–' }));
+
+  // Team workload — use live data if available, else DEMO
+  const liveTeams = (teamWorkloadQ.data as { id?: string; name?: string; tag?: string; queued?: number; pct?: number }[] | undefined);
+  const teams = (liveTeams && liveTeams.length > 0)
+    ? liveTeams.map(t => ({ name: t.tag ?? t.name ?? '–', queued: t.queued ?? 0, pct: t.pct ?? 0 }))
+    : DEMO.teams;
+
+  const trendMax = Math.max(...DEMO.trend.map(t => t.opened));
 
   return (
     <div>
@@ -74,10 +100,10 @@ export function DashboardPageClient() {
               <RefreshCw size={11} className="animate-spin" /> Refreshing
             </span>
           )}
-          <button className="v2-btn v2-btn-secondary v2-btn-sm">
+          <button type="button" className="v2-btn v2-btn-secondary v2-btn-sm">
             <Clock size={12} /> Last 30 days
           </button>
-          <button className="v2-btn v2-btn-primary v2-btn-sm">
+          <button type="button" className="v2-btn v2-btn-primary v2-btn-sm">
             <ArrowUpRight size={12} /> Full Report
           </button>
         </div>
@@ -85,10 +111,10 @@ export function DashboardPageClient() {
 
       {/* Stat cards */}
       <div className="v2-stats-grid">
-        <StatCard color="indigo" icon={<Ticket size={15} />} value={openTickets} label="Open Tickets" trend="+3%" trendUp />
-        <StatCard color="red"    icon={<AlertTriangle size={15} />} value={DEMO.slaBreached} label="SLA Breached" trend="-2" trendUp={false} />
-        <StatCard color="green"  icon={<CheckCircle2 size={15} />} value={DEMO.resolvedMTD} label="Resolved MTD" trend="+11%" trendUp />
-        <StatCard color="blue"   icon={<TrendingUp size={15} />}  value={`${DEMO.kpiScore}%`} label="KPI Score" trend="+2.1%" trendUp />
+        <StatCard color="indigo" icon={<Ticket size={15} />}        value={openTickets}          label="Open Tickets"  trend="+3%"  trendUp />
+        <StatCard color="red"    icon={<AlertTriangle size={15} />}  value={slaBreached}          label="SLA Breached"  trend="-2"   trendUp={false} />
+        <StatCard color="green"  icon={<CheckCircle2 size={15} />}  value={resolvedMTD}          label="Resolved MTD"  trend="+11%" trendUp />
+        <StatCard color="blue"   icon={<TrendingUp size={15} />}    value={`${Math.round(kpiScore)}%`} label="KPI Score" trend="+2.1%" trendUp />
       </div>
 
       {/* Row 2: Ticket Volume Chart + Ticket Categories */}
@@ -97,33 +123,69 @@ export function DashboardPageClient() {
         <div className="v2-card">
           <div className="v2-card-header">
             <div>
-              <div className="v2-card-title">Ticket Volume Trend</div>
-              <div className="v2-card-subtitle">Oct 2025 – May 2026</div>
+              <div className="v2-card-title">Ticket Volume</div>
+              <div className="v2-card-subtitle">Opened vs Resolved · Last 8 months</div>
             </div>
-            <span className="v2-badge v2-badge-indigo"><ArrowUpRight size={10} /> 3.8%</span>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)' }}>
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--indigo)', display: 'inline-block' }} /> Opened
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)' }}>
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--green)', display: 'inline-block' }} /> Resolved
+              </span>
+              <select style={{ fontSize: 11, padding: '4px 8px', height: 28, borderRadius: 6, border: '1px solid var(--border)', color: 'var(--text-primary)', background: 'var(--bg-card)', cursor: 'pointer', outline: 'none' }}>
+                <option>8 months</option>
+                <option>6 months</option>
+                <option>3 months</option>
+              </select>
+            </div>
           </div>
-          <div className="v2-card-body" style={{ paddingTop: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 110, paddingBottom: 8 }}>
-              {DEMO.trend.map((t, i) => {
-                const isLast = i === DEMO.trend.length - 1;
-                const h = Math.round((t.val / trendMax) * 100);
-                return (
-                  <div key={t.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    {isLast && (
-                      <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--indigo)' }}>{t.val}</span>
-                    )}
-                    <div
-                      style={{
-                        width: '100%', height: `${h}%`,
-                        background: isLast ? 'var(--indigo)' : 'var(--indigo-dim)',
-                        border: isLast ? '1.5px solid var(--indigo)' : '1px solid var(--indigo-border)',
-                        borderRadius: '3px 3px 0 0', minHeight: 4, transition: 'height 0.3s',
-                      }}
-                    />
-                    <span style={{ fontSize: 9, color: 'var(--text-light)', whiteSpace: 'nowrap' }}>{t.month}</span>
-                  </div>
-                );
-              })}
+          <div className="v2-card-body" style={{ paddingTop: 8 }}>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {/* Y-axis labels */}
+              <div style={{ width: 26, height: 110, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexShrink: 0 }}>
+                {[1, 0.67, 0.33, 0].map((frac) => (
+                  <span key={frac} style={{ fontSize: 9, color: 'var(--text-light)', textAlign: 'right', lineHeight: 1 }}>
+                    {frac > 0 ? Math.round(trendMax * frac / 10) * 10 : ''}
+                  </span>
+                ))}
+              </div>
+              {/* Chart area */}
+              <div style={{ flex: 1, position: 'relative', height: 110, overflow: 'visible' }}>
+                {/* Grid lines */}
+                {[0, 0.33, 0.67, 1].map((frac) => (
+                  <div key={frac} style={{ position: 'absolute', top: `${frac * 100}%`, left: 0, right: 0, height: 1, background: 'var(--border)', zIndex: 0 }} />
+                ))}
+                {/* Bar columns */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'flex-end', gap: 4, zIndex: 1 }}>
+                  {DEMO.trend.map((t, i) => {
+                    const isLast = i === DEMO.trend.length - 1;
+                    const oh = Math.max(2, Math.round((t.opened / trendMax) * 110));
+                    const rh = t.resolved ? Math.max(2, Math.round((t.resolved / trendMax) * 110)) : 0;
+                    return (
+                      <div key={t.month} style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'flex-end', gap: 2 }}>
+                        {isLast && (
+                          <span style={{
+                            position: 'absolute', bottom: oh + 4, left: '50%', transform: 'translateX(-50%)',
+                            fontSize: 9, fontWeight: 700, color: 'white', background: 'var(--indigo)',
+                            borderRadius: 3, padding: '2px 5px', lineHeight: 1.5, whiteSpace: 'nowrap',
+                          }}>{t.opened}</span>
+                        )}
+                        <div style={{ flex: 1, height: oh, background: 'var(--indigo)', borderRadius: '3px 3px 0 0', opacity: 0.85, minHeight: 2 }} />
+                        {!isLast && t.resolved && (
+                          <div style={{ flex: 1, height: rh, background: 'var(--green)', borderRadius: '3px 3px 0 0', opacity: 0.75, minHeight: 2 }} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            {/* X-axis labels */}
+            <div style={{ display: 'flex', marginLeft: 32, gap: 4, marginTop: 5 }}>
+              {DEMO.trend.map(t => (
+                <div key={t.month} style={{ flex: 1, textAlign: 'center', fontSize: 9, color: 'var(--text-light)', whiteSpace: 'nowrap' }}>{t.month}</div>
+              ))}
             </div>
           </div>
         </div>
@@ -159,10 +221,10 @@ export function DashboardPageClient() {
             <span className="v2-badge v2-badge-yellow"><Activity size={10} /> Monitor</span>
           </div>
           <div className="v2-card-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <QueueStat value={DEMO.queueStats.unassigned} label="Unassigned" color="var(--red)" />
-            <QueueStat value={DEMO.queueStats.pickupRisk} label="Pickup SLA at risk" color="var(--yellow)" />
+            <QueueStat value={unassigned}   label="Unassigned"          color="var(--red)"    />
+            <QueueStat value={atRisk}       label="Pickup SLA at risk"  color="var(--yellow)" />
             <QueueStat value={`${DEMO.queueStats.avgPickupMin}m`} label="Avg pickup time" color="var(--blue)" />
-            <QueueStat value={DEMO.queueStats.autoAssigned} label="Auto-assigned today" color="var(--green)" />
+            <QueueStat value={autoAssigned} label="Auto-assigned today" color="var(--green)"  />
           </div>
         </div>
 
@@ -173,7 +235,7 @@ export function DashboardPageClient() {
             <span className="v2-card-subtitle">Active queues</span>
           </div>
           <div className="v2-card-body">
-            {DEMO.teams.map(t => (
+            {teams.map(t => (
               <div key={t.name} style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
                   <span style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-primary)' }}>{t.name}</span>
@@ -190,10 +252,10 @@ export function DashboardPageClient() {
 
       {/* Row 4: Top Agents + Active Alerts */}
       <div className="v2-grid-2">
-        {/* Top agents */}
+        {/* Top engineers */}
         <div className="v2-card">
           <div className="v2-card-header">
-            <div className="v2-card-title">Top Agents</div>
+            <div className="v2-card-title" style={{ color: 'var(--indigo)' }}>Top Engineers</div>
             <span className="v2-card-subtitle">This month</span>
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -201,20 +263,26 @@ export function DashboardPageClient() {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Agent</th>
+                  <th>Engineer</th>
+                  <th>Team</th>
                   <th>Tickets</th>
                   <th>KPI Score</th>
                 </tr>
               </thead>
               <tbody>
-                {DEMO.agents.map((a, i) => (
-                  <tr key={a.name}>
+                {agents.map((a, i) => (
+                  <tr key={`${i}-${a.name}`}>
                     <td><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-light)' }}>#{i + 1}</span></td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div className="v2-avatar-sm">{a.name.split(' ').map(n => n[0]).join('').slice(0,2)}</div>
                         <span style={{ fontSize: 12.5, fontWeight: 500 }}>{a.name}</span>
                       </div>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--indigo)', background: 'var(--indigo-dim)', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>
+                        {a.team}
+                      </span>
                     </td>
                     <td><span style={{ fontWeight: 600 }}>{a.tickets}</span></td>
                     <td>
@@ -236,11 +304,11 @@ export function DashboardPageClient() {
             <span className="v2-badge v2-badge-red">{DEMO.alerts.filter(a => a.level === 'red').length} critical</span>
           </div>
           <div className="v2-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {DEMO.alerts.map((alert, i) => {
+            {DEMO.alerts.map((alert) => {
               const c = ALERT_COLORS[alert.level];
               return (
                 <div
-                  key={i}
+                  key={alert.text}
                   style={{
                     display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 12px',
                     borderRadius: 'var(--radius-sm)', background: c.bg, border: `1px solid ${c.dot}22`,
@@ -286,7 +354,7 @@ function StatCard({
 
 function QueueStat({ value, label, color }: { value: string | number; label: string; color: string }) {
   return (
-    <div style={{ background: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', padding: '12px 14px' }}>
+    <div style={{ background: '#fff', borderRadius: 'var(--radius-sm)', padding: '12px 14px', border: '1px solid var(--border)', borderLeft: `3px solid ${color}` }}>
       <div style={{ fontSize: 22, fontWeight: 800, color, letterSpacing: -0.8 }}>{value}</div>
       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>{label}</div>
     </div>
