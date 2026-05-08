@@ -1,42 +1,22 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '@clerk/nextjs';
-import type { AdminTeam } from '@/lib/admin-api';
-import { listTeams, updateTeam } from '@/lib/admin-api';
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
 import { CreateTeamModal } from './create-team-modal';
 
 export function TeamsTable() {
-  const { getToken } = useAuth();
-  const [teams, setTeams] = useState<AdminTeam[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const token = await getToken();
-      if (!token) throw new Error('Not authenticated');
-      setTeams(await listTeams(token));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load teams');
-    } finally {
-      setLoading(false);
-    }
-  }, [getToken]);
+  const { data: teams = [], isLoading, error, refetch } = trpc['admin.teams.list'].useQuery();
 
-  useEffect(() => { void load(); }, [load]);
+  const updateTeamMutation = trpc['admin.teams.update'].useMutation();
 
-  const handleToggleActive = async (team: AdminTeam) => {
-    const token = await getToken();
-    if (!token) return;
-    setUpdatingId(team.id);
+  const handleToggleActive = async (teamId: string, isActive: boolean) => {
+    setUpdatingId(teamId);
     try {
-      const updated = await updateTeam(token, team.id, { isActive: !team.isActive });
-      setTeams((prev) => prev.map((t) => (t.id === team.id ? { ...t, isActive: updated.isActive } : t)));
+      await updateTeamMutation.mutateAsync({ teamId, isActive: !isActive });
+      void refetch();
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Update failed');
     } finally {
@@ -56,17 +36,17 @@ export function TeamsTable() {
       </div>
 
       <div className="v2-card">
-        {loading && (
+        {isLoading && (
           <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
             Loading teams…
           </div>
         )}
         {error && (
           <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--red)', fontSize: 13 }}>
-            {error}
+            {error.message}
           </div>
         )}
-        {!loading && !error && (
+        {!isLoading && !error && (
           <div className="v2-table-wrap">
             <table className="v2-table">
               <thead>
@@ -100,7 +80,7 @@ export function TeamsTable() {
                         className="v2-btn v2-btn-ghost v2-btn-sm"
                         style={{ fontSize: 11 }}
                         disabled={updatingId === team.id}
-                        onClick={() => void handleToggleActive(team)}
+                        onClick={() => void handleToggleActive(team.id, team.isActive)}
                       >
                         {team.isActive ? 'Deactivate' : 'Reactivate'}
                       </button>
@@ -123,9 +103,10 @@ export function TeamsTable() {
       {showCreate && (
         <CreateTeamModal
           onClose={() => setShowCreate(false)}
-          onSuccess={() => { setShowCreate(false); void load(); }}
+          onSuccess={() => { setShowCreate(false); void refetch(); }}
         />
       )}
     </>
   );
 }
+

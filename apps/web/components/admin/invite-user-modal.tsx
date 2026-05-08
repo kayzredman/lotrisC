@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@clerk/nextjs';
-import { createUser } from '@/lib/admin-api';
+import { trpc } from '@/lib/trpc';
 
 const ROLES = [
   { id: 2, label: 'ADMIN' },
@@ -31,7 +30,6 @@ const labelStyle: React.CSSProperties = {
 };
 
 export function InviteUserModal({ onClose, onSuccess }: Props) {
-  const { getToken } = useAuth();
   const [form, setForm] = useState({
     clerkUserId: '',
     email: '',
@@ -39,29 +37,23 @@ export function InviteUserModal({ onClose, onSuccess }: Props) {
     roleId: 5,
     teamId: '',
   });
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const createMutation = trpc['admin.users.create'].useMutation({
+    onSuccess,
+    onError: (e) => setError(e.message),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSubmitting(true);
-    try {
-      const token = await getToken();
-      if (!token) throw new Error('Not authenticated');
-      await createUser(token, {
-        clerkUserId: form.clerkUserId,
-        email: form.email,
-        fullName: form.fullName,
-        roleId: form.roleId,
-        ...(form.teamId ? { teamId: form.teamId } : {}),
-      });
-      onSuccess();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to invite user');
-    } finally {
-      setSubmitting(false);
-    }
+    createMutation.mutate({
+      clerkUserId: form.clerkUserId,
+      email: form.email,
+      fullName: form.fullName,
+      roleId: form.roleId,
+      ...(form.teamId ? { teamId: form.teamId } : {}),
+    });
   };
 
   return (
@@ -71,13 +63,12 @@ export function InviteUserModal({ onClose, onSuccess }: Props) {
       background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(4px)',
     }}>
       <div className="v2-card" style={{ width: '100%', maxWidth: 440, padding: 0, boxShadow: 'var(--shadow-lg)' }}>
-        {/* Header */}
         <div className="v2-card-header" style={{ padding: '16px 20px' }}>
           <div className="v2-card-title">Invite User</div>
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 18, lineHeight: 1 }}>×</button>
         </div>
 
-        <form onSubmit={(e) => void handleSubmit(e)} style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <form onSubmit={handleSubmit} style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
             <span style={labelStyle}>Clerk User ID</span>
             <input
@@ -137,8 +128,8 @@ export function InviteUserModal({ onClose, onSuccess }: Props) {
             <button type="button" className="v2-btn v2-btn-ghost v2-btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="v2-btn v2-btn-primary v2-btn-sm" style={{ flex: 1, justifyContent: 'center' }} disabled={submitting}>
-              {submitting ? 'Inviting…' : 'Invite'}
+            <button type="submit" className="v2-btn v2-btn-primary v2-btn-sm" style={{ flex: 1, justifyContent: 'center' }} disabled={createMutation.isPending}>
+              {createMutation.isPending ? 'Inviting…' : 'Invite'}
             </button>
           </div>
         </form>
@@ -146,3 +137,4 @@ export function InviteUserModal({ onClose, onSuccess }: Props) {
     </div>
   );
 }
+

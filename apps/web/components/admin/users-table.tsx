@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '@clerk/nextjs';
-import type { AdminUser } from '@/lib/admin-api';
-import { listUsers, assignRole, deactivateUser } from '@/lib/admin-api';
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
 import { InviteUserModal } from './invite-user-modal';
 import type { UserRole } from '@lotris/types';
 
@@ -19,37 +17,20 @@ const ROLE_BADGE: Record<string, { bg: string; color: string }> = {
 };
 
 export function UsersTable() {
-  const { getToken } = useAuth();
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const token = await getToken();
-      if (!token) throw new Error('Not authenticated');
-      setUsers(await listUsers(token));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  }, [getToken]);
+  const { data: users = [], isLoading, error, refetch } = trpc['admin.users.list'].useQuery();
 
-  useEffect(() => { void load(); }, [load]);
+  const updateRoleMutation = trpc['admin.users.updateRole'].useMutation();
+  const setActiveMutation = trpc['admin.users.setActive'].useMutation();
 
   const handleRoleChange = async (userId: string, role: UserRole) => {
     const roleIds: Record<UserRole, number> = { SUPERADMIN: 1, ADMIN: 2, IT_MANAGER: 3, TEAM_LEAD: 4, ENGINEER: 5, EXECUTIVE: 6 };
-    const token = await getToken();
-    if (!token) return;
     setUpdatingId(userId);
     try {
-      const updated = await assignRole(token, userId, roleIds[role]);
-      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: updated.role } : u)));
+      await updateRoleMutation.mutateAsync({ userId, roleId: roleIds[role] });
+      void refetch();
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Role update failed');
     } finally {
@@ -57,13 +38,11 @@ export function UsersTable() {
     }
   };
 
-  const handleToggleActive = async (user: AdminUser) => {
-    const token = await getToken();
-    if (!token) return;
-    setUpdatingId(user.id);
+  const handleToggleActive = async (userId: string, isActive: boolean) => {
+    setUpdatingId(userId);
     try {
-      const updated = await deactivateUser(token, user.id, !user.isActive);
-      setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, isActive: updated.isActive } : u)));
+      await setActiveMutation.mutateAsync({ userId, isActive: !isActive });
+      void refetch();
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Update failed');
     } finally {
@@ -83,17 +62,17 @@ export function UsersTable() {
       </div>
 
       <div className="v2-card">
-        {loading && (
+        {isLoading && (
           <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
             Loading users…
           </div>
         )}
         {error && (
           <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--red)', fontSize: 13 }}>
-            {error}
+            {error.message}
           </div>
         )}
-        {!loading && !error && (
+        {!isLoading && !error && (
           <div className="v2-table-wrap">
             <table className="v2-table">
               <thead>
@@ -108,14 +87,16 @@ export function UsersTable() {
               </thead>
               <tbody>
                 {users.map((user) => {
-                  const rb = ROLE_BADGE[user.role] ?? { bg: '#f1f5f9', color: '#64748b' };
+                  const role = (user.roleName ?? 'ENGINEER') as UserRole;
+                  const rb = ROLE_BADGE[role] ?? { bg: '#f1f5f9', color: '#64748b' };
+                  const isActive = Number(user.isActive) === 1;
                   return (
                     <tr key={user.id} style={{ opacity: updatingId === user.id ? 0.6 : 1 }}>
                       <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{user.fullName}</td>
                       <td style={{ color: 'var(--text-muted)', fontSize: 12.5 }}>{user.email}</td>
                       <td>
                         <select
-                          value={user.role}
+                          value={role}
                           disabled={updatingId === user.id}
                           onChange={(e) => void handleRoleChange(user.id, e.target.value as UserRole)}
                           style={{
@@ -133,13 +114,13 @@ export function UsersTable() {
                           ))}
                         </select>
                       </td>
-                      <td style={{ color: 'var(--text-muted)', fontSize: 12.5 }}>{user.teamName ?? '—'}</td>
+                      <td style={{ color: 'var(--text-muted)', fontSize: 12.5 }}>{user.teamId ?? '—'}</td>
                       <td>
                         <span
-                          className={user.isActive ? 'v2-badge v2-badge-green' : 'v2-badge'}
+                          className={isActive ? 'v2-badge v2-badge-green' : 'v2-badge'}
                           style={{ fontSize: 10.5 }}
                         >
-                          {user.isActive ? 'Active' : 'Inactive'}
+                          {isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td>
@@ -148,9 +129,9 @@ export function UsersTable() {
                           className="v2-btn v2-btn-ghost v2-btn-sm"
                           style={{ fontSize: 11 }}
                           disabled={updatingId === user.id}
-                          onClick={() => void handleToggleActive(user)}
+                          onClick={() => void handleToggleActive(user.id, isActive)}
                         >
-                          {user.isActive ? 'Deactivate' : 'Reactivate'}
+                          {isActive ? 'Deactivate' : 'Reactivate'}
                         </button>
                       </td>
                     </tr>
@@ -172,9 +153,10 @@ export function UsersTable() {
       {showInvite && (
         <InviteUserModal
           onClose={() => setShowInvite(false)}
-          onSuccess={() => { setShowInvite(false); void load(); }}
+          onSuccess={() => { setShowInvite(false); void refetch(); }}
         />
       )}
     </>
   );
 }
+

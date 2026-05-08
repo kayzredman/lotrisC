@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@clerk/nextjs';
-import { createTeam } from '@/lib/admin-api';
+import { trpc } from '@/lib/trpc';
 
 interface Props {
   onClose: () => void;
@@ -23,29 +22,22 @@ const labelStyle: React.CSSProperties = {
 };
 
 export function CreateTeamModal({ onClose, onSuccess }: Props) {
-  const { getToken } = useAuth();
   const [form, setForm] = useState({
     name: '',
     maxTicketsPerEngineer: 5,
     pickupSlaMinutes: 30,
   });
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const createMutation = trpc['admin.teams.create'].useMutation({
+    onSuccess,
+    onError: (e) => setError(e.message),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSubmitting(true);
-    try {
-      const token = await getToken();
-      if (!token) throw new Error('Not authenticated');
-      await createTeam(token, form);
-      onSuccess();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create team');
-    } finally {
-      setSubmitting(false);
-    }
+    createMutation.mutate(form);
   };
 
   return (
@@ -55,13 +47,12 @@ export function CreateTeamModal({ onClose, onSuccess }: Props) {
       background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(4px)',
     }}>
       <div className="v2-card" style={{ width: '100%', maxWidth: 440, padding: 0, boxShadow: 'var(--shadow-lg)' }}>
-        {/* Header */}
         <div className="v2-card-header" style={{ padding: '16px 20px' }}>
           <div className="v2-card-title">Create Team</div>
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 18, lineHeight: 1 }}>×</button>
         </div>
 
-        <form onSubmit={(e) => void handleSubmit(e)} style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <form onSubmit={handleSubmit} style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
             <span style={labelStyle}>Team Name</span>
             <input
@@ -101,8 +92,8 @@ export function CreateTeamModal({ onClose, onSuccess }: Props) {
             <button type="button" className="v2-btn v2-btn-ghost v2-btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="v2-btn v2-btn-primary v2-btn-sm" style={{ flex: 1, justifyContent: 'center' }} disabled={submitting}>
-              {submitting ? 'Creating…' : 'Create Team'}
+            <button type="submit" className="v2-btn v2-btn-primary v2-btn-sm" style={{ flex: 1, justifyContent: 'center' }} disabled={createMutation.isPending}>
+              {createMutation.isPending ? 'Creating…' : 'Create Team'}
             </button>
           </div>
         </form>
@@ -110,3 +101,5 @@ export function CreateTeamModal({ onClose, onSuccess }: Props) {
     </div>
   );
 }
+
+

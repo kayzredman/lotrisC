@@ -1,6 +1,6 @@
 import { router, protectedProcedure, adminProcedure } from './trpc';
 import { HealthService } from '../modules/health/health.service';
-import { getMssqlDb, users, teams, roles, tickets, ticketComments, ticketHistory, auditLogs, eq, and, asc, desc } from '@lotris/db';
+import { getMssqlDb, users, teams, roles, auditLogs, eq, and } from '@lotris/db';
 import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
 import { QueueService } from '../modules/queue/queue.service';
@@ -8,6 +8,10 @@ import { NotificationsService } from '../modules/notifications/notifications.ser
 import { TasksService } from '../modules/tasks/tasks.service';
 import { KpiService } from '../modules/kpi/kpi.service';
 import { DashboardCacheService } from '../modules/analytics/dashboard-cache.service';
+import { AdminService } from '../modules/admin/admin.service';
+import type { CreateUserDto } from '../modules/admin/dto/create-user.dto';
+import type { CreateTeamDto } from '../modules/admin/dto/create-team.dto';
+import type { UpdateTeamDto } from '../modules/admin/dto/update-team.dto';
 
 /**
  * tRPC application router.
@@ -64,6 +68,79 @@ export const appRouter = router({
       .from(teams)
       .where(and(eq(teams.tenantId, ctx.auth.tenantId), eq(teams.isActive, 1)));
   }),
+
+  // ── admin ────────────────────────────────────────────────────────────────
+
+  'admin.users.list': adminProcedure.query(async ({ ctx }) => {
+    const svc = new AdminService();
+    return svc.listUsers(ctx.auth.tenantId);
+  }),
+
+  'admin.users.updateRole': adminProcedure
+    .input(z.object({ userId: z.string().uuid(), roleId: z.number().int().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new AdminService();
+      return svc.assignRole(ctx.auth.tenantId, ctx.auth.userId, input.userId, input.roleId);
+    }),
+
+  'admin.users.setActive': adminProcedure
+    .input(z.object({ userId: z.string().uuid(), isActive: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.isActive) {
+        // Reactivate — direct update
+        const db = await getMssqlDb();
+        await db
+          .update(users)
+          .set({ isActive: 1, updatedAt: new Date() })
+          .where(and(eq(users.id, input.userId), eq(users.tenantId, ctx.auth.tenantId)));
+        return { ok: true };
+      }
+      const svc = new AdminService();
+      return svc.deactivateUser(ctx.auth.tenantId, ctx.auth.userId, input.userId);
+    }),
+
+  'admin.users.create': adminProcedure
+    .input(z.object({
+      clerkUserId: z.string().min(1),
+      email: z.string().email(),
+      fullName: z.string().min(1),
+      roleId: z.number().int().min(1),
+      teamId: z.string().uuid().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new AdminService();
+      return svc.createUser(ctx.auth.tenantId, ctx.auth.userId, input as CreateUserDto);
+    }),
+
+  'admin.teams.list': adminProcedure.query(async ({ ctx }) => {
+    const svc = new AdminService();
+    return svc.listTeams(ctx.auth.tenantId);
+  }),
+
+  'admin.teams.create': adminProcedure
+    .input(z.object({
+      name: z.string().min(1).max(255),
+      maxTicketsPerEngineer: z.number().int().min(1).optional(),
+      pickupSlaMinutes: z.number().int().min(1).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new AdminService();
+      return svc.createTeam(ctx.auth.tenantId, ctx.auth.userId, input as CreateTeamDto);
+    }),
+
+  'admin.teams.update': adminProcedure
+    .input(z.object({
+      teamId: z.string().uuid(),
+      name: z.string().min(1).max(255).optional(),
+      maxTicketsPerEngineer: z.number().int().min(1).optional(),
+      pickupSlaMinutes: z.number().int().min(1).optional(),
+      isActive: z.boolean().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { teamId, ...dto } = input;
+      const svc = new AdminService();
+      return svc.updateTeam(ctx.auth.tenantId, ctx.auth.userId, teamId, dto as UpdateTeamDto);
+    }),
 
   // ── tickets ──────────────────────────────────────────────────────────────
 
