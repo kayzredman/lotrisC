@@ -8,7 +8,7 @@ export const teams = mssqlTable(
     tenantId: varchar('tenant_id', { length: 36 }).notNull().references(() => tenants.id),
     name: nvarchar('name', { length: 255 }).notNull(),
     maxTicketsPerEngineer: int('max_tickets_per_engineer').notNull().default(5),
-    pickupSlaMins: int('pickup_sla_minutes').notNull().default(30),
+    pickupSlaMinutes: int('pickup_sla_minutes').notNull().default(30),
     isActive: bit('is_active').notNull().default(1),
     createdAt: datetime2('created_at', { precision: 3 }).notNull(),
     updatedAt: datetime2('updated_at', { precision: 3 }).notNull(),

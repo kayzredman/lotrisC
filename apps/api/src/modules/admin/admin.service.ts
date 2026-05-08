@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { getMssqlDb, users, teams, auditLogs, eq, and } from '@lotris/db';
+import { getMssqlDb, users, teams, auditLogs, eq, and, sql } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
 import type { CreateUserDto } from './dto/create-user.dto';
 import type { UpdateUserDto } from './dto/update-user.dto';
@@ -87,10 +87,36 @@ export class AdminService {
 
   async listTeams(tenantId: string) {
     const db = await getMssqlDb();
-    return db
-      .select()
-      .from(teams)
-      .where(and(eq(teams.tenantId, tenantId), eq(teams.isActive, 1)));
+    // Raw SQL: get all teams (active + inactive) with live member count
+    const rows = await db.execute<{
+      id: string;
+      name: string;
+      maxTicketsPerEngineer: number;
+      pickupSlaMinutes: number;
+      isActive: number;
+      memberCount: number;
+    }>(sql.raw(`
+      SELECT t.id, t.name,
+             t.max_tickets_per_engineer AS maxTicketsPerEngineer,
+             t.pickup_sla_minutes      AS pickupSlaMinutes,
+             t.is_active               AS isActive,
+             COUNT(u.id)               AS memberCount
+      FROM Teams t
+      LEFT JOIN Users u ON u.team_id = t.id
+                       AND u.tenant_id = t.tenant_id
+                       AND u.is_active = 1
+      WHERE t.tenant_id = '${tenantId}'
+      GROUP BY t.id, t.name, t.max_tickets_per_engineer, t.pickup_sla_minutes, t.is_active
+      ORDER BY t.name ASC
+    `));
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      maxTicketsPerEngineer: Number(r.maxTicketsPerEngineer),
+      pickupSlaMinutes: Number(r.pickupSlaMinutes),
+      isActive: Number(r.isActive) === 1,
+      memberCount: Number(r.memberCount),
+    }));
   }
 
   async createTeam(tenantId: string, actorId: string, dto: CreateTeamDto) {
@@ -103,7 +129,7 @@ export class AdminService {
       tenantId,
       name: dto.name,
       maxTicketsPerEngineer: dto.maxTicketsPerEngineer ?? 5,
-      pickupSlaMins: dto.pickupSlaMins ?? 30,
+      pickupSlaMinutes: dto.pickupSlaMinutes ?? 30,
       isActive: 1,
       createdAt: now,
       updatedAt: now,
@@ -120,7 +146,13 @@ export class AdminService {
 
     await db
       .update(teams)
-      .set({ ...dto, updatedAt: new Date() })
+      .set({
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.maxTicketsPerEngineer !== undefined ? { maxTicketsPerEngineer: dto.maxTicketsPerEngineer } : {}),
+        ...(dto.pickupSlaMinutes !== undefined ? { pickupSlaMinutes: dto.pickupSlaMinutes } : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive ? 1 : 0 } : {}),
+        updatedAt: new Date(),
+      })
       .where(and(eq(teams.id, teamId), eq(teams.tenantId, tenantId)));
 
     await this.writeAuditLog(db, tenantId, actorId, 'TEAM_UPDATED', 'Team', teamId, dto as Record<string, unknown>);
