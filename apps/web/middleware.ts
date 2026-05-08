@@ -1,10 +1,23 @@
+import { NextResponse } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 const isPublicRoute = createRouteMatcher(['/login(.*)', '/sign-up(.*)']);
 
 export default clerkMiddleware(async (auth, request) => {
+  const url = new URL(request.url);
+
+  // Clerk invite links land with ?__clerk_ticket=... on whatever redirectUrl was set.
+  // If the ticket arrives on any route other than /sign-up, redirect there preserving all params.
+  if (url.searchParams.has('__clerk_ticket') && !url.pathname.startsWith('/sign-up')) {
+    const signUpUrl = new URL('/sign-up', request.url);
+    for (const [key, value] of url.searchParams.entries()) {
+      signUpUrl.searchParams.set(key, value);
+    }
+    return NextResponse.redirect(signUpUrl);
+  }
+
   if (!isPublicRoute(request)) {
-    auth().protect();
+    await auth.protect();
   }
 });
 
