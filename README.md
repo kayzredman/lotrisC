@@ -36,6 +36,8 @@ NEW → TEAM_ASSIGNED → UNASSIGNED → ASSIGNED → IN_PROGRESS → ESCALATED 
 
 The system uses a **hybrid queue-based assignment model**: tickets are routed to a team queue first, engineers pick them up from the queue, and auto-assignment kicks in if the pickup SLA is breached.
 
+`ADMIN`, `SUPERADMIN`, and `TEAM_LEAD` roles can also **directly assign** any ticket to an engineer from the ticket drawer. The system automatically walks all intermediate state machine steps (`NEW → TEAM_ASSIGNED → UNASSIGNED → ASSIGNED`), firing SLA timers and notifications at each step.
+
 ---
 
 ## Features
@@ -188,6 +190,7 @@ lotris/
 | Client state      | **Zustand**                  | ~1 KB; UI state (drawers, filters, sidebar, selections)              |
 | Charts            | **Tremor**                   | Tailwind-native dashboard charts; KPI and report visualisations      |
 | Live data         | **SSE** (Server-Sent Events) | Queue counts, live ticket updates, KPI stream                        |
+| Dark mode         | **next-themes**              | `ThemeProvider attribute="class"`; `localStorage`-backed; Moon/Sun toggle in topbar |
 
 **Rendering strategy:**
 
@@ -333,6 +336,7 @@ lotris/
 | M5 — KPIs       | 10     | 3-layer KPI system, agreements, scoring, KPI dashboard  |
 | M6 — Reports    | 12     | Analytics layer, full dashboard, scheduled reports      |
 | M7 — Monitoring | 13     | SysAdmin ops dashboard, restart controls, status page   |
+| M8 — UI Quality | 15     | Dark mode, dashboard accuracy, tickets page full repair, role-gated assign |
 
 ---
 
