@@ -7,6 +7,7 @@
    ============================================================ */
 
 :root {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   /* Brand accent */
   --indigo:         #4F46E5;
   --indigo-light:   #6366F1;
