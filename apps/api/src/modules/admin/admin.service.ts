@@ -42,7 +42,7 @@ export class AdminService {
 
     await clerk.invitations.createInvitation({
       emailAddress: dto.email,
-      redirectUrl: process.env.APP_BASE_URL ?? 'http://localhost:3000',
+      redirectUrl: `${process.env.APP_BASE_URL ?? 'http://localhost:3000'}/sign-up`,
       publicMetadata: {
         tenantId,
         roleId: dto.roleId,
