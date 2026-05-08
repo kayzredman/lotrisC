@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { getMssqlDb, users, teams, auditLogs, eq, and, sql } from '@lotris/db';
+import { getMssqlDb, users, teams, roles, auditLogs, eq, and, sql } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
 import type { CreateUserDto } from './dto/create-user.dto';
 import type { UpdateUserDto } from './dto/update-user.dto';
@@ -13,9 +13,21 @@ export class AdminService {
   async listUsers(tenantId: string) {
     const db = await getMssqlDb();
     return db
-      .select()
+      .select({
+        id: users.id,
+        email: users.email,
+        fullName: users.fullName,
+        roleId: users.roleId,
+        roleName: roles.name,
+        teamId: users.teamId,
+        teamName: teams.name,
+        isActive: users.isActive,
+        isUnavailable: users.isUnavailable,
+      })
       .from(users)
-      .where(and(eq(users.tenantId, tenantId), eq(users.isActive, 1)));
+      .innerJoin(roles, eq(users.roleId, roles.id))
+      .leftJoin(teams, eq(users.teamId, teams.id))
+      .where(eq(users.tenantId, tenantId));
   }
 
   async createUser(tenantId: string, actorId: string, dto: CreateUserDto) {

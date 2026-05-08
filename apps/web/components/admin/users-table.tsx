@@ -114,7 +114,7 @@ export function UsersTable() {
                           ))}
                         </select>
                       </td>
-                      <td style={{ color: 'var(--text-muted)', fontSize: 12.5 }}>{user.teamId ?? '—'}</td>
+                      <td style={{ color: 'var(--text-muted)', fontSize: 12.5 }}>{user.teamName ?? '—'}</td>
                       <td>
                         <span
                           className={isActive ? 'v2-badge v2-badge-green' : 'v2-badge'}
