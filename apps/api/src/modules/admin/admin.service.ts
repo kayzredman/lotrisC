@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { getMssqlDb, users, teams, roles, auditLogs, eq, and, sql } from '@lotris/db';
+import { createClerkClient } from '@clerk/backend';
+import { getEnv } from '@lotris/config';
 import { v4 as uuidv4 } from 'uuid';
 import type { CreateUserDto } from './dto/create-user.dto';
 import type { UpdateUserDto } from './dto/update-user.dto';
@@ -30,30 +32,35 @@ export class AdminService {
       .where(eq(users.tenantId, tenantId));
   }
 
+  /**
+   * Send a Clerk invitation email to the new user.
+   * The MSSQL record is created later by the Clerk `user.created` webhook
+   * once the invitee completes sign-up. Role + team travel via publicMetadata.
+   */
   async createUser(tenantId: string, actorId: string, dto: CreateUserDto) {
-    const db = await getMssqlDb();
-    const id = uuidv4();
-    const now = new Date();
+    const clerk = createClerkClient({ secretKey: getEnv().CLERK_SECRET_KEY });
 
-    await db.insert(users).values({
-      id,
-      tenantId,
-      clerkUserId: dto.clerkUserId,
+    await clerk.invitations.createInvitation({
+      emailAddress: dto.email,
+      redirectUrl: process.env.APP_BASE_URL ?? 'http://localhost:3000',
+      publicMetadata: {
+        tenantId,
+        roleId: dto.roleId,
+        teamId: dto.teamId ?? null,
+        fullName: dto.fullName,
+      },
+      notify: true,
+      ignoreExisting: false,
+    });
+
+    const db = await getMssqlDb();
+    await this.writeAuditLog(db, tenantId, actorId, 'USER_INVITED', 'Invitation', actorId, {
       email: dto.email,
-      fullName: dto.fullName,
       roleId: dto.roleId,
       teamId: dto.teamId ?? null,
-      isActive: 1,
-      isUnavailable: 0,
-      createdAt: now,
-      updatedAt: now,
     });
 
-    await this.writeAuditLog(db, tenantId, actorId, 'USER_CREATED', 'User', id, {
-      email: dto.email,
-    });
-
-    return { id };
+    return { invited: true };
   }
 
   async updateUser(tenantId: string, actorId: string, userId: string, dto: UpdateUserDto) {

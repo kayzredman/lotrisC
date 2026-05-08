@@ -101,7 +101,6 @@ export const appRouter = router({
 
   'admin.users.create': adminProcedure
     .input(z.object({
-      clerkUserId: z.string().min(1),
       email: z.string().email(),
       fullName: z.string().min(1),
       roleId: z.number().int().min(1),
