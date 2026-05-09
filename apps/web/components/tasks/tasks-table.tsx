@@ -69,7 +69,7 @@ export default function TasksTable() {
 
   // Live tasks from MSSQL
   const { data: liveData } = trpc['tasks.list'].useQuery(
-    { page, limit: 25 },
+    { page, limit: 50 },
     { staleTime: 25_000 },
   );
 

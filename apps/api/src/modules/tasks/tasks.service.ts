@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { getMssqlDb, tasks, taskAssignments, taskChecklistItems, users, eq, and, sql, count, asc, inArray } from '@lotris/db';
+import { getMssqlDb, tasks, taskAssignments, taskChecklistItems, users, eq, and, sql, count, asc, desc, inArray } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
 import type { TrpcAuth } from '@lotris/types';
 import type {
@@ -138,7 +138,7 @@ export class TasksService {
             sql`(${tasks.createdBy} = ${visibilityFilter}${assignedIds.length ? sql` OR ${tasks.id} IN (${sql.join(assignedIds.map((id: string) => sql`${id}`), sql`, `)})` : sql``})`,
           ),
         )
-        .orderBy(asc(tasks.dueDate), asc(tasks.createdAt))
+        .orderBy(asc(tasks.dueDate), desc(tasks.createdAt))
         .offset(offset)
         .limit(limit);
     } else {
@@ -146,7 +146,7 @@ export class TasksService {
         .select()
         .from(tasks)
         .where(whereClause)
-        .orderBy(asc(tasks.dueDate), asc(tasks.createdAt))
+        .orderBy(asc(tasks.dueDate), desc(tasks.createdAt))
         .offset(offset)
         .limit(limit);
     }
