@@ -20,8 +20,6 @@ const TASK_TYPES = [
 
 type TaskTypeValue = (typeof TASK_TYPES)[number]['value'];
 
-// ── Inline styles (matches v2 design system from mockup 09-tasks-v2.html) ───
-
 const S = {
   sectionTitle: {
     fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' as const,
@@ -57,7 +55,6 @@ function initials(name: string) {
   return name.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
-/** Show "First L." — readable, short, unique enough */
 function chipName(fullName: string | null | undefined, email: string | null | undefined): string {
   const name = fullName?.trim() ?? email?.split('@')[0] ?? '?';
   const parts = name.split(' ').filter(Boolean);
@@ -68,13 +65,6 @@ function chipName(fullName: string | null | undefined, email: string | null | un
   return parts[0] ?? name;
 }
 
-/** Stable color from user id — doesn't shift when list is filtered */
-function getAvatarColor(id: string): { bg: string; color: string } {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffff;
-  return AVATAR_COLORS[h % AVATAR_COLORS.length] ?? { bg: '#e0e7ff', color: '#4338ca' };
-}
-
 const AVATAR_COLORS = [
   { bg: '#e0e7ff', color: '#4338ca' },
   { bg: '#fef3c7', color: '#92400e' },
@@ -83,6 +73,14 @@ const AVATAR_COLORS = [
   { bg: '#f3e8ff', color: '#7c3aed' },
   { bg: '#fee2e2', color: '#dc2626' },
 ];
+
+function getAvatarColor(id: string): { bg: string; color: string } {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffff;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length] ?? { bg: '#e0e7ff', color: '#4338ca' };
+}
+
+const LEAD_ROLES = ['TEAM_LEAD', 'IT_MANAGER', 'ADMIN', 'SUPERADMIN'];
 
 export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalProps) {
   const [mode, setMode] = useState<'self' | 'assign'>('self');
@@ -98,6 +96,7 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
   const { data: users = [] } = trpc['users.list'].useQuery();
   const meQuery = trpc['users.me'].useQuery();
   const me = meQuery.data;
+  const isLead = me ? LEAD_ROLES.includes(me.roleName ?? '') : false;
 
   const filteredUsers = assigneeSearch.trim()
     ? users.filter(u =>
@@ -119,6 +118,13 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
     setShowAssigneeError(false);
   };
 
+  const resetMode = (next: 'self' | 'assign') => {
+    setMode(next);
+    setAssigneeIds([]);
+    setAssigneeSearch('');
+    setShowAssigneeError(false);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
@@ -127,7 +133,6 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
       return;
     }
     setSubmitError(null);
-
     createMutation.mutate({
       title: title.trim(),
       description: description.trim() || undefined,
@@ -150,6 +155,7 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
 
       {/* Drawer */}
       <div className="v2-drawer open">
+
         {/* Header */}
         <div className="v2-drawer-header">
           <div>
@@ -168,39 +174,46 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}
+        >
           <div className="v2-drawer-body">
 
-            {/* ── Source toggle ── */}
-            <div style={{ ...S.sectionTitle, marginTop: 0 }}>Task Source</div>
-            <div style={{
-              display: 'flex', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: 16,
-            }}>
-              {[
-                { key: 'assign', icon: <UserCheck size={12} />, label: 'Lead assigns to engineer' },
-                { key: 'self',   icon: <User size={12} />,      label: 'Engineer logs own task' },
-              ].map((btn, i) => (
-                <button
-                  key={btn.key}
-                  type="button"
-                  onClick={() => { setMode(btn.key as 'self' | 'assign'); setAssigneeIds([]); setAssigneeSearch(''); setShowAssigneeError(false); }}
-                  style={{
-                    flex: 1, padding: '8px 12px',
-                    fontSize: 12, fontWeight: 600,
-                    border: 'none',
-                    borderRight: i === 0 ? '1px solid var(--border)' : 'none',
-                    background: mode === btn.key ? 'var(--indigo)' : 'var(--bg-subtle)',
-                    color: mode === btn.key ? 'white' : 'var(--text-muted)',
-                    cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    transition: 'all 0.12s',
-                  }}
-                >
-                  {btn.icon} {btn.label}
-                </button>
-              ))}
-            </div>
+            {/* ── Source toggle (leads/managers only) ── */}
+            {isLead && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ ...S.sectionTitle, marginTop: 0 }}>Task Source</div>
+                <div style={{
+                  display: 'flex', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)', overflow: 'hidden',
+                }}>
+                  {([
+                    { key: 'assign' as const, icon: <UserCheck size={12} />, label: 'Lead assigns to engineer' },
+                    { key: 'self'   as const, icon: <User size={12} />,      label: 'Engineer logs own task' },
+                  ] as const).map((btn, i) => (
+                    <button
+                      key={btn.key}
+                      type="button"
+                      onClick={() => resetMode(btn.key)}
+                      style={{
+                        flex: 1, padding: '8px 12px',
+                        fontSize: 12, fontWeight: 600,
+                        border: 'none',
+                        borderRight: i === 0 ? '1px solid var(--border)' : 'none',
+                        background: mode === btn.key ? 'var(--indigo)' : 'var(--bg-subtle)',
+                        color: mode === btn.key ? 'white' : 'var(--text-muted)',
+                        cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        transition: 'all 0.12s',
+                      }}
+                    >
+                      {btn.icon} {btn.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ── Self-assign notice ── */}
             {mode === 'self' && me && (
@@ -279,7 +292,10 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
             {/* ── Assignee section ── */}
             {mode === 'assign' && (
               <>
-                <div style={{ ...S.sectionTitle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{
+                  ...S.sectionTitle,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}>
                   <span>Assignee</span>
                   {assigneeIds.length > 0 && (
                     <span style={{
@@ -292,7 +308,6 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
                   )}
                 </div>
 
-                {/* Search filter */}
                 <input
                   type="text"
                   value={assigneeSearch}
@@ -301,7 +316,6 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
                   style={{ ...S.input, marginBottom: 10, fontSize: 12.5 }}
                 />
 
-                {/* Engineer grid */}
                 {filteredUsers.length > 0 ? (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                     {filteredUsers.map((u) => {
@@ -322,8 +336,7 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
                             background: selected ? 'var(--indigo-dim)' : 'white',
                             color: selected ? 'var(--indigo)' : 'var(--text-primary)',
                             transition: 'all 0.12s',
-                            textAlign: 'left',
-                            overflow: 'hidden',
+                            textAlign: 'left', overflow: 'hidden',
                           }}
                         >
                           <div
@@ -362,33 +375,36 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
               </>
             )}
 
-            {/* Submit error */}
+          </div>{/* end v2-drawer-body */}
+
+          {/* Footer — error always visible here, above buttons */}
+          <div className="v2-drawer-footer" style={{ flexDirection: 'column', gap: 0, alignItems: 'stretch' }}>
             {submitError && (
               <div style={{
-                marginTop: 12, padding: '8px 11px',
+                marginBottom: 10, padding: '8px 11px',
                 background: 'var(--red-bg)', border: '1px solid var(--red)',
                 borderRadius: 'var(--radius-sm)', fontSize: 12.5, color: 'var(--red)',
               }}>
                 {submitError}
               </div>
             )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button type="button" className="v2-btn v2-btn-secondary" onClick={onClose}>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="v2-btn v2-btn-primary"
+                disabled={!title.trim() || createMutation.isPending}
+              >
+                {createMutation.isPending ? 'Creating…' : 'Create Task'}
+              </button>
+            </div>
           </div>
 
-          {/* Footer */}
-          <div className="v2-drawer-footer">
-            <button type="button" className="v2-btn v2-btn-secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="v2-btn v2-btn-primary"
-              disabled={!title.trim() || createMutation.isPending}
-            >
-              {createMutation.isPending ? 'Creating…' : 'Create Task'}
-            </button>
-          </div>
         </form>
       </div>
     </>
   );
 }
+
