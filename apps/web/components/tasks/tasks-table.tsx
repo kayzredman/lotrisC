@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import TaskDrawer from './task-drawer';
 import CreateTaskModal from './create-task-modal';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 
 // ── Marketing demo data (fallback) ──────────────────────────────────────────
 const DEMO_TASKS = [
@@ -62,6 +62,7 @@ export default function TasksTable() {
   const [activeTab, setActiveTab] = useState('All');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [search, setSearch] = useState('');
   const [page] = useState(1);
 
   const utils = trpc.useUtils();
@@ -110,11 +111,19 @@ export default function TasksTable() {
     { label: 'Self-logged', count: selfLoggedCount },
   ];
 
-  const filtered = activeTab === 'All'
+  const tabFiltered = activeTab === 'All'
     ? allRows
     : activeTab === 'Self-logged'
       ? allRows.filter(t => t.selfLogged)
       : allRows.filter(t => t.status === activeTab);
+
+  const filtered = search.trim()
+    ? tabFiltered.filter(t =>
+        t.title.toLowerCase().includes(search.toLowerCase()) ||
+        t.assignee.toLowerCase().includes(search.toLowerCase()) ||
+        t.type.toLowerCase().includes(search.toLowerCase()),
+      )
+    : tabFiltered;
 
   // Summary stat counts
   const stats = [
@@ -148,15 +157,45 @@ export default function TasksTable() {
       {/* Summary stats */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
         {stats.map(s => (
-          <div key={s.label} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', minWidth: 80, flex: '1 1 70px', boxShadow: 'var(--shadow-xs)' }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: s.color, letterSpacing: -0.5 }}>{s.value}</div>
-            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500, marginTop: 2 }}>{s.label}</div>
-          </div>
+          <button
+            key={s.label}
+            type="button"
+            onClick={() => setActiveTab(s.label === 'All Tasks' ? 'All' : s.label)}
+            style={{
+              background: 'white',
+              border: '1px solid var(--border)',
+              borderTop: `3px solid ${s.color}`,
+              borderRadius: 'var(--radius-sm)',
+              padding: '10px 14px',
+              minWidth: 80, flex: '1 1 70px',
+              boxShadow: 'var(--shadow-xs)',
+              cursor: 'pointer',
+              transition: 'box-shadow 0.12s',
+            }}
+          >
+            <div style={{ fontSize: 22, fontWeight: 800, color: s.color, letterSpacing: -0.5 }}>{s.value}</div>
+            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 600, marginTop: 3, textTransform: 'uppercase', letterSpacing: 0.3 }}>{s.label}</div>
+          </button>
         ))}
       </div>
 
-      {/* Filter tabs */}
-      <div className="v2-filter-bar">
+      {/* Search + Filter tabs */}
+      <div className="v2-filter-bar" style={{ gap: 10 }}>
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <Search size={12} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)', pointerEvents: 'none' }} />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tasks…"
+            style={{
+              fontSize: 12.5, padding: '5px 10px 5px 28px',
+              border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-primary)', background: 'white',
+              fontFamily: 'inherit', outline: 'none', width: 180,
+            }}
+          />
+        </div>
         <div className="v2-filter-tabs">
           {STATUS_TABS.map(t => (
             <button type="button" key={t.label} className={`v2-filter-tab${activeTab === t.label ? ' active' : ''}`} onClick={() => setActiveTab(t.label)}>
