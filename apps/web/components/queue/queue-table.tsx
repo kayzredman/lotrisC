@@ -4,19 +4,6 @@ import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { Clock, Users, ArrowRight, CheckCircle, AlertTriangle, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 
-// ── Marketing demo data (fallback) ──────────────────────────────────────────
-const DEMO_QUEUE = [
-  { rawId: '', id: 'TKT-0491', title: 'Network outage – Finance floor',   priority: 'Critical', team: 'Network Ops',  sla: '−2h 40m',    slaColor: 'red',    created: '2 May 09:12' },
-  { rawId: '', id: 'TKT-0488', title: 'VPN access refused – 5 users',    priority: 'High',     team: 'IT Support',   sla: '1h 20m left', slaColor: 'yellow', created: '3 May 14:05' },
-  { rawId: '', id: 'TKT-0487', title: 'Exchange mailbox quota exceeded',  priority: 'Medium',   team: 'IT Support',   sla: '4h 00m left', slaColor: 'green',  created: '3 May 16:30' },
-  { rawId: '', id: 'TKT-0485', title: 'Azure AD group sync failure',      priority: 'High',     team: 'Network Ops',  sla: '2h 15m left', slaColor: 'yellow', created: '4 May 08:00' },
-  { rawId: '', id: 'TKT-0483', title: 'WiFi dead spots – Building B',     priority: 'Medium',   team: 'Network Ops',  sla: '6h 30m left', slaColor: 'green',  created: '4 May 13:10' },
-  { rawId: '', id: 'TKT-0481', title: 'Backup job failed – server02',     priority: 'Critical', team: 'DB Team',      sla: '45m left',    slaColor: 'yellow', created: '5 May 06:00' },
-  { rawId: '', id: 'TKT-0480', title: 'LDAP auth timeout – Web Portal',  priority: 'High',     team: 'DB Team',      sla: '3h 00m left', slaColor: 'green',  created: '5 May 07:30' },
-  { rawId: '', id: 'TKT-0478', title: 'Monitor flickering – Workstation', priority: 'Low',      team: 'IT Support',   sla: '9h 00m left', slaColor: 'green',  created: '4 May 17:00' },
-  { rawId: '', id: 'TKT-0477', title: 'USB drive not recognised',         priority: 'Low',      team: 'IT Support',   sla: '1d 2h left',  slaColor: 'green',  created: '4 May 15:20' },
-];
-
 const PRIORITY_LABEL: Record<number, string> = { 1: 'Critical', 2: 'High', 3: 'Medium', 4: 'Low' };
 
 const TEAM_NAME: Record<string, string> = {
@@ -45,6 +32,7 @@ function formatPickupSla(deadline: Date | string | null | undefined, breached: n
 export default function QueueTable() {
   const [page, setPage] = useState(1);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [claimError, setClaimError] = useState<{ id: string; msg: string } | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -54,11 +42,19 @@ export default function QueueTable() {
   const { data: health } = trpc['dashboard.queueHealth'].useQuery(undefined, { staleTime: 20_000 });
 
   const claimMutation = trpc['queue.claim'].useMutation({
-    onMutate: (vars) => setClaimingId(vars.ticketId),
-    onSettled: () => {
-      setClaimingId(null);
+    onMutate: (vars) => {
+      setClaimingId(vars.ticketId);
+      setClaimError(null);
+    },
+    onSuccess: () => {
       void utils['queue.list'].invalidate();
       void utils['dashboard.queueHealth'].invalidate();
+    },
+    onError: (err: { message?: string }, vars) => {
+      setClaimError({ id: vars.ticketId, msg: err?.message ?? 'Failed to claim ticket' });
+    },
+    onSettled: () => {
+      setClaimingId(null);
     },
   });
 
@@ -77,7 +73,9 @@ export default function QueueTable() {
     };
   });
 
-  const rows = (liveRows && liveRows.length > 0) ? liveRows : DEMO_QUEUE;
+  // Use live data only; never silently fall back to DEMO (DEMO buttons are disabled)
+  const isLoading = liveQueue === undefined;
+  const rows = liveRows ?? [];
 
   // Team workload counts from live data
   const teamCounts = rows.reduce<Record<string, number>>((acc, t) => {
@@ -131,6 +129,15 @@ export default function QueueTable() {
             <span className="v2-badge v2-badge-red">{rows.length} pending</span>
           </div>
           <div className="v2-table-wrap">
+            {isLoading ? (
+              <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                Loading queue…
+              </div>
+            ) : rows.length === 0 ? (
+              <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                No unassigned tickets in the queue right now.
+              </div>
+            ) : (
             <table className="v2-table">
               <thead>
                 <tr>
@@ -171,18 +178,30 @@ export default function QueueTable() {
                     </td>
                     <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t.created}</span></td>
                     <td>
-                      <button
-                        className="v2-btn v2-btn-primary v2-btn-sm"
-                        type="button"
-                        onClick={() => t.rawId && claimMutation.mutate({ ticketId: t.rawId })}
-                      >
-                        {claimingId === t.rawId ? 'Claiming…' : <><ArrowRight size={11} /> Claim</>}
-                      </button>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+                        <button
+                          className="v2-btn v2-btn-primary v2-btn-sm"
+                          type="button"
+                          disabled={claimingId === t.rawId}
+                          onClick={() => {
+                            setClaimError(null);
+                            claimMutation.mutate({ ticketId: t.rawId });
+                          }}
+                        >
+                          {claimingId === t.rawId ? 'Claiming…' : <><ArrowRight size={11} /> Claim</>}
+                        </button>
+                        {claimError?.id === t.rawId && (
+                          <span style={{ fontSize: 10.5, color: 'var(--red)', maxWidth: 140, lineHeight: 1.3 }}>
+                            {claimError.msg}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            )}
           </div>
           <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Showing 1–{rows.length} of {health?.unassigned ?? rows.length} unassigned</span>

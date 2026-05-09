@@ -47,22 +47,21 @@ export class QueueService {
       teamId = engineer?.teamId ?? undefined;
     }
 
-    if (!teamId) {
-      return [];
-    }
-
-    // Queue: UNASSIGNED or TEAM_ASSIGNED tickets for the team
+    // Queue: UNASSIGNED or TEAM_ASSIGNED tickets
+    // Admins/leads with no team see ALL queued tickets across all teams
     // Queue ordering invariant: priority ASC (1=highest), sla_pickup_deadline ASC
+    const baseConditions = and(
+      eq(tickets.tenantId, auth.tenantId),
+      sql`${tickets.status} IN ('UNASSIGNED', 'TEAM_ASSIGNED')`,
+    );
+    const conditions = teamId
+      ? and(baseConditions, eq(tickets.teamId, teamId))
+      : baseConditions;
+
     return db
       .select()
       .from(tickets)
-      .where(
-        and(
-          eq(tickets.tenantId, auth.tenantId),
-          eq(tickets.teamId, teamId),
-          sql`${tickets.status} IN ('UNASSIGNED', 'TEAM_ASSIGNED')`,
-        ),
-      )
+      .where(conditions)
       .orderBy(asc(tickets.priority), asc(tickets.slaPickupDeadline))
       .limit(limit)
       .offset(offset);
