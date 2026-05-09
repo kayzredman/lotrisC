@@ -15,6 +15,10 @@ import type {
   AddAssigneesDto,
 } from './dto';
 
+/** Roles that can create/assign tasks to other users and manage all team tasks. */
+const LEAD_ROLES: TrpcAuth['role'][] = ['SUPERADMIN', 'ADMIN', 'IT_MANAGER', 'TEAM_LEAD'];
+const isLeadRole = (role: TrpcAuth['role']) => LEAD_ROLES.includes(role);
+
 @Injectable()
 export class TasksService {
   private get db() {
@@ -33,7 +37,7 @@ export class TasksService {
     const id = uuidv4();
 
     // Determine source from role
-    const isLead = auth.role === 'TEAM_LEAD' || auth.role === 'IT_MANAGER' || auth.role === 'ADMIN';
+    const isLead = isLeadRole(auth.role);
     const hasAssignees = dto.assigneeIds && dto.assigneeIds.length > 0;
     const source = isLead && hasAssignees ? 'LEAD_ASSIGNED' : 'SELF_LOGGED';
 
@@ -83,7 +87,7 @@ export class TasksService {
     const limit = query.limit ?? 25;
     const offset = (page - 1) * limit;
 
-    const isLead = auth.role === 'TEAM_LEAD' || auth.role === 'IT_MANAGER' || auth.role === 'ADMIN';
+    const isLead = isLeadRole(auth.role);
 
     // Build base WHERE conditions
     const conditions: ReturnType<typeof eq>[] = [
@@ -169,7 +173,7 @@ export class TasksService {
 
     if (!task) throw new NotFoundException(`Task ${taskId} not found`);
 
-    const isLead = auth.role === 'TEAM_LEAD' || auth.role === 'IT_MANAGER' || auth.role === 'ADMIN';
+    const isLead = isLeadRole(auth.role);
     const isOwner = task.createdBy === auth.userId;
 
     // Check visibility: engineer must be creator or assignee
@@ -305,7 +309,7 @@ export class TasksService {
   // ── Assignees ─────────────────────────────────────────────────────────────
 
   async addAssignees(auth: TrpcAuth, taskId: string, dto: AddAssigneesDto) {
-    const isLead = auth.role === 'TEAM_LEAD' || auth.role === 'IT_MANAGER' || auth.role === 'ADMIN';
+    const isLead = isLeadRole(auth.role);
     if (!isLead) throw new ForbiddenException('Only leads can assign tasks');
 
     await this.findById(auth, taskId);
