@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { UserCheck, User, X } from 'lucide-react';
+import { UserCheck, User, X, Check } from 'lucide-react';
 
 interface CreateTaskModalProps {
   onClose: () => void;
@@ -54,7 +54,25 @@ const S = {
 };
 
 function initials(name: string) {
-  return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  return name.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase();
+}
+
+/** Show "First L." — readable, short, unique enough */
+function chipName(fullName: string | null | undefined, email: string | null | undefined): string {
+  const name = fullName?.trim() ?? email?.split('@')[0] ?? '?';
+  const parts = name.split(' ').filter(Boolean);
+  if (parts.length >= 2) {
+    const last = parts[parts.length - 1] ?? '';
+    return `${parts[0]} ${last[0] ?? ''}.`;
+  }
+  return parts[0] ?? name;
+}
+
+/** Stable color from user id — doesn't shift when list is filtered */
+function getAvatarColor(id: string): { bg: string; color: string } {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffff;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length] ?? { bg: '#e0e7ff', color: '#4338ca' };
 }
 
 const AVATAR_COLORS = [
@@ -73,11 +91,19 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
   const [taskType, setTaskType] = useState<TaskTypeValue>('AD_HOC');
   const [dueDate, setDueDate] = useState('');
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [assigneeSearch, setAssigneeSearch] = useState('');
+  const [showAssigneeError, setShowAssigneeError] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { data: users = [] } = trpc['users.list'].useQuery();
   const meQuery = trpc['users.me'].useQuery();
   const me = meQuery.data;
+
+  const filteredUsers = assigneeSearch.trim()
+    ? users.filter(u =>
+        (u.fullName ?? u.email ?? '').toLowerCase().includes(assigneeSearch.toLowerCase()),
+      )
+    : users;
 
   const createMutation = trpc['tasks.create'].useMutation({
     onSuccess: onCreated,
@@ -90,11 +116,16 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
     setAssigneeIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id],
     );
+    setShowAssigneeError(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    if (mode === 'assign' && assigneeIds.length === 0) {
+      setShowAssigneeError(true);
+      return;
+    }
     setSubmitError(null);
 
     createMutation.mutate({
@@ -153,7 +184,7 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
                 <button
                   key={btn.key}
                   type="button"
-                  onClick={() => { setMode(btn.key as 'self' | 'assign'); setAssigneeIds([]); }}
+                  onClick={() => { setMode(btn.key as 'self' | 'assign'); setAssigneeIds([]); setAssigneeSearch(''); setShowAssigneeError(false); }}
                   style={{
                     flex: 1, padding: '8px 12px',
                     fontSize: 12, fontWeight: 600,
@@ -248,51 +279,83 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
             {/* ── Assignee section ── */}
             {mode === 'assign' && (
               <>
-                <div style={S.sectionTitle}>Assignee</div>
-                {users.length > 0 ? (
-                  <>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-                      {users.map((u, idx) => {
-                        const selected = assigneeIds.includes(u.id);
-                        const col = AVATAR_COLORS[idx % AVATAR_COLORS.length] ?? { bg: '#e0e7ff', color: '#4338ca' };
-                        return (
-                          <button
-                            key={u.id}
-                            type="button"
-                            onClick={() => toggleAssignee(u.id)}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: 7,
-                              padding: '5px 10px 5px 6px',
-                              border: `1px solid ${selected ? 'var(--indigo)' : 'var(--border)'}`,
-                              borderRadius: 99,
-                              fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                              background: selected ? 'var(--indigo-dim)' : 'white',
-                              color: selected ? 'var(--indigo)' : 'var(--text-primary)',
-                              transition: 'all 0.12s',
-                            }}
+                <div style={{ ...S.sectionTitle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Assignee</span>
+                  {assigneeIds.length > 0 && (
+                    <span style={{
+                      background: 'var(--indigo)', color: 'white',
+                      borderRadius: 99, padding: '1px 8px',
+                      fontSize: 10, fontWeight: 700, letterSpacing: 0,
+                    }}>
+                      {assigneeIds.length} selected
+                    </span>
+                  )}
+                </div>
+
+                {/* Search filter */}
+                <input
+                  type="text"
+                  value={assigneeSearch}
+                  onChange={(e) => setAssigneeSearch(e.target.value)}
+                  placeholder="Filter by name…"
+                  style={{ ...S.input, marginBottom: 10, fontSize: 12.5 }}
+                />
+
+                {/* Engineer grid */}
+                {filteredUsers.length > 0 ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                    {filteredUsers.map((u) => {
+                      const selected = assigneeIds.includes(u.id);
+                      const col = getAvatarColor(u.id);
+                      return (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => toggleAssignee(u.id)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8,
+                            padding: '7px 8px 7px 7px',
+                            border: `1.5px solid ${selected ? 'var(--indigo)' : 'var(--border)'}`,
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 12.5, fontWeight: selected ? 700 : 500,
+                            cursor: 'pointer',
+                            background: selected ? 'var(--indigo-dim)' : 'white',
+                            color: selected ? 'var(--indigo)' : 'var(--text-primary)',
+                            transition: 'all 0.12s',
+                            textAlign: 'left',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div
+                            className="v2-avatar-sm"
+                            style={{ background: col.bg, color: col.color, flexShrink: 0 }}
                           >
-                            <div
-                              className="v2-avatar-sm"
-                              style={{ background: col.bg, color: col.color, flexShrink: 0 }}
-                            >
-                              {initials(u.fullName ?? u.email ?? '?')}
-                            </div>
-                            {(u.fullName ?? u.email ?? '').split(' ').map(n => n[0]).join('. ').slice(0, 5) || u.email?.split('@')[0]}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 6 }}>
-                      Select one or more engineers. Tasks with multiple assignees track completion per person.
-                    </div>
-                  </>
+                            {initials(u.fullName ?? u.email ?? '?')}
+                          </div>
+                          <span style={{
+                            overflow: 'hidden', textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap', flex: 1, minWidth: 0,
+                          }}>
+                            {chipName(u.fullName, u.email)}
+                          </span>
+                          {selected && (
+                            <Check size={11} style={{ flexShrink: 0, color: 'var(--indigo)' }} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', padding: '8px 0' }}>
-                    Loading engineers…
+                    {users.length === 0 ? 'Loading engineers…' : 'No engineers match your search.'}
                   </div>
                 )}
-                {assigneeIds.length === 0 && (
-                  <div style={{ fontSize: 11.5, color: 'var(--red)', marginTop: 6 }}>
+
+                <div style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 8 }}>
+                  Select one or more engineers. Multi-assignee tasks track completion per person.
+                </div>
+                {showAssigneeError && (
+                  <div style={{ fontSize: 11.5, color: 'var(--red)', marginTop: 4, fontWeight: 600 }}>
                     Select at least one engineer to assign this task.
                   </div>
                 )}
@@ -319,11 +382,7 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
             <button
               type="submit"
               className="v2-btn v2-btn-primary"
-              disabled={
-                !title.trim() ||
-                createMutation.isPending ||
-                (mode === 'assign' && assigneeIds.length === 0)
-              }
+              disabled={!title.trim() || createMutation.isPending}
             >
               {createMutation.isPending ? 'Creating…' : 'Create Task'}
             </button>
