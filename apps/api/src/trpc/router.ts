@@ -184,9 +184,9 @@ export const appRouter = router({
   'tickets.assign': protectedProcedure
     .input(z.object({ id: z.string().uuid(), assigneeId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const ALLOWED = ['ADMIN', 'SUPERADMIN', 'TEAM_LEAD'];
+      const ALLOWED = ['ADMIN', 'SUPERADMIN', 'IT_MANAGER', 'TEAM_LEAD'];
       if (!ALLOWED.includes(ctx.auth.role)) {
-        throw new Error('Forbidden: only Admins and Team Leads can assign tickets');
+        throw new Error('Forbidden: only Admins, IT Managers and Team Leads can assign tickets');
       }
       const svc = new TicketsService(new NotificationsService());
       return svc.assign(ctx.auth, input.id, input.assigneeId);
