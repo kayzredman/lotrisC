@@ -51,7 +51,7 @@ export type KpiDirection = 'HIGHER_IS_BETTER' | 'LOWER_IS_BETTER';
 
 export type KpiScope = 'ORG' | 'TEAM' | 'ENGINEER';
 
-export type KpiAgreementStatus = 'DRAFT' | 'PENDING_SIGN_OFF' | 'ACTIVE' | 'CLOSED';
+export type KpiAgreementStatus = 'DRAFT' | 'PENDING_REVIEW' | 'ACTIVE' | 'CLOSED';
 
 export type ServiceStatus = 'UP' | 'DEGRADED' | 'DOWN';
 

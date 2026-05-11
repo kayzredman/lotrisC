@@ -62,7 +62,6 @@ export function DashboardPageClient() {
   const role = me?.roleName ?? '';
   const isEngineer  = role === 'ENGINEER';
   const isTeamLead  = role === 'TEAM_LEAD';
-  const isElevated  = ['ADMIN', 'SUPERADMIN', 'IT_MANAGER'].includes(role);
 
   // Live data from tRPC (all queries stale 25s, refetch every 30s)
   const summaryQ      = trpc['dashboard.summary'].useQuery(undefined, { staleTime: 25_000, refetchInterval: 30_000 });
@@ -306,7 +305,7 @@ export function DashboardPageClient() {
               </thead>
               <tbody>
                 {agents.map((a, i) => (
-                  <tr key={`${i}-${a.name}`}>
+                  <tr key={a.name}>
                     <td><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-light)' }}>#{i + 1}</span></td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

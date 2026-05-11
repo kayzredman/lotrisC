@@ -223,6 +223,15 @@ export class TicketsService {
 
     assertTransition(from, to);
 
+    // Role guards for sensitive transitions
+    const LEAD_ROLES: TrpcAuth['role'][] = ['SUPERADMIN', 'ADMIN', 'IT_MANAGER', 'TEAM_LEAD'];
+    if (to === TICKET_STATUS.ESCALATED && !LEAD_ROLES.includes(auth.role)) {
+      throw new ForbiddenException('Only team leads and managers can escalate tickets');
+    }
+    if (to === TICKET_STATUS.CLOSED && !LEAD_ROLES.includes(auth.role)) {
+      throw new ForbiddenException('Only team leads and managers can close tickets');
+    }
+
     const now = new Date();
     const updates: Partial<typeof ticket> & { updatedAt: Date } = { updatedAt: now };
 

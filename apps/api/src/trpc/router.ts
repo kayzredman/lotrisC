@@ -1,4 +1,5 @@
 import { router, protectedProcedure, adminProcedure, publicProcedure } from './trpc';
+import { TRPCError } from '@trpc/server';
 import { HealthService } from '../modules/health/health.service';
 import { getMssqlDb, users, teams, roles, auditLogs, eq, and, sql } from '@lotris/db';
 import { z } from 'zod';
@@ -213,7 +214,7 @@ export const appRouter = router({
     .mutation(async ({ ctx, input }) => {
       const ALLOWED = ['ADMIN', 'SUPERADMIN', 'IT_MANAGER', 'TEAM_LEAD'];
       if (!ALLOWED.includes(ctx.auth.role)) {
-        throw new Error('Forbidden: only Admins, IT Managers and Team Leads can assign tickets');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only Admins, IT Managers and Team Leads can assign tickets' });
       }
       const svc = new TicketsService(new NotificationsService());
       return svc.assign(ctx.auth, input.id, input.assigneeId);
@@ -450,27 +451,27 @@ export const appRouter = router({
 
   'dashboard.summary': protectedProcedure.query(async ({ ctx }) => {
     const svc = new DashboardCacheService();
-    return svc.getSummary(ctx.auth.tenantId);
+    return svc.getSummary(ctx.auth);
   }),
 
   'dashboard.ticketAnalytics': protectedProcedure.query(async ({ ctx }) => {
     const svc = new DashboardCacheService();
-    return svc.getTicketAnalytics(ctx.auth.tenantId);
+    return svc.getTicketAnalytics(ctx.auth);
   }),
 
   'dashboard.engineerPerf': protectedProcedure.query(async ({ ctx }) => {
     const svc = new DashboardCacheService();
-    return svc.getEngineerPerf(ctx.auth.tenantId);
+    return svc.getEngineerPerf(ctx.auth);
   }),
 
   'dashboard.queueHealth': protectedProcedure.query(async ({ ctx }) => {
     const svc = new DashboardCacheService();
-    return svc.getQueueHealth(ctx.auth.tenantId);
+    return svc.getQueueHealth(ctx.auth);
   }),
 
   'dashboard.teamWorkload': protectedProcedure.query(async ({ ctx }) => {
     const svc = new DashboardCacheService();
-    return svc.getTeamWorkload(ctx.auth.tenantId);
+    return svc.getTeamWorkload(ctx.auth);
   }),
 
   // ── health (ADMIN only) ──────────────────────────────────────────────────

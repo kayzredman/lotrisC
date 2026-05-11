@@ -104,60 +104,65 @@ export class TasksService {
       conditions.push(eq(tasks.teamId, query.teamId) as ReturnType<typeof eq>);
     }
 
-    // Engineers can only see tasks they created or are assigned to
-    // Leads/managers see all team tasks
-    let visibilityFilter: string | null = null;
-    if (!isLead) {
-      visibilityFilter = auth.userId;
+    // TEAM_LEAD without explicit teamId → scope to their own team only
+    if (auth.role === 'TEAM_LEAD' && !query.teamId) {
+      const [lead] = await db
+        .select({ teamId: users.teamId })
+        .from(users)
+        .where(and(eq(users.id, auth.userId), eq(users.tenantId, auth.tenantId)));
+      if (lead?.teamId) {
+        conditions.push(eq(tasks.teamId, lead.teamId) as ReturnType<typeof eq>);
+      }
     }
 
     const whereClause = and(...conditions);
 
-    let rows: typeof tasks.$inferSelect[];
-
-    if (visibilityFilter) {
-      // Fetch tasks created by or assigned to this engineer
+    // Engineers can only see tasks they created or are assigned to;
+    // pre-compute their assigned task IDs so the same filter applies to rows AND count.
+    let assignedIds: string[] = [];
+    if (!isLead) {
       const assignedTaskIds = await db
         .select({ taskId: taskAssignments.taskId })
         .from(taskAssignments)
         .where(
           and(
             eq(taskAssignments.tenantId, auth.tenantId),
-            eq(taskAssignments.assigneeId, visibilityFilter),
+            eq(taskAssignments.assigneeId, auth.userId),
           ),
         );
-      const assignedIds = assignedTaskIds.map((r: { taskId: unknown }) => r.taskId as string);
-
-      rows = await db
-        .select()
-        .from(tasks)
-        .where(
-          and(
-            eq(tasks.tenantId, auth.tenantId),
-            ...(conditions.slice(1)),
-            sql`(${tasks.createdBy} = ${visibilityFilter}${assignedIds.length ? sql` OR ${tasks.id} IN (${sql.join(assignedIds.map((id: string) => sql`${id}`), sql`, `)})` : sql``})`,
-          ),
-        )
-        .orderBy(asc(tasks.dueDate), desc(tasks.createdAt))
-        .offset(offset)
-        .limit(limit);
-    } else {
-      rows = await db
-        .select()
-        .from(tasks)
-        .where(whereClause)
-        .orderBy(asc(tasks.dueDate), desc(tasks.createdAt))
-        .offset(offset)
-        .limit(limit);
+      assignedIds = assignedTaskIds.map((r: { taskId: unknown }) => r.taskId as string);
     }
+
+    const engVisibilitySql = !isLead
+      ? sql`(${tasks.createdBy} = ${auth.userId}${
+          assignedIds.length
+            ? sql` OR ${tasks.id} IN (${sql.join(
+                assignedIds.map((id: string) => sql`${id}`),
+                sql`, `,
+              )})`
+            : sql``
+        })`
+      : null;
+
+    // rowFilter combines base conditions + engineer visibility (same filter for rows AND count)
+    const rowFilter = engVisibilitySql ? and(whereClause, engVisibilitySql) : whereClause;
+
+    const rows = await db
+      .select()
+      .from(tasks)
+      .where(rowFilter)
+      .orderBy(asc(tasks.dueDate), desc(tasks.createdAt))
+      .offset(offset)
+      .limit(limit);
 
     // Enrich with progress computed from checklist
     const enriched = await Promise.all(rows.map((t) => this.enrichTask(t)));
 
+    // Use rowFilter (not whereClause) so pagination total matches visible rows
     const [{ total }] = await db
       .select({ total: count() })
       .from(tasks)
-      .where(whereClause);
+      .where(rowFilter);
 
     return { items: enriched, total: Number(total), page, limit };
   }

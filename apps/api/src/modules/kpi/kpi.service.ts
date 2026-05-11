@@ -150,7 +150,12 @@ export class KpiService {
   async listAssignments(auth: TrpcAuth, engineerId?: string, periodKey?: string) {
     const db = await getMssqlDb();
     const conditions = [eq(kpiEngineerAssignments.tenantId, auth.tenantId)];
-    if (engineerId) conditions.push(eq(kpiEngineerAssignments.engineerId, engineerId));
+    // Engineers can only view their own assignments
+    if (auth.role === 'ENGINEER') {
+      conditions.push(eq(kpiEngineerAssignments.engineerId, auth.userId));
+    } else if (engineerId) {
+      conditions.push(eq(kpiEngineerAssignments.engineerId, engineerId));
+    }
     if (periodKey) conditions.push(eq(kpiEngineerAssignments.periodKey, periodKey));
     return db
       .select()
