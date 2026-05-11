@@ -7,6 +7,7 @@ import {
   ticketHistory,
   slaConfigs,
   attachmentRefs,
+  users,
 } from '@lotris/db';
 import type { TrpcAuth } from '@lotris/types';
 import {
@@ -101,6 +102,37 @@ export class TicketsService {
 
     // Build WHERE clause with raw SQL to support LIKE search
     const whereParts: string[] = [`tk.tenant_id = '${auth.tenantId}'`];
+
+    // Role-based visibility:
+    // ENGINEER → only tickets assigned to them
+    // TEAM_LEAD → tickets belonging to own team + any granted cross-access teams
+    // IT_MANAGER / ADMIN / SUPERADMIN → all tickets
+    if (auth.role === 'ENGINEER') {
+      whereParts.push(`tk.assignee_id = '${auth.userId}'`);
+    } else if (auth.role === 'TEAM_LEAD') {
+      const userRows = await db
+        .select({ teamId: users.teamId })
+        .from(users)
+        .where(and(eq(users.id, auth.userId), eq(users.tenantId, auth.tenantId)))
+        .limit(1);
+      const tlTeamId = userRows[0]?.teamId;
+
+      // Collect all team IDs this TL can see: own team + granted cross-access teams
+      const grantedRows = await db.execute<{ targetTeamId: string }>(
+        sql.raw(`SELECT target_team_id AS targetTeamId FROM TeamAccessGrants WHERE tenant_id = '${auth.tenantId}' AND grantee_user_id = '${auth.userId}'`)
+      );
+      const grantedTeamIds = grantedRows.map((r) => r.targetTeamId);
+      const visibleTeamIds = [...(tlTeamId ? [tlTeamId] : []), ...grantedTeamIds];
+
+      if (visibleTeamIds.length > 0) {
+        const inList = visibleTeamIds.map((id) => `'${id}'`).join(',');
+        whereParts.push(`tk.team_id IN (${inList})`);
+      } else {
+        // No team and no grants — show only own assigned tickets
+        whereParts.push(`tk.assignee_id = '${auth.userId}'`);
+      }
+    }
+
     if (query.status)   whereParts.push(`tk.status = '${query.status}'`);
     if (query.priority) whereParts.push(`tk.priority = ${Number(query.priority)}`);
     if (query.teamId)   whereParts.push(`tk.team_id = '${query.teamId}'`);

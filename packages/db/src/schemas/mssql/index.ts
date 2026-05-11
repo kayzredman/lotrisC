@@ -20,3 +20,4 @@ export { kpiAgreementAreas, type KpiAgreementArea, type NewKpiAgreementArea } fr
 export { kpiAgreementMetrics, type KpiAgreementMetric, type NewKpiAgreementMetric } from './kpi-agreement-metrics';
 export { kpiActuals, type KpiActual, type NewKpiActual } from './kpi-actuals';
 export { kpiResults, type KpiResult, type NewKpiResult } from './kpi-results';
+export { teamAccessGrants, type TeamAccessGrant, type NewTeamAccessGrant } from './team-access-grants';

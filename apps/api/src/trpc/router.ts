@@ -1,6 +1,6 @@
-import { router, protectedProcedure, adminProcedure } from './trpc';
+import { router, protectedProcedure, adminProcedure, publicProcedure } from './trpc';
 import { HealthService } from '../modules/health/health.service';
-import { getMssqlDb, users, teams, roles, auditLogs, eq, and } from '@lotris/db';
+import { getMssqlDb, users, teams, roles, auditLogs, eq, and, sql } from '@lotris/db';
 import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
 import { QueueService } from '../modules/queue/queue.service';
@@ -141,7 +141,34 @@ export const appRouter = router({
       return svc.updateTeam(ctx.auth.tenantId, ctx.auth.userId, teamId, dto as UpdateTeamDto);
     }),
 
-  // ── tickets ──────────────────────────────────────────────────────────────
+  // ── admin.teamAccess ──────────────────────────────────────────────────────
+
+  'admin.teamAccess.list': adminProcedure
+    .query(async ({ ctx }) => {
+      const svc = new AdminService();
+      return svc.listTeamAccessGrants(ctx.auth.tenantId);
+    }),
+
+  'admin.teamAccess.grant': adminProcedure
+    .input(z.object({
+      granteeUserId: z.string().uuid(),
+      targetTeamId:  z.string().uuid(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new AdminService();
+      return svc.grantTeamAccess(ctx.auth.tenantId, ctx.auth.userId, input.granteeUserId, input.targetTeamId);
+    }),
+
+  'admin.teamAccess.revoke': adminProcedure
+    .input(z.object({
+      granteeUserId: z.string().uuid(),
+      targetTeamId:  z.string().uuid(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new AdminService();
+      return svc.revokeTeamAccess(ctx.auth.tenantId, input.granteeUserId, input.targetTeamId);
+    }),
+
 
   'tickets.list': protectedProcedure
     .input(
@@ -497,6 +524,89 @@ export const appRouter = router({
         .orderBy(desc(auditLogs.createdAt))
         .limit(input.limit);
     }),
+
+  // ── monitor (PUBLIC — no auth required) ─────────────────────────────────
+
+  'monitor.stats': publicProcedure.query(async () => {
+    const db = await getMssqlDb();
+
+    type StatRow = {
+      totalOpen: number;
+      slaBreach: number;
+      resolved24h: number;
+      totalActive: number;
+    };
+    type TeamRow = {
+      teamName: string;
+      openCount: number;
+      inProgress: number;
+      escalated: number;
+    };
+    type RecentRow = {
+      id: string;
+      title: string;
+      status: string;
+      priority: number;
+      teamName: string | null;
+      createdAt: Date;
+    };
+
+    const [statsRows, teamRows, recentRows] = await Promise.all([
+      db.execute<StatRow>(sql.raw(`
+        SELECT
+          SUM(CASE WHEN status NOT IN ('RESOLVED','CLOSED') THEN 1 ELSE 0 END) AS totalOpen,
+          SUM(CASE WHEN status NOT IN ('RESOLVED','CLOSED') AND sla_resolution_deadline < GETUTCDATE() THEN 1 ELSE 0 END) AS slaBreach,
+          SUM(CASE WHEN status IN ('RESOLVED','CLOSED') AND updated_at >= DATEADD(HOUR,-24,GETUTCDATE()) THEN 1 ELSE 0 END) AS resolved24h,
+          COUNT(*) AS totalActive
+        FROM Tickets
+        WHERE status NOT IN ('CLOSED')
+      `)),
+      db.execute<TeamRow>(sql.raw(`
+        SELECT
+          t.name AS teamName,
+          SUM(CASE WHEN tk.status IN ('NEW','TEAM_ASSIGNED','UNASSIGNED','ASSIGNED') THEN 1 ELSE 0 END) AS openCount,
+          SUM(CASE WHEN tk.status = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS inProgress,
+          SUM(CASE WHEN tk.status = 'ESCALATED' THEN 1 ELSE 0 END) AS escalated
+        FROM Teams t
+        LEFT JOIN Tickets tk ON tk.team_id = t.id AND tk.status NOT IN ('RESOLVED','CLOSED')
+        WHERE t.is_active = 1
+        GROUP BY t.id, t.name
+        ORDER BY openCount DESC
+      `)),
+      db.execute<RecentRow>(sql.raw(`
+        SELECT TOP 20
+          tk.id, tk.title, tk.status, tk.priority,
+          tm.name AS teamName,
+          tk.created_at AS createdAt
+        FROM Tickets tk
+        LEFT JOIN Teams tm ON tm.id = tk.team_id
+        WHERE tk.status NOT IN ('RESOLVED','CLOSED')
+        ORDER BY tk.priority ASC, tk.created_at ASC
+      `)),
+    ]);
+
+    const s = statsRows[0] ?? { totalOpen: 0, slaBreach: 0, resolved24h: 0, totalActive: 0 };
+    return {
+      totalOpen:   Number(s.totalOpen   ?? 0),
+      slaBreach:   Number(s.slaBreach   ?? 0),
+      resolved24h: Number(s.resolved24h ?? 0),
+      totalActive: Number(s.totalActive ?? 0),
+      teams: teamRows.map((r) => ({
+        teamName:   r.teamName,
+        open:       Number(r.openCount  ?? 0),
+        inProgress: Number(r.inProgress ?? 0),
+        escalated:  Number(r.escalated  ?? 0),
+      })),
+      topTickets: recentRows.map((r) => ({
+        id:       r.id,
+        title:    r.title,
+        status:   r.status,
+        priority: Number(r.priority),
+        teamName: r.teamName ?? '—',
+        createdAt: r.createdAt,
+      })),
+    };
+  }),
 });
 
 export type AppRouter = typeof appRouter;

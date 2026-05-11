@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { getMssqlDb, users, teams, roles, auditLogs, eq, and, sql } from '@lotris/db';
+import { getMssqlDb, users, teams, roles, auditLogs, teamAccessGrants, eq, and, sql } from '@lotris/db';
 import { createClerkClient } from '@clerk/backend';
 import { getEnv } from '@lotris/config';
 import { v4 as uuidv4 } from 'uuid';
@@ -175,6 +175,70 @@ export class AdminService {
       .where(and(eq(teams.id, teamId), eq(teams.tenantId, tenantId)));
 
     await this.writeAuditLog(db, tenantId, actorId, 'TEAM_UPDATED', 'Team', teamId, dto as Record<string, unknown>);
+  }
+
+  // ── Team Access Grants ────────────────────────────────────────────────────
+
+  async listTeamAccessGrants(tenantId: string) {
+    const db = await getMssqlDb();
+    const rows = await db.execute<{
+      id: string;
+      granteeUserId: string;
+      granteeName: string;
+      targetTeamId: string;
+      targetTeamName: string;
+      grantedBy: string;
+      grantedByName: string;
+      createdAt: Date;
+    }>(sql.raw(`
+      SELECT
+        tag.id,
+        tag.grantee_user_id   AS granteeUserId,
+        gu.full_name          AS granteeName,
+        tag.target_team_id    AS targetTeamId,
+        tt.name               AS targetTeamName,
+        tag.granted_by        AS grantedBy,
+        gb.full_name          AS grantedByName,
+        tag.created_at        AS createdAt
+      FROM TeamAccessGrants tag
+      INNER JOIN Users  gu ON gu.id = tag.grantee_user_id
+      INNER JOIN Teams  tt ON tt.id = tag.target_team_id
+      INNER JOIN Users  gb ON gb.id = tag.granted_by
+      WHERE tag.tenant_id = '${tenantId}'
+      ORDER BY tag.created_at DESC
+    `));
+    return rows;
+  }
+
+  async grantTeamAccess(tenantId: string, actorId: string, granteeUserId: string, targetTeamId: string) {
+    const db = await getMssqlDb();
+    // Validate grantee and team belong to tenant
+    await this.assertUserBelongsToTenant(db, tenantId, granteeUserId);
+    await this.assertTeamBelongsToTenant(db, tenantId, targetTeamId);
+
+    const id = uuidv4();
+    await db.insert(teamAccessGrants).values({
+      id,
+      tenantId,
+      granteeUserId,
+      targetTeamId,
+      grantedBy: actorId,
+      createdAt: new Date(),
+    });
+
+    await this.writeAuditLog(db, tenantId, actorId, 'TEAM_ACCESS_GRANTED', 'TeamAccessGrant', id, { granteeUserId, targetTeamId });
+    return { id };
+  }
+
+  async revokeTeamAccess(tenantId: string, granteeUserId: string, targetTeamId: string) {
+    const db = await getMssqlDb();
+    await db
+      .delete(teamAccessGrants)
+      .where(and(
+        eq(teamAccessGrants.tenantId, tenantId),
+        eq(teamAccessGrants.granteeUserId, granteeUserId),
+        eq(teamAccessGrants.targetTeamId, targetTeamId),
+      ));
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
