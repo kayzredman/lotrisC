@@ -58,9 +58,9 @@ const TEAM = {
 };
 
 const USER = {
-  superadmin: '30000001-0000-0000-0000-000000000001',
-  admin:      '30000001-0000-0000-0000-000000000002',
-  leadA:      '30000001-0000-0000-0000-000000000003',
+  superadmin: '30000001-0000-0000-0000-000000000001', // kwame (dev-login)
+  admin:      '30000001-0000-0000-0000-000000000002', // abena (dev-login)
+  leadA:      '30000001-0000-0000-0000-000000000003', // kofi  (dev-login)
   leadB:      '30000001-0000-0000-0000-000000000004',
   eng1:       '30000001-0000-0000-0000-000000000005', // A. Okonkwo
   eng2:       '30000001-0000-0000-0000-000000000006', // F. Mohammed
@@ -68,6 +68,8 @@ const USER = {
   eng4:       '30000001-0000-0000-0000-000000000008', // N. Kamara
   eng5:       '30000001-0000-0000-0000-000000000009', // D. Mensah
   eng6:       '30000001-0000-0000-0000-000000000010', // B. Ibrahim
+  yaw:        '30000001-0000-0000-0000-000000000011', // Yaw Owusu    (dev-login: engineer)
+  fatima:     '30000001-0000-0000-0000-000000000012', // Fatima Al-Hassan (dev-login: IT manager)
 };
 
 const ENGINEERS = [USER.eng1, USER.eng2, USER.eng3, USER.eng4, USER.eng5, USER.eng6];
@@ -95,22 +97,25 @@ async function main() {
 
   // ── 3. Users ──────────────────────────────────────────────────────────────
   for (const u of [
-    { id: USER.superadmin, clerkUserId: 'clerk_demo_sa',    email: 'superadmin@demo.lotris', fullName: 'Kwame Asante',       roleId: ROLE_IDS.SUPERADMIN, teamId: null            },
-    { id: USER.admin,      clerkUserId: 'clerk_demo_admin', email: 'admin@demo.lotris',      fullName: 'Abena Mensah',       roleId: ROLE_IDS.ADMIN,      teamId: null            },
-    { id: USER.leadA,      clerkUserId: 'clerk_demo_leadA', email: 'lead.a@demo.lotris',     fullName: 'Kofi Boateng',       roleId: ROLE_IDS.TEAM_LEAD,  teamId: TEAM.itSupport  },
-    { id: USER.leadB,      clerkUserId: 'clerk_demo_leadB', email: 'lead.b@demo.lotris',     fullName: 'Ama Darko',          roleId: ROLE_IDS.TEAM_LEAD,  teamId: TEAM.networkOps },
-    { id: USER.eng1,       clerkUserId: 'clerk_demo_eng1',  email: 'a.okonkwo@demo.lotris',  fullName: 'Ama Okonkwo',        roleId: ROLE_IDS.ENGINEER,   teamId: TEAM.itSupport  },
-    { id: USER.eng2,       clerkUserId: 'clerk_demo_eng2',  email: 'f.mohammed@demo.lotris', fullName: 'Femi Mohammed',      roleId: ROLE_IDS.ENGINEER,   teamId: TEAM.itSupport  },
-    { id: USER.eng3,       clerkUserId: 'clerk_demo_eng3',  email: 'c.boateng@demo.lotris',  fullName: 'Christabel Boateng',roleId: ROLE_IDS.ENGINEER,   teamId: TEAM.networkOps },
-    { id: USER.eng4,       clerkUserId: 'clerk_demo_eng4',  email: 'n.kamara@demo.lotris',   fullName: 'Nii Kamara',         roleId: ROLE_IDS.ENGINEER,   teamId: TEAM.networkOps },
-    { id: USER.eng5,       clerkUserId: 'clerk_demo_eng5',  email: 'd.mensah@demo.lotris',   fullName: 'Dela Mensah',        roleId: ROLE_IDS.ENGINEER,   teamId: TEAM.dbTeam     },
-    { id: USER.eng6,       clerkUserId: 'clerk_demo_eng6',  email: 'b.ibrahim@demo.lotris',  fullName: 'Baaba Ibrahim',      roleId: ROLE_IDS.ENGINEER,   teamId: TEAM.dbTeam     },
+    // clerkUserIds match the real Clerk accounts in apps/web/app/api/dev-login/route.ts
+    { id: USER.superadmin, clerkUserId: 'user_3DP8ZaH7FcKqGbp3FOvC9fZDqoO', email: 'superadmin@demo.lotris', fullName: 'Kwame Asante',        roleId: ROLE_IDS.SUPERADMIN,  teamId: null            },
+    { id: USER.admin,      clerkUserId: 'user_3DP8ZuU5uL5sEvfWS9IzKVQJr9C', email: 'admin@demo.lotris',      fullName: 'Abena Mensah',        roleId: ROLE_IDS.ADMIN,       teamId: null            },
+    { id: USER.leadA,      clerkUserId: 'user_3DP8ZyhbMzhzMFmhctZ1SsggzGJ', email: 'lead.a@demo.lotris',     fullName: 'Kofi Boateng',        roleId: ROLE_IDS.TEAM_LEAD,   teamId: TEAM.itSupport  },
+    { id: USER.leadB,      clerkUserId: 'clerk_demo_leadB',                  email: 'lead.b@demo.lotris',     fullName: 'Ama Darko',           roleId: ROLE_IDS.TEAM_LEAD,   teamId: TEAM.networkOps },
+    { id: USER.yaw,        clerkUserId: 'user_3DP8aNpw7RDxTOvd2e5VQgOiu1j', email: 'y.owusu@demo.lotris',    fullName: 'Yaw Owusu',           roleId: ROLE_IDS.ENGINEER,    teamId: TEAM.itSupport  },
+    { id: USER.fatima,     clerkUserId: 'user_3DP8bnKs0ZJ22LHs8f7ykqOiKFs', email: 'f.alhassan@demo.lotris', fullName: 'Fatima Al-Hassan',    roleId: ROLE_IDS.IT_MANAGER,  teamId: null            },
+    { id: USER.eng1,       clerkUserId: 'clerk_demo_eng1',                   email: 'a.okonkwo@demo.lotris',  fullName: 'Ama Okonkwo',         roleId: ROLE_IDS.ENGINEER,    teamId: TEAM.itSupport  },
+    { id: USER.eng2,       clerkUserId: 'clerk_demo_eng2',                   email: 'f.mohammed@demo.lotris', fullName: 'Femi Mohammed',       roleId: ROLE_IDS.ENGINEER,    teamId: TEAM.itSupport  },
+    { id: USER.eng3,       clerkUserId: 'clerk_demo_eng3',                   email: 'c.boateng@demo.lotris',  fullName: 'Christabel Boateng', roleId: ROLE_IDS.ENGINEER,    teamId: TEAM.networkOps },
+    { id: USER.eng4,       clerkUserId: 'clerk_demo_eng4',                   email: 'n.kamara@demo.lotris',   fullName: 'Nii Kamara',          roleId: ROLE_IDS.ENGINEER,    teamId: TEAM.networkOps },
+    { id: USER.eng5,       clerkUserId: 'clerk_demo_eng5',                   email: 'd.mensah@demo.lotris',   fullName: 'Dela Mensah',         roleId: ROLE_IDS.ENGINEER,    teamId: TEAM.dbTeam     },
+    { id: USER.eng6,       clerkUserId: 'clerk_demo_eng6',                   email: 'b.ibrahim@demo.lotris',  fullName: 'Baaba Ibrahim',       roleId: ROLE_IDS.ENGINEER,    teamId: TEAM.dbTeam     },
   ]) {
     await db.insert(users).values({
       ...u, tenantId: TENANT_ID, isActive: 1, isUnavailable: 0, createdAt: NOW, updatedAt: NOW,
     }).catch(() => {});
   }
-  console.log('✅ Users (10)');
+  console.log('✅ Users (12)');
 
   // ── 4. Queue Config ───────────────────────────────────────────────────────
   for (const cfg of [
