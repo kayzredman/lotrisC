@@ -1,19 +1,10 @@
 import { Providers } from '@/components/providers';
-import { Sidebar } from '@/components/sidebar/sidebar';
-import { Topbar } from '@/components/layout/topbar';
+import { AppShell } from '@/components/layout/app-shell';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <Providers>
-      <div className="v2-app">
-        <Sidebar />
-        <div className="v2-main">
-          <Topbar />
-          <main className="v2-content">
-            {children}
-          </main>
-        </div>
-      </div>
+      <AppShell>{children}</AppShell>
     </Providers>
   );
 }

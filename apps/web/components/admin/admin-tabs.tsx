@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { UsersTable } from './users-table';
 import { TeamsTable } from './teams-table';
+import { TeamAccessPanel } from './team-access-panel';
 
-type Tab = 'users' | 'teams';
+type Tab = 'users' | 'teams' | 'access';
 
 export function AdminTabs() {
   const [active, setActive] = useState<Tab>('users');
@@ -13,32 +14,37 @@ export function AdminTabs() {
     <div>
       {/* Tab bar — v2 design system */}
       <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
-        {(['users', 'teams'] as const).map((tab) => (
+        {([
+          { key: 'users', label: 'Users' },
+          { key: 'teams', label: 'Teams' },
+          { key: 'access', label: 'Cross-Team Access' },
+        ] as const).map((tab) => (
           <button
-            key={tab}
+            key={tab.key}
             type="button"
-            onClick={() => setActive(tab)}
+            onClick={() => setActive(tab.key)}
             style={{
               padding: '8px 18px',
               fontSize: 13,
               fontWeight: 600,
               background: 'none',
               border: 'none',
-              borderBottom: active === tab ? '2px solid var(--indigo)' : '2px solid transparent',
-              color: active === tab ? 'var(--indigo)' : 'var(--text-muted)',
+              borderBottom: active === tab.key ? '2px solid var(--indigo)' : '2px solid transparent',
+              color: active === tab.key ? 'var(--indigo)' : 'var(--text-muted)',
               cursor: 'pointer',
-              textTransform: 'capitalize',
               transition: 'color 0.15s, border-color 0.15s',
               marginBottom: -1,
+              whiteSpace: 'nowrap',
             }}
           >
-            {tab === 'users' ? 'Users' : 'Teams'}
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {active === 'users' && <UsersTable />}
-      {active === 'teams' && <TeamsTable />}
+      {active === 'users'  && <UsersTable />}
+      {active === 'teams'  && <TeamsTable />}
+      {active === 'access' && <TeamAccessPanel />}
     </div>
   );
 }

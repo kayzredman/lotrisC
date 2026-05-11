@@ -1,7 +1,7 @@
 import { SignUp } from '@clerk/nextjs';
 import type { Metadata } from 'next';
 import { Ticket, BarChart2, ShieldCheck } from 'lucide-react';
-import styles from '../../../login/[[...sign-in]]/login.module.css';
+import styles from '../../login/[[...sign-in]]/login.module.css';
 
 export const metadata: Metadata = { title: 'Accept invite — Lotris' };
 

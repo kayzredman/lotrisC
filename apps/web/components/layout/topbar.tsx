@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { useTheme } from 'next-themes';
-import { Search, Bell, Moon, Sun } from 'lucide-react';
+import { Search, Bell, Moon, Sun, Menu } from 'lucide-react';
 import { useState } from 'react';
 
 const PAGE_META: Record<string, { title: string; breadcrumb: string[] }> = {
@@ -27,7 +27,9 @@ function getPageMeta(pathname: string) {
   return { title: 'Lotris', breadcrumb: ['Home'] };
 }
 
-export function Topbar() {
+type TopbarProps = { onMenuClick?: () => void };
+
+export function Topbar({ onMenuClick }: TopbarProps) {
   const pathname = usePathname();
   const meta = getPageMeta(pathname);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -40,8 +42,16 @@ export function Topbar() {
 
   return (
     <header className="v2-topbar">
-      {/* Left — breadcrumb + page title */}
+      {/* Left — hamburger (mobile) + page title */}
       <div className="v2-topbar-left">
+        <button
+          type="button"
+          className="v2-mobile-menu-btn"
+          onClick={onMenuClick}
+          aria-label="Open menu"
+        >
+          <Menu size={18} />
+        </button>
         <span className="v2-page-title">{meta.title}</span>
         <nav className="v2-breadcrumb" aria-label="breadcrumb">
           {meta.breadcrumb.map((crumb, i) => (
