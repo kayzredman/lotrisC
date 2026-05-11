@@ -4,7 +4,7 @@
 > _"Where performance surfaces."_
 
 [![Status](https://img.shields.io/badge/status-in%20development-blue)]()
-[![Phase](https://img.shields.io/badge/phase-1%20foundation-teal)]()
+[![Phase](https://img.shields.io/badge/phase-1%20sprint%2016%20complete-teal)]()
 [![License](https://img.shields.io/badge/license-private-lightgrey)]()
 
 ---
@@ -45,16 +45,36 @@ The system uses a **hybrid queue-based assignment model**: tickets are routed to
 - **Ticket Lifecycle Management** — Full audit trail from open to close
 - **Queue Management** — Team queues, controlled pickup, workload enforcement, priority ordering
 - **Auto-Assignment** — Least-loaded engineer assignment on pickup SLA breach
-- **Task Management** — Assign non-ticket work items to engineers (maintenance, DR drills, change requests) and allow engineers to self-log their own tasks for personal tracking
+- **Task Management** — Assign non-ticket work items to engineers (maintenance, DR drills, change requests) and allow engineers to self-log their own tasks for personal tracking and KPI contribution
 - **KPI Dashboard** — Real-time metrics per engineer, team, and organisation
 - **SLA Tracking** — Pickup SLA + resolution SLA monitoring with automated escalation
 - **Automated Notifications** — Email and in-app alerts on SLA breach, escalation, KPI deadline
 - **Engineer Workload Balancing** — Max workload enforcement and queue visibility
-- **Role-based Access Control** — Granular permissions per user role
-- **Multi-Tenancy** — Each organisation is an isolated tenant with its own SLA and KPI config
+- **Role-based Access Control** — Granular permissions per user role; role-scoped queue workload, ticket and task views per engineer/lead/manager
+- **Multi-Tenancy** — Each organisation is an isolated tenant with its own SLA and KPI config; `tenantId` filter on every query
 - **Operational & Performance Reports** — Ticket summaries, SLA compliance, queue reports, KPI reports
 - **Responsive Design + PWA** — Fully responsive across desktop, tablet, and mobile; installable as a Progressive Web App
 - **System Health Monitoring** — Real-time SysAdmin ops dashboard showing live process status, queue depths, CPU/memory, and restart controls
+- **Monitor Wall** — Public ops screen (`/monitor`) with live ticket stats, animated priority ticker (top-20 tickets), and light/dark theme toggle; no authentication required
+- **Cross-Team Access Grants** — Admins can grant read access across team boundaries without role changes
+
+---
+
+## Build Status — Sprint 16 (May 2026)
+
+| Milestone | Sprint | Status |
+|-----------|--------|--------|
+| M1 — Auth & Tenant Scaffold | 1–2 | ✅ Complete |
+| M2 — Ticket Core | 3–4 | ✅ Complete |
+| M3 — Queue Engine | 5–6 | ✅ Complete |
+| M4 — Task Management | 7 | ✅ Complete |
+| M5 — KPI Engine | 8–10 | ✅ Complete |
+| M6 — Reporting & Full Dashboard | 11–12 | ✅ Complete |
+| M7 — System Health Monitoring | 13 | ✅ Complete |
+| M8 — UI Polish + Tickets Repair | 14–15 | ✅ Complete |
+| M9 — QA Fixes + Monitor Wall | 16 | ✅ Complete |
+
+**Live on dev branch.** Next: Phase 2 analytics intelligence.
 
 ---
 

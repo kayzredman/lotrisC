@@ -1,6 +1,6 @@
 # Lotris — Project Context
 
-> Last updated: May 2026 — Sprint 14–15 complete (UI polish, dark mode, tickets page full repair, ticket assignment by role)
+> Last updated: May 2026 — Sprint 16 complete (QA fixes: Queue role-scope, Tickets/Tasks role banners, Monitor real DB; animated ticker; light/dark toggle; cross-team access; mobile CSS)
 
 ---
 
@@ -527,6 +527,7 @@ Auth & Tenancy
 | M6 — Reports    | 12     | Analytics layer, full dashboard, scheduled reports      |
 | M7 — Monitoring | 13     | SysAdmin ops dashboard, restart controls, status page   |
 | M8 — UI Quality | 15     | Dark mode, dashboard accuracy, tickets page fully functional, role-gated assign |
+| M9 — QA & Monitor | 16  | Queue/Tickets/Tasks role-visibility, Monitor wall (real data, ticker, theme toggle), cross-team access, mobile CSS |
 
 ---
 
@@ -651,9 +652,67 @@ lotris/                          ← monorepo root
 
 ---
 
-## 16. Out of Scope (v1)
+## 16. Local Development Environment
+
+### Process Manager
+
+All services run under **pm2** in local dev:
+
+| pm2 ID | Name         | Port | Restart behaviour            |
+| ------ | ------------ | ---- | ---------------------------- |
+| 5      | `lotris-api` | 4000 | tsx watch — auto-reloads on file save |
+| 6      | `lotris-web` | 3000 | Next.js HMR — hot-reloads on file save |
+
+pm2 binary: `/Users/kwekku/.nvm/versions/node/v24.13.0/lib/node_modules/pm2/bin/pm2`  
+Next.js started with `-H 0.0.0.0` to bind on LAN. Current dev LAN IP: `192.168.8.133`.
+
+### Dev Login Users
+
+Development shortcut: `GET /api/dev-login?user={alias}` — sets a Clerk-compatible dev session without social login.
+
+| Alias  | Role        | Notes                          |
+| ------ | ----------- | ------------------------------ |
+| yaw    | ENGINEER    | Standard engineer scope        |
+| kofi   | TEAM_LEAD   | DB/IT team                     |
+| kwame  | SUPERADMIN  | Full access                    |
+| abena  | ADMIN       | Tenant admin                   |
+| fatima | IT_MANAGER  | KPI definitions, oversight     |
+
+### Database
+
+- **MSSQL** connection string: `mssql://sa:Lotris@Dev2024!@localhost:1433/lotris`
+- Snake_case column names throughout. Key column: `sla_resolution_deadline` (not `sla_deadline`).
+- Priority values: `1 = Critical, 2 = High, 3 = Medium, 4 = Low` — always `ORDER BY priority ASC`.
+- 347 tickets in local dev DB; 204 open; 187 SLA breached.
+- MSSQL reserved keyword `open` — use alias `openCount` in raw SQL.
+
+### CSS Design System
+
+The live implementation uses the **v2 CSS design system** ported from `mockups/style-v2.css` into `apps/web/app/globals.css`. Most page components use v2 CSS classes (e.g. `v2-card`, `v2-btn`, `v2-stats-grid`). The Monitor page uses 100% inline styles. Tailwind is configured but the primary styling approach in built components is the v2 CSS class system.
+
+### tRPC Client Pattern
+
+`AppRouter` in `@lotris/types` is typed as `any` to avoid complex type propagation. All tRPC calls use **bracket notation** to avoid TypeScript errors:
+
+```ts
+trpc['users.me'].useQuery()
+trpc['tickets.list'].useQuery({ page: 1, limit: 25 })
+```
+
+### Monitor Page
+
+- URL: `/monitor` — **public route** (no Clerk auth required)
+- `middleware.ts` includes `/monitor(.*)` in `publicRoutes`
+- Uses `MonitorProviders` (lightweight tRPC + QueryClient, no auth token)
+- Queries `monitor.stats` tRPC procedure (also public/unauthenticated)
+- Features: real-time stat cards, animated priority ticker (20 tickets), light/dark theme toggle (persisted via `localStorage`)
+
+---
+
+## 17. Out of Scope (v1)
 
 - Customer-facing self-service portal
 - Native mobile app — deferred; responsive PWA covers all roles in v1; revisit if field engineers drive specific demand
 - Real-time chat / live support
 - Billing / subscription management
+- Prometheus / Grafana / Datadog integrations (Phase 3)

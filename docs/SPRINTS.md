@@ -17,6 +17,7 @@
 | 11–12  | Reporting & Full Dashboard   | ✅ COMPLETE   | `dev` @ `f900bfc`                | M6 |
 | 13     | System Health Monitoring     | ✅ Complete   | `dev` @ `b901271`               | M7    |
 | 14–15  | UI Polish + Dashboard QA + Tickets Repair | ✅ COMPLETE | `feature/sprint-14-layout-polish` | M8 |
+| 16     | QA Fixes · Monitor Wall · Role Visibility | ✅ COMPLETE | `feature/sprint-16-qa-monitor`    | M9 |
 
 ---
 
@@ -334,9 +335,53 @@
 
 ---
 
-## Open Issues / Deferred Items
+## Sprint 16 · QA Fixes · Monitor Wall · Role Visibility
 
-| ID   | Item                                    | Raised     | Status   |
+**Target milestone:** M9  
+**Status:** ✅ COMPLETE — branch `feature/sprint-16-qa-monitor`
+
+**Deliverable:** Three QA items (Queue Team Workload role-scoping, Tickets/Tasks role-context banners, Monitor real DB data), animated priority ticker on Monitor wall, light/dark toggle on Monitor, cross-team access grants UI, mobile responsiveness.
+
+---
+
+### Backend Dev Agent Jobs
+
+- [x] `B16-1` — `monitor.stats` tRPC procedure SQL fixes: `sla_deadline` → `sla_resolution_deadline`; `AS open` → `AS openCount` (MSSQL reserved keyword); `ORDER BY priority ASC` (1=Critical); `SELECT TOP 20` for top tickets
+- [x] `B16-2` — `dashboard.teamWorkload` tRPC procedure: returns `{ id, name, queued, openCount }` per team; elevated roles see all teams, non-elevated filtered to `myTeamId`
+- [x] `B16-3` — TeamAccessGrants schema (`packages/db/src/schemas/mssql/team-access-grants.ts`); migration `0006_team_access_grants.sql`; AdminService CRUD; cross-team read grants
+- [x] `B16-4` — RBAC filtering hardened in `TicketsService` and `TasksService`: Engineers see own/assigned items only; Team Leads see team scope; elevated roles see all
+
+### Frontend Dev Agent Jobs
+
+- [x] `F16-1` — **Queue Team Workload role-scope** (`queue-table.tsx`): `ELEVATED_ROLES = {ADMIN, SUPERADMIN, IT_MANAGER}` → "All Teams Workload" with all teams; others → "My Team Workload" filtered to `myTeamId`; 8-color `WORKLOAD_COLORS` array using CSS vars
+- [x] `F16-2` — **Tickets role-context banner** (`tickets-table.tsx`): queries `users.me`; Engineers → indigo banner; Team Leads → green banner; elevated roles → no banner
+- [x] `F16-3` — **Tasks role-context banner** (`tasks-table.tsx`): same pattern — Engineers → "My Tasks" header + indigo; Team Leads → "Team Tasks" header + green
+- [x] `F16-4` — **Monitor page wired to real DB** (`monitor-client.tsx`): full rewrite; `monitor.stats` via `MonitorProviders` (public, no auth); sub-components: StatCard, SectionTitle, Chip, SkeletonRows, EmptyState; 8-color distinct chip colors
+- [x] `F16-5` — **Animated priority ticker** (`monitor-client.tsx`): top-20 tickets duplicated for seamless CSS loop; `animation: tickerScroll linear infinite`; hover-to-pause; fade masks via `WebkitMaskImage`
+- [x] `F16-6` — **Light/dark toggle on Monitor** (`monitor-client.tsx`): Two `TC` ThemeConfig objects — `DARK` and `LIGHT`; Sun/Moon icon toggle; `localStorage` persisted; threaded as `t` prop through all sub-components
+- [x] `F16-7` — **Monitor light mode**: `LIGHT.bg = '#c8d3e0'`, `cardBg = '#ffffff'`; `cardBorder` at 66% opacity so cards lift clearly against the dimmed field
+- [x] `F16-8` — **Cross-team access admin panel** (`admin-tabs.tsx`, `team-access-panel.tsx`): 3-tab admin UI; Cross-Team Access tab for managing `team_access_grants`
+- [x] `F16-9` — **Mobile responsiveness** (`globals.css`): `@media (max-width: 768px)` block; `v2-stats-grid` responsive class; sidebar → bottom nav; hamburger button in topbar
+- [x] `F16-10` — **Monitor public route** (`middleware.ts`): `/monitor(.*)` in Clerk `publicRoutes`; `app/monitor/page.tsx` + `layout.tsx` + `MonitorProviders.tsx`
+- [x] `F16-11` — **RBAC sidebar** (`sidebar.tsx`): Monitor link visible; nav items role-filtered
+- [x] `F16-12` — **Dashboard role-aware variants** (`dashboard-page-client.tsx`): role-specific content and stat card scoping
+
+### QA Gate Checks — M9
+
+- [x] Queue sidebar shows "All Teams Workload" for ADMIN/SUPERADMIN/IT_MANAGER; "My Team Workload" for TEAM_LEAD/ENGINEER
+- [x] Tickets page: indigo banner for ENGINEER, green for TEAM_LEAD, none for elevated roles
+- [x] Tasks page: ENGINEER sees "My Tasks" + indigo; TEAM_LEAD sees "Team Tasks" + green
+- [x] Monitor page (`/monitor`) loads without auth — no Clerk redirect
+- [x] Monitor stats serve real DB data — no 500 errors
+- [x] SQL verified: `sla_resolution_deadline` column, `openCount` alias, `ORDER BY priority ASC`
+- [x] Animated ticker scrolls continuously; pauses on hover; loops seamlessly at −50% translateY
+- [x] Light/dark toggle persists across browser refresh via `localStorage`
+- [x] Light mode: white cards lift clearly against `#c8d3e0` background
+- [x] TypeScript clean: `npx tsc --noEmit -p apps/web/tsconfig.json` → exit code 0
+
+---
+
+## Open Issues / Deferred Items
 | ---- | --------------------------------------- | ---------- | -------- |
 | OI-1 | Notifications queue: 1 failed job (DLQ) | Pre-build  | Monitor  |
 | OI-2 | Native mobile app                       | Pre-build  | Deferred to post-v1 |
