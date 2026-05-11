@@ -106,7 +106,7 @@ export class AdminService {
 
   async listTeams(tenantId: string) {
     const db = await getMssqlDb();
-    // Raw SQL: get all teams (active + inactive) with live member count
+    // Raw SQL for the live memberCount subquery; tenantId passed as bound parameter via sql``
     const rows = await db.execute<{
       id: string;
       name: string;
@@ -114,7 +114,7 @@ export class AdminService {
       pickupSlaMinutes: number;
       isActive: number;
       memberCount: number;
-    }>(sql.raw(`
+    }>(sql`
       SELECT t.id, t.name,
              t.max_tickets_per_engineer AS maxTicketsPerEngineer,
              t.pickup_sla_minutes      AS pickupSlaMinutes,
@@ -124,10 +124,10 @@ export class AdminService {
       LEFT JOIN Users u ON u.team_id = t.id
                        AND u.tenant_id = t.tenant_id
                        AND u.is_active = 1
-      WHERE t.tenant_id = '${tenantId}'
+      WHERE t.tenant_id = ${tenantId}
       GROUP BY t.id, t.name, t.max_tickets_per_engineer, t.pickup_sla_minutes, t.is_active
       ORDER BY t.name ASC
-    `));
+    `);
     return rows.map((r) => ({
       id: r.id,
       name: r.name,

@@ -1,7 +1,7 @@
-import { router, protectedProcedure, adminProcedure, publicProcedure } from './trpc';
+import { router, protectedProcedure, adminProcedure, managerProcedure, publicProcedure } from './trpc';
 import { TRPCError } from '@trpc/server';
 import { HealthService } from '../modules/health/health.service';
-import { getMssqlDb, users, teams, roles, auditLogs, eq, and, sql } from '@lotris/db';
+import { getMssqlDb, users, teams, roles, auditLogs, eq, and, sql, desc } from '@lotris/db';
 import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
 import { QueueService } from '../modules/queue/queue.service';
@@ -52,11 +52,13 @@ export const appRouter = router({
         roleId: users.roleId,
         roleName: roles.name,
         teamId: users.teamId,
+        teamName: teams.name,
         isActive: users.isActive,
         isUnavailable: users.isUnavailable,
       })
       .from(users)
       .innerJoin(roles, eq(users.roleId, roles.id))
+      .leftJoin(teams, eq(users.teamId, teams.id))
       .where(and(eq(users.tenantId, ctx.auth.tenantId), eq(users.isActive, 1)));
   }),
 
@@ -112,12 +114,12 @@ export const appRouter = router({
       return svc.createUser(ctx.auth.tenantId, ctx.auth.userId, input as CreateUserDto);
     }),
 
-  'admin.teams.list': adminProcedure.query(async ({ ctx }) => {
+  'admin.teams.list': managerProcedure.query(async ({ ctx }) => {
     const svc = new AdminService();
     return svc.listTeams(ctx.auth.tenantId);
   }),
 
-  'admin.teams.create': adminProcedure
+  'admin.teams.create': managerProcedure
     .input(z.object({
       name: z.string().min(1).max(255),
       maxTicketsPerEngineer: z.number().int().min(1).optional(),
@@ -128,7 +130,7 @@ export const appRouter = router({
       return svc.createTeam(ctx.auth.tenantId, ctx.auth.userId, input as CreateTeamDto);
     }),
 
-  'admin.teams.update': adminProcedure
+  'admin.teams.update': managerProcedure
     .input(z.object({
       teamId: z.string().uuid(),
       name: z.string().min(1).max(255).optional(),
@@ -144,13 +146,13 @@ export const appRouter = router({
 
   // ── admin.teamAccess ──────────────────────────────────────────────────────
 
-  'admin.teamAccess.list': adminProcedure
+  'admin.teamAccess.list': managerProcedure
     .query(async ({ ctx }) => {
       const svc = new AdminService();
       return svc.listTeamAccessGrants(ctx.auth.tenantId);
     }),
 
-  'admin.teamAccess.grant': adminProcedure
+  'admin.teamAccess.grant': managerProcedure
     .input(z.object({
       granteeUserId: z.string().uuid(),
       targetTeamId:  z.string().uuid(),
@@ -160,7 +162,7 @@ export const appRouter = router({
       return svc.grantTeamAccess(ctx.auth.tenantId, ctx.auth.userId, input.granteeUserId, input.targetTeamId);
     }),
 
-  'admin.teamAccess.revoke': adminProcedure
+  'admin.teamAccess.revoke': managerProcedure
     .input(z.object({
       granteeUserId: z.string().uuid(),
       targetTeamId:  z.string().uuid(),
@@ -476,19 +478,19 @@ export const appRouter = router({
 
   // ── health (ADMIN only) ──────────────────────────────────────────────────
 
-  'health.getSnapshot': adminProcedure.query(async () => {
+  'health.getSnapshot': managerProcedure.query(async () => {
     const svc = new HealthService();
     return svc.getSnapshot();
   }),
 
-  'health.getIncidents': adminProcedure
+  'health.getIncidents': managerProcedure
     .input(z.object({ limit: z.number().int().min(1).max(100).default(20) }))
     .query(async ({ input }) => {
       const svc = new HealthService();
       return svc.getIncidents(input.limit);
     }),
 
-  'health.restartService': adminProcedure
+  'health.restartService': adminProcedure  // ADMIN/SUPERADMIN only — destructive action
     .input(z.object({
       serviceName: z.enum([
         'nestjs-api',
@@ -506,7 +508,7 @@ export const appRouter = router({
 
   // ── audit logs (ADMIN only) ──────────────────────────────────────────────
 
-  'auditLogs.list': adminProcedure
+  'auditLogs.list': managerProcedure
     .input(z.object({ limit: z.number().int().min(1).max(200).default(50) }))
     .query(async ({ ctx, input }) => {
       const db = await getMssqlDb();

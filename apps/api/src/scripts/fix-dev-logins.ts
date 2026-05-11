@@ -100,6 +100,27 @@ async function main() {
   }
 
   // ── Step 2: Update seeded users' clerkUserId ─────────────────────────────
+  // Note: eng1 (Ama Okonkwo, ...000005) may have had Yaw's real Clerk ID incorrectly
+  // assigned in a prior session. Reset it to the fake ID first so step 3 can claim the
+  // real ID for the dedicated Yaw record.
+  const eng1Check = await db
+    .select({ clerkUserId: users.clerkUserId })
+    .from(users)
+    .where(eq(users.id, '30000001-0000-0000-0000-000000000005'));
+
+  if (eng1Check[0]?.clerkUserId === REAL_IDS.yaw) {
+    console.log('\n🔧 eng1 (Ama Okonkwo) has Yaw real Clerk ID — resetting to clerk_demo_eng1');
+    try {
+      await db
+        .update(users)
+        .set({ clerkUserId: 'clerk_demo_eng1', updatedAt: NOW })
+        .where(eq(users.id, '30000001-0000-0000-0000-000000000005'));
+      console.log('   ✅ eng1 reset to clerk_demo_eng1');
+    } catch (e: unknown) {
+      console.warn(`   ⚠  eng1 reset failed: ${e}`);
+    }
+  }
+
   const updates: Array<{ id: string; clerkUserId: string; label: string }> = [
     { id: SEEDED_IDS.superadmin, clerkUserId: REAL_IDS.kwame,  label: 'Kwame Asante (SUPERADMIN)' },
     { id: SEEDED_IDS.admin,      clerkUserId: REAL_IDS.abena,  label: 'Abena Mensah (ADMIN)' },
