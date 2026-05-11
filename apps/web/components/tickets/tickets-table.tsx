@@ -98,6 +98,12 @@ export function TicketsTable() {
 
   const utils = trpc.useUtils();
 
+  // Role-awareness
+  const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
+  const role = (me as { roleName?: string } | undefined)?.roleName ?? '';
+  const isEngineer = role === 'ENGINEER';
+  const isTeamLead = role === 'TEAM_LEAD';
+
   const statusFilter = TAB_STATUS[activeTab];
 
   // Live data from MSSQL
@@ -163,6 +169,22 @@ export function TicketsTable() {
 
   return (
     <div>
+      {/* Role context banner */}
+      {(isEngineer || isTeamLead) && (
+        <div style={{
+          background: isEngineer ? 'rgba(99,102,241,0.07)' : 'rgba(16,185,129,0.07)',
+          border: `1px solid ${isEngineer ? 'rgba(99,102,241,0.2)' : 'rgba(16,185,129,0.2)'}`,
+          borderRadius: 'var(--radius-sm)',
+          padding: '8px 14px',
+          fontSize: 12.5,
+          color: isEngineer ? 'var(--indigo)' : 'var(--green)',
+          marginBottom: 14,
+          fontWeight: 500,
+        }}>
+          {isEngineer ? '👤 Showing tickets assigned to you' : '👥 Showing all tickets for your team'}
+        </div>
+      )}
+
       {/* Mini stat bar */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
         {miniStats.map(s => (

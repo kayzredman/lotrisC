@@ -67,6 +67,12 @@ export default function TasksTable() {
 
   const utils = trpc.useUtils();
 
+  // Role-awareness
+  const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
+  const role = (me as { roleName?: string } | undefined)?.roleName ?? '';
+  const isEngineer = role === 'ENGINEER';
+  const isTeamLead = role === 'TEAM_LEAD';
+
   // Live tasks from MSSQL
   const { data: liveData } = trpc['tasks.list'].useQuery(
     { page, limit: 50 },
@@ -144,8 +150,8 @@ export default function TasksTable() {
       {/* Page header */}
       <div className="v2-page-header">
         <div>
-          <h1>Tasks</h1>
-          <p>Team tasks, maintenance schedules, and self-logged items</p>
+          <h1>{isEngineer ? 'My Tasks' : isTeamLead ? 'Team Tasks' : 'Tasks'}</h1>
+          <p>{isEngineer ? 'Tasks assigned to you or self-logged' : isTeamLead ? 'All tasks for your team' : 'Team tasks, maintenance schedules, and self-logged items'}</p>
         </div>
         <div className="v2-page-header-actions">
           <button type="button" className="v2-btn v2-btn-primary v2-btn-sm" onClick={() => setShowCreate(true)}>
@@ -153,6 +159,22 @@ export default function TasksTable() {
           </button>
         </div>
       </div>
+
+      {/* Role context banner */}
+      {(isEngineer || isTeamLead) && (
+        <div style={{
+          background: isEngineer ? 'rgba(99,102,241,0.07)' : 'rgba(16,185,129,0.07)',
+          border: `1px solid ${isEngineer ? 'rgba(99,102,241,0.2)' : 'rgba(16,185,129,0.2)'}`,
+          borderRadius: 'var(--radius-sm)',
+          padding: '8px 14px',
+          fontSize: 12.5,
+          color: isEngineer ? 'var(--indigo)' : 'var(--green)',
+          marginBottom: 14,
+          fontWeight: 500,
+        }}>
+          {isEngineer ? '👤 Showing tasks assigned to you or created by you' : '👥 Showing all tasks for your team'}
+        </div>
+      )}
 
       {/* Summary stats */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>

@@ -1,7 +1,6 @@
 'use client';
 
 import { trpc } from '@/lib/trpc';
-import { useUser } from '@clerk/nextjs';
 
 interface TicketStatusBarProps {
   ticketId: string;
@@ -27,12 +26,12 @@ const TRANSITIONS: Record<string, { label: string; to: string }[]> = {
   CLOSED: [],
 };
 
-// Roles that can escalate and close
+// Roles that can escalate and close tickets
 const ELEVATED_ROLES = new Set(['ADMIN', 'SUPERADMIN', 'IT_MANAGER', 'TEAM_LEAD']);
 
 export function TicketStatusBar({ ticketId, currentStatus, onUpdated }: TicketStatusBarProps) {
-  const { user } = useUser();
-  const role = (user?.publicMetadata?.role as string) ?? 'ENGINEER';
+  const { data: me } = trpc['users.me'].useQuery();
+  const role = me?.roleName ?? 'ENGINEER';
   const utils = trpc.useUtils();
 
   const updateMutation = trpc['tickets.updateStatus'].useMutation({
@@ -45,24 +44,18 @@ export function TicketStatusBar({ ticketId, currentStatus, onUpdated }: TicketSt
 
   let actions = TRANSITIONS[currentStatus] ?? [];
 
-  // ENGINEER: remove Escalate and Close actions
-  if (role === 'ENGINEER') {
+  // ENGINEER: cannot escalate or close
+  if (!ELEVATED_ROLES.has(role)) {
     actions = actions.filter((a) => a.to !== 'ESCALATED' && a.to !== 'CLOSED');
   }
 
   if (actions.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2 border-t border-gray-800 pt-4">
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8 }}>
       {actions.map((action) => {
         const isDanger = action.to === 'ESCALATED';
         const isSuccess = action.to === 'RESOLVED' || action.to === 'CLOSED';
-        const colorClass = isDanger
-          ? 'border-red-700 text-red-400 hover:bg-red-900/30'
-          : isSuccess
-            ? 'border-green-700 text-green-400 hover:bg-green-900/30'
-            : 'border-brand text-brand hover:bg-brand/10';
-
         return (
           <button
             key={action.to}
@@ -70,7 +63,12 @@ export function TicketStatusBar({ ticketId, currentStatus, onUpdated }: TicketSt
               updateMutation.mutate({ id: ticketId, status: action.to as 'TEAM_ASSIGNED' | 'UNASSIGNED' | 'ASSIGNED' | 'IN_PROGRESS' | 'ESCALATED' | 'RESOLVED' | 'CLOSED' })
             }
             disabled={updateMutation.isPending}
-            className={`h-8 rounded border px-3 text-xs font-medium transition-colors disabled:opacity-50 ${colorClass}`}
+            className={`v2-btn v2-btn-sm${isDanger ? ' v2-btn-danger' : isSuccess ? ' v2-btn-success' : ' v2-btn-secondary'}`}
+            style={
+              isDanger ? { borderColor: 'var(--red)', color: 'var(--red)', background: 'none' } :
+              isSuccess ? { borderColor: 'var(--green)', color: 'var(--green)', background: 'none' } :
+              undefined
+            }
           >
             {action.label}
           </button>

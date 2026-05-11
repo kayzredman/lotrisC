@@ -57,6 +57,13 @@ const ALERT_COLORS: Record<string, { dot: string; text: string; bg: string }> = 
 };
 
 export function DashboardPageClient() {
+  // Role awareness
+  const { data: me } = trpc['users.me'].useQuery();
+  const role = me?.roleName ?? '';
+  const isEngineer  = role === 'ENGINEER';
+  const isTeamLead  = role === 'TEAM_LEAD';
+  const isElevated  = ['ADMIN', 'SUPERADMIN', 'IT_MANAGER'].includes(role);
+
   // Live data from tRPC (all queries stale 25s, refetch every 30s)
   const summaryQ      = trpc['dashboard.summary'].useQuery(undefined, { staleTime: 25_000, refetchInterval: 30_000 });
   const queueQ        = trpc['dashboard.queueHealth'].useQuery(undefined, { staleTime: 25_000, refetchInterval: 30_000 });
@@ -88,11 +95,39 @@ export function DashboardPageClient() {
 
   return (
     <div>
+      {/* ── Role-aware context banner ──────────────────────────────────── */}
+      {isEngineer && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 16px', borderRadius: 10, marginBottom: 16,
+          background: 'var(--blue-bg)', border: '1px solid var(--blue)',
+          fontSize: 13, color: 'var(--blue)',
+        }}>
+          <Activity size={14} />
+          <span><strong>Engineer view</strong> — showing your personal workload and team metrics.</span>
+        </div>
+      )}
+      {isTeamLead && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 16px', borderRadius: 10, marginBottom: 16,
+          background: 'var(--indigo-bg, rgba(99,102,241,0.08))', border: '1px solid var(--indigo)',
+          fontSize: 13, color: 'var(--indigo)',
+        }}>
+          <TrendingUp size={14} />
+          <span><strong>Team Lead view</strong> — showing your team&apos;s queue and performance.</span>
+        </div>
+      )}
+
       {/* Page header */}
       <div className="v2-page-header">
         <div>
           <h1>Dashboard</h1>
-          <p>Live performance overview · auto-refreshes every 30s</p>
+          <p>
+            {isEngineer  ? 'Your personal metrics · auto-refreshes every 30s' :
+             isTeamLead  ? 'Team performance overview · auto-refreshes every 30s' :
+             'Live performance overview · auto-refreshes every 30s'}
+          </p>
         </div>
         <div className="v2-page-header-actions">
           {summaryQ.isFetching && (
@@ -111,10 +146,10 @@ export function DashboardPageClient() {
 
       {/* Stat cards */}
       <div className="v2-stats-grid">
-        <StatCard color="indigo" icon={<Ticket size={15} />}        value={openTickets}          label="Open Tickets"  trend="+3%"  trendUp />
-        <StatCard color="red"    icon={<AlertTriangle size={15} />}  value={slaBreached}          label="SLA Breached"  trend="-2"   trendUp={false} />
-        <StatCard color="green"  icon={<CheckCircle2 size={15} />}  value={resolvedMTD}          label="Resolved MTD"  trend="+11%" trendUp />
-        <StatCard color="blue"   icon={<TrendingUp size={15} />}    value={`${Math.round(kpiScore)}%`} label="KPI Score" trend="+2.1%" trendUp />
+        <StatCard color="indigo" icon={<Ticket size={15} />}       value={openTickets} label={isEngineer ? 'My Open Tickets' : isTeamLead ? 'Team Open Tickets' : 'Open Tickets'} trend="+3%"  trendUp />
+        <StatCard color="red"    icon={<AlertTriangle size={15} />} value={slaBreached} label={isEngineer ? 'My SLA Breached' : 'SLA Breached'} trend="-2"   trendUp={false} />
+        <StatCard color="green"  icon={<CheckCircle2 size={15} />} value={resolvedMTD} label={isEngineer ? 'I Resolved MTD' : isTeamLead ? 'Team Resolved MTD' : 'Resolved MTD'} trend="+11%" trendUp />
+        <StatCard color="blue"   icon={<TrendingUp size={15} />}   value={`${Math.round(kpiScore)}%`} label={isEngineer ? 'My KPI Score' : isTeamLead ? 'Team KPI Score' : 'KPI Score'} trend="+2.1%" trendUp />
       </div>
 
       {/* Row 2: Ticket Volume Chart + Ticket Categories */}
@@ -322,6 +357,43 @@ export function DashboardPageClient() {
           </div>
         </div>
       </div>
+
+      {/* ── SUPERADMIN: System Health mini-widget ────────────────────────── */}
+      {role === 'SUPERADMIN' && (
+        <div className="v2-card" style={{ marginTop: 16, borderColor: 'var(--indigo)' }}>
+          <div className="v2-card-header">
+            <div className="v2-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Activity size={14} style={{ color: 'var(--indigo)' }} /> System Health
+              <span className="v2-badge v2-badge-green" style={{ marginLeft: 6 }}>All systems operational</span>
+            </div>
+            <a href="/system-health" className="v2-btn v2-btn-ghost v2-btn-sm" style={{ fontSize: 11 }}>
+              View full dashboard →
+            </a>
+          </div>
+          <div className="v2-card-body">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+              {[
+                { label: 'API',        status: 'Operational', color: 'var(--green)' },
+                { label: 'MSSQL',      status: 'Operational', color: 'var(--green)' },
+                { label: 'Queue',      status: 'Operational', color: 'var(--green)' },
+                { label: 'BullMQ',     status: 'Operational', color: 'var(--green)' },
+              ].map((svc) => (
+                <div key={svc.label} style={{
+                  padding: '12px 14px', borderRadius: 8,
+                  background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+                  display: 'flex', flexDirection: 'column', gap: 4,
+                }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{svc.label}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: svc.color }} />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: svc.color }}>{svc.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

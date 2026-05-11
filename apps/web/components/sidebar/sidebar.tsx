@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useState, useRef, useEffect } from 'react';
+import { trpc } from '@/lib/trpc';
 import {
   LayoutDashboard,
   Ticket,
@@ -18,6 +19,7 @@ import {
   FilePenLine,
   ChevronRight,
   LogOut,
+  MonitorPlay,
 } from 'lucide-react';
 
 type NavItem = {
@@ -34,6 +36,7 @@ const MAIN_NAV: NavItem[] = [
   { label: 'Tasks',     href: '/tasks',      icon: CheckSquare },
   { label: 'KPIs',      href: '/kpis',       icon: BarChart3 },
   { label: 'Reports',   href: '/reports',    icon: FileText  },
+  { label: 'Monitor',   href: '/monitor',    icon: MonitorPlay },
 ];
 
 const ADMIN_NAV: NavItem[] = [
@@ -44,7 +47,24 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Audit Log',       href: '/audit-log',           icon: ShieldCheck },
 ];
 
-export function Sidebar() {
+const ROLE_LABELS: Record<string, string> = {
+  SUPERADMIN: 'Super Admin',
+  ADMIN: 'Admin',
+  IT_MANAGER: 'IT Manager',
+  TEAM_LEAD: 'Team Lead',
+  ENGINEER: 'Engineer',
+  EXECUTIVE: 'Executive',
+};
+
+// Which roles can see the Admin section in the sidebar
+const ADMIN_NAV_ROLES = new Set(['SUPERADMIN', 'ADMIN', 'IT_MANAGER', 'TEAM_LEAD']);
+
+type SidebarProps = {
+  isOpen?: boolean;
+  onClose?: () => void;
+};
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useUser();
@@ -53,10 +73,26 @@ export function Sidebar() {
   const menuRef = useRef<HTMLDivElement>(null);
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
+  const { data: me } = trpc['users.me'].useQuery();
+
   const initials = user
     ? ((user.firstName?.[0] ?? '') + (user.lastName?.[0] ?? '')).toUpperCase() || 'U'
     : 'RK';
   const fullName = user ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() : 'Rowland K.';
+  const roleLabel = me?.roleName ? (ROLE_LABELS[me.roleName] ?? me.roleName) : '—';
+  const role = me?.roleName ?? '';
+
+  // Build admin nav based on role
+  // SUPERADMIN/ADMIN: all admin items
+  // IT_MANAGER: teams, kpi setup, system health, audit log (no KPI Agreement)
+  // TEAM_LEAD: KPI Agreement only
+  // ENGINEER/EXECUTIVE: no admin section
+  const visibleAdminNav = (() => {
+    if (role === 'SUPERADMIN' || role === 'ADMIN') return ADMIN_NAV;
+    if (role === 'IT_MANAGER') return ADMIN_NAV.filter(i => i.href !== '/kpis/agreements');
+    if (role === 'TEAM_LEAD') return ADMIN_NAV.filter(i => i.href === '/kpis/agreements' || i.href === '/admin/kpi-setup');
+    return [];
+  })();
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -74,8 +110,13 @@ export function Sidebar() {
     router.push('/login');
   }
 
+  function handleNavClick() {
+    // Close sidebar on mobile after navigating
+    onClose?.();
+  }
+
   return (
-    <aside className="v2-sidebar">
+    <aside className={`v2-sidebar${isOpen ? ' is-open' : ''}`}>
       {/* Logo */}
       <div className="v2-sidebar-logo">
         <div className="v2-logo-mark">
@@ -97,6 +138,7 @@ export function Sidebar() {
               key={item.href + item.label}
               href={item.href}
               className={`v2-nav-item${active ? ' active' : ''}`}
+              onClick={handleNavClick}
             >
               <span className="v2-nav-icon">
                 <item.icon size={14} />
@@ -109,22 +151,27 @@ export function Sidebar() {
           );
         })}
 
-        <div className="v2-nav-section-label">Admin</div>
-        {ADMIN_NAV.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href + item.label}
-              href={item.href}
-              className={`v2-nav-item${active ? ' active' : ''}`}
-            >
-              <span className="v2-nav-icon">
-                <item.icon size={14} />
-              </span>
-              {item.label}
-            </Link>
-          );
-        })}
+        {visibleAdminNav.length > 0 && (
+          <>
+            <div className="v2-nav-section-label">Admin</div>
+            {visibleAdminNav.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href + item.label}
+                  href={item.href}
+                  className={`v2-nav-item${active ? ' active' : ''}`}
+                  onClick={handleNavClick}
+                >
+                  <span className="v2-nav-icon">
+                    <item.icon size={14} />
+                  </span>
+                  {item.label}
+                </Link>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       {/* User card */}
@@ -176,7 +223,7 @@ export function Sidebar() {
           <div className="v2-avatar">{initials}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="v2-user-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fullName}</div>
-            <div className="v2-user-role">IT Manager</div>
+            <div className="v2-user-role">{roleLabel}</div>
           </div>
           <ChevronRight size={12} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0, transform: menuOpen ? 'rotate(90deg)' : undefined, transition: 'transform 0.15s' }} />
         </button>

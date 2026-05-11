@@ -6,11 +6,12 @@ import { Clock, Users, ArrowRight, CheckCircle, AlertTriangle, Zap, ChevronLeft,
 
 const PRIORITY_LABEL: Record<number, string> = { 1: 'Critical', 2: 'High', 3: 'Medium', 4: 'Low' };
 
-const TEAM_NAME: Record<string, string> = {
-  '20000001-0000-0000-0000-000000000001': 'IT Support',
-  '20000001-0000-0000-0000-000000000002': 'Network Ops',
-  '20000001-0000-0000-0000-000000000003': 'DB Team',
-};
+const ELEVATED_ROLES = new Set(['ADMIN', 'SUPERADMIN', 'IT_MANAGER']);
+
+const WORKLOAD_COLORS = [
+  'var(--indigo)', 'var(--blue)', 'var(--green)', 'var(--purple)',
+  'var(--yellow)', 'var(--red)', '#06b6d4', '#f97316',
+];
 
 function formatPickupSla(deadline: Date | string | null | undefined, breached: number | boolean | null | undefined): { text: string; color: 'red' | 'yellow' | 'green' } {
   if (!deadline) return { text: '–', color: 'green' };
@@ -36,10 +37,18 @@ export default function QueueTable() {
 
   const utils = trpc.useUtils();
 
+  // Current user (for role-scoped workload)
+  const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
+  const role = (me as { roleName?: string } | undefined)?.roleName ?? '';
+  const myTeamId = (me as { teamId?: string | null } | undefined)?.teamId ?? null;
+  const isElevated = ELEVATED_ROLES.has(role);
+
   // Live queue data
   const { data: liveQueue } = trpc['queue.list'].useQuery({ page, limit: 25 }, { staleTime: 20_000 });
   // Queue health stats
   const { data: health } = trpc['dashboard.queueHealth'].useQuery(undefined, { staleTime: 20_000 });
+  // Team workload from backend (all teams)
+  const { data: teamWorkload } = trpc['dashboard.teamWorkload'].useQuery(undefined, { staleTime: 30_000 });
 
   const claimMutation = trpc['queue.claim'].useMutation({
     onMutate: (vars) => {
@@ -66,7 +75,7 @@ export default function QueueTable() {
       id: `TKT-${t.id.slice(-4).toUpperCase()}`,
       title: t.title,
       priority: PRIORITY_LABEL[t.priority as 1|2|3|4] ?? 'Medium',
-      team: t.teamId ? (TEAM_NAME[t.teamId] ?? 'IT Support') : 'IT Support',
+      team: t.teamId ?? '',
       sla: sla.text,
       slaColor: sla.color,
       created: new Date(t.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''),
@@ -77,17 +86,18 @@ export default function QueueTable() {
   const isLoading = liveQueue === undefined;
   const rows = liveRows ?? [];
 
-  // Team workload counts from live data
-  const teamCounts = rows.reduce<Record<string, number>>((acc, t) => {
-    acc[t.team] = (acc[t.team] ?? 0) + 1;
-    return acc;
-  }, {});
-  const totalQueued = rows.length || 1;
-  const teamStats = [
-    { team: 'IT Support',  queued: teamCounts['IT Support'] ?? 5,  color: 'var(--indigo)' },
-    { team: 'Network Ops', queued: teamCounts['Network Ops'] ?? 2, color: 'var(--blue)'   },
-    { team: 'DB Team',     queued: teamCounts['DB Team'] ?? 2,     color: 'var(--green)'  },
-  ];
+  // Build role-scoped team workload sidebar
+  const allTeamStats = (teamWorkload ?? []).map((t: { id: string; name: string; tag: string; queued: number; pct: number }, i: number) => ({
+    ...t,
+    color: WORKLOAD_COLORS[i % WORKLOAD_COLORS.length],
+  }));
+  // TEAM_LEAD / ENGINEER → only their own team; elevated → all teams
+  const teamStats = isElevated
+    ? allTeamStats
+    : myTeamId
+      ? allTeamStats.filter((t: { id: string }) => t.id === myTeamId)
+      : allTeamStats;
+  const totalQueued = teamStats.reduce((s: number, t: { queued: number }) => s + t.queued, 0) || 1;
 
   return (
     <div>
@@ -190,7 +200,7 @@ export default function QueueTable() {
                         >
                           {claimingId === t.rawId ? 'Claiming…' : <><ArrowRight size={11} /> Claim</>}
                         </button>
-                        {claimError?.id === t.rawId && (
+                        {claimError?.id === t.rawId && claimError && (
                           <span style={{ fontSize: 10.5, color: 'var(--red)', maxWidth: 140, lineHeight: 1.3 }}>
                             {claimError.msg}
                           </span>
@@ -213,24 +223,26 @@ export default function QueueTable() {
           </div>
         </div>
 
-        {/* Sidebar: team workload */}
+        {/* Sidebar: team workload — role-scoped */}
         <div className="v2-card">
           <div className="v2-card-header">
-            <div className="v2-card-title">Team Workload</div>
+            <div className="v2-card-title">{isElevated ? 'All Teams Workload' : 'My Team Workload'}</div>
           </div>
           <div className="v2-card-body">
-            {teamStats.map(t => {
+            {teamStats.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', padding: '8px 0' }}>No workload data</div>
+            ) : teamStats.map((t: { id: string; name: string; queued: number; pct: number; color: string }) => {
               const pct = Math.round((t.queued / totalQueued) * 100);
               return (
-                <div key={t.team} style={{ marginBottom: 16 }}>
+                <div key={t.id} style={{ marginBottom: 16 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-primary)' }}>{t.team}</span>
-                    <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{t.queued} queued</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-primary)' }}>{t.name}</span>
+                    <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{t.queued} active</span>
                   </div>
                   <div className="v2-progress-bg">
                     <div className="v2-progress-fill" style={{ width: `${pct}%`, background: t.color }} />
                   </div>
-                  <div style={{ fontSize: 10.5, color: 'var(--text-light)', marginTop: 3 }}>{pct}% of queue</div>
+                  <div style={{ fontSize: 10.5, color: 'var(--text-light)', marginTop: 3 }}>{pct}% of total</div>
                 </div>
               );
             })}
