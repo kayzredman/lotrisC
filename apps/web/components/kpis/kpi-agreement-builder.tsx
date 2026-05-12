@@ -297,7 +297,6 @@ export default function KpiAgreementBuilder() {
   const [periodKey, setPeriodKey] = useState('JAN-DEC-2026');
   const [leadNotes, setLeadNotes] = useState('');
   const [saving, setSaving] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<AgreementStatus | 'ALL'>('ALL');
   const [showNewForm, setShowNewForm] = useState(false);
@@ -417,33 +416,26 @@ export default function KpiAgreementBuilder() {
     utils['kpi.agreements.get'].invalidate({ id: selectedId });
   }
 
+  // ── Create agreement mutation (tRPC — avoids REST auth guard) ───────────
+  const createAgreementMutation = trpc['kpi.agreements.create'].useMutation({
+    onSuccess: (data) => {
+      setSelectedId((data as { id: string }).id);
+      setAreas([emptyArea()]);
+      setShowNewForm(false);
+      setCreateError(null);
+      utils['kpi.agreements.list'].invalidate();
+      setTimeout(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    },
+    onError: (err) => {
+      setCreateError(err.message ?? 'Error creating agreement');
+    },
+  });
+
   // ── New agreement ────────────────────────────────────────────────────────
-  async function handleNewAgreement() {
+  function handleNewAgreement() {
     if (!engineerId) return;
-    setCreating(true);
     setCreateError(null);
-    try {
-      const resp = await apiFetch('/api/v1/kpi/agreements', {
-        method: 'POST',
-        body: JSON.stringify({ engineerId, periodKey }),
-      });
-      if (resp.ok) {
-        const d = await resp.json() as { id: string };
-        setSelectedId(d.id);
-        setAreas([emptyArea()]);
-        setShowNewForm(false);
-        setCreateError(null);
-        utils['kpi.agreements.list'].invalidate();
-        setTimeout(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
-      } else {
-        const err = await resp.json().catch(() => ({})) as { message?: string };
-        setCreateError(err.message ?? `Server error (${resp.status})`);
-      }
-    } catch (_e) {
-      setCreateError('Network error — check the API is running');
-    } finally {
-      setCreating(false);
-    }
+    createAgreementMutation.mutate({ engineerId, periodKey });
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -542,10 +534,10 @@ export default function KpiAgreementBuilder() {
               <button
                 type="button"
                 className="v2-btn v2-btn-primary v2-btn-sm"
-                disabled={!engineerId || creating}
+                disabled={!engineerId || createAgreementMutation.isPending}
                 onClick={handleNewAgreement}
               >
-                <CheckCircle2 size={12} /> {creating ? 'Creating…' : 'Create'}
+                <CheckCircle2 size={12} /> {createAgreementMutation.isPending ? 'Creating…' : 'Create'}
               </button>
               <button type="button" className="v2-btn v2-btn-ghost v2-btn-sm" onClick={() => { setShowNewForm(false); setCreateError(null); }}>
                 Cancel

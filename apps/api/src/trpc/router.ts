@@ -416,6 +416,13 @@ export const appRouter = router({
       return svc.listAgreements(ctx.auth, input.engineerId, input.periodKey);
     }),
 
+  'kpi.agreements.create': managerProcedure
+    .input(z.object({ engineerId: z.string().uuid(), periodKey: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new KpiService();
+      return svc.createAgreement(ctx.auth, { engineerId: input.engineerId, periodKey: input.periodKey });
+    }),
+
   'kpi.agreements.get': protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
