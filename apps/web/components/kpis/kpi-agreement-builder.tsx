@@ -383,10 +383,17 @@ export default function KpiAgreementBuilder() {
     },
   });
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitDone, setSubmitDone] = useState(false);
   const submitMutation = trpc['kpi.agreements.submit'].useMutation({
     onSuccess: () => {
+      setSubmitDone(true);
+      setSubmitError(null);
       utils['kpi.agreements.list'].invalidate();
       utils['kpi.agreements.get'].invalidate({ id: selectedId ?? '' });
+    },
+    onError: (err) => {
+      setSubmitError(err.message ?? 'Failed to send for review');
     },
   });
 
@@ -431,6 +438,8 @@ export default function KpiAgreementBuilder() {
   // ── Submit for review ────────────────────────────────────────────────────
   function handleSubmit() {
     if (!selectedId) return;
+    setSubmitError(null);
+    setSubmitDone(false);
     submitMutation.mutate({ agreementId: selectedId });
   }
 
@@ -600,7 +609,7 @@ export default function KpiAgreementBuilder() {
                   <tr
                     key={a.id}
                     style={{ cursor: 'pointer', background: selectedId === a.id ? 'var(--indigo-dim)' : undefined }}
-                    onClick={() => { setSelectedId(a.id); setLeadNotes(''); setTimeout(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
+                    onClick={() => { setSelectedId(a.id); setLeadNotes(''); setSubmitDone(false); setSubmitError(null); setTimeout(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
                   >
                     <td style={{ fontWeight: 600 }}>{userName(a.engineerId)}</td>
                     <td><span className="v2-badge">{a.periodKey}</span></td>
@@ -612,7 +621,7 @@ export default function KpiAgreementBuilder() {
                         type="button"
                         className="v2-btn v2-btn-ghost v2-btn-sm"
                         style={{ fontSize: 11 }}
-                        onClick={e => { e.stopPropagation(); setSelectedId(a.id); setLeadNotes(''); setTimeout(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
+                        onClick={e => { e.stopPropagation(); setSelectedId(a.id); setLeadNotes(''); setSubmitDone(false); setSubmitError(null); setTimeout(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
                       >
                         Edit
                       </button>
@@ -871,15 +880,63 @@ export default function KpiAgreementBuilder() {
                       <span className="v2-badge v2-badge-green" style={{ fontSize: 10 }}>Signed</span>
                     </div>
                     {/* Send for review button */}
-                    {(selectedAgreement?.status === 'DRAFT' || selectedAgreement?.status === 'PENDING_REVIEW') && (
-                      <button
-                        type="button"
-                        className="v2-btn v2-btn-secondary v2-btn-sm"
-                        style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}
-                        onClick={handleSubmit}
-                      >
-                        <Send size={11} /> Send to member for review
-                      </button>
+                    {selectedAgreement?.status === 'DRAFT' && (
+                      <div style={{ marginTop: 4 }}>
+                        <button
+                          type="button"
+                          className="v2-btn v2-btn-sm"
+                          style={{
+                            width: '100%',
+                            justifyContent: 'center',
+                            background: submitMutation.isPending
+                              ? '#a5b4fc'
+                              : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                            color: '#fff',
+                            border: 'none',
+                            boxShadow: submitMutation.isPending ? 'none' : '0 2px 8px rgba(99,102,241,0.35)',
+                            cursor: submitMutation.isPending ? 'not-allowed' : 'pointer',
+                            opacity: submitMutation.isPending ? 0.7 : 1,
+                          }}
+                          disabled={submitMutation.isPending}
+                          onClick={handleSubmit}
+                        >
+                          <Send size={11} />
+                          {submitMutation.isPending ? 'Sending…' : 'Send to member for review'}
+                        </button>
+                        {submitError && (
+                          <div style={{
+                            marginTop: 7, fontSize: 11.5, color: '#991b1b',
+                            background: '#fef2f2', border: '1px solid #fecaca',
+                            borderRadius: 'var(--radius-sm)', padding: '7px 10px',
+                            display: 'flex', alignItems: 'center', gap: 6,
+                          }}>
+                            <AlertCircle size={12} style={{ flexShrink: 0 }} />
+                            {submitError}
+                          </div>
+                        )}
+                        {submitDone && (
+                          <div style={{
+                            marginTop: 7, fontSize: 11.5, color: '#166534',
+                            background: 'var(--green-bg)', border: '1px solid #bbf7d0',
+                            borderRadius: 'var(--radius-sm)', padding: '7px 10px',
+                            display: 'flex', alignItems: 'center', gap: 6,
+                          }}>
+                            <CheckCircle2 size={12} style={{ flexShrink: 0 }} />
+                            Sent — waiting for engineer to sign off.
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {selectedAgreement?.status === 'PENDING_REVIEW' && (
+                      <div style={{
+                        marginTop: 6, fontSize: 11.5, color: '#1d4ed8',
+                        background: '#eff6ff', border: '1px solid #bfdbfe',
+                        borderRadius: 'var(--radius-sm)', padding: '7px 10px',
+                        display: 'flex', alignItems: 'center', gap: 6,
+                      }}>
+                        <Send size={12} style={{ flexShrink: 0 }} />
+                        Sent — awaiting member sign-off.
+                      </div>
                     )}
                   </div>
                 </div>
