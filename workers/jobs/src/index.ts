@@ -4,6 +4,7 @@ import IORedis from 'ioredis';
 import { createSlaTimersWorker } from './sla-timers.worker';
 import { createAutoAssignWorker } from './auto-assign.worker';
 import { createEtlSyncWorker, registerEtlRepeatableJob } from './etl-sync.worker';
+import { createNotificationsWorker } from './notifications.worker';
 
 const env = getEnv();
 
@@ -37,6 +38,7 @@ export const etlSyncQueue = new Queue('etl-sync', { connection });
 const slaTimersWorker = createSlaTimersWorker(connection);
 const autoAssignWorker = createAutoAssignWorker(connection);
 const etlSyncWorker = createEtlSyncWorker(connection);
+const notificationsWorker = createNotificationsWorker(connection);
 
 // Register ETL repeatable daily job (idempotent — BullMQ deduplicates by jobId)
 registerEtlRepeatableJob(etlSyncQueue).catch((err) =>
@@ -45,7 +47,7 @@ registerEtlRepeatableJob(etlSyncQueue).catch((err) =>
 
 console.log('⚙️   Lotris BullMQ Worker process starting…');
 console.log('   Queues registered: sla-timers, auto-assign, notifications, report-gen, etl-sync');
-console.log('   Workers active: sla-timers, auto-assign, etl-sync');
+console.log('   Workers active: sla-timers, auto-assign, notifications, etl-sync');
 
 // ── Graceful shutdown ──────────────────────────────────────────────────────
 async function shutdown() {
@@ -54,6 +56,7 @@ async function shutdown() {
     slaTimersWorker.close(),
     autoAssignWorker.close(),
     etlSyncWorker.close(),
+    notificationsWorker.close(),
     slaTimersQueue.close(),
     autoAssignQueue.close(),
     notificationsQueue.close(),

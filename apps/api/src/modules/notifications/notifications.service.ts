@@ -12,6 +12,25 @@ export interface TicketNotificationPayload {
   recipientId?: string;
 }
 
+export interface IntakeAckPayload {
+  type: 'INTAKE_ACK';
+  ticketId: string;
+  ticketRef: string;
+  ticketTitle: string;
+  requesterEmail: string;
+  requesterName: string;
+}
+
+export interface IntakeResolvedPayload {
+  type: 'INTAKE_RESOLVED';
+  ticketId: string;
+  ticketRef: string;
+  ticketTitle: string;
+  requesterEmail: string;
+  requesterName: string;
+  teamName: string;
+}
+
 /**
  * NotificationsService — queues notification jobs into BullMQ.
  * The actual email/in-app dispatch happens in workers/jobs.
@@ -42,6 +61,32 @@ export class NotificationsService {
     } catch (err) {
       // Non-fatal: log and continue — never block the API response for a notification
       this.logger.error(`Failed to queue notification ${payload.type}: ${String(err)}`);
+    }
+  }
+
+  async queueIntakeAck(payload: IntakeAckPayload): Promise<void> {
+    try {
+      await this.getQueue().add('INTAKE_ACK', payload, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+        removeOnComplete: { count: 1000 },
+        removeOnFail: { count: 500 },
+      });
+    } catch (err) {
+      this.logger.error(`Failed to queue INTAKE_ACK for ${payload.ticketId}: ${String(err)}`);
+    }
+  }
+
+  async queueIntakeResolved(payload: IntakeResolvedPayload): Promise<void> {
+    try {
+      await this.getQueue().add('INTAKE_RESOLVED', payload, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+        removeOnComplete: { count: 1000 },
+        removeOnFail: { count: 500 },
+      });
+    } catch (err) {
+      this.logger.error(`Failed to queue INTAKE_RESOLVED for ${payload.ticketId}: ${String(err)}`);
     }
   }
 }

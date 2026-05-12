@@ -10,6 +10,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { KpiModule } from './modules/kpi/kpi.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { IntakeModule } from './modules/intake/intake.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     KpiModule,
     AnalyticsModule,
     ReportsModule,
+    IntakeModule,
   ],
 })
 export class AppModule {}

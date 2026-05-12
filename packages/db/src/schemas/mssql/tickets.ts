@@ -32,6 +32,12 @@ export const tickets = mssqlTable(
     // Status
     status: varchar('status', { length: 50 }).notNull().default('NEW'),
 
+    // Intake source tracking
+    source: varchar('source', { length: 20 }).notNull().default('INTERNAL'),
+    requesterEmail: varchar('requester_email', { length: 255 }),
+    requesterName: nvarchar('requester_name', { length: 255 }),
+    relatedTicketId: varchar('related_ticket_id', { length: 36 }),
+
     // Routing
     teamId: varchar('team_id', { length: 36 }).references(() => teams.id),
     assigneeId: varchar('assignee_id', { length: 36 }).references(() => users.id),

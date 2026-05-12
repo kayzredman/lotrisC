@@ -8,6 +8,7 @@ import {
   slaConfigs,
   attachmentRefs,
   users,
+  teams,
 } from '@lotris/db';
 import type { TrpcAuth } from '@lotris/types';
 import {
@@ -58,6 +59,10 @@ export class TicketsService {
       description: dto.description,
       priority: dto.priority ?? 2,
       status: 'NEW',
+      source: dto.source ?? 'INTERNAL',
+      requesterEmail: dto.requesterEmail ?? null,
+      requesterName: dto.requesterName ?? null,
+      relatedTicketId: dto.relatedTicketId ?? null,
       teamId: dto.teamId ?? null,
       createdBy: auth.userId,
       slaPickupDeadline,
@@ -88,6 +93,22 @@ export class TicketsService {
       ticketTitle: dto.title,
       actorId: auth.userId,
     });
+
+    // For external tickets (web form / email), send acknowledgement email
+    if (
+      (dto.source === 'SELF_SERVICE' || dto.source === 'EMAIL') &&
+      dto.requesterEmail
+    ) {
+      const refNum = id.split('-')[0]?.toUpperCase() ?? id.slice(0, 8).toUpperCase();
+      void this.notifications.queueIntakeAck({
+        type: 'INTAKE_ACK',
+        ticketId: id,
+        ticketRef: `TKT-${refNum}`,
+        ticketTitle: dto.title,
+        requesterEmail: dto.requesterEmail,
+        requesterName: dto.requesterName ?? 'there',
+      });
+    }
 
     return created;
   }
@@ -137,6 +158,7 @@ export class TicketsService {
     if (query.priority) whereParts.push(`tk.priority = ${Number(query.priority)}`);
     if (query.teamId)   whereParts.push(`tk.team_id = '${query.teamId}'`);
     if (query.assigneeId) whereParts.push(`tk.assignee_id = '${query.assigneeId}'`);
+    if (query.source)   whereParts.push(`tk.source = '${query.source}'`);
     if (query.search?.trim()) {
       const term = query.search.trim().replace(/'/g, "''");
       whereParts.push(`(tk.title LIKE '%${term}%' OR tk.id LIKE '%${term}%')`);
@@ -147,6 +169,8 @@ export class TicketsService {
       id: string; title: string; description: string | null;
       status: string; priority: number; tenantId: string;
       teamId: string | null; assigneeId: string | null;
+      source: string;
+      requesterEmail: string | null; requesterName: string | null;
       slaPickupDeadline: string | null; slaPickupBreached: number;
       slaResolutionDeadline: string | null; slaResolutionBreached: number;
       createdAt: string; updatedAt: string;
@@ -159,6 +183,7 @@ export class TicketsService {
         SELECT
           tk.id, tk.title, tk.description, tk.status, tk.priority,
           tk.tenant_id AS tenantId, tk.team_id AS teamId, tk.assignee_id AS assigneeId,
+          tk.source, tk.requester_email AS requesterEmail, tk.requester_name AS requesterName,
           tk.sla_pickup_deadline AS slaPickupDeadline, tk.sla_pickup_breached AS slaPickupBreached,
           tk.sla_resolution_deadline AS slaResolutionDeadline, tk.sla_resolution_breached AS slaResolutionBreached,
           tk.created_at AS createdAt, tk.updated_at AS updatedAt,
@@ -188,6 +213,9 @@ export class TicketsService {
         teamId: r.teamId,
         teamName: r.teamName,
         assigneeId: r.assigneeId,
+        source: r.source,
+        requesterEmail: r.requesterEmail,
+        requesterName: r.requesterName,
         slaPickupDeadline: r.slaPickupDeadline,
         slaPickupBreached: r.slaPickupBreached,
         slaResolutionDeadline: r.slaResolutionDeadline,
@@ -316,6 +344,29 @@ export class TicketsService {
         actorId: auth.userId,
         recipientId: updated.createdBy,
       });
+
+      // If this ticket came from an external requester, send resolution email
+      const resolvedEmail = updated.requesterEmail as string | null;
+      if (resolvedEmail) {
+        const refNum = ticketId.split('-')[0]?.toUpperCase() ?? ticketId.slice(0, 8).toUpperCase();
+        const teamRow = updated.teamId
+          ? await (async () => {
+              const db = await getMssqlDb();
+              const [t] = await db.select({ name: teams.name }).from(teams).where(eq(teams.id, updated.teamId as string)).limit(1);
+              return t ?? null;
+            })()
+          : null;
+
+        void this.notifications.queueIntakeResolved({
+          type: 'INTAKE_RESOLVED',
+          ticketId,
+          ticketRef: `TKT-${refNum}`,
+          ticketTitle: updated.title,
+          requesterEmail: resolvedEmail,
+          requesterName: (updated.requesterName as string | null) ?? 'there',
+          teamName: teamRow?.name ?? 'IT Support',
+        });
+      }
     }
     if (to === TICKET_STATUS.ESCALATED) {
       void this.notifications.queueTicketNotification({

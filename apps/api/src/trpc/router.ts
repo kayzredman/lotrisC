@@ -172,6 +172,40 @@ export const appRouter = router({
       return svc.revokeTeamAccess(ctx.auth.tenantId, input.granteeUserId, input.targetTeamId);
     }),
 
+  // ── admin.categoryRouting ────────────────────────────────────────────────
+
+  'admin.categoryRouting.list': adminProcedure
+    .query(async ({ ctx }) => {
+      const svc = new AdminService();
+      return svc.listCategoryRouting(ctx.auth.tenantId);
+    }),
+
+  'admin.categoryRouting.upsert': adminProcedure
+    .input(
+      z.object({
+        category: z.string().min(1).max(100),
+        teamId: z.string().uuid(),
+        defaultPriority: z.number().int().min(1).max(4).default(3),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const svc = new AdminService();
+      return svc.upsertCategoryRouting(
+        ctx.auth.tenantId,
+        ctx.auth.userId,
+        input.category,
+        input.teamId,
+        input.defaultPriority,
+      );
+    }),
+
+  'admin.categoryRouting.delete': adminProcedure
+    .input(z.object({ category: z.string().min(1).max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new AdminService();
+      return svc.deleteCategoryRouting(ctx.auth.tenantId, ctx.auth.userId, input.category);
+    }),
+
 
   'tickets.list': protectedProcedure
     .input(
@@ -181,6 +215,7 @@ export const appRouter = router({
         teamId: z.string().uuid().optional(),
         assigneeId: z.string().uuid().optional(),
         search: z.string().optional(),
+        source: z.enum(['INTERNAL', 'EMAIL', 'SELF_SERVICE', 'API']).optional(),
         page: z.number().int().min(1).default(1),
         limit: z.number().int().min(1).max(100).default(25),
       }),
@@ -204,11 +239,12 @@ export const appRouter = router({
         description: z.string().min(1).max(4000),
         priority: z.number().int().min(1).max(4).default(2),
         teamId: z.string().uuid().optional(),
+        relatedTicketId: z.string().uuid().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const svc = new TicketsService(new NotificationsService());
-      return svc.create(ctx.auth, input);
+      return svc.create(ctx.auth, { ...input, source: 'INTERNAL' });
     }),
 
   'tickets.assign': protectedProcedure

@@ -1,6 +1,7 @@
-import { IsString, IsNotEmpty, IsOptional, IsIn, IsUUID, MaxLength, Min, Max, IsInt } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsIn, IsUUID, MaxLength, IsEmail, Min, Max, IsInt } from 'class-validator';
 
 const PRIORITY_VALUES = [1, 2, 3, 4] as const;
+const SOURCE_VALUES = ['INTERNAL', 'EMAIL', 'SELF_SERVICE', 'API'] as const;
 
 export class CreateTicketDto {
   @IsString()
@@ -21,6 +22,24 @@ export class CreateTicketDto {
   @IsUUID()
   @IsOptional()
   teamId?: string;
+
+  @IsIn(SOURCE_VALUES)
+  @IsOptional()
+  source?: string;
+
+  @IsEmail()
+  @IsOptional()
+  @MaxLength(255)
+  requesterEmail?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  requesterName?: string;
+
+  @IsUUID()
+  @IsOptional()
+  relatedTicketId?: string;
 }
 
 export class UpdateTicketStatusDto {
@@ -87,6 +106,10 @@ export class TicketListQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsIn(SOURCE_VALUES)
+  source?: string;
 
   @IsOptional()
   page?: number = 1;

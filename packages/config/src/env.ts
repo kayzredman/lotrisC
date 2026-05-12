@@ -19,6 +19,31 @@ const envSchema = z.object({
 
   // API
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
+
+  // Public app URL (used in notification email links)
+  APP_BASE_URL: z.string().url().optional().default('http://localhost:3000'),
+
+  // Outbound email (Nodemailer)
+  EMAIL_FROM: z.string().optional().default('it-support@lotris.io'),
+  EMAIL_HOST: z.string().optional(),
+  EMAIL_PORT: z.coerce.number().int().optional().default(587),
+  EMAIL_USER: z.string().optional(),
+  EMAIL_PASS: z.string().optional(),
+  EMAIL_SECURE: z.string().optional().default('false'),
+
+  // Email intake — IMAP polling (optional; intake disabled if not set)
+  INTAKE_EMAIL_HOST: z.string().optional(),
+  INTAKE_EMAIL_PORT: z.coerce.number().int().optional().default(993),
+  INTAKE_EMAIL_USER: z.string().optional(),
+  INTAKE_EMAIL_PASS: z.string().optional(),
+  INTAKE_EMAIL_TLS: z.string().optional().default('true'),
+
+  // Triage team for email intake (UUID of team that receives emailed tickets)
+  TRIAGE_TENANT_ID: z.string().optional(),
+  TRIAGE_TEAM_ID: z.string().optional(),
+
+  // System user ID — used as createdBy for externally-sourced tickets
+  INTAKE_SYSTEM_USER_ID: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

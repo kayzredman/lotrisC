@@ -21,3 +21,4 @@ export { kpiAgreementMetrics, type KpiAgreementMetric, type NewKpiAgreementMetri
 export { kpiActuals, type KpiActual, type NewKpiActual } from './kpi-actuals';
 export { kpiResults, type KpiResult, type NewKpiResult } from './kpi-results';
 export { teamAccessGrants, type TeamAccessGrant, type NewTeamAccessGrant } from './team-access-grants';
+export { categoryRouting, type CategoryRouting, type NewCategoryRouting } from './category-routing';

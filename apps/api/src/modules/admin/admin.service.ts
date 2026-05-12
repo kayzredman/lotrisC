@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { getMssqlDb, users, teams, roles, auditLogs, teamAccessGrants, eq, and, sql } from '@lotris/db';
+import { getMssqlDb, users, teams, roles, auditLogs, teamAccessGrants, categoryRouting, eq, and, sql } from '@lotris/db';
 import { createClerkClient } from '@clerk/backend';
 import { getEnv } from '@lotris/config';
 import { v4 as uuidv4 } from 'uuid';
@@ -239,6 +239,74 @@ export class AdminService {
         eq(teamAccessGrants.granteeUserId, granteeUserId),
         eq(teamAccessGrants.targetTeamId, targetTeamId),
       ));
+  }
+
+  // ── Category Routing ──────────────────────────────────────────────────────
+
+  async listCategoryRouting(tenantId: string) {
+    const db = await getMssqlDb();
+    const rows = await db.execute<{
+      id: string;
+      category: string;
+      teamId: string;
+      teamName: string;
+      defaultPriority: number;
+    }>(sql.raw(`
+      SELECT cr.id, cr.category, cr.team_id AS teamId, t.name AS teamName,
+             cr.default_priority AS defaultPriority
+      FROM CategoryRouting cr
+      INNER JOIN Teams t ON t.id = cr.team_id
+      WHERE cr.tenant_id = '${tenantId}'
+      ORDER BY cr.category ASC
+    `));
+    return rows.map((r) => ({
+      id: r.id,
+      category: r.category,
+      teamId: r.teamId,
+      teamName: r.teamName,
+      defaultPriority: Number(r.defaultPriority),
+    }));
+  }
+
+  /**
+   * Upsert a category→team routing rule (insert or update by tenant+category).
+   * Uses MERGE statement for idempotent upsert.
+   */
+  async upsertCategoryRouting(
+    tenantId: string,
+    actorId: string,
+    category: string,
+    teamId: string,
+    defaultPriority: number,
+  ) {
+    const db = await getMssqlDb();
+    await this.assertTeamBelongsToTenant(db, tenantId, teamId);
+
+    const id = uuidv4();
+    const now = new Date().toISOString();
+
+    await db.execute(sql.raw(`
+      MERGE CategoryRouting AS target
+      USING (SELECT '${tenantId}' AS tenant_id, '${category.replace(/'/g, "''")}' AS category) AS source
+        ON target.tenant_id = source.tenant_id AND target.category = source.category
+      WHEN MATCHED THEN
+        UPDATE SET team_id = '${teamId}', default_priority = ${defaultPriority}, updated_at = '${now}'
+      WHEN NOT MATCHED THEN
+        INSERT (id, tenant_id, category, team_id, default_priority, created_at, updated_at)
+        VALUES ('${id}', '${tenantId}', '${category.replace(/'/g, "''")}', '${teamId}', ${defaultPriority}, '${now}', '${now}');
+    `));
+
+    await this.writeAuditLog(db, tenantId, actorId, 'CATEGORY_ROUTING_UPSERT', 'CategoryRouting', id, { category, teamId, defaultPriority });
+
+    return { category, teamId, defaultPriority };
+  }
+
+  async deleteCategoryRouting(tenantId: string, actorId: string, category: string) {
+    const db = await getMssqlDb();
+    await db
+      .delete(categoryRouting)
+      .where(and(eq(categoryRouting.tenantId, tenantId), eq(categoryRouting.category, category)));
+    await this.writeAuditLog(db, tenantId, actorId, 'CATEGORY_ROUTING_DELETED', 'CategoryRouting', category, { category });
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Post-Sprint 16 (KPI My Agreement for engineers/team-leads; kpiAgreementProcedure; Daily period; submit button fix; QA doc audit; merged to `dev`)
+> Last updated: May 2026 — Sprint 17 backend complete (ticket intake: web form + IMAP + category routing + ACK/resolved emails); frontend pending
 
 ---
 
@@ -18,6 +18,70 @@
 | 13     | System Health Monitoring     | ✅ Complete   | `dev` @ `b901271`               | M7    |
 | 14–15  | UI Polish + Dashboard QA + Tickets Repair | ✅ COMPLETE | `feature/sprint-14-layout-polish` | M8 |
 | 16     | QA Fixes · Monitor Wall · Role Visibility · KPI My Agreement | ✅ COMPLETE | `dev` @ `3e2b17e`    | M9 |
+| 17     | Ticket Intake — Web Form + Email + Category Routing | 🔨 IN PROGRESS | `feature/sprint-17-ticket-intake` | M10 |
+
+---
+
+## Sprint 17 · Ticket Intake
+
+**Target milestone:** M10  
+**Status:** 🔨 IN PROGRESS — backend ✅ complete, frontend ❌ pending  
+**Branch:** `feature/sprint-17-ticket-intake` (to be cut from `dev`)
+
+### Goal
+Allow non-IT staff and external requesters to submit tickets without a Lotris account via:
+1. A public web form at `/request` (SELF_SERVICE source)
+2. An IMAP email inbox monitored every 60s (EMAIL source)
+
+Tickets are automatically routed to teams via `CategoryRouting` config. ACK and resolution emails sent to requesters (no specific time promises — "shortly/soon" wording).
+
+### Design Decisions
+- Reopened tickets = new ticket with `related_ticket_id` reference (not status reopen)
+- ACK/resolved emails use "shortly/soon" language — no SLA time commitments
+- `INTAKE_SYSTEM_USER_ID` env var: admin sets this to a valid User UUID in their tenant — required for web form
+- Multi-tenant: `tenantId` in request body; TRIAGE_TENANT_ID/TRIAGE_TEAM_ID for IMAP fallback
+- Rate limiting: Redis sliding window, 10 req/hour per IP, fail-open if Redis down
+- No CSAT in resolution email; no engineer notes exposed to external requesters
+
+### Backend Dev Agent Jobs
+- [x] `B-TI-1` — SQL migration `0007_ticket_intake.sql`: adds `source`, `requester_email`, `requester_name`, `related_ticket_id` to `Tickets`; creates `CategoryRouting` table
+- [x] `B-TI-2` — Drizzle schema `category-routing.ts`; updated `tickets.ts` + `index.ts`
+- [x] `B-TI-3` — `packages/config/src/env.ts`: added Sprint 17 env vars (APP_BASE_URL, EMAIL_*, INTAKE_EMAIL_*, TRIAGE_*, INTAKE_SYSTEM_USER_ID)
+- [x] `B-TI-4` — `dto/index.ts`: extended `CreateTicketDto` and `TicketListQueryDto` with `source` filter
+- [x] `B-TI-5` — `NotificationsService`: added `queueIntakeAck` + `queueIntakeResolved` methods; `IntakeAckPayload` + `IntakeResolvedPayload` interfaces
+- [x] `B-TI-6` — `TicketsService`: stores new fields on create; fires intake ACK if source = EMAIL/SELF_SERVICE; fires resolved email on RESOLVED status update
+- [x] `B-TI-7` — `AdminService`: `listCategoryRouting`, `upsertCategoryRouting` (MERGE), `deleteCategoryRouting`
+- [x] `B-TI-8` — `trpc/router.ts`: source filter on `tickets.list`; `relatedTicketId` on `tickets.create`; 3 new `admin.categoryRouting.*` procedures
+- [x] `B-TI-9` — `IntakeService`: `createFromWebForm` (SLA lookup, DB insert, team assign, ACK); IMAP poller with 5-min dedup; rate limiting
+- [x] `B-TI-10` — `IntakeController`: `POST /api/v1/request` — public, rate-limited, validated; no auth guard
+- [x] `B-TI-11` — `IntakeModule` + `AppModule` wiring
+- [x] `B-TI-12` — `notifications.worker.ts`: handles `INTAKE_ACK` + `INTAKE_RESOLVED` email sending via nodemailer; fallback to jsonTransport in dev
+- [x] `B-TI-13` — `workers/jobs/src/index.ts`: `notificationsWorker` registered + graceful shutdown
+
+### Frontend Dev Agent Jobs
+- [ ] `F-TI-1` — Public web form at `app/(public)/request/page.tsx` — no Clerk, 5-field form, submits to `POST ${NEXT_PUBLIC_API_URL}/api/v1/request`; confirmation screen with ticket ref
+- [ ] `F-TI-2` — Admin routing config tab (new tab in Admin Settings) — wired to `trpc['admin.categoryRouting.list']` and `trpc['admin.categoryRouting.upsert']`
+- [ ] `F-TI-3` — Ticket list + drawer updates: source badge ("Via Web Form" / "Via Email" / "Internal"), requesterEmail/requesterName shown
+
+### QA Checks (to run after frontend complete)
+- [ ] `POST /api/v1/request` with valid payload creates SELF_SERVICE ticket, returns ticketRef
+- [ ] Rate limiting: 11th request in sliding window returns 429
+- [ ] Validation: empty fields + invalid email returns 400 with field errors ← ✅ verified
+- [ ] DI wiring: IntakeService injects correctly into IntakeController ← ✅ verified (required explicit `@Inject`)
+- [ ] ACK email queued to notifications queue on ticket create (SELF_SERVICE/EMAIL)
+- [ ] Resolved email queued when ticket → RESOLVED and `requesterEmail` set
+- [ ] `admin.categoryRouting.list` returns correct rows
+- [ ] `admin.categoryRouting.upsert` creates new + overwrites existing routing rule
+- [ ] Source badge visible in ticket list and ticket drawer
+- [ ] Public form accessible without Clerk session
+
+### Known Issues / Env Requirements
+- `INTAKE_SYSTEM_USER_ID` must be set to a valid User UUID before web form creates tickets
+- `EMAIL_HOST/USER/PASS` optional in dev — falls back to jsonTransport (no emails sent)
+- `INTAKE_EMAIL_*` optional — if not set, IMAP poller is disabled (logged at startup)
+- Workers process must be started via ecosystem.config.cjs (uses node `--env-file` flag) — tsx watch mode doesn't have nvm PATH
+
+
 
 ---
 
