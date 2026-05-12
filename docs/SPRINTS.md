@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Post-Sprint 15 (Dashboard QA + Tickets page full repair + Ticket assign complete; merged to `dev`)
+> Last updated: May 2026 — Post-Sprint 16 (KPI My Agreement for engineers/team-leads; kpiAgreementProcedure; Daily period; submit button fix; QA doc audit; merged to `dev`)
 
 ---
 
@@ -17,7 +17,7 @@
 | 11–12  | Reporting & Full Dashboard   | ✅ COMPLETE   | `dev` @ `f900bfc`                | M6 |
 | 13     | System Health Monitoring     | ✅ Complete   | `dev` @ `b901271`               | M7    |
 | 14–15  | UI Polish + Dashboard QA + Tickets Repair | ✅ COMPLETE | `feature/sprint-14-layout-polish` | M8 |
-| 16     | QA Fixes · Monitor Wall · Role Visibility | ✅ COMPLETE | `feature/sprint-16-qa-monitor`    | M9 |
+| 16     | QA Fixes · Monitor Wall · Role Visibility · KPI My Agreement | ✅ COMPLETE | `dev` @ `3e2b17e`    | M9 |
 
 ---
 
@@ -335,12 +335,12 @@
 
 ---
 
-## Sprint 16 · QA Fixes · Monitor Wall · Role Visibility
+## Sprint 16 · QA Fixes · Monitor Wall · Role Visibility · KPI My Agreement
 
 **Target milestone:** M9  
-**Status:** ✅ COMPLETE — branch `feature/sprint-16-qa-monitor`
+**Status:** ✅ COMPLETE — `dev` @ `3e2b17e`
 
-**Deliverable:** Three QA items (Queue Team Workload role-scoping, Tickets/Tasks role-context banners, Monitor real DB data), animated priority ticker on Monitor wall, light/dark toggle on Monitor, cross-team access grants UI, mobile responsiveness.
+**Deliverable:** Three QA items (Queue Team Workload role-scoping, Tickets/Tasks role-context banners, Monitor real DB data), animated priority ticker on Monitor wall, light/dark toggle on Monitor, cross-team access grants UI, mobile responsiveness, plus: KPI My Agreement view for Engineers and Team Leads, `kpiAgreementProcedure` middleware for TEAM_LEAD builder access, Daily measurement period, submit-for-review button improvements.
 
 ---
 
@@ -350,6 +350,11 @@
 - [x] `B16-2` — `dashboard.teamWorkload` tRPC procedure: returns `{ id, name, queued, openCount }` per team; elevated roles see all teams, non-elevated filtered to `myTeamId`
 - [x] `B16-3` — TeamAccessGrants schema (`packages/db/src/schemas/mssql/team-access-grants.ts`); migration `0006_team_access_grants.sql`; AdminService CRUD; cross-team read grants
 - [x] `B16-4` — RBAC filtering hardened in `TicketsService` and `TasksService`: Engineers see own/assigned items only; Team Leads see team scope; elevated roles see all
+- [x] `B16-5` — `kpiAgreementProcedure` added to `apps/api/src/trpc/trpc.ts`: allows SUPERADMIN, ADMIN, IT_MANAGER, TEAM_LEAD to access agreement builder
+- [x] `B16-6` — `kpi.agreements.create` + `kpi.agreements.setAreas` migrated from `managerProcedure` to `kpiAgreementProcedure` (granting TEAM_LEAD builder access)
+- [x] `B16-7` — `kpi.agreements.accept` new `protectedProcedure` in router: input `{ agreementId: uuid }`, calls `KpiService.acceptAgreement(auth, agreementId)` — enforces `PENDING_REVIEW` status and `engineerId === auth.userId`
+- [x] `B16-8` — `MeasurementPeriod` enum in `apps/api/src/modules/kpi/dto/index.ts` extended with `'DAILY'`; all relevant Zod schemas + router inputs updated
+- [x] `B16-9` — `KpiService.listAgreements()` auto-scopes `ENGINEER` role to own `userId`; accepts optional `engineerId` filter; `ClerkJwtGuard` Logger added for real error logging
 
 ### Frontend Dev Agent Jobs
 
@@ -365,6 +370,11 @@
 - [x] `F16-10` — **Monitor public route** (`middleware.ts`): `/monitor(.*)` in Clerk `publicRoutes`; `app/monitor/page.tsx` + `layout.tsx` + `MonitorProviders.tsx`
 - [x] `F16-11` — **RBAC sidebar** (`sidebar.tsx`): Monitor link visible; nav items role-filtered
 - [x] `F16-12` — **Dashboard role-aware variants** (`dashboard-page-client.tsx`): role-specific content and stat card scoping
+- [x] `F16-13` — **KPI My Agreement component** (`components/kpis/kpi-my-agreement.tsx`): ENGINEER + TEAM_LEAD view of own agreement; search/filter by period/lead/status; status pills (ALL/DRAFT/PENDING_REVIEW/ACTIVE/CLOSED); read-only area cards with collapsible metric table; Sign-off card (Accept & Sign Off for PENDING_REVIEW); summary sidebar; wired to `kpi.agreements.list` with `engineerId: me.id` filter; `kpi.agreements.accept` mutation
+- [x] `F16-14` — **My Agreement page** (`app/(app)/kpis/my-agreement/page.tsx`): App Router page at `/kpis/my-agreement`; metadata `title: 'My KPI Agreement | Lotris'`
+- [x] `F16-15` — **Sidebar My Agreement nav** (`sidebar.tsx`): `ClipboardList` icon; visible for `ENGINEER` and `TEAM_LEAD` roles; indented below KPI section
+- [x] `F16-16` — **Agreement builder search** (`kpi-agreement-builder.tsx`): search input in card header; filters agreements by engineer name, lead name, period key, or status label
+- [x] `F16-17` — **Submit-for-review button fix** (`kpi-agreement-builder.tsx`): `submitError` + `submitDone` state; `onError` handler added; button disabled + "Sending…" during mutation; success green banner; error red banner; `PENDING_REVIEW` shows blue info pill; button only shown for `DRAFT` status; state resets on row change
 
 ### QA Gate Checks — M9
 
@@ -377,6 +387,17 @@
 - [x] Animated ticker scrolls continuously; pauses on hover; loops seamlessly at −50% translateY
 - [x] Light/dark toggle persists across browser refresh via `localStorage`
 - [x] Light mode: white cards lift clearly against `#c8d3e0` background
+- [x] `kpiAgreementProcedure` enforces SUPERADMIN/ADMIN/IT_MANAGER/TEAM_LEAD; ENGINEER role receives FORBIDDEN
+- [x] TEAM_LEAD can create agreements and set areas via `kpi.agreements.create` and `kpi.agreements.setAreas`
+- [x] `kpi.agreements.accept` enforces `engineerId === auth.userId` — cannot accept another engineer's agreement
+- [x] `/kpis/my-agreement` renders correctly for ENGINEER role — shows own agreements, search/filter works
+- [x] `/kpis/my-agreement` renders correctly for TEAM_LEAD role — shows own agreement (own engineer agreements)
+- [x] Accept & Sign Off button only visible for `PENDING_REVIEW` status
+- [x] After accept, agreement status updates to `ACTIVE` — sign-off card updates accordingly
+- [x] Submit-for-review button: disabled + "Sending…" during mutation; green success banner after; red error banner on failure
+- [x] Submit button not shown for `PENDING_REVIEW` status (info pill shown instead)
+- [x] Sidebar shows "My Agreement" nav item for ENGINEER and TEAM_LEAD; not shown for ADMIN/IT_MANAGER/SUPERADMIN
+- [x] Daily measurement period selectable in agreement builder metric rows
 - [x] TypeScript clean: `npx tsc --noEmit -p apps/web/tsconfig.json` → exit code 0
 
 ---

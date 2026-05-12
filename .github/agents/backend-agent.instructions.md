@@ -57,6 +57,19 @@ modules/
 - Procedures that mutate state return the updated entity (not just `{ success: true }`)
 - Procedure naming: `entity.operation` — e.g. `tickets.create`, `queue.pickup`, `kpi.getActuals`
 
+**tRPC Middleware hierarchy (defined in `apps/api/src/trpc/trpc.ts`):**
+| Middleware | Allowed roles |
+|---|---|
+| `publicProcedure` | unauthenticated |
+| `protectedProcedure` | any authenticated user |
+| `managerProcedure` | SUPERADMIN, ADMIN, IT_MANAGER |
+| `adminProcedure` | SUPERADMIN, ADMIN |
+| `kpiAgreementProcedure` | SUPERADMIN, ADMIN, IT_MANAGER, TEAM_LEAD |
+
+Use `kpiAgreementProcedure` (not `managerProcedure`) for KPI agreement builder operations (`create`, `setAreas`) so that TEAM_LEAD can participate in the agreement-building workflow.
+
+Business-logic authorization (e.g. "can only accept your own agreement") belongs **inside the service method**, not in the tRPC middleware.
+
 ### REST v1 (external integrations only)
 - Base path: `/api/v1/`
 - Versioned from day one — never break a v1 contract

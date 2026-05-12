@@ -62,7 +62,9 @@ app/
   (app)/tickets/         ← Ticket list + detail
   (app)/queue/           ← Queue view
   (app)/tasks/           ← Task management
-  (app)/kpis/            ← KPI views (3 layers)
+  (app)/kpis/            ← KPI views (3 layers) + My Agreement
+    agreements/          ← Agreement builder (TEAM_LEAD+)
+    my-agreement/        ← My Agreement view (ENGINEER + TEAM_LEAD)
   (app)/reports/         ← Reports
   (app)/admin/           ← KPI setup, team management
   (app)/system/          ← SysAdmin ops dashboard
@@ -72,7 +74,19 @@ store/                   ← Zustand stores
 lib/                     ← trpc client, auth helpers
 ```
 
-## Quality Self-Checks (before marking job done)
+### Styling Notes
+- The live implementation uses the **v2 CSS class system** (`v2-card`, `v2-btn`, `v2-stats-grid`, etc.) ported from `mockups/style-v2.css` into `apps/web/app/globals.css`. Most built page components use v2 classes, not raw Tailwind. Match the existing pattern in the file you are editing.
+- The Monitor page (`/monitor`) uses 100% inline styles — do not change this pattern.
+- All tRPC calls use **bracket notation**: `trpc['users.me'].useQuery()`, `trpc['kpi.agreements.list'].useQuery({ engineerId: me.id })`
+
+### tRPC Procedure Access Levels
+| Procedure | Who can call |
+|---|---|
+| `publicProcedure` | unauthenticated (Monitor, health) |
+| `protectedProcedure` | any authenticated user |
+| `managerProcedure` | SUPERADMIN, ADMIN, IT_MANAGER |
+| `adminProcedure` | SUPERADMIN, ADMIN |
+| `kpiAgreementProcedure` | SUPERADMIN, ADMIN, IT_MANAGER, TEAM_LEAD |
 - [ ] TypeScript strict — no `any`, no red squiggles
 - [ ] Renders correctly at 375px, 768px, 1280px
 - [ ] Loading states: Suspense skeleton or TanStack Query `isLoading` handled

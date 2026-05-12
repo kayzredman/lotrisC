@@ -1,6 +1,6 @@
 # Lotris — Project Context
 
-> Last updated: May 2026 — Sprint 16 complete (QA fixes: Queue role-scope, Tickets/Tasks role banners, Monitor real DB; animated ticker; light/dark toggle; cross-team access; mobile CSS)
+> Last updated: May 2026 — Sprint 16 complete (QA fixes: Queue role-scope, Tickets/Tasks role banners, Monitor real DB; animated ticker; light/dark toggle; cross-team access; mobile CSS; KPI My Agreement for engineers/team leads; TEAM_LEAD agreement builder access; Daily measurement period; submit-for-review button improvements)
 
 ---
 
@@ -151,7 +151,7 @@ Agreements are organised into **KPI Areas**, each containing multiple **Metric R
 | ------------------------------------ | ---------------------------------------------------------------- |
 | Minimum Performance Metrics Standard | Full prose description of the expected standard                  |
 | Weight                               | Numeric weight for this metric within the total (all must = 100) |
-| Measurement Period                   | Monthly, Quarterly, or Annually                                  |
+| Measurement Period                   | `DAILY`, `MONTHLY`, `QUARTERLY`, or `ANNUALLY` — configurable per row |
 | Target / Score                       | Specific target value for the review period                      |
 
 Example structure for a DB Engineer agreement (total weight = 100):
@@ -169,10 +169,14 @@ Example structure for a DB Engineer agreement (total weight = 100):
 
 **Sign-off flow:**
 
-1. Team Lead builds the agreement (status: Draft)
-2. Lead signs and sends to the engineer for review
-3. Engineer reviews and accepts (status: Active)
+1. Team Lead builds the agreement (status: `DRAFT`)
+2. Lead uses "Send to member for review" button — status changes to `PENDING_REVIEW`
+3. Engineer views their own agreement at `/kpis/my-agreement` and accepts ("Accept & Sign Off") — status changes to `ACTIVE`
 4. Active agreements are the basis for KPI tracking and scoring throughout the period
+
+**Role access to agreements:**
+- `SUPERADMIN`, `ADMIN`, `IT_MANAGER`, `TEAM_LEAD` — full agreement builder at `/kpis/agreements` (controlled via `kpiAgreementProcedure`)
+- `TEAM_LEAD`, `ENGINEER` — read-only My Agreement view at `/kpis/my-agreement`; engineer can accept `PENDING_REVIEW` agreements
 
 ---
 
@@ -527,7 +531,7 @@ Auth & Tenancy
 | M6 — Reports    | 12     | Analytics layer, full dashboard, scheduled reports      |
 | M7 — Monitoring | 13     | SysAdmin ops dashboard, restart controls, status page   |
 | M8 — UI Quality | 15     | Dark mode, dashboard accuracy, tickets page fully functional, role-gated assign |
-| M9 — QA & Monitor | 16  | Queue/Tickets/Tasks role-visibility, Monitor wall (real data, ticker, theme toggle), cross-team access, mobile CSS |
+| M9 — QA & Monitor + KPI My Agreement | 16  | Queue/Tickets/Tasks role-visibility, Monitor wall, cross-team access, mobile CSS, KPI My Agreement, TEAM_LEAD builder access, Daily period, submit button fix |
 
 ---
 
@@ -660,7 +664,7 @@ All services run under **pm2** in local dev:
 
 | pm2 ID | Name         | Port | Restart behaviour            |
 | ------ | ------------ | ---- | ---------------------------- |
-| 5      | `lotris-api` | 4000 | tsx watch — auto-reloads on file save |
+| 0      | `lotris-api` | 4000 | tsx watch — auto-reloads on file save |
 | 6      | `lotris-web` | 3000 | Next.js HMR — hot-reloads on file save |
 
 pm2 binary: `/Users/kwekku/.nvm/versions/node/v24.13.0/lib/node_modules/pm2/bin/pm2`  
@@ -690,6 +694,16 @@ Development shortcut: `GET /api/dev-login?user={alias}` — sets a Clerk-compati
 
 The live implementation uses the **v2 CSS design system** ported from `mockups/style-v2.css` into `apps/web/app/globals.css`. Most page components use v2 CSS classes (e.g. `v2-card`, `v2-btn`, `v2-stats-grid`). The Monitor page uses 100% inline styles. Tailwind is configured but the primary styling approach in built components is the v2 CSS class system.
 
+### tRPC Procedure Middleware
+
+| Procedure | Allowed roles | Purpose |
+|---|---|---|
+| `publicProcedure` | anyone (no auth) | Monitor stats, public endpoints |
+| `protectedProcedure` | any authenticated user | Tickets, tasks, own user data |
+| `managerProcedure` | SUPERADMIN, ADMIN, IT_MANAGER | Reporting, config |
+| `adminProcedure` | SUPERADMIN, ADMIN | User management, destructive ops |
+| `kpiAgreementProcedure` | SUPERADMIN, ADMIN, IT_MANAGER, TEAM_LEAD | KPI agreement builder (create, setAreas) |
+
 ### tRPC Client Pattern
 
 `AppRouter` in `@lotris/types` is typed as `any` to avoid complex type propagation. All tRPC calls use **bracket notation** to avoid TypeScript errors:
@@ -697,6 +711,7 @@ The live implementation uses the **v2 CSS design system** ported from `mockups/s
 ```ts
 trpc['users.me'].useQuery()
 trpc['tickets.list'].useQuery({ page: 1, limit: 25 })
+trpc['kpi.agreements.list'].useQuery({ engineerId: me.id })
 ```
 
 ### Monitor Page

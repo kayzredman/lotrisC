@@ -57,6 +57,7 @@ The system uses a **hybrid queue-based assignment model**: tickets are routed to
 - **System Health Monitoring** — Real-time SysAdmin ops dashboard showing live process status, queue depths, CPU/memory, and restart controls
 - **Monitor Wall** — Public ops screen (`/monitor`) with live ticket stats, animated priority ticker (top-20 tickets), and light/dark theme toggle; no authentication required
 - **Cross-Team Access Grants** — Admins can grant read access across team boundaries without role changes
+- **KPI My Agreement** — Engineers and Team Leads can view their own active KPI agreement, inspect areas and metric targets, and digitally sign off at `/kpis/my-agreement`; submit-for-review flow includes loading state, error/success feedback, and PENDING_REVIEW info pill
 
 ---
 
@@ -72,7 +73,7 @@ The system uses a **hybrid queue-based assignment model**: tickets are routed to
 | M6 — Reporting & Full Dashboard | 11–12 | ✅ Complete |
 | M7 — System Health Monitoring | 13 | ✅ Complete |
 | M8 — UI Polish + Tickets Repair | 14–15 | ✅ Complete |
-| M9 — QA Fixes + Monitor Wall | 16 | ✅ Complete |
+| M9 — QA Fixes + Monitor Wall + KPI My Agreement | 16 | ✅ Complete |
 
 **Live on dev branch.** Next: Phase 2 analytics intelligence.
 
@@ -104,6 +105,12 @@ Team Leads assign active KPI definitions to their individual engineers and optio
 ### Layer 3 — KPI Agreement (Team Lead + Engineer)
 
 For each review period, the Team Lead builds a structured **KPI Agreement** with the engineer — a formal performance contract. Agreements are organised into **KPI Areas** (e.g. Product Quality, Professional Development, Customer Focus), each containing multiple weighted metric descriptions. Weights across all areas must total 100. Both parties sign off digitally before the period begins. Agreements can be entered manually or imported from an Excel/CSV template.
+
+**Measurement periods:** `DAILY`, `MONTHLY`, `QUARTERLY`, or `ANNUALLY` — configurable per metric row.
+
+**Agreement access by role:**
+- **TEAM_LEAD** — full builder access at `/kpis/agreements` (create, set areas, submit for review); can also view own agreement at `/kpis/my-agreement`
+- **ENGINEER** — read-only view of own agreement at `/kpis/my-agreement`; can accept (sign off) agreements in PENDING_REVIEW status
 
 ---
 
@@ -357,6 +364,7 @@ lotris/
 | M6 — Reports    | 12     | Analytics layer, full dashboard, scheduled reports      |
 | M7 — Monitoring | 13     | SysAdmin ops dashboard, restart controls, status page   |
 | M8 — UI Quality | 15     | Dark mode, dashboard accuracy, tickets page full repair, role-gated assign |
+| M9 — QA & Monitor + KPI My Agreement | 16 | Queue/Tickets/Tasks role-visibility, Monitor wall, cross-team access, mobile CSS, My Agreement view, TEAM_LEAD agreement builder access, submit button fix |
 
 ---
 
@@ -389,6 +397,7 @@ lotris/
 | `07-team-kpi-setup-v2.html` | Team KPI Assignment            | Team Lead            |
 | `08-kpi-agreement-v2.html`  | KPI Agreement Builder          | Team Lead            |
 | `09-tasks-v2.html`          | Task Assignment & Self-Logging | Team Lead / Engineer |
+| `10-sysadmin-ops-v2.html`   | System Health & Ops Dashboard  | System Admin         |
 
 ---
 
