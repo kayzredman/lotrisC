@@ -1,4 +1,4 @@
-import { router, protectedProcedure, adminProcedure, managerProcedure, publicProcedure } from './trpc';
+import { router, protectedProcedure, adminProcedure, managerProcedure, kpiAgreementProcedure, publicProcedure } from './trpc';
 import { TRPCError } from '@trpc/server';
 import { HealthService } from '../modules/health/health.service';
 import { getMssqlDb, users, teams, roles, auditLogs, eq, and, sql, desc } from '@lotris/db';
@@ -416,14 +416,14 @@ export const appRouter = router({
       return svc.listAgreements(ctx.auth, input.engineerId, input.periodKey);
     }),
 
-  'kpi.agreements.create': managerProcedure
+  'kpi.agreements.create': kpiAgreementProcedure
     .input(z.object({ engineerId: z.string().uuid(), periodKey: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const svc = new KpiService();
       return svc.createAgreement(ctx.auth, { engineerId: input.engineerId, periodKey: input.periodKey });
     }),
 
-  'kpi.agreements.setAreas': managerProcedure
+  'kpi.agreements.setAreas': kpiAgreementProcedure
     .input(z.object({
       agreementId: z.string().uuid(),
       areas: z.array(z.object({
@@ -432,7 +432,7 @@ export const appRouter = router({
         sortOrder: z.number().int().optional(),
         metrics: z.array(z.object({
           description: z.string(),
-          measurementPeriod: z.enum(['MONTHLY', 'QUARTERLY', 'ANNUALLY']),
+          measurementPeriod: z.enum(['DAILY', 'MONTHLY', 'QUARTERLY', 'ANNUALLY']),
           weight: z.number(),
           targetScore: z.number(),
           sortOrder: z.number().int().optional(),
@@ -457,6 +457,13 @@ export const appRouter = router({
     .query(async ({ ctx, input }) => {
       const svc = new KpiService();
       return svc.getAgreementWithAreas(ctx.auth, input.id);
+    }),
+
+  'kpi.agreements.accept': protectedProcedure
+    .input(z.object({ agreementId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new KpiService();
+      return svc.acceptAgreement(ctx.auth, input.agreementId);
     }),
 
   'kpi.actuals.list': protectedProcedure

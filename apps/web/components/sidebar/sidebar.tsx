@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Settings2,
   FilePenLine,
+  ClipboardList,
   ChevronRight,
   LogOut,
   MonitorPlay,
@@ -92,7 +93,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   // Build admin nav based on role
   // SUPERADMIN/ADMIN: all admin items
   // IT_MANAGER: teams, kpi setup, system health, audit log (no KPI Agreement)
-  // TEAM_LEAD: KPI Agreement only
+  // TEAM_LEAD: KPI Agreement builder + KPI Setup
   // ENGINEER/EXECUTIVE: no admin section
   const visibleAdminNav = (() => {
     if (role === 'SUPERADMIN' || role === 'ADMIN') return ADMIN_NAV;
@@ -100,6 +101,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (role === 'TEAM_LEAD') return ADMIN_NAV.filter(i => i.href === '/kpis/agreements' || i.href === '/admin/kpi-setup');
     return [];
   })();
+
+  // My Agreement link — shown inline under KPIs for ENGINEER and TEAM_LEAD
+  const showMyAgreement = role === 'ENGINEER' || role === 'TEAM_LEAD';
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -158,6 +162,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </Link>
           );
         })}
+
+        {/* My Agreement — sub-item under KPIs for engineers and team leads */}
+        {showMyAgreement && (
+          <Link
+            href="/kpis/my-agreement"
+            className={`v2-nav-item${isActive('/kpis/my-agreement') ? ' active' : ''}`}
+            style={{ paddingLeft: 32, fontSize: 12.5 }}
+            onClick={handleNavClick}
+          >
+            <span className="v2-nav-icon">
+              <ClipboardList size={13} />
+            </span>
+            My Agreement
+          </Link>
+        )}
 
         {visibleAdminNav.length > 0 && (
           <>

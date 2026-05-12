@@ -18,6 +18,7 @@ import {
   Printer,
   Send,
   Copy,
+  Search,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -159,6 +160,7 @@ function AgrMetricRow({
           value={metric.measurementPeriod}
           onChange={e => onChange('measurementPeriod', e.target.value)}
         >
+          <option value="DAILY">Daily</option>
           <option value="MONTHLY">Monthly</option>
           <option value="QUARTERLY">Quarterly</option>
           <option value="ANNUALLY">Annually</option>
@@ -283,6 +285,7 @@ export default function KpiAgreementBuilder() {
   const [saving, setSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<AgreementStatus | 'ALL'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showNewForm, setShowNewForm] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -297,9 +300,20 @@ export default function KpiAgreementBuilder() {
     { staleTime: 60_000 },
   );
   const allAgreements: Agreement[] = (listData as Agreement[] | undefined) ?? [];
-  const agreements = allAgreements.filter(
-    a => filterStatus === 'ALL' || a.status === filterStatus,
-  );
+  const agreements = allAgreements
+    .filter(a => filterStatus === 'ALL' || a.status === filterStatus)
+    .filter(a => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      const sp = STATUS_PILL[a.status];
+      return (
+        userName(a.engineerId).toLowerCase().includes(q) ||
+        a.periodKey.toLowerCase().includes(q) ||
+        sp.label.toLowerCase().includes(q) ||
+        userName(a.leadId).toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Load areas when agreement selected
   const { data: agreementDetail } = trpc['kpi.agreements.get'].useQuery(
@@ -400,7 +414,7 @@ export default function KpiAgreementBuilder() {
         weight: areaTotal(a),
         metrics: a.metrics.map(m => ({
           description: m.description,
-          measurementPeriod: m.measurementPeriod as 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY',
+          measurementPeriod: m.measurementPeriod as 'DAILY' | 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY',
           weight: m.weight,
           targetScore: parseFloat(m.targetScore) || 0,
         })),
@@ -462,6 +476,27 @@ export default function KpiAgreementBuilder() {
         <div className="v2-card-header">
           <div className="v2-card-title">Agreements</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ position: 'relative' }}>
+              <Search
+                size={13}
+                style={{
+                  position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)',
+                  color: 'var(--text-muted)', pointerEvents: 'none',
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Search engineer, period…"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{
+                  paddingLeft: 28, paddingRight: 10, paddingTop: 5, paddingBottom: 5,
+                  fontSize: 12.5, border: '1px solid var(--border)', borderRadius: 'var(--radius-xs)',
+                  background: 'var(--bg-subtle)', outline: 'none', width: 200,
+                  color: 'var(--text-primary)',
+                }}
+              />
+            </div>
             <div style={{ display: 'flex', gap: 4 }}>
               {(['ALL', 'DRAFT', 'PENDING_REVIEW', 'ACTIVE', 'CLOSED'] as const).map(s => (
                 <button

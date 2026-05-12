@@ -34,3 +34,16 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   }
   return next({ ctx });
 });
+
+/**
+ * kpiAgreementProcedure — SUPERADMIN, ADMIN, IT_MANAGER, TEAM_LEAD.
+ * Used for KPI agreement creation and area management.
+ * Team leads can create/manage agreements for themselves and their direct reports.
+ */
+export const kpiAgreementProcedure = protectedProcedure.use(({ ctx, next }) => {
+  const allowed = ['SUPERADMIN', 'ADMIN', 'IT_MANAGER', 'TEAM_LEAD'] as const;
+  if (!(allowed as readonly string[]).includes(ctx.auth.role)) {
+    throw new TRPCError({ code: 'FORBIDDEN' });
+  }
+  return next({ ctx });
+});

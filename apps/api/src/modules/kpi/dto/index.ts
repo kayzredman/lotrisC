@@ -22,7 +22,7 @@ export type KpiMetricType = 'PERCENTAGE' | 'TIME_HOURS' | 'TIME_MINUTES' | 'COUN
 export type KpiDirection = 'HIGHER_BETTER' | 'LOWER_BETTER';
 export type KpiScope = 'ORG' | 'TEAM' | 'INDIVIDUAL';
 export type KpiDefinitionStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
-export type MeasurementPeriod = 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY';
+export type MeasurementPeriod = 'DAILY' | 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY';
 export type AgreementStatus = 'DRAFT' | 'PENDING_REVIEW' | 'ACTIVE' | 'CLOSED';
 export type ActualSource = 'TICKET_RESOLVE' | 'TASK_COMPLETE' | 'MANUAL';
 
@@ -113,7 +113,7 @@ export class CreateKpiAssignmentDto {
   @IsString()
   periodKey!: string;
 
-  @IsEnum(['MONTHLY', 'QUARTERLY', 'ANNUALLY'])
+  @IsEnum(['DAILY', 'MONTHLY', 'QUARTERLY', 'ANNUALLY'])
   measurementPeriod!: MeasurementPeriod;
 
   @IsOptional()
@@ -140,7 +140,7 @@ export class KpiMetricRowDto {
   @IsString()
   description!: string;
 
-  @IsEnum(['MONTHLY', 'QUARTERLY', 'ANNUALLY'])
+  @IsEnum(['DAILY', 'MONTHLY', 'QUARTERLY', 'ANNUALLY'])
   measurementPeriod!: MeasurementPeriod;
 
   @IsNumber()
