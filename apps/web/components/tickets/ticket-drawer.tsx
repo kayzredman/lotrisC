@@ -17,6 +17,13 @@ const PRIORITY_LABELS: Record<number, string> = {
   4: 'Low',
 };
 
+const SOURCE_LABELS: Record<string, { label: string; badgeClass: string }> = {
+  INTERNAL:     { label: 'Internal',      badgeClass: 'v2-badge-gray'   },
+  SELF_SERVICE: { label: 'Via Web Form',  badgeClass: 'v2-badge-indigo' },
+  EMAIL:        { label: 'Via Email',     badgeClass: 'v2-badge-blue'   },
+  API:          { label: 'Via API',       badgeClass: 'v2-badge-orange' },
+};
+
 const ASSIGNABLE_ROLES = ['ADMIN', 'SUPERADMIN', 'TEAM_LEAD'];
 
 export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
@@ -86,6 +93,15 @@ export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
                     breached={(ticket.slaResolutionBreached as number) === 1}
                     label="Res SLA"
                   />
+                  {ticket.source && ticket.source !== 'INTERNAL' && (() => {
+                    const src = SOURCE_LABELS[ticket.source as string] ?? { label: ticket.source as string, badgeClass: 'v2-badge-gray' };
+                    return (
+                      <>
+                        <span className="text-gray-700">·</span>
+                        <span className={`v2-badge ${src.badgeClass}`}>{src.label}</span>
+                      </>
+                    );
+                  })()}
                 </div>
               </>
             ) : (
@@ -120,6 +136,41 @@ export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
                   <p className="text-gray-300">{new Date(ticket.createdAt as string).toLocaleString()}</p>
                 </div>
               </section>
+
+              {/* Requester info — shown for external tickets */}
+              {(ticket.requesterEmail || ticket.requesterName) && (
+                <section className="rounded-lg border border-gray-700 bg-[#131c2e] p-4">
+                  <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-3">Requester</h3>
+                  <div className="space-y-1.5 text-sm">
+                    {ticket.requesterName && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500 text-xs w-16 shrink-0">Name</span>
+                        <span className="text-gray-200">{ticket.requesterName as string}</span>
+                      </div>
+                    )}
+                    {ticket.requesterEmail && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500 text-xs w-16 shrink-0">Email</span>
+                        <a
+                          href={`mailto:${ticket.requesterEmail as string}`}
+                          className="text-indigo-400 hover:text-indigo-300 text-xs break-all"
+                        >
+                          {ticket.requesterEmail as string}
+                        </a>
+                      </div>
+                    )}
+                    {ticket.source && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500 text-xs w-16 shrink-0">Source</span>
+                        {(() => {
+                          const src = SOURCE_LABELS[ticket.source as string] ?? { label: ticket.source as string, badgeClass: 'v2-badge-gray' };
+                          return <span className={`v2-badge ${src.badgeClass}`}>{src.label}</span>;
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
 
               {/* Assign To — Admins and Team Leads only */}
               {canAssign && (

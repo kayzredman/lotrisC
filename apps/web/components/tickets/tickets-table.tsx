@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { CreateTicketModal } from './create-ticket-modal';
 import { TicketDrawer } from './ticket-drawer';
@@ -70,6 +70,13 @@ const STATUS_BADGE: Record<string, string> = {
   'Assigned':       'v2-badge-indigo',
 };
 
+const SOURCE_BADGE: Record<string, React.ReactNode> = {
+  INTERNAL:     null,
+  SELF_SERVICE: <span className="v2-badge v2-badge-indigo">Web Form</span>,
+  EMAIL:        <span className="v2-badge v2-badge-blue">Email</span>,
+  API:          <span className="v2-badge v2-badge-orange">API</span>,
+};
+
 const MINI_STAT_BG: Record<string, string> = {
   indigo: 'var(--indigo-dim)',  red: 'var(--red-bg)', blue: 'var(--blue-bg)',
   orange: 'var(--orange-bg)',   green: 'var(--green-bg)', yellow: 'var(--yellow-bg)',
@@ -131,13 +138,14 @@ export function TicketsTable() {
       status: STATUS_LABEL[t.status] ?? t.status,
       assignee: t.assigneeId ? (USER_SHORT[t.assigneeId] ?? 'Engineer') : 'Team Queue',
       team: t.teamName ?? '–',
+      source: t.source ?? 'INTERNAL',
       sla: sla.text,
       slaColor: sla.color,
       date: new Date(t.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''),
     };
   });
 
-  const rows = (liveRows && liveRows.length > 0) ? liveRows : DEMO_TICKETS.map(t => ({ ...t, rawId: t.id, team: '–' }));
+  const rows = (liveRows && liveRows.length > 0) ? liveRows : DEMO_TICKETS.map(t => ({ ...t, rawId: t.id, team: '–', source: 'INTERNAL' }));
 
   // Mini stats — live from dashboard.summary or DEMO values
   const miniStats = [
@@ -249,6 +257,7 @@ export function TicketsTable() {
                 <th>Title</th>
                 <th>Priority</th>
                 <th>Status</th>
+                <th>Source</th>
                 <th>Assigned To</th>
                 <th>Team</th>
                 <th>SLA</th>
@@ -270,6 +279,7 @@ export function TicketsTable() {
                     </div>
                   </td>
                   <td><span className={`v2-badge ${STATUS_BADGE[t.status] ?? 'v2-badge-gray'}`}>{t.status}</span></td>
+                  <td>{SOURCE_BADGE[t.source ?? 'INTERNAL']}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <div className="v2-avatar-sm">{t.assignee.split(' ').map(n => n[0]).join('').slice(0,2)}</div>

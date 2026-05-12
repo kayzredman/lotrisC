@@ -5,8 +5,9 @@ import { trpc } from '@/lib/trpc';
 import { UsersTable } from './users-table';
 import { TeamsTable } from './teams-table';
 import { TeamAccessPanel } from './team-access-panel';
+import { CategoryRoutingPanel } from './category-routing-panel';
 
-type Tab = 'users' | 'teams' | 'access';
+type Tab = 'users' | 'teams' | 'access' | 'routing';
 
 export function AdminTabs() {
   const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
@@ -20,6 +21,7 @@ export function AdminTabs() {
     ...(!isManagerOnly ? [{ key: 'users' as Tab, label: 'Users' }] : []),
     { key: 'teams', label: 'Teams' },
     { key: 'access', label: 'Cross-Team Access' },
+    { key: 'routing', label: 'Intake Routing' },
   ];
 
   return (
@@ -50,9 +52,10 @@ export function AdminTabs() {
         ))}
       </div>
 
-      {active === 'users'  && !isManagerOnly && <UsersTable />}
-      {active === 'teams'  && <TeamsTable />}
-      {active === 'access' && <TeamAccessPanel />}
+      {active === 'users'   && !isManagerOnly && <UsersTable />}
+      {active === 'teams'   && <TeamsTable />}
+      {active === 'access'  && <TeamAccessPanel />}
+      {active === 'routing' && <CategoryRoutingPanel />}
     </div>
   );
 }
