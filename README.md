@@ -4,7 +4,7 @@
 > _"Where performance surfaces."_
 
 [![Status](https://img.shields.io/badge/status-in%20development-blue)]()
-[![Phase](https://img.shields.io/badge/phase-1%20sprint%2016%20complete-teal)]()
+[![Phase](https://img.shields.io/badge/phase-1%20sprint%2017%20complete-teal)]()
 [![License](https://img.shields.io/badge/license-private-lightgrey)]()
 
 ---
@@ -61,7 +61,7 @@ The system uses a **hybrid queue-based assignment model**: tickets are routed to
 
 ---
 
-## Build Status — Sprint 16 (May 2026)
+## Build Status — Sprint 17 (May 2026)
 
 | Milestone | Sprint | Status |
 |-----------|--------|--------|
@@ -74,6 +74,7 @@ The system uses a **hybrid queue-based assignment model**: tickets are routed to
 | M7 — System Health Monitoring | 13 | ✅ Complete |
 | M8 — UI Polish + Tickets Repair | 14–15 | ✅ Complete |
 | M9 — QA Fixes + Monitor Wall + KPI My Agreement | 16 | ✅ Complete |
+| M10 — Ticket Intake — Web Form + Email + Category Routing | 17 | ✅ Complete |
 
 **Live on dev branch.** Next: Phase 2 analytics intelligence.
 
@@ -365,6 +366,7 @@ lotris/
 | M7 — Monitoring | 13     | SysAdmin ops dashboard, restart controls, status page   |
 | M8 — UI Quality | 15     | Dark mode, dashboard accuracy, tickets page full repair, role-gated assign |
 | M9 — QA & Monitor + KPI My Agreement | 16 | Queue/Tickets/Tasks role-visibility, Monitor wall, cross-team access, mobile CSS, My Agreement view, TEAM_LEAD agreement builder access, submit button fix |
+| M10 — Ticket Intake | 17 | Public web form `/request`, IMAP poller, CategoryRouting config, ACK/resolved emails, source badges in ticket list + drawer, admin routing tab |
 
 ---
 
