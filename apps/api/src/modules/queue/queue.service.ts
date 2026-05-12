@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { getMssqlDb, eq, and, asc, sql, count } from '@lotris/db';
+import { getMssqlDb, eq, and, asc, sql, count, teams } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
@@ -59,8 +59,29 @@ export class QueueService {
       : baseConditions;
 
     return db
-      .select()
+      .select({
+        id: tickets.id,
+        tenantId: tickets.tenantId,
+        title: tickets.title,
+        description: tickets.description,
+        priority: tickets.priority,
+        status: tickets.status,
+        teamId: tickets.teamId,
+        assigneeId: tickets.assigneeId,
+        createdBy: tickets.createdBy,
+        slaPickupDeadline: tickets.slaPickupDeadline,
+        slaResolutionDeadline: tickets.slaResolutionDeadline,
+        slaPickupBreached: tickets.slaPickupBreached,
+        slaResolutionBreached: tickets.slaResolutionBreached,
+        assignedAt: tickets.assignedAt,
+        resolvedAt: tickets.resolvedAt,
+        closedAt: tickets.closedAt,
+        createdAt: tickets.createdAt,
+        updatedAt: tickets.updatedAt,
+        teamName: teams.name,
+      })
       .from(tickets)
+      .leftJoin(teams, eq(tickets.teamId, teams.id))
       .where(conditions)
       .orderBy(asc(tickets.priority), asc(tickets.slaPickupDeadline))
       .limit(limit)

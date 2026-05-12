@@ -506,6 +506,18 @@ export const appRouter = router({
       return svc.requestRestart(input.serviceName, ctx.auth.userId, ctx.auth.tenantId);
     }),
 
+  // ── package store health (ADMIN only) ───────────────────────────────────
+
+  'health.storeHealth': adminProcedure.query(async () => {
+    const svc = new HealthService();
+    return svc.checkStoreHealth();
+  }),
+
+  'health.repairStore': adminProcedure.mutation(async ({ ctx }) => {
+    const svc = new HealthService();
+    return svc.repairStore(ctx.auth.userId, ctx.auth.tenantId);
+  }),
+
   // ── audit logs (ADMIN only) ──────────────────────────────────────────────
 
   'auditLogs.list': managerProcedure

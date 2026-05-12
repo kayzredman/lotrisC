@@ -75,7 +75,7 @@ export default function QueueTable() {
       id: `TKT-${t.id.slice(-4).toUpperCase()}`,
       title: t.title,
       priority: PRIORITY_LABEL[t.priority as 1|2|3|4] ?? 'Medium',
-      team: t.teamId ?? '',
+      team: t.teamName ?? t.teamId ?? '',
       sla: sla.text,
       slaColor: sla.color,
       created: new Date(t.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''),

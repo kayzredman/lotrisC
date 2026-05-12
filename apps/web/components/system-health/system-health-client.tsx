@@ -9,7 +9,7 @@ import { DetailPanel } from './detail-panel';
 import { RestartModal } from './restart-modal';
 import { trpc } from '@/lib/trpc';
 import type { HealthSnapshot, ServiceHealthEntry } from '@lotris/types';
-import { Pause, Play, Globe, Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
+import { Pause, Play, Globe, Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw, Package, Wrench } from 'lucide-react';
 
 export function SystemHealthClient() {
   const [paused, setPaused]           = useState(false);
@@ -41,6 +41,24 @@ export function SystemHealthClient() {
   const upCount       = snapshot?.services.filter((s) => s.status === 'UP').length   ?? 0;
   const degradedCount = snapshot?.services.filter((s) => s.status === 'DEGRADED').length ?? 0;
   const downCount     = snapshot?.services.filter((s) => s.status === 'DOWN').length ?? 0;
+
+  // ── Store health ─────────────────────────────────────────────────────────
+  const storeHealthQuery = (trpc as any)['health.storeHealth'].useQuery(undefined, {
+    refetchInterval: (query: unknown) => {
+      const state = (query as { state: { data?: { repairState?: string } } }).state.data?.repairState;
+      return state === 'running' ? 5_000 : 30_000;
+    },
+  });
+  const storeHealth = storeHealthQuery.data as {
+    healthy: boolean;
+    corruptedPackages: string[];
+    repairState: 'idle' | 'running' | 'done' | 'error';
+    startedAt?: string;
+  } | undefined;
+
+  const repairMutation = (trpc as any)['health.repairStore'].useMutation({
+    onSuccess: () => storeHealthQuery.refetch(),
+  });
 
   // ── Restart mutation ─────────────────────────────────────────────────────
   const restartMutation = (trpc as any)['health.restartService'].useMutation();
@@ -125,11 +143,123 @@ export function SystemHealthClient() {
       </div>
 
       {/* Incident log */}
-      <div className="v2-card">
+      <div className="v2-card" style={{ marginBottom: 16 }}>
         <div className="v2-card-header">
           <div className="v2-card-title">Recent Incidents</div>
         </div>
         <IncidentLog incidents={incidents ?? []} />
+      </div>
+
+      {/* Package store health */}
+      <div className="v2-card">
+        <div className="v2-card-header">
+          <div className="v2-card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Package size={15} />
+            Package Store Health
+          </div>
+          {storeHealth && (
+            <span style={{
+              fontSize: 11,
+              fontWeight: 600,
+              padding: '2px 8px',
+              borderRadius: 4,
+              background: storeHealth.repairState === 'running'
+                ? 'var(--yellow-muted, rgba(234,179,8,0.15))'
+                : storeHealth.repairState === 'done'
+                  ? 'var(--green-muted, rgba(34,197,94,0.15))'
+                  : storeHealth.repairState === 'error'
+                    ? 'var(--red-muted, rgba(239,68,68,0.15))'
+                    : storeHealth.healthy
+                      ? 'var(--green-muted, rgba(34,197,94,0.15))'
+                      : 'var(--red-muted, rgba(239,68,68,0.15))',
+              color: storeHealth.repairState === 'running'
+                ? 'var(--yellow, #ca8a04)'
+                : storeHealth.repairState === 'done'
+                  ? 'var(--green, #16a34a)'
+                  : storeHealth.repairState === 'error'
+                    ? 'var(--red, #dc2626)'
+                    : storeHealth.healthy
+                      ? 'var(--green, #16a34a)'
+                      : 'var(--red, #dc2626)',
+            }}>
+              {storeHealth.repairState === 'running' && '⏳ Repairing…'}
+              {storeHealth.repairState === 'done' && '✓ Repair Complete'}
+              {storeHealth.repairState === 'error' && '✗ Repair Failed'}
+              {storeHealth.repairState === 'idle' && (storeHealth.healthy ? '✓ Healthy' : `✗ ${storeHealth.corruptedPackages.length} corrupted`)}
+            </span>
+          )}
+        </div>
+
+        <div style={{ padding: '12px 16px' }}>
+          {storeHealthQuery.isPending && (
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Checking store status…</p>
+          )}
+
+          {storeHealth?.repairState === 'running' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--text-secondary)' }}>
+              <RefreshCw size={14} className="animate-spin" />
+              Running <code style={{ fontSize: 12 }}>pnpm install --force</code> — started {storeHealth.startedAt ? new Date(storeHealth.startedAt).toLocaleTimeString() : '…'}. This takes 2–4 minutes.
+            </div>
+          )}
+
+          {storeHealth?.repairState === 'done' && (
+            <p style={{ fontSize: 13, color: 'var(--green, #16a34a)', margin: 0 }}>
+              Store repair completed successfully. All packages are healthy.
+            </p>
+          )}
+
+          {storeHealth?.repairState === 'error' && (
+            <p style={{ fontSize: 13, color: 'var(--red, #dc2626)', margin: 0 }}>
+              Repair failed — check API logs for details. You can retry below.
+            </p>
+          )}
+
+          {(storeHealth?.repairState === 'idle' || storeHealth?.repairState === 'error') && !storeHealth?.healthy && (
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 0, marginBottom: 8 }}>
+                The following packages have integrity issues in the pnpm store:
+              </p>
+              <ul style={{ margin: 0, padding: '0 0 0 18px', fontSize: 12, color: 'var(--text-muted)' }}>
+                {storeHealth.corruptedPackages.slice(0, 10).map((pkg) => (
+                  <li key={pkg} style={{ fontFamily: 'monospace', marginBottom: 2 }}>{pkg}</li>
+                ))}
+                {storeHealth.corruptedPackages.length > 10 && (
+                  <li style={{ color: 'var(--text-muted)' }}>…and {storeHealth.corruptedPackages.length - 10} more</li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          {(storeHealth?.repairState === 'idle' || storeHealth?.repairState === 'error') && storeHealth?.healthy && (
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
+              No integrity issues detected. All packages in the pnpm store are intact.
+            </p>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: storeHealth?.repairState === 'idle' || storeHealth?.repairState === 'error' ? 14 : 10 }}>
+            {(storeHealth?.repairState === 'idle' || storeHealth?.repairState === 'error') && (
+              <button
+                type="button"
+                className="v2-btn v2-btn-primary v2-btn-sm"
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                onClick={() => repairMutation.mutate({})}
+                disabled={repairMutation.isPending || storeHealth?.healthy === true}
+                title={storeHealth?.healthy ? 'Store is healthy — no repair needed' : 'Run pnpm install --force to restore store integrity'}
+              >
+                <Wrench size={12} />
+                {repairMutation.isPending ? 'Starting…' : 'Repair Store'}
+              </button>
+            )}
+            {repairMutation.data && (
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{repairMutation.data.message}</span>
+            )}
+            {repairMutation.error && (
+              <span style={{ fontSize: 12, color: 'var(--red, #dc2626)' }}>
+                {repairMutation.error instanceof Error ? repairMutation.error.message : 'Failed to start repair'}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Drawers / modals */}

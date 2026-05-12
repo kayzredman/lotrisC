@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { exec } from 'child_process';
+import * as path from 'path';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 import { getEnv } from '@lotris/config';
@@ -414,5 +416,91 @@ export class HealthService {
     }
 
     return { queued: true };
+  }
+
+  // ── Package store health ──────────────────────────────────────────────────
+
+  async checkStoreHealth(): Promise<{
+    healthy: boolean;
+    corruptedPackages: string[];
+    repairState: 'idle' | 'running' | 'done' | 'error';
+    startedAt?: string;
+  }> {
+    const redis = this.getRedis();
+    const [repairState, startedAt] = await Promise.all([
+      redis.get('health:store-repair:state'),
+      redis.get('health:store-repair:started_at'),
+    ]);
+    const state = (repairState ?? 'idle') as 'idle' | 'running' | 'done' | 'error';
+
+    if (state === 'running') {
+      return { healthy: false, corruptedPackages: [], repairState: 'running', startedAt: startedAt ?? undefined };
+    }
+
+    const pnpm = path.join(path.dirname(process.execPath), 'pnpm');
+    return new Promise((resolve) => {
+      exec(`"${pnpm}" store status`, { cwd: process.cwd(), timeout: 30_000 }, (_err, stdout) => {
+        const corruptedPackages = stdout
+          .split('\n')
+          .map((l) => l.trim())
+          .filter((l) => l && !l.startsWith('You can run') && !l.includes('pnpm install'));
+        resolve({
+          healthy: corruptedPackages.length === 0,
+          corruptedPackages,
+          repairState: state,
+          startedAt: startedAt ?? undefined,
+        });
+      });
+    });
+  }
+
+  async repairStore(actorId: string, tenantId: string): Promise<{ started: boolean; message: string }> {
+    const redis = this.getRedis();
+
+    const [current, cooldownTtl] = await Promise.all([
+      redis.get('health:store-repair:state'),
+      redis.ttl('health:store-repair:cooldown'),
+    ]);
+    if (current === 'running') return { started: false, message: 'Repair already in progress' };
+    if (cooldownTtl > 0) return { started: false, message: `Repair cooling down — available in ${cooldownTtl}s` };
+
+    await Promise.all([
+      redis.set('health:store-repair:state', 'running', 'EX', 600),
+      redis.set('health:store-repair:started_at', new Date().toISOString(), 'EX', 600),
+    ]);
+
+    try {
+      const db = await getMssqlDb();
+      await db.insert(auditLogs).values({
+        tenantId,
+        userId: actorId,
+        action: 'STORE_REPAIR_REQUESTED',
+        entityType: 'System',
+        entityId: 'pnpm-store',
+        details: JSON.stringify({ startedAt: new Date().toISOString() }),
+        createdAt: new Date(),
+      });
+    } catch (err) {
+      this.logger.error(`Failed to write store repair audit log: ${String(err)}`);
+    }
+
+    const pnpm = path.join(path.dirname(process.execPath), 'pnpm');
+    this.logger.log(`[Health] pnpm store repair triggered by ${actorId}`);
+
+    exec(`"${pnpm}" install --force`, { cwd: process.cwd(), timeout: 300_000 }, async (err, _stdout, stderr) => {
+      const r = this.getRedis();
+      if (err) {
+        this.logger.error(`[Health] Store repair failed: ${stderr}`);
+        await r.set('health:store-repair:state', 'error', 'EX', 300);
+      } else {
+        this.logger.log('[Health] Store repair completed successfully');
+        await Promise.all([
+          r.set('health:store-repair:state', 'done', 'EX', 120),
+          r.set('health:store-repair:cooldown', '1', 'EX', 300),
+        ]);
+      }
+    });
+
+    return { started: true, message: 'Repair started — takes 2–4 min. Status updates automatically.' };
   }
 }

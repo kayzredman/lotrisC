@@ -31,8 +31,8 @@ type NavItem = {
 
 const MAIN_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard',  icon: LayoutDashboard },
-  { label: 'Tickets',   href: '/tickets',    icon: Ticket,   badge: 12 },
-  { label: 'Queue',     href: '/queue',      icon: Layers,   badge: 9  },
+  { label: 'Tickets',   href: '/tickets',    icon: Ticket   },
+  { label: 'Queue',     href: '/queue',      icon: Layers   },
   { label: 'Tasks',     href: '/tasks',      icon: CheckSquare },
   { label: 'KPIs',      href: '/kpis',       icon: BarChart3 },
   { label: 'Reports',   href: '/reports',    icon: FileText  },
@@ -74,6 +74,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   const { data: me } = trpc['users.me'].useQuery();
+  const { data: summary } = trpc['dashboard.summary'].useQuery(undefined, { staleTime: 60_000 });
+  const { data: queueHealth } = trpc['dashboard.queueHealth'].useQuery(undefined, { staleTime: 60_000 });
+
+  const liveBadges: Record<string, number | undefined> = {
+    '/tickets': (summary as { openTickets?: number } | undefined)?.openTickets,
+    '/queue':   (queueHealth as { unassigned?: number } | undefined)?.unassigned,
+  };
 
   const initials = user
     ? ((user.firstName?.[0] ?? '') + (user.lastName?.[0] ?? '')).toUpperCase() || 'U'
@@ -133,6 +140,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="v2-nav-section-label">Main</div>
         {MAIN_NAV.map((item) => {
           const active = isActive(item.href);
+          const badge = liveBadges[item.href] ?? item.badge;
           return (
             <Link
               key={item.href + item.label}
@@ -144,8 +152,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <item.icon size={14} />
               </span>
               {item.label}
-              {item.badge != null && item.badge > 0 && (
-                <span className="v2-nav-badge">{item.badge}</span>
+              {badge != null && badge > 0 && (
+                <span className="v2-nav-badge">{badge}</span>
               )}
             </Link>
           );
