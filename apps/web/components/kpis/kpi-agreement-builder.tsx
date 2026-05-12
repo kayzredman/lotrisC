@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@clerk/nextjs';
 import { trpc } from '@/lib/trpc/client';
 import {
   Plus,
@@ -275,21 +274,6 @@ function AreaCard({
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export default function KpiAgreementBuilder() {
-  const { getToken } = useAuth();
-
-  async function apiFetch(path: string, init: RequestInit = {}) {
-    const token = await getToken();
-    const base = process.env.NEXT_PUBLIC_API_URL ?? '';
-    return fetch(`${base}${path}`, {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(init.headers as Record<string, string> | undefined),
-      },
-    });
-  }
-
   const [activeTab, setActiveTab] = useState<'manual' | 'upload'>('manual');
   const [areas, setAreas] = useState<AreaRow[]>([emptyArea()]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -377,46 +361,21 @@ export default function KpiAgreementBuilder() {
       : a));
   }
 
-  // ── Save/activate ────────────────────────────────────────────────────────
-  async function handleSave(activate = false) {
-    if (!selectedId) return;
-    setSaving(true);
-    try {
-      const body = {
-        areas: areas.map(a => ({
-          name: a.name,
-          weight: areaTotal(a),
-          metrics: a.metrics.map(m => ({
-            description: m.description,
-            measurementPeriod: m.measurementPeriod,
-            weight: m.weight,
-            targetScore: parseFloat(m.targetScore) || 0,
-          })),
-        })),
-      };
-      await apiFetch(`/api/v1/kpi/agreements/${selectedId}/areas`, {
-        method: 'PATCH',
-        body: JSON.stringify(body),
-      });
-      if (activate) {
-        await apiFetch(`/api/v1/kpi/agreements/${selectedId}/submit`, { method: 'POST' });
-      }
+  // ── tRPC mutations (all auth goes through tRPC context, not REST guard) ──
+  const setAreasMutation = trpc['kpi.agreements.setAreas'].useMutation({
+    onSuccess: () => {
       utils['kpi.agreements.list'].invalidate();
-      utils['kpi.agreements.get'].invalidate({ id: selectedId });
-    } finally {
-      setSaving(false);
-    }
-  }
+      utils['kpi.agreements.get'].invalidate({ id: selectedId ?? '' });
+    },
+  });
 
-  // ── Submit for review ────────────────────────────────────────────────────
-  async function handleSubmit() {
-    if (!selectedId) return;
-    await apiFetch(`/api/v1/kpi/agreements/${selectedId}/submit`, { method: 'POST' });
-    utils['kpi.agreements.list'].invalidate();
-    utils['kpi.agreements.get'].invalidate({ id: selectedId });
-  }
+  const submitMutation = trpc['kpi.agreements.submit'].useMutation({
+    onSuccess: () => {
+      utils['kpi.agreements.list'].invalidate();
+      utils['kpi.agreements.get'].invalidate({ id: selectedId ?? '' });
+    },
+  });
 
-  // ── Create agreement mutation (tRPC — avoids REST auth guard) ───────────
   const createAgreementMutation = trpc['kpi.agreements.create'].useMutation({
     onSuccess: (data) => {
       setSelectedId((data as { id: string }).id);
@@ -430,6 +389,36 @@ export default function KpiAgreementBuilder() {
       setCreateError(err.message ?? 'Error creating agreement');
     },
   });
+
+  // ── Save/activate ────────────────────────────────────────────────────────
+  async function handleSave(activate = false) {
+    if (!selectedId) return;
+    setSaving(true);
+    try {
+      const areasPayload = areas.map(a => ({
+        name: a.name,
+        weight: areaTotal(a),
+        metrics: a.metrics.map(m => ({
+          description: m.description,
+          measurementPeriod: m.measurementPeriod as 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY',
+          weight: m.weight,
+          targetScore: parseFloat(m.targetScore) || 0,
+        })),
+      }));
+      await setAreasMutation.mutateAsync({ agreementId: selectedId, areas: areasPayload });
+      if (activate) {
+        await submitMutation.mutateAsync({ agreementId: selectedId });
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // ── Submit for review ────────────────────────────────────────────────────
+  function handleSubmit() {
+    if (!selectedId) return;
+    submitMutation.mutate({ agreementId: selectedId });
+  }
 
   // ── New agreement ────────────────────────────────────────────────────────
   function handleNewAgreement() {

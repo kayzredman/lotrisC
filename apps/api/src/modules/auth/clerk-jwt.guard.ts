@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import { verifyToken } from '@clerk/backend';
 import { getEnv } from '@lotris/config';
@@ -6,6 +6,8 @@ import type { AuthService } from './auth.service';
 
 @Injectable()
 export class ClerkJwtGuard implements CanActivate {
+  private readonly logger = new Logger(ClerkJwtGuard.name);
+
   constructor(private readonly authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -41,6 +43,10 @@ export class ClerkJwtGuard implements CanActivate {
       return true;
     } catch (err) {
       if (err instanceof UnauthorizedException) throw err;
+      this.logger.error(
+        `[ClerkJwtGuard] Token verification failed: ${err instanceof Error ? err.message : String(err)}`,
+        err instanceof Error ? err.stack : undefined,
+      );
       throw new UnauthorizedException('Invalid Clerk JWT');
     }
   }

@@ -423,6 +423,35 @@ export const appRouter = router({
       return svc.createAgreement(ctx.auth, { engineerId: input.engineerId, periodKey: input.periodKey });
     }),
 
+  'kpi.agreements.setAreas': managerProcedure
+    .input(z.object({
+      agreementId: z.string().uuid(),
+      areas: z.array(z.object({
+        name: z.string(),
+        weight: z.number(),
+        sortOrder: z.number().int().optional(),
+        metrics: z.array(z.object({
+          description: z.string(),
+          measurementPeriod: z.enum(['MONTHLY', 'QUARTERLY', 'ANNUALLY']),
+          weight: z.number(),
+          targetScore: z.number(),
+          sortOrder: z.number().int().optional(),
+          kpiDefinitionId: z.string().uuid().optional(),
+        })),
+      })),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new KpiService();
+      return svc.upsertAgreementAreas(ctx.auth, input.agreementId, { areas: input.areas });
+    }),
+
+  'kpi.agreements.submit': protectedProcedure
+    .input(z.object({ agreementId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new KpiService();
+      return svc.submitAgreement(ctx.auth, input.agreementId);
+    }),
+
   'kpi.agreements.get': protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
