@@ -92,3 +92,36 @@ export interface IncidentEntry {
   createdAt: string;
   details: string | null;
 }
+
+// ─── Sprint 18: SLA Warning + KPI Trend row types ────────────────────────────
+
+/** A ticket currently at AMBER or RED SLA warning level. */
+export interface SlaWarningRow {
+  ticketId: string;
+  ticketRef: string;
+  title: string;
+  priority: number;
+  status: string;
+  slaDeadline: string;          // ISO timestamp
+  warningLevel: 'AMBER' | 'RED';
+  minutesRemaining: number;
+  assigneeId: string | null;
+  assigneeName: string | null;
+  teamId: string | null;
+  teamName: string | null;
+}
+
+/** Latest KPI trend snapshot for an engineer in the current period. */
+export interface KpiTrendRow {
+  snapshotId: string;
+  engineerId: string;
+  engineerName: string;
+  kpiDefId: string;
+  kpiName: string;
+  periodKey: string;
+  actualToDate: number;
+  projectedEop: number;
+  target: number;
+  warningLevel: 'NONE' | 'AMBER' | 'RED';
+  snapshotAt: string;           // ISO timestamp
+}

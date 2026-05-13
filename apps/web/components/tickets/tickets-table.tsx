@@ -267,7 +267,13 @@ export function TicketsTable() {
             </thead>
             <tbody>
               {rows.map(t => (
-                <tr key={t.rawId ?? t.id} onClick={() => setSelectedTicketId(t.rawId ?? t.id)} style={{ cursor: 'pointer' }}>
+                <tr key={t.rawId ?? t.id} onClick={() => setSelectedTicketId(t.rawId ?? t.id)} style={{
+                  cursor: 'pointer',
+                  background:
+                    (t as { slaWarningLevel?: string }).slaWarningLevel === 'RED'   ? '#fee2e2' :
+                    (t as { slaWarningLevel?: string }).slaWarningLevel === 'AMBER' ? '#fef3c7' :
+                    undefined,
+                }}>
                   <td><span className="v2-ticket-id">{t.id}</span></td>
                   <td>
                     <span style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: 12.5 }}>{t.title}</span>
