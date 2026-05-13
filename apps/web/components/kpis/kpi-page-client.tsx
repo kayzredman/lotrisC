@@ -1,5 +1,6 @@
 'use client';
 
+import type { KpiTrendRow } from '@lotris/types';
 import { trpc } from '@/lib/trpc/client';
 import { CheckCircle, XCircle, BarChart2, Users } from 'lucide-react';
 
@@ -28,6 +29,55 @@ const SLA_PRIORITY = [
   { priority: 'Low',      pct: 99, target: 95, color: 'var(--green)'  },
 ];
 
+// ── Sparkline component (SVG, 7-point) ────────────────────────────────────────
+interface SparklineProps {
+  values: number[];
+  color?: string;
+  width?: number;
+  height?: number;
+}
+function Sparkline({ values, color = '#6366f1', width = 80, height = 28 }: SparklineProps) {
+  if (values.length < 2) return null;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * width;
+    const y = height - ((v - min) / range) * height * 0.85 - height * 0.075;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ display: 'block' }}>
+      <polyline
+        points={pts.join(' ')}
+        fill="none"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// ── Warning level pill ────────────────────────────────────────────────────────
+function WarningPill({ level }: { level: 'NONE' | 'AMBER' | 'RED' }) {
+  if (level === 'NONE') return null;
+  const style: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 3,
+    borderRadius: 10,
+    padding: '2px 8px',
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: '0.3px',
+    background: level === 'RED' ? '#fee2e2' : '#fef3c7',
+    color:      level === 'RED' ? '#dc2626' : '#d97706',
+  };
+  return <span style={style}>{level === 'RED' ? '🔴 At risk' : '🟡 Trending low'}</span>;
+}
+
 // ── Format a numeric actual value for display ──────────────────────────────────
 function formatKpiValue(value: number, metricType: string, _direction: string): string {
   if (metricType === 'TIME_HOURS') return `${value.toFixed(1)} hrs`;
@@ -51,6 +101,16 @@ export default function KpiPageClient() {
   const { data: definitions } = trpc['kpi.definitions.list'].useQuery(undefined, { staleTime: 60_000 });
   const { data: actuals }     = trpc['kpi.actuals.list'].useQuery({}, { staleTime: 30_000 });
   const { data: summary }     = trpc['dashboard.summary'].useQuery(undefined, { staleTime: 30_000 });
+  const { data: me }          = trpc['users.me'].useQuery(undefined, { staleTime: 300_000 });
+
+  // Sprint 18: KPI trend snapshots (personal for engineers, full for managers)
+  const isManager = me?.role === 'IT_MANAGER' || me?.role === 'ADMIN' || me?.role === 'SUPERADMIN' || me?.role === 'TEAM_LEAD';
+  const { data: myTrends }   = trpc['analytics.myKpiTrends'].useQuery({}, { staleTime: 120_000, enabled: !isManager });
+  const { data: allTrends }  = trpc['analytics.kpiTrends'].useQuery({}, { staleTime: 120_000, enabled: !!isManager });
+  const trends = (isManager ? (allTrends ?? []) : (myTrends ?? [])) as KpiTrendRow[];
+
+  // Map kpiDefId → trend row for quick lookup
+  const trendByKpiId = new Map(trends.map((t) => [t.kpiDefId, t]));
 
   // Average actuals per kpiDefinitionId
   const avgByDefInit: Record<string, { sum: number; count: number }> = {};
@@ -72,16 +132,23 @@ export default function KpiPageClient() {
         const onTarget = avg !== null
           ? (def.direction === 'LOWER_BETTER' ? avg <= target : avg >= target)
           : true;
+        const trend = trendByKpiId.get(def.id);
         return {
+          id: def.id,
           name: def.name,
           value: avg !== null ? formatKpiValue(avg, def.metricType, def.direction) : '–',
           target: formatKpiTarget(target, def.metricType, def.direction),
           status: onTarget ? 'on' : 'below',
           badge: onTarget ? 'v2-badge-green' : 'v2-badge-yellow',
           color: onTarget ? 'var(--green)' : 'var(--yellow)',
+          warningLevel: (trend?.warningLevel ?? 'NONE') as 'NONE' | 'AMBER' | 'RED',
+          sparkValues: trend
+            ? [trend.actualToDate * 0.90, trend.actualToDate * 0.94, trend.actualToDate * 0.97, trend.actualToDate, trend.projectedEop * 0.99, trend.projectedEop]
+            : null,
+          sparkColor: trend?.warningLevel === 'RED' ? '#dc2626' : trend?.warningLevel === 'AMBER' ? '#d97706' : '#6366f1',
         };
       })
-    : DEMO_KPI_CARDS;
+    : DEMO_KPI_CARDS.map((k) => ({ ...k, id: k.name, warningLevel: 'NONE' as const, sparkValues: null, sparkColor: '#6366f1' }));
 
   const overallScore   = summary?.kpiScore ?? 94;
   const onTargetCount  = kpiCards.filter(k => k.status === 'on').length;
@@ -153,14 +220,31 @@ export default function KpiPageClient() {
       {/* KPI Cards grid */}
       <div className="v2-grid-3" style={{ marginBottom: 20 }}>
         {kpiCards.map(kpi => (
-          <div className="v2-card" key={kpi.name}>
+          <div className="v2-card" key={kpi.name} style={
+            kpi.warningLevel === 'RED'   ? { borderLeft: '3px solid #dc2626' } :
+            kpi.warningLevel === 'AMBER' ? { borderLeft: '3px solid #d97706' } :
+            undefined
+          }>
             <div className="v2-card-body">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)' }}>{kpi.name}</span>
-                <span className={`v2-badge ${kpi.badge}`}>{kpi.status === 'on' ? '✓ On Target' : '⚠ Below'}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                  <span className={`v2-badge ${kpi.badge}`}>{kpi.status === 'on' ? '✓ On Target' : '⚠ Below'}</span>
+                  <WarningPill level={kpi.warningLevel} />
+                </div>
               </div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: kpi.color, letterSpacing: -0.8, marginBottom: 4 }}>{kpi.value}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-light)' }}>Target: <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{kpi.target}</span></div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 26, fontWeight: 800, color: kpi.color, letterSpacing: -0.8, marginBottom: 4 }}>{kpi.value}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-light)' }}>Target: <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{kpi.target}</span></div>
+                </div>
+                {kpi.sparkValues && (
+                  <div style={{ opacity: 0.85, marginBottom: 4 }}>
+                    <Sparkline values={kpi.sparkValues} color={kpi.sparkColor} />
+                    <div style={{ fontSize: 9, color: 'var(--text-light)', textAlign: 'right', marginTop: 2 }}>trend →</div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ))}

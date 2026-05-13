@@ -41,7 +41,34 @@ interface InternalTicketJob {
   recipientId?: string;
 }
 
-type NotificationJob = IntakeAckJob | IntakeResolvedJob | InternalTicketJob;
+interface SlaWarningJob {
+  type: 'SLA_WARNING';
+  tenantId: string;
+  ticketId: string;
+  ticketRef: string;
+  ticketTitle: string;
+  assigneeId: string;
+  assigneeEmail: string;
+  leadId: string | null;
+  leadEmail: string | null;
+  warningLevel: 'AMBER' | 'RED';
+  slaDeadline: string;
+  minutesRemaining: number;
+}
+
+interface KpiWarningJob {
+  type: 'KPI_WARNING';
+  tenantId: string;
+  engineerId: string;
+  engineerName: string;
+  kpiName: string;
+  projectedScore: number;
+  target: number;
+  warningLevel: 'AMBER' | 'RED';
+  periodKey: string;
+}
+
+type NotificationJob = IntakeAckJob | IntakeResolvedJob | InternalTicketJob | SlaWarningJob | KpiWarningJob;
 
 function createTransport() {
   const env = getEnv();
@@ -133,6 +160,60 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
+async function sendSlaWarning(payload: SlaWarningJob, connection: IORedis): Promise<void> {
+  const env = getEnv();
+  const transport = createTransport();
+  const levelLabel = payload.warningLevel === 'RED' ? '🔴 URGENT' : '🟡 Warning';
+  const subject = `${levelLabel}: Ticket [${payload.ticketRef}] SLA breach imminent (${payload.minutesRemaining}m remaining)`;
+  const html = `
+    <p>The following ticket is at risk of breaching its SLA resolution deadline.</p>
+    <table cellpadding="6" cellspacing="0" style="border-collapse:collapse;margin:16px 0">
+      <tr><td style="color:#666">Ticket</td><td><strong>[${escapeHtml(payload.ticketRef)}] ${escapeHtml(payload.ticketTitle)}</strong></td></tr>
+      <tr><td style="color:#666">Warning</td><td><strong style="color:${payload.warningLevel === 'RED' ? '#dc2626' : '#d97706'}">${payload.warningLevel}</strong></td></tr>
+      <tr><td style="color:#666">Time remaining</td><td><strong>${payload.minutesRemaining} minutes</strong></td></tr>
+      <tr><td style="color:#666">SLA deadline</td><td>${new Date(payload.slaDeadline).toLocaleString()}</td></tr>
+    </table>
+    <p>Please action this ticket immediately to avoid a breach.</p>
+  `;
+  const text = `${levelLabel}: Ticket [${payload.ticketRef}] ${payload.ticketTitle} — ${payload.minutesRemaining} minutes until SLA breach. SLA deadline: ${payload.slaDeadline}`;
+
+  const recipients: string[] = [payload.assigneeEmail];
+  if (payload.leadEmail) recipients.push(payload.leadEmail);
+
+  for (const to of recipients) {
+    try {
+      await transport.sendMail({ from: env.EMAIL_FROM, to, subject, html, text });
+    } catch (err) {
+      console.error(`[notifications] Failed to send SLA_WARNING email to ${to}:`, err);
+    }
+  }
+
+  // Push real-time SSE event via Redis pub/sub
+  const ssePayload = JSON.stringify({
+    type: 'SLA_WARNING',
+    ticketRef: payload.ticketRef,
+    ticketTitle: payload.ticketTitle,
+    warningLevel: payload.warningLevel,
+    minutesRemaining: payload.minutesRemaining,
+  });
+  const sseRecipients = [payload.assigneeId];
+  if (payload.leadId) sseRecipients.push(payload.leadId);
+  await Promise.all(sseRecipients.map((id) => connection.publish(`sse:user:${id}`, ssePayload)));
+}
+
+async function handleKpiWarning(payload: KpiWarningJob, connection: IORedis): Promise<void> {
+  // KPI_WARNING = in-app SSE only (no email; email digest is handled by digest.worker.ts)
+  const ssePayload = JSON.stringify({
+    type: 'KPI_WARNING',
+    kpiName: payload.kpiName,
+    projectedScore: payload.projectedScore,
+    target: payload.target,
+    warningLevel: payload.warningLevel,
+    periodKey: payload.periodKey,
+  });
+  await connection.publish(`sse:user:${payload.engineerId}`, ssePayload);
+}
+
 export function createNotificationsWorker(connection: IORedis): Worker {
   return new Worker<NotificationJob>(
     'notifications',
@@ -146,6 +227,14 @@ export function createNotificationsWorker(connection: IORedis): Worker {
 
         case 'INTAKE_RESOLVED':
           await sendIntakeResolved(payload);
+          break;
+
+        case 'SLA_WARNING':
+          await sendSlaWarning(payload, connection);
+          break;
+
+        case 'KPI_WARNING':
+          await handleKpiWarning(payload, connection);
           break;
 
         case 'TICKET_CREATED':

@@ -68,6 +68,9 @@ export function DashboardPageClient() {
   const queueQ        = trpc['dashboard.queueHealth'].useQuery(undefined, { staleTime: 25_000, refetchInterval: 30_000 });
   const engPerfQ      = trpc['dashboard.engineerPerf'].useQuery(undefined, { staleTime: 60_000 });
   const teamWorkloadQ = trpc['dashboard.teamWorkload'].useQuery(undefined, { staleTime: 30_000, refetchInterval: 60_000 });
+  // Sprint 18: SLA warnings (TEAM_LEAD+ only)
+  const canSeeSlaWarnings = ['IT_MANAGER', 'ADMIN', 'SUPERADMIN', 'TEAM_LEAD'].includes(role);
+  const slaWarningsQ = trpc['analytics.slaWarnings'].useQuery(undefined, { staleTime: 60_000, refetchInterval: 120_000, enabled: canSeeSlaWarnings });
 
   // Live values with DEMO fallbacks
   const openTickets  = summaryQ.data?.openTickets  ?? DEMO.openTickets;
@@ -335,9 +338,51 @@ export function DashboardPageClient() {
         <div className="v2-card">
           <div className="v2-card-header">
             <div className="v2-card-title">Active Alerts</div>
-            <span className="v2-badge v2-badge-red">{DEMO.alerts.filter(a => a.level === 'red').length} critical</span>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {canSeeSlaWarnings && slaWarningsQ.data && slaWarningsQ.data.length > 0 && (() => {
+                const redCount   = slaWarningsQ.data.filter(w => w.warningLevel === 'RED').length;
+                const amberCount = slaWarningsQ.data.filter(w => w.warningLevel === 'AMBER').length;
+                return (
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {redCount > 0 && (
+                      <a href={`/tickets?slaWarning=red`} className="v2-badge v2-badge-red" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                        🔴 {redCount} RED
+                      </a>
+                    )}
+                    {amberCount > 0 && (
+                      <a href={`/tickets?slaWarning=amber`} className="v2-badge v2-badge-yellow" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                        🟡 {amberCount} AMBER
+                      </a>
+                    )}
+                  </div>
+                );
+              })()}
+              <span className="v2-badge v2-badge-red">{DEMO.alerts.filter(a => a.level === 'red').length} critical</span>
+            </div>
           </div>
           <div className="v2-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Sprint 18: Live SLA warning rows */}
+            {canSeeSlaWarnings && slaWarningsQ.data && slaWarningsQ.data.slice(0, 3).map((w) => (
+              <div
+                key={w.ticketId}
+                style={{
+                  display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: w.warningLevel === 'RED' ? '#fee2e2' : '#fef3c7',
+                  border: `1px solid ${w.warningLevel === 'RED' ? '#fca5a5' : '#fde68a'}`,
+                }}
+              >
+                <span style={{
+                  width: 7, height: 7, borderRadius: '50%', marginTop: 4, flexShrink: 0,
+                  background: w.warningLevel === 'RED' ? '#dc2626' : '#d97706',
+                }} />
+                <span style={{ fontSize: 12.5, color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                  <strong>{w.warningLevel}</strong> — [{w.ticketRef}] {w.title}
+                  {w.assigneeName && <span style={{ color: 'var(--text-muted)' }}> · {w.assigneeName}</span>}
+                  <span style={{ color: 'var(--text-light)', marginLeft: 4 }}>({w.minutesRemaining}m left)</span>
+                </span>
+              </div>
+            ))}
             {DEMO.alerts.map((alert) => {
               const c = ALERT_COLORS[alert.level];
               return (

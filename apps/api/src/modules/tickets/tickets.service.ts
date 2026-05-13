@@ -159,6 +159,7 @@ export class TicketsService {
     if (query.teamId)   whereParts.push(`tk.team_id = '${query.teamId}'`);
     if (query.assigneeId) whereParts.push(`tk.assignee_id = '${query.assigneeId}'`);
     if (query.source)   whereParts.push(`tk.source = '${query.source}'`);
+    if (query.slaWarning) whereParts.push(`tk.sla_warning_level = '${query.slaWarning.toUpperCase()}'`);
     if (query.search?.trim()) {
       const term = query.search.trim().replace(/'/g, "''");
       whereParts.push(`(tk.title LIKE '%${term}%' OR tk.id LIKE '%${term}%')`);
@@ -173,6 +174,7 @@ export class TicketsService {
       requesterEmail: string | null; requesterName: string | null;
       slaPickupDeadline: string | null; slaPickupBreached: number;
       slaResolutionDeadline: string | null; slaResolutionBreached: number;
+      slaWarningLevel: string;
       createdAt: string; updatedAt: string;
       teamName: string | null;
       total: number;
@@ -186,6 +188,7 @@ export class TicketsService {
           tk.source, tk.requester_email AS requesterEmail, tk.requester_name AS requesterName,
           tk.sla_pickup_deadline AS slaPickupDeadline, tk.sla_pickup_breached AS slaPickupBreached,
           tk.sla_resolution_deadline AS slaResolutionDeadline, tk.sla_resolution_breached AS slaResolutionBreached,
+          tk.sla_warning_level AS slaWarningLevel,
           tk.created_at AS createdAt, tk.updated_at AS updatedAt,
           t.name AS teamName,
           COUNT(*) OVER() AS total
@@ -220,6 +223,7 @@ export class TicketsService {
         slaPickupBreached: r.slaPickupBreached,
         slaResolutionDeadline: r.slaResolutionDeadline,
         slaResolutionBreached: r.slaResolutionBreached,
+        slaWarningLevel: r.slaWarningLevel ?? 'NONE',
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
       })),

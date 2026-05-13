@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
 import { CreateTicketModal } from './create-ticket-modal';
 import { TicketDrawer } from './ticket-drawer';
@@ -113,9 +114,13 @@ export function TicketsTable() {
 
   const statusFilter = TAB_STATUS[activeTab];
 
+  // Read slaWarning URL param (deep-link from dashboard SLA card)
+  const searchParams = useSearchParams();
+  const slaWarningParam = searchParams.get('slaWarning') as 'amber' | 'red' | null;
+
   // Live data from MSSQL
   const { data: liveData } = trpc['tickets.list'].useQuery(
-    { status: statusFilter, priority, search: debouncedSearch || undefined, page, limit: 25 },
+    { status: statusFilter, priority, search: debouncedSearch || undefined, page, limit: 25, slaWarning: slaWarningParam ?? undefined },
     { staleTime: 15_000 },
   );
   const totalTickets = liveData?.total ?? 0;
@@ -141,6 +146,7 @@ export function TicketsTable() {
       source: t.source ?? 'INTERNAL',
       sla: sla.text,
       slaColor: sla.color,
+      slaWarningLevel: (t as { slaWarningLevel?: string }).slaWarningLevel ?? 'NONE',
       date: new Date(t.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''),
     };
   });
@@ -267,7 +273,13 @@ export function TicketsTable() {
             </thead>
             <tbody>
               {rows.map(t => (
-                <tr key={t.rawId ?? t.id} onClick={() => setSelectedTicketId(t.rawId ?? t.id)} style={{ cursor: 'pointer' }}>
+                <tr key={t.rawId ?? t.id} onClick={() => setSelectedTicketId(t.rawId ?? t.id)} style={{
+                  cursor: 'pointer',
+                  background:
+                    (t as { slaWarningLevel?: string }).slaWarningLevel === 'RED'   ? '#fee2e2' :
+                    (t as { slaWarningLevel?: string }).slaWarningLevel === 'AMBER' ? '#fef3c7' :
+                    undefined,
+                }}>
                   <td><span className="v2-ticket-id">{t.id}</span></td>
                   <td>
                     <span style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: 12.5 }}>{t.title}</span>
@@ -296,8 +308,12 @@ export function TicketsTable() {
                       style={{
                         fontSize: 12, fontWeight: 600,
                         color: t.slaColor === 'red' ? 'var(--red)' : t.slaColor === 'yellow' ? 'var(--yellow)' : 'var(--green)',
+                        display: 'flex', alignItems: 'center', gap: 3,
                       }}
                     >
+                      {(t as { slaWarningLevel?: string }).slaWarningLevel === 'RED' && (
+                        <span title="System-predicted SLA breach" style={{ fontSize: 11 }}>⚠</span>
+                      )}
                       {t.sla}
                     </span>
                   </td>

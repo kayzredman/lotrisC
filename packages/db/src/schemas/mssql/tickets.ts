@@ -48,6 +48,7 @@ export const tickets = mssqlTable(
     slaResolutionDeadline: datetime2('sla_resolution_deadline', { precision: 3 }),
     slaPickupBreached: bit('sla_pickup_breached').notNull().default(0),
     slaResolutionBreached: bit('sla_resolution_breached').notNull().default(0),
+    slaWarningLevel: varchar('sla_warning_level', { length: 10 }).notNull().default('NONE'),
 
     // Timestamps
     assignedAt: datetime2('assigned_at', { precision: 3 }),
@@ -63,6 +64,8 @@ export const tickets = mssqlTable(
     tenantAssigneeIdx: index('idx_tickets_tenant_assignee').on(table.tenantId, table.assigneeId),
     // Queue ordering index: priority ASC (1=highest), sla_resolution_deadline ASC
     tenantQueueIdx: index('idx_tickets_queue').on(table.tenantId, table.priority, table.slaResolutionDeadline),
+    // SLA warning index: fast lookup of amber/red tickets per tenant
+    slaWarningIdx: index('idx_tickets_sla_warning').on(table.tenantId, table.slaWarningLevel),
   }),
 );
 

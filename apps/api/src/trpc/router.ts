@@ -1,7 +1,7 @@
 import { router, protectedProcedure, adminProcedure, managerProcedure, kpiAgreementProcedure, publicProcedure } from './trpc';
 import { TRPCError } from '@trpc/server';
 import { HealthService } from '../modules/health/health.service';
-import { getMssqlDb, users, teams, roles, auditLogs, eq, and, sql, desc } from '@lotris/db';
+import { getMssqlDb, getPostgresDb, users, teams, roles, auditLogs, tickets, kpiDefinitions, kpiTrendSnapshots, eq, and, sql, desc, inArray } from '@lotris/db';
 import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
 import { QueueService } from '../modules/queue/queue.service';
@@ -216,6 +216,7 @@ export const appRouter = router({
         assigneeId: z.string().uuid().optional(),
         search: z.string().optional(),
         source: z.enum(['INTERNAL', 'EMAIL', 'SELF_SERVICE', 'API']).optional(),
+        slaWarning: z.enum(['amber', 'red']).optional(),
         page: z.number().int().min(1).default(1),
         limit: z.number().int().min(1).max(100).default(25),
       }),
@@ -701,6 +702,185 @@ export const appRouter = router({
       })),
     };
   }),
+
+  // ── Sprint 18: SLA Warning & KPI Trend procedures ───────────────────────────
+
+  /**
+   * analytics.slaWarnings — list all AMBER/RED tickets in the tenant.
+   * Accessible by TEAM_LEAD, IT_MANAGER, ADMIN, SUPERADMIN.
+   */
+  'analytics.slaWarnings': kpiAgreementProcedure.query(async ({ ctx }) => {
+    const { tenantId } = ctx.auth;
+    const db = await getMssqlDb();
+
+    const rows = await db.execute<{
+      id: string;
+      title: string;
+      priority: number;
+      status: string;
+      sla_resolution_deadline: string | null;
+      sla_warning_level: string;
+      assignee_id: string | null;
+      assignee_name: string | null;
+      team_id: string | null;
+      team_name: string | null;
+      assigned_at: string | null;
+    }>(sql`
+      SELECT
+        t.id,
+        t.title,
+        t.priority,
+        t.status,
+        t.sla_resolution_deadline,
+        t.sla_warning_level,
+        t.assignee_id,
+        u.full_name AS assignee_name,
+        t.team_id,
+        tm.name     AS team_name,
+        t.assigned_at
+      FROM Tickets t
+      LEFT JOIN Users  u  ON u.id = t.assignee_id  AND u.tenant_id  = ${tenantId}
+      LEFT JOIN Teams  tm ON tm.id = t.team_id      AND tm.tenant_id = ${tenantId}
+      WHERE t.tenant_id = ${tenantId}
+        AND t.sla_warning_level IN ('AMBER', 'RED')
+        AND t.status NOT IN ('RESOLVED', 'CLOSED')
+      ORDER BY t.sla_warning_level DESC, t.sla_resolution_deadline ASC
+    `);
+
+    const now = Date.now();
+    return rows.map((r) => {
+      const slaDeadline    = r.sla_resolution_deadline ?? '';
+      const minutesRemaining = slaDeadline
+        ? Math.max(0, Math.round((new Date(slaDeadline).getTime() - now) / 60_000))
+        : 0;
+      const ticketRef = `TKT-${r.id.split('-')[0]?.toUpperCase() ?? r.id.slice(0, 8).toUpperCase()}`;
+      return {
+        ticketId:         r.id,
+        ticketRef,
+        title:            r.title,
+        priority:         Number(r.priority),
+        status:           r.status,
+        slaDeadline,
+        warningLevel:     r.sla_warning_level as 'AMBER' | 'RED',
+        minutesRemaining,
+        assigneeId:       r.assignee_id ?? null,
+        assigneeName:     r.assignee_name ?? null,
+        teamId:           r.team_id ?? null,
+        teamName:         r.team_name ?? null,
+      };
+    });
+  }),
+
+  /**
+   * analytics.kpiTrends — latest KPI trend snapshots for all engineers in the tenant.
+   * Accessible by TEAM_LEAD, IT_MANAGER, ADMIN, SUPERADMIN.
+   */
+  'analytics.kpiTrends': kpiAgreementProcedure
+    .input(z.object({ periodKey: z.string().optional() }))
+    .query(async ({ ctx, input }) => {
+      const { tenantId } = ctx.auth;
+      const db = await getMssqlDb();
+      const pg = getPostgresDb();
+      const now = new Date();
+      const yr  = now.getFullYear();
+      const mo  = String(now.getMonth() + 1).padStart(2, '0');
+      const q   = Math.ceil((now.getMonth() + 1) / 3);
+      const period = input.periodKey ?? `${yr}-${mo}`;
+
+      // Fetch latest snapshot per (engineerId, kpiDefId) for the period
+      const snaps = await pg
+        .select()
+        .from(kpiTrendSnapshots)
+        .where(
+          and(
+            eq(kpiTrendSnapshots.tenantId, tenantId),
+            eq(kpiTrendSnapshots.periodKey, period),
+          ),
+        );
+
+      if (snaps.length === 0) return [];
+
+      // Enrich with engineer names and KPI names from MSSQL
+      const engineerIds = [...new Set(snaps.map((s) => s.engineerId))];
+      const kpiDefIds   = [...new Set(snaps.map((s) => s.kpiDefId))];
+
+      const engineerRows = await db.execute<{ id: string; full_name: string }>(
+        sql`SELECT id, full_name FROM Users WHERE tenant_id = ${tenantId}`,
+      );
+      const kpiRows = await db.execute<{ id: string; name: string }>(
+        sql`SELECT id, name FROM KPI_Definitions WHERE tenant_id = ${tenantId}`,
+      );
+
+      const engineerMap = new Map(engineerRows.map((r) => [r.id, r.full_name]));
+      const kpiMap      = new Map(kpiRows.map((r) => [r.id, r.name]));
+
+      return snaps.map((s) => ({
+        snapshotId:    s.id,
+        engineerId:    s.engineerId,
+        engineerName:  engineerMap.get(s.engineerId) ?? s.engineerId,
+        kpiDefId:      s.kpiDefId,
+        kpiName:       kpiMap.get(s.kpiDefId) ?? s.kpiDefId,
+        periodKey:     s.periodKey,
+        actualToDate:  parseFloat(String(s.actualToDate)),
+        projectedEop:  parseFloat(String(s.projectedEop)),
+        target:        parseFloat(String(s.target)),
+        warningLevel:  s.warningLevel as 'NONE' | 'AMBER' | 'RED',
+        snapshotAt:    s.snapshotAt instanceof Date ? s.snapshotAt.toISOString() : String(s.snapshotAt),
+      }));
+    }),
+
+  /**
+   * analytics.myKpiTrends — KPI trend snapshots scoped to the current user.
+   * Accessible by any authenticated user (ENGINEER+).
+   */
+  'analytics.myKpiTrends': protectedProcedure
+    .input(z.object({ periodKey: z.string().optional() }))
+    .query(async ({ ctx, input }) => {
+      const { tenantId, userId } = ctx.auth;
+      const db = await getMssqlDb();
+      const pg = getPostgresDb();
+      const now = new Date();
+      const yr  = now.getFullYear();
+      const mo  = String(now.getMonth() + 1).padStart(2, '0');
+      const period = input.periodKey ?? `${yr}-${mo}`;
+
+      const snaps = await pg
+        .select()
+        .from(kpiTrendSnapshots)
+        .where(
+          and(
+            eq(kpiTrendSnapshots.tenantId, tenantId),
+            eq(kpiTrendSnapshots.engineerId, userId),
+            eq(kpiTrendSnapshots.periodKey, period),
+          ),
+        );
+
+      if (snaps.length === 0) return [];
+
+      const kpiRows = await db.execute<{ id: string; name: string }>(
+        sql`SELECT id, name FROM KPI_Definitions WHERE tenant_id = ${tenantId}`,
+      );
+      const kpiMap = new Map(kpiRows.map((r) => [r.id, r.name]));
+
+      const meRows = await db.execute<{ full_name: string }>(
+        sql`SELECT full_name FROM Users WHERE id = ${userId} AND tenant_id = ${tenantId}`,
+      );
+      const myName = meRows[0]?.full_name ?? userId;
+
+      return snaps.map((s) => ({
+        snapshotId:    s.id,
+        engineerId:    s.engineerId,
+        engineerName:  myName,
+        kpiDefId:      s.kpiDefId,
+        kpiName:       kpiMap.get(s.kpiDefId) ?? s.kpiDefId,
+        periodKey:     s.periodKey,
+        actualToDate:  parseFloat(String(s.actualToDate)),
+        projectedEop:  parseFloat(String(s.projectedEop)),
+        target:        parseFloat(String(s.target)),
+        warningLevel:  s.warningLevel as 'NONE' | 'AMBER' | 'RED',
+        snapshotAt:    s.snapshotAt instanceof Date ? s.snapshotAt.toISOString() : String(s.snapshotAt),
+      }));
+    }),
 });
 
 export type AppRouter = typeof appRouter;

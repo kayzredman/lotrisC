@@ -31,6 +31,33 @@ export interface IntakeResolvedPayload {
   teamName: string;
 }
 
+export interface SlaWarningPayload {
+  type: 'SLA_WARNING';
+  tenantId: string;
+  ticketId: string;
+  ticketRef: string;
+  ticketTitle: string;
+  assigneeId: string;
+  assigneeEmail: string;
+  leadId: string | null;
+  leadEmail: string | null;
+  warningLevel: 'AMBER' | 'RED';
+  slaDeadline: string; // ISO timestamp
+  minutesRemaining: number;
+}
+
+export interface KpiWarningPayload {
+  type: 'KPI_WARNING';
+  tenantId: string;
+  engineerId: string;
+  engineerName: string;
+  kpiName: string;
+  projectedScore: number;
+  target: number;
+  warningLevel: 'AMBER' | 'RED';
+  periodKey: string;
+}
+
 /**
  * NotificationsService — queues notification jobs into BullMQ.
  * The actual email/in-app dispatch happens in workers/jobs.
@@ -87,6 +114,32 @@ export class NotificationsService {
       });
     } catch (err) {
       this.logger.error(`Failed to queue INTAKE_RESOLVED for ${payload.ticketId}: ${String(err)}`);
+    }
+  }
+
+  async queueSlaWarning(payload: SlaWarningPayload): Promise<void> {
+    try {
+      await this.getQueue().add('SLA_WARNING', payload, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+        removeOnComplete: { count: 1000 },
+        removeOnFail: { count: 500 },
+      });
+    } catch (err) {
+      this.logger.error(`Failed to queue SLA_WARNING for ticket ${payload.ticketId}: ${String(err)}`);
+    }
+  }
+
+  async queueKpiWarning(payload: KpiWarningPayload): Promise<void> {
+    try {
+      await this.getQueue().add('KPI_WARNING', payload, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+        removeOnComplete: { count: 1000 },
+        removeOnFail: { count: 500 },
+      });
+    } catch (err) {
+      this.logger.error(`Failed to queue KPI_WARNING for engineer ${payload.engineerId}: ${String(err)}`);
     }
   }
 }
