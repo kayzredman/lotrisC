@@ -1,6 +1,6 @@
 # Lotris — Project Context
 
-> Last updated: May 2026 — Sprint 16 complete (QA fixes: Queue role-scope, Tickets/Tasks role banners, Monitor real DB; animated ticker; light/dark toggle; cross-team access; mobile CSS; KPI My Agreement for engineers/team leads; TEAM_LEAD agreement builder access; Daily measurement period; submit-for-review button improvements)
+> Last updated: May 2026 — Sprint 17 complete (Ticket Intake: public web form `/request`, IMAP email poller, CategoryRouting config, source field on tickets INTERNAL/SELF_SERVICE/EMAIL/API, ACK + resolved email notifications, source badges in ticket table and drawer)
 
 ---
 
@@ -56,6 +56,7 @@ Lotris solves this with a single system where every ticket is queued, assigned, 
 | Quarterly & Operational Reports | Auto-compiled ticket, SLA, queue, and KPI reports for stakeholder distribution                                                              |
 | Responsive Design + PWA         | Fully responsive across desktop, tablet, and mobile; installable as a Progressive Web App                                                   |
 | System Health Monitoring        | Real-time SysAdmin ops dashboard; per-process status, queue depths, restart controls; public status page (`status.lotris.io`)               |
+| Ticket Intake (Web Form + Email) | Public self-service request form (`/request`, no auth required); IMAP email poller; auto-routing via CategoryRouting config table; source tracking on all tickets (INTERNAL / SELF_SERVICE / EMAIL / API); ACK and resolved emails to external requesters |
 
 ---
 
@@ -242,7 +243,8 @@ NestJS on Fastify (API layer)
 BullMQ Workers (separate Docker process)
 ├── sla-timers       ─ Pickup + resolution SLA countdown jobs
 ├── auto-assign      ─ Mutex-locked least-loaded assignment
-├── notifications    ─ Email dispatch + push
+├── notifications    ─ Email dispatch + push; ACK + resolved emails for self-service tickets
+├── intake-poller    ─ IMAP email polling; inbound email → ticket creation via CategoryRouting
 └── report-gen       ─ PDF/Excel generation + email delivery
 ```
 
@@ -290,7 +292,9 @@ lotris/
 ## 9. Data Model (High-Level)
 
 **Core ticket entities:**
-Tenants · Users (Engineers) · Roles · Teams · Tickets · Ticket_Comments · Tasks · Task_Assignments · Task_Checklist_Items · Notifications · Audit_Logs · Assignment_History · Queue_Config
+Tenants · Users (Engineers) · Roles · Teams · Tickets · Ticket_Comments · Tasks · Task_Assignments · Task_Checklist_Items · Notifications · Audit_Logs · Assignment_History · Queue_Config · Category_Routing
+
+> **Tickets** carry a `source` field (`INTERNAL | SELF_SERVICE | EMAIL | API`) and optional `requester_name`, `requester_email` columns for externally-submitted tickets. The `Category_Routing` table maps category strings to a default team and priority, used by the intake module to auto-route incoming requests.
 
 > **Tasks** carry a `source` field (`LEAD_ASSIGNED | SELF_LOGGED`) and a `created_by` FK. Self-logged tasks are visible to the team lead and feed KPI actuals the same way lead-assigned tasks do.
 
@@ -532,6 +536,7 @@ Auth & Tenancy
 | M7 — Monitoring | 13     | SysAdmin ops dashboard, restart controls, status page   |
 | M8 — UI Quality | 15     | Dark mode, dashboard accuracy, tickets page fully functional, role-gated assign |
 | M9 — QA & Monitor + KPI My Agreement | 16  | Queue/Tickets/Tasks role-visibility, Monitor wall, cross-team access, mobile CSS, KPI My Agreement, TEAM_LEAD builder access, Daily period, submit button fix |
+| M10 — Ticket Intake               | 17  | Public web form (`/request`), IMAP email poller, CategoryRouting config, source field on tickets, ACK + resolved notifications, source badges in UI |
 
 ---
 
@@ -662,10 +667,11 @@ lotris/                          ← monorepo root
 
 All services run under **pm2** in local dev:
 
-| pm2 ID | Name         | Port | Restart behaviour            |
-| ------ | ------------ | ---- | ---------------------------- |
-| 0      | `lotris-api` | 4000 | tsx watch — auto-reloads on file save |
-| 6      | `lotris-web` | 3000 | Next.js HMR — hot-reloads on file save |
+| pm2 ID | Name              | Port | Restart behaviour            |
+| ------ | ----------------- | ---- | ---------------------------- |
+| 0      | `lotris-api`      | 4000 | tsx watch — auto-reloads on file save |
+| 6      | `lotris-web`      | 3000 | Next.js HMR — hot-reloads on file save |
+| 12     | `lotris-workers`  | —    | BullMQ workers; started via `workers/jobs/ecosystem.config.cjs` (gitignored, local-dev only) |
 
 pm2 binary: `/Users/kwekku/.nvm/versions/node/v24.13.0/lib/node_modules/pm2/bin/pm2`  
 Next.js started with `-H 0.0.0.0` to bind on LAN. Current dev LAN IP: `192.168.8.133`.
@@ -726,7 +732,7 @@ trpc['kpi.agreements.list'].useQuery({ engineerId: me.id })
 
 ## 17. Out of Scope (v1)
 
-- Customer-facing self-service portal
+- Full customer-facing self-service portal (Sprint 17 adds a limited public intake form `/request` — no account or tracking dashboard)
 - Native mobile app — deferred; responsive PWA covers all roles in v1; revisit if field engineers drive specific demand
 - Real-time chat / live support
 - Billing / subscription management
