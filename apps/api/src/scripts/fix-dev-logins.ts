@@ -24,7 +24,7 @@
  */
 import 'dotenv/config';
 import { getMssqlDb, users } from '@lotris/db';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray } from '@lotris/db';
 
 // ─── Real Clerk IDs (from apps/web/app/api/dev-login/route.ts) ────────────
 

@@ -21,8 +21,12 @@ function parseMssqlUrl(urlStr: string): sql.config {
   const user     = credentials.substring(0, colonInCreds);
   const password = credentials.substring(colonInCreds + 1);
 
-  const [hostPort, database] = hostPart.split('/');
-  const [server, portStr]    = hostPort.split(':');
+  const slashIdx  = hostPart.indexOf('/');
+  const hostPort   = slashIdx >= 0 ? hostPart.substring(0, slashIdx) : hostPart;
+  const database   = slashIdx >= 0 ? hostPart.substring(slashIdx + 1) : undefined;
+  const colonIdx   = hostPort.indexOf(':');
+  const server     = colonIdx >= 0 ? hostPort.substring(0, colonIdx) : hostPort;
+  const portStr    = colonIdx >= 0 ? hostPort.substring(colonIdx + 1) : undefined;
 
   return {
     server,

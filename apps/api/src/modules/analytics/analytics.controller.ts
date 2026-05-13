@@ -19,24 +19,24 @@ export class AnalyticsController {
   @Get('summary')
   @HttpCode(HttpStatus.OK)
   async getSummary(@Auth() auth: TrpcAuth) {
-    return this.cache.getSummary(auth.tenantId);
+    return this.cache.getSummary(auth);
   }
 
   @Get('ticket-analytics')
   @HttpCode(HttpStatus.OK)
   async getTicketAnalytics(@Auth() auth: TrpcAuth) {
-    return this.cache.getTicketAnalytics(auth.tenantId);
+    return this.cache.getTicketAnalytics(auth);
   }
 
   @Get('engineer-perf')
   @HttpCode(HttpStatus.OK)
   async getEngineerPerf(@Auth() auth: TrpcAuth) {
-    return this.cache.getEngineerPerf(auth.tenantId);
+    return this.cache.getEngineerPerf(auth);
   }
 
   @Get('queue-health')
   @HttpCode(HttpStatus.OK)
   async getQueueHealth(@Auth() auth: TrpcAuth) {
-    return this.cache.getQueueHealth(auth.tenantId);
+    return this.cache.getQueueHealth(auth);
   }
 }

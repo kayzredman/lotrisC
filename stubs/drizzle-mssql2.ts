@@ -13,6 +13,7 @@
  *   db.execute(sql`...`)
  */
 
+// @ts-expect-error — mssql has no bundled type declarations
 import sql_pkg from 'mssql';
 
 // ── SQL Serializer ────────────────────────────────────────────────────────────
@@ -147,7 +148,30 @@ function buildSelectCols(fields?: any): string {
 
 // ── drizzle() factory ─────────────────────────────────────────────────────────
 
-export function drizzle(pool: sql_pkg.ConnectionPool, _config?: { schema?: any }): any {
+export interface DrizzleSelectBuilder<T = any> {
+  from(table: any): DrizzleSelectBuilder<T>;
+  where(cond?: any): DrizzleSelectBuilder<T>;
+  orderBy(...orders: any[]): DrizzleSelectBuilder<T>;
+  limit(n: number): DrizzleSelectBuilder<T>;
+  offset(n: number): DrizzleSelectBuilder<T>;
+  innerJoin(table: any, cond: any): DrizzleSelectBuilder<T>;
+  leftJoin(table: any, cond: any): DrizzleSelectBuilder<T>;
+  groupBy(...cols: any[]): DrizzleSelectBuilder<T>;
+  then<TResult1 = T[], TResult2 = never>(
+    onfulfilled?: ((value: T[]) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
+  ): Promise<TResult1 | TResult2>;
+}
+
+export interface DrizzleMssqlDb {
+  select<T = any>(fields?: any): DrizzleSelectBuilder<T>;
+  insert(table: any): { values(vals: any | any[]): Promise<void> };
+  update(table: any): { set(vals: any): { where(cond: any): Promise<void> } };
+  delete(table: any): { where(cond: any): Promise<void> };
+  execute<T = any>(query: any): Promise<T[]>;
+}
+
+export function drizzle(pool: sql_pkg.ConnectionPool, _config?: { schema?: any }): DrizzleMssqlDb {
   return {
     // ── SELECT ────────────────────────────────────────────────────────────
     select(fields?: any) {
@@ -177,8 +201,11 @@ export function drizzle(pool: sql_pkg.ConnectionPool, _config?: { schema?: any }
           return builder;
         },
         groupBy(...cols: any[]) { state.groupByCols.push(...cols); return builder; },
-        then(resolve: any, reject: any) { return _exec().then(resolve, reject); },
-      };
+        then<TResult1 = any[], TResult2 = never>(
+          resolve?: ((value: any[]) => TResult1 | PromiseLike<TResult1>) | null,
+          reject?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
+        ): Promise<TResult1 | TResult2> { return _exec().then(resolve, reject); },
+      } as DrizzleSelectBuilder;
 
       async function _exec(): Promise<any[]> {
         const table = state.table;
@@ -338,10 +365,10 @@ export function drizzle(pool: sql_pkg.ConnectionPool, _config?: { schema?: any }
     },
 
     // ── RAW EXECUTE ───────────────────────────────────────────────────────
-    execute(query: any) {
+    execute<T = any>(query: any): Promise<T[]> {
       const params: any[] = [];
       const sqlStr = serializeChunks(query?.queryChunks ?? [], params);
-      return runQuery(pool, sqlStr, params);
+      return runQuery(pool, sqlStr, params) as Promise<T[]>;
     },
-  };
+  } as unknown as DrizzleMssqlDb;
 }

@@ -31,7 +31,7 @@ export const decimal = (name: string, _opts?: any): any => makeCol(name);
 export const datetime2 = (name: string, _opts?: any): any => makeCol(name);
 export const uniqueIdentifier = (name: string): any => makeCol(name);
 
-export function mssqlTable(tableName: string, columns: Record<string, any>): any {
+export function mssqlTable(tableName: string, columns: Record<string, any>, _extras?: (table: any) => any): any {
   const table: any = { _tableName: tableName, _columns: {} };
   for (const [fieldName, col] of Object.entries(columns)) {
     col._fieldName = fieldName;
@@ -50,4 +50,8 @@ export function index(_name: string): any {
       unique: () => ({}),
     }),
   };
+}
+
+export function uniqueIndex(_name: string): any {
+  return { on: (..._cols: any[]) => ({}) };
 }
