@@ -159,6 +159,7 @@ export class TicketsService {
     if (query.teamId)   whereParts.push(`tk.team_id = '${query.teamId}'`);
     if (query.assigneeId) whereParts.push(`tk.assignee_id = '${query.assigneeId}'`);
     if (query.source)   whereParts.push(`tk.source = '${query.source}'`);
+    if (query.slaWarning) whereParts.push(`tk.sla_warning_level = '${query.slaWarning.toUpperCase()}'`);
     if (query.search?.trim()) {
       const term = query.search.trim().replace(/'/g, "''");
       whereParts.push(`(tk.title LIKE '%${term}%' OR tk.id LIKE '%${term}%')`);

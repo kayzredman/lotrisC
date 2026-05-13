@@ -112,6 +112,10 @@ export class TicketListQueryDto {
   source?: string;
 
   @IsOptional()
+  @IsIn(['amber', 'red'])
+  slaWarning?: 'amber' | 'red';
+
+  @IsOptional()
   page?: number = 1;
 
   @IsOptional()

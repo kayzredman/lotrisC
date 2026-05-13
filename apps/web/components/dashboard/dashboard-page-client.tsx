@@ -339,16 +339,24 @@ export function DashboardPageClient() {
           <div className="v2-card-header">
             <div className="v2-card-title">Active Alerts</div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              {canSeeSlaWarnings && slaWarningsQ.data && slaWarningsQ.data.length > 0 && (
-                <span
-                  className="v2-badge v2-badge-red"
-                  title={`${slaWarningsQ.data.filter(w => w.warningLevel === 'RED').length} RED, ${slaWarningsQ.data.filter(w => w.warningLevel === 'AMBER').length} AMBER`}
-                >
-                  {slaWarningsQ.data.filter(w => w.warningLevel === 'RED').length > 0
-                    ? `🔴 ${slaWarningsQ.data.filter(w => w.warningLevel === 'RED').length} at risk`
-                    : `🟡 ${slaWarningsQ.data.length} SLA warning${slaWarningsQ.data.length > 1 ? 's' : ''}`}
-                </span>
-              )}
+              {canSeeSlaWarnings && slaWarningsQ.data && slaWarningsQ.data.length > 0 && (() => {
+                const redCount   = slaWarningsQ.data.filter(w => w.warningLevel === 'RED').length;
+                const amberCount = slaWarningsQ.data.filter(w => w.warningLevel === 'AMBER').length;
+                return (
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {redCount > 0 && (
+                      <a href={`/tickets?slaWarning=red`} className="v2-badge v2-badge-red" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                        🔴 {redCount} RED
+                      </a>
+                    )}
+                    {amberCount > 0 && (
+                      <a href={`/tickets?slaWarning=amber`} className="v2-badge v2-badge-yellow" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                        🟡 {amberCount} AMBER
+                      </a>
+                    )}
+                  </div>
+                );
+              })()}
               <span className="v2-badge v2-badge-red">{DEMO.alerts.filter(a => a.level === 'red').length} critical</span>
             </div>
           </div>

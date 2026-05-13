@@ -216,6 +216,7 @@ export const appRouter = router({
         assigneeId: z.string().uuid().optional(),
         search: z.string().optional(),
         source: z.enum(['INTERNAL', 'EMAIL', 'SELF_SERVICE', 'API']).optional(),
+        slaWarning: z.enum(['amber', 'red']).optional(),
         page: z.number().int().min(1).default(1),
         limit: z.number().int().min(1).max(100).default(25),
       }),
