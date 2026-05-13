@@ -1,6 +1,6 @@
 # Lotris — Project Context
 
-> Last updated: May 2026 — Sprint 18 IN PROGRESS (Phase 2: SLA Breach Prediction + KPI Trend Analysis; branch `feature/sprint-18-intelligence`). Sprint 17 complete and merged to dev (`af06b9c`).
+> Last updated: May 2026 — Sprint 18 COMPLETE (merged to `dev` 2026-05-13, commit `4d640a9`). Sprint 19 next: automated quarterly reports + engineer workload rebalancing.
 
 ---
 
@@ -543,10 +543,10 @@ Auth & Tenancy
 
 ---
 
-### Phase 2 — Intelligence _(in progress — Sprint 18)_
+### Phase 2 — Intelligence _(complete — Sprint 18)_
 
-- **Sprint 18:** SLA breach prediction (linear projection, amber/red warnings in ticket list + dashboard, email + SSE notifications to assignee + lead, BullMQ `sla-predictor` cron every 5 min)
-- **Sprint 18:** KPI performance trend analysis (linear regression on actuals, sparkline charts, amber/red flag pills in KPI dashboard, daily digest email to team leads, BullMQ `kpi-trend` cron every 30 min)
+- **Sprint 18 ✅:** SLA breach prediction (linear projection, amber/red warnings in ticket list + dashboard, email + SSE notifications to assignee + lead, BullMQ `sla-predictor` cron every 5 min)
+- **Sprint 18 ✅:** KPI performance trend analysis (linear regression on actuals, sparkline charts, amber/red flag pills in KPI dashboard, daily digest email to team leads, BullMQ `kpi-trend` cron every 30 min)
 - **Sprint 19 (planned):** Automated quarterly report generation and distribution
 - **Sprint 19 (planned):** Engineer workload rebalancing suggestions
 

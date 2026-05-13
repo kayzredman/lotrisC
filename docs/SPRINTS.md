@@ -490,8 +490,8 @@ Tickets are automatically routed to teams via `CategoryRouting` config. ACK and 
 ## Sprint 18 · Phase 2 — SLA Breach Prediction + KPI Trend Analysis
 
 **Target milestone:** M11  
-**Status:** 🔵 IN PROGRESS  
-**Branch:** `feature/sprint-18-intelligence`  
+**Status:** ✅ COMPLETE — merged to `dev` 2026-05-13  
+**Branch:** `feature/sprint-18-intelligence` (merged)  
 **Phase:** 2 — Intelligence
 
 ### Goal
