@@ -540,6 +540,7 @@ Auth & Tenancy
 | M9 — QA & Monitor + KPI My Agreement | 16  | Queue/Tickets/Tasks role-visibility, Monitor wall, cross-team access, mobile CSS, KPI My Agreement, TEAM_LEAD builder access, Daily period, submit button fix |
 | M10 — Ticket Intake               | 17  | Public web form (`/request`), IMAP email poller, CategoryRouting config, source field on tickets, ACK + resolved notifications, source badges in UI |
 | M11 — Phase 2: Intelligence       | 18  | SLA breach prediction (amber/red warnings, notifications), KPI trend analysis (sparklines, flag pills, daily digest email) |
+| M12 — Phase 2: Reports + Workload | 19  | Automated report scheduling (PDF/Excel, email delivery), workload rebalancing suggestions + batch reassign |}
 
 ---
 
@@ -547,8 +548,8 @@ Auth & Tenancy
 
 - **Sprint 18 ✅:** SLA breach prediction (linear projection, amber/red warnings in ticket list + dashboard, email + SSE notifications to assignee + lead, BullMQ `sla-predictor` cron every 5 min)
 - **Sprint 18 ✅:** KPI performance trend analysis (linear regression on actuals, sparkline charts, amber/red flag pills in KPI dashboard, daily digest email to team leads, BullMQ `kpi-trend` cron every 30 min)
-- **Sprint 19 (planned):** Automated quarterly report generation and distribution
-- **Sprint 19 (planned):** Engineer workload rebalancing suggestions
+- **Sprint 19 🔵:** Automated quarterly/monthly/weekly report scheduling — `report-gen` BullMQ worker executes due schedules, generates PDF/Excel, emails recipients; tRPC report procedures; Reports UI page
+- **Sprint 19 🔵:** Engineer workload rebalancing — `WorkloadAnalyser` computes per-engineer open-ticket load vs. `Queue_Config.max_capacity_per_engineer`, generates reassignment suggestions, `tickets.batchReassign` mutation, workload panel on dashboard with one-click Apply
 
 ### Phase 3 — AI & Automation
 

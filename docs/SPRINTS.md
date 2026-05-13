@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Sprint 17 COMPLETE and merged to dev (`af06b9c`). Sprint 18 specs written — Phase 2 begins: SLA Breach Prediction + KPI Trend Analysis.
+> Last updated: May 2026 — Sprint 18 COMPLETE (`dev` @ `4d640a9`). Sprint 19 IN PROGRESS: Automated Reports + Workload Rebalancing.
 
 ---
 
@@ -19,7 +19,8 @@
 | 14–15  | UI Polish + Dashboard QA + Tickets Repair | ✅ COMPLETE | `feature/sprint-14-layout-polish` | M8 |
 | 16     | QA Fixes · Monitor Wall · Role Visibility · KPI My Agreement | ✅ COMPLETE | `dev` @ `3e2b17e`    | M9 |
 | 17     | Ticket Intake — Web Form + Email + Category Routing | ✅ COMPLETE | `dev` @ `af06b9c` | M10 |
-| 18     | Phase 2 — SLA Breach Prediction + KPI Trend Analysis | 🔵 IN PROGRESS | `feature/sprint-18-intelligence` | M11 |
+| 18     | Phase 2 — SLA Breach Prediction + KPI Trend Analysis | ✅ Complete    | `dev` @ `4d640a9` | M11 |
+| 19     | Phase 2 — Automated Reports + Workload Rebalancing   | 🔵 IN PROGRESS | `feature/sprint-19-reports-workload` | M12 |
 
 ---
 
@@ -671,3 +672,190 @@ F-SI-2 (sparklines) depends on F-SI-1 (KPI dashboard data hook) being wired firs
 - No new env vars required for core prediction (uses existing MSSQL + PostgreSQL + Redis connections).
 - `KPI_ACTUALS` must have at least 2 data points in the current period for trend projection to be meaningful. Trend service returns `null` projection with `NONE` level if fewer than 2 actuals.
 - `sla_deadline` and `assigned_at` must be non-null on a ticket for SLA prediction to run (ASSIGNED/IN_PROGRESS states always have these set by the Queue Engine).
+
+---
+
+## Sprint 19 · Phase 2 — Automated Reports + Workload Rebalancing
+
+**Target milestone:** M12  
+**Status:** 🔵 IN PROGRESS  
+**Branch:** `feature/sprint-19-reports-workload`  
+**Phase:** 2 — Intelligence
+
+### Goal
+
+Two parallel workstreams completing Phase 2:
+
+1. **Automated Quarterly Report Generation & Distribution** — Wire the existing `ReportsModule` (PDF/Excel services, REST controller, PG schemas) into a BullMQ scheduled worker. Add `next_run_at` / `last_run_at` to `report_schedules`, wire tRPC procedures for the frontend, and build the Reports UI page.
+2. **Engineer Workload Rebalancing Suggestions** — Compute open-ticket load per engineer vs. `Queue_Config.max_capacity_per_engineer`. Identify over/under-capacity engineers, generate reassignment suggestions, expose via tRPC, and surface in a dashboard panel with a one-click "Apply" flow.
+
+No new external dependencies. All work uses the existing stack (BullMQ, ExcelJS, PDFKit, MSSQL, PostgreSQL, tRPC, Nodemailer).
+
+---
+
+### What Already Exists (Do Not Rebuild)
+
+| Item | Location | Status |
+|------|----------|--------|
+| `ReportsPdfService` — all 4 report types | `apps/api/src/modules/reports/reports-pdf.service.ts` | ✅ Complete |
+| `ReportsExcelService` — all 4 report types | `apps/api/src/modules/reports/reports-excel.service.ts` | ✅ Complete |
+| `ReportsService` — generate + list + schedule CRUD | `apps/api/src/modules/reports/reports.service.ts` | ✅ Complete |
+| `ReportsController` — REST at `/api/v1/reports` | `apps/api/src/modules/reports/reports.controller.ts` | ✅ Complete |
+| `ReportsModule` — wired into `AppModule` | `apps/api/src/modules/reports/reports.module.ts` | ✅ Complete |
+| Drizzle PG schemas: `reportJobs`, `reportSchedules` | `packages/db/src/schemas/postgres/reports.ts` | ✅ Exists (missing `next_run_at`, `last_run_at`) |
+| `GenerateReportDto`, `CreateScheduleDto` | `apps/api/src/modules/reports/dto/index.ts` | ✅ Complete |
+| `Queue_Config.max_capacity_per_engineer` | MSSQL `Queue_Config` table | ✅ Exists |
+
+---
+
+### Design Decisions
+
+- **Report delivery**: Generated file stored in `os.tmpdir()` (dev) or configurable `REPORT_OUTPUT_DIR` env var (prod). Email the file as an attachment to `recipients` list. Attachment size limit: 10 MB — fall back to a download link in the email body if exceeded.
+- **Schedule timing**: `next_run_at` is computed at creation and advanced on each run. WEEKLY = next Monday 08:00 UTC; MONTHLY = 1st of next month 08:00 UTC; QUARTERLY = 1st of next quarter (Jan, Apr, Jul, Oct) 08:00 UTC.
+- **Report worker**: A new `report-gen.worker.ts` in `workers/jobs/src/`. Hourly cron `0 * * * *` triggers `PROCESS_SCHEDULES` job — one job per tenant (keyed `report-schedule-check:{tenantId}:{YYYYMMDDHH}` to prevent double-runs). Per-schedule `GENERATE_REPORT` job keyed `report-gen:{scheduleId}:{nextRunAt}`.
+- **Workload imbalance threshold**: a team is "imbalanced" if ≥1 engineer is at >100% capacity AND ≥1 engineer is at <70% capacity simultaneously.
+- **Suggestion algorithm**: For each over-capacity engineer, take their lowest-priority open ticket(s) (sorted: priority ASC, assigned_at ASC) and suggest reassignment to the least-loaded under-capacity engineer in the same team. Max 5 suggestions per team. Never suggest reassignment of ESCALATED tickets.
+- **Batch reassign cap**: Max 20 reassignments per `tickets.batchReassign` call. Uses existing `TicketsService` assign logic (respects state machine, fires notifications, writes audit log).
+- **No new DB tables for workload**: suggestions are computed in-memory at query time — no persistence needed.
+- **tRPC namespace**: report procedures at `'reports.*'`; workload at `'analytics.teamWorkload'` + `'analytics.workloadSuggestions'`.
+- **Role gates**: all report and workload procedures require `kpiAgreementProcedure` (TEAM_LEAD, IT_MANAGER, ADMIN, SUPERADMIN).
+
+---
+
+### Inter-Agent Dependencies
+
+```
+B-AR-1 (DB migration + Drizzle schema update) must complete before B-AR-2 and B-AR-3.
+B-AR-4 (tRPC report procedures) depends on B-AR-2 (ReportsService next_run_at logic).
+B-AR-5 (WorkloadAnalyser) is independent — can run in parallel with report jobs.
+B-AR-6 (tRPC workload procedures) depends on B-AR-5.
+F-AR-1 (Reports UI) depends on B-AR-4 (tRPC procedures wired).
+F-AR-2 and F-AR-3 (Workload panel) depend on B-AR-6.
+```
+
+---
+
+### Backend Dev Agent Jobs
+
+- [ ] `B-AR-1` — **DB migration `0009_report_schedule_timing.sql`** (PostgreSQL):
+  ```sql
+  -- PostgreSQL: add scheduling columns to report_schedules
+  ALTER TABLE report_schedules
+    ADD COLUMN next_run_at  TIMESTAMPTZ,
+    ADD COLUMN last_run_at  TIMESTAMPTZ;
+
+  CREATE INDEX ON report_schedules (tenant_id, next_run_at) WHERE is_active = 'true';
+  ```
+  Update Drizzle PG schema `packages/db/src/schemas/postgres/reports.ts`:
+  - Add `nextRunAt: timestamp('next_run_at', { withTimezone: true })` and `lastRunAt: timestamp('last_run_at', { withTimezone: true })` fields to `reportSchedules`.
+  - Migration file goes in `packages/db/migrations/pg/0003_report_schedule_timing.sql`.
+
+- [ ] `B-AR-2` — **`ReportsService` extension** — update `createSchedule()` + add schedule execution logic. In `apps/api/src/modules/reports/reports.service.ts`:
+  - Add private `computeNextRunAt(frequency: string): Date`:
+    - `'WEEKLY'` → next Monday at 08:00 UTC.
+    - `'MONTHLY'` → 1st of next month at 08:00 UTC.
+    - `'QUARTERLY'` → 1st of next quarter (Jan/Apr/Jul/Oct) at 08:00 UTC.
+  - Update `createSchedule()` to call `computeNextRunAt(dto.frequency)` and include `nextRunAt` in the insert.
+  - Add `processDueSchedules(tenantId: string)`: SELECT `reportSchedules` WHERE `tenantId = ?` AND `nextRunAt <= NOW()` AND `isActive = 'true'`. For each: create a `reportJobs` row, advance `nextRunAt = computeNextRunAt(schedule.frequency)`, update `lastRunAt = NOW()`. Returns `{ scheduled: string[] }` (jobIds).
+  - Add `emailReportToRecipients(jobId: string, filePath: string, recipients: string[])`: sends email via nodemailer with the file as an attachment (if ≤10 MB) or a download link.
+  - `ReportsModule` does not need to change (already exports `ReportsService`).
+
+- [ ] `B-AR-3` — **`report-gen.worker.ts`** (`workers/jobs/src/report-gen.worker.ts`):
+  - New BullMQ worker consuming queue `'report-gen'`, concurrency 2.
+  - Job types dispatched by `name` field:
+    - **`'PROCESS_SCHEDULES'`** — triggered by hourly cron `0 * * * *`. Fetches all distinct `tenant_id` values from `report_schedules WHERE is_active = 'true'` (PostgreSQL query in worker). For each tenant, calls the equivalent of `processDueSchedules(tenantId)` inline (no HTTP — duplicate the query + logic directly in the worker). Idempotent via job key `report-schedule-check:{tenantId}:{YYYYMMDDHH}`.
+    - **`'GENERATE_REPORT'`** — triggered per due schedule. Payload: `{ jobId, tenantId, reportType, format, dateFrom, dateTo, teamId, recipients }`. Calls `ReportsPdfService.generate()` or `ReportsExcelService.generate()` directly (import the service class — instantiate with `new` since workers don't have NestJS DI). On success: update `reportJobs` row to `DONE` with `filePath`. Email to recipients via nodemailer (same transport as `notifications.worker.ts`). On failure: set `FAILED` + `errorMsg`.
+  - Register hourly `PROCESS_SCHEDULES` repeatable job in `workers/jobs/src/index.ts`. Add `reportGenQueue` and `reportGenWorker` to graceful shutdown.
+
+- [ ] `B-AR-4` — **tRPC report procedures** — add to `apps/api/src/trpc/router.ts`. Import `ReportsService` from the NestJS context (pass via `ctx.reportsService` or inject via `createContext` — follow the same pattern used for existing services). Add:
+  - `'reports.list'`: `kpiAgreementProcedure.query()` — returns `ReportJob[]` for tenant (last 50, ordered by `createdAt DESC`).
+  - `'reports.generate'`: `kpiAgreementProcedure.input(z.object({ reportType: z.enum(['TICKET_SUMMARY','SLA_COMPLIANCE','KPI_REPORT','ENGINEER_PERF']), format: z.enum(['PDF','EXCEL']), dateFrom: z.string().optional(), dateTo: z.string().optional(), teamId: z.string().uuid().optional() })).mutation()` — calls `reportsService.generateReport()`, returns `{ jobId: string }`.
+  - `'reports.jobStatus'`: `kpiAgreementProcedure.input(z.object({ jobId: z.string().uuid() })).query()` — returns single `ReportJob`.
+  - `'reports.schedules.list'`: `kpiAgreementProcedure.query()` — returns `ReportSchedule[]`.
+  - `'reports.schedules.create'`: `kpiAgreementProcedure.input(z.object({ reportType: z.enum([...]), format: z.enum(['PDF','EXCEL']), frequency: z.enum(['WEEKLY','MONTHLY','QUARTERLY']), recipients: z.string().min(2), teamId: z.string().uuid().optional() })).mutation()` — calls `reportsService.createSchedule()`.
+  - `'reports.schedules.delete'`: `kpiAgreementProcedure.input(z.object({ id: z.string().uuid() })).mutation()` — calls `reportsService.deleteSchedule()`.
+
+- [ ] `B-AR-5` — **`WorkloadAnalyser` service** (`apps/api/src/modules/analytics/workload-analyser.service.ts`):
+  - `@Injectable() WorkloadAnalyser`
+  - `analyseTeam(tenantId: string, teamId: string): Promise<TeamWorkloadResult>`:
+    - Fetch `Queue_Config` for `teamId`; fall back to tenant-default row (`teamId IS NULL`) if none found. Use `maxCapacityPerEngineer`.
+    - MSSQL query: SELECT `u.id`, `u.full_name`, COUNT(t.id) AS `openCount` FROM `Users u` LEFT JOIN `Tickets t` ON `t.assignee_id = u.id` AND `t.status IN ('ASSIGNED','IN_PROGRESS','ESCALATED')` AND `t.tenant_id = :tenantId` WHERE `u.team_id = :teamId` AND `u.tenant_id = :tenantId` GROUP BY `u.id, u.full_name`.
+    - Compute `loadPct = Math.round((openCount / maxCapacityPerEngineer) * 100)`.
+    - Identify over-capacity (`loadPct > 100`) and under-capacity (`loadPct < 70`) engineers.
+    - Build suggestions (max 5 per team): for each over-capacity engineer fetch their lowest-priority non-ESCALATED open tickets (ORDER BY priority ASC, assigned_at ASC LIMIT 3 per engineer). Suggest each to the least-loaded under-capacity engineer.
+    - Returns `{ teamId, teamName, capacity: number, engineers: EngineerLoad[], suggestions: WorkloadSuggestion[] }`.
+  - `analyseAllTeams(tenantId: string)`: SELECT distinct `team_id` from `Users WHERE tenant_id = :tenantId AND team_id IS NOT NULL`. Call `analyseTeam` for each. Return array.
+  - Every MSSQL query includes `tenantId` filter. No cross-tenant reads.
+  - Add `WorkloadAnalyser` to `analytics.module.ts` providers.
+  - Export new types `EngineerLoad`, `WorkloadSuggestion`, `TeamWorkloadResult` from `packages/types/src/context.ts` and `packages/types/src/index.ts`.
+
+- [ ] `B-AR-6` — **tRPC workload procedures** — add to `apps/api/src/trpc/router.ts`:
+  - `'analytics.teamWorkload'`: `kpiAgreementProcedure.input(z.object({ teamId: z.string().uuid() })).query()` — calls `workloadAnalyser.analyseTeam(tenantId, teamId)`. Returns `TeamWorkloadResult`.
+  - `'analytics.workloadSuggestions'`: `kpiAgreementProcedure.query()` — calls `workloadAnalyser.analyseAllTeams(tenantId)`. Returns `TeamWorkloadResult[]`.
+  - `'tickets.batchReassign'`: `kpiAgreementProcedure.input(z.object({ reassignments: z.array(z.object({ ticketId: z.string().uuid(), toEngineerId: z.string().uuid() })).min(1).max(20) })).mutation()` — iterates reassignments, calls `ticketsService.assignTicket()` for each, collects errors without aborting remaining items. Returns `{ applied: number, failed: { ticketId: string; reason: string }[] }`.
+
+---
+
+### Frontend Dev Agent Jobs
+
+- [ ] `F-AR-1` — **Reports page** (`apps/web/app/(app)/reports/page.tsx` + supporting components) based on `mockups/05-reports-v2.html`:
+  - **Generate Report section**: form with `reportType` select (Ticket Summary / SLA Compliance / KPI Report / Engineer Performance), `format` radio (PDF / Excel), optional `dateFrom` + `dateTo` date inputs, optional `teamId` select (ADMIN+ only). "Generate" button calls `trpc['reports.generate'].useMutation()`. Shows spinner during generation (poll `trpc['reports.jobStatus']` every 2s until `status !== 'PROCESSING'`). On DONE: show "Download" link pointing to `GET /api/v1/reports/:id/download`. On FAILED: show error banner.
+  - **Report History table**: calls `trpc['reports.list'].useQuery()`. Columns: Type, Format, Period, Status (badge), Generated At, Actions (Download button for DONE). Refresh every 10s while any row is in PROCESSING state.
+  - **Scheduled Reports section**: calls `trpc['reports.schedules.list'].useQuery()`. Table: Type, Format, Frequency, Recipients, Next Run, Actions (Delete). "+ Add Schedule" button opens a drawer form — fields: reportType, format, frequency, recipients (comma-separated emails textarea), teamId (optional). Submit calls `trpc['reports.schedules.create'].useMutation()`. Delete calls `trpc['reports.schedules.delete'].useMutation()` with confirm dialog.
+  - Role gate: page only accessible to TEAM_LEAD, IT_MANAGER, ADMIN, SUPERADMIN. ENGINEER sees a "Not authorised" state.
+
+- [ ] `F-AR-2` — **Workload panel** (`apps/web/components/dashboard/workload-panel.tsx`):
+  - Visible on the main dashboard (`02-dashboard-v2.html` "Queue Health" section), TEAM_LEAD+ only.
+  - For TEAM_LEAD role: uses `trpc['analytics.teamWorkload'].useQuery({ teamId: ctx.teamId })` — shows their own team only.
+  - For IT_MANAGER, ADMIN, SUPERADMIN: uses `trpc['analytics.workloadSuggestions'].useQuery()` — shows all teams.
+  - **Engineer load bars**: horizontal progress bar per engineer. Green ≤69%, amber 70–99%, red ≥100%. Label: `"Kwame A. — 8/10 (80%)"`. Click engineer row to jump to their tickets.
+  - **Suggestions section**: collapsible (collapsed by default if no RED engineers). Title: "Rebalancing Suggestions ({N})". List of suggestion rows: `"Move TKT-XXXX (P{priority}) from [Name] → [Name]"`. "Apply All" button at bottom of list.
+
+- [ ] `F-AR-3` — **Apply rebalancing flow** (in `workload-panel.tsx`):
+  - "Apply All" opens a confirm dialog: `"Apply {N} reassignment(s)? This will notify affected engineers."` with Cancel / Confirm buttons.
+  - On confirm: calls `trpc['tickets.batchReassign'].useMutation()` with the full suggestion list mapped to `{ ticketId, toEngineerId }`.
+  - Loading state: spinner on the Apply All button; panel grayed out.
+  - On success: toast `"{applied} tickets reassigned successfully."`. Invalidate `analytics.teamWorkload` / `analytics.workloadSuggestions` queries so panel refreshes.
+  - On partial failure: show a warning: `"{applied} reassigned; {failed.length} could not be moved."` with expandable error details.
+
+---
+
+### QA Checks (Sprint 19)
+
+**Automated Reports**
+- [ ] `POST /api/v1/reports/generate` returns a `jobId` and the job reaches `DONE` status for all 4 report types × 2 formats (PDF + Excel) — 8 total
+- [ ] `GET /api/v1/reports/:id/download` streams the file with correct `Content-Type`
+- [ ] Creating a MONTHLY schedule sets `next_run_at` to 1st of next month at 08:00 UTC
+- [ ] Creating a QUARTERLY schedule sets `next_run_at` to 1st of next quarter at 08:00 UTC
+- [ ] `PROCESS_SCHEDULES` job is idempotent — running twice in the same hour produces one `GENERATE_REPORT` job (dedup key present)
+- [ ] Recipients receive email with attached report (or download link if >10 MB)
+- [ ] `trpc['reports.generate']` mutation is blocked for ENGINEER role (403)
+- [ ] `trpc['reports.schedules.list']` returns only the calling tenant's schedules
+- [ ] `reportJobs` `tenantId` filter prevents cross-tenant job access
+
+**Workload Rebalancing**
+- [ ] Team with all engineers ≤69% capacity → `suggestions` array is empty
+- [ ] Team with engineer at 110% capacity and another at 40% capacity → at least 1 suggestion generated
+- [ ] Suggestion never includes an ESCALATED ticket
+- [ ] `analyseAllTeams` includes `tenantId` filter on every MSSQL query
+- [ ] `tickets.batchReassign` input of 21 items returns Zod validation error (max 20)
+- [ ] `tickets.batchReassign` with invalid `toEngineerId` returns `failed` entry without aborting the rest
+- [ ] Apply All triggers notifications to affected engineers (via existing `TicketsService.assignTicket` path)
+- [ ] `analytics.workloadSuggestions` blocked for ENGINEER role (403)
+
+**UI**
+- [ ] Reports page accessible to TEAM_LEAD; ENGINEER sees "Not authorised" state
+- [ ] Polling stops when all `PROCESSING` report jobs resolve
+- [ ] Workload panel visible on dashboard for TEAM_LEAD, hidden for ENGINEER
+- [ ] Engineer load bars show correct colour thresholds (green / amber / red)
+- [ ] "Apply All" confirm dialog shows correct count
+- [ ] After apply, workload panel refreshes with updated load percentages
+
+---
+
+### Known Issues / Env Requirements
+
+- `REPORT_OUTPUT_DIR` — optional env var for prod. If unset, files go to `os.tmpdir()` (temp files are lost on server restart in prod; set this to a persistent volume mount).
+- `EMAIL_HOST`, `EMAIL_USER`, `EMAIL_PASS` — required for report email delivery. Falls back to `jsonTransport` (dev-only, no emails sent) if unset — same pattern as `notifications.worker.ts`.
+- `GENERATE_REPORT` worker jobs use `new ReportsPdfService()` / `new ReportsExcelService()` (no NestJS DI in BullMQ workers). These services only depend on `@lotris/db` helpers — no injected dependencies. Confirm this before implementation.
+- `WorkloadAnalyser` is read-only (SELECT only). No tickets are modified until `tickets.batchReassign` is explicitly called by a TEAM_LEAD+.
