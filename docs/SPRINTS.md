@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Sprint 17 COMPLETE (ticket intake: web form, IMAP, category routing, notifications; backend + frontend done; committed to feature/sprint-17-ticket-intake)
+> Last updated: May 2026 — Sprint 17 COMPLETE and merged to dev (`af06b9c`). Sprint 18 specs written — Phase 2 begins: SLA Breach Prediction + KPI Trend Analysis.
 
 ---
 
@@ -18,7 +18,8 @@
 | 13     | System Health Monitoring     | ✅ Complete   | `dev` @ `b901271`               | M7    |
 | 14–15  | UI Polish + Dashboard QA + Tickets Repair | ✅ COMPLETE | `feature/sprint-14-layout-polish` | M8 |
 | 16     | QA Fixes · Monitor Wall · Role Visibility · KPI My Agreement | ✅ COMPLETE | `dev` @ `3e2b17e`    | M9 |
-| 17     | Ticket Intake — Web Form + Email + Category Routing | ✅ COMPLETE | `feature/sprint-17-ticket-intake` | M10 |
+| 17     | Ticket Intake — Web Form + Email + Category Routing | ✅ COMPLETE | `dev` @ `af06b9c` | M10 |
+| 18     | Phase 2 — SLA Breach Prediction + KPI Trend Analysis | 🔵 IN PROGRESS | `feature/sprint-18-intelligence` | M11 |
 
 ---
 
@@ -475,9 +476,198 @@ Tickets are automatically routed to teams via `CategoryRouting` config. ACK and 
 
 ## Phase 2 / Phase 3 Backlog (post-MVP)
 
-- SLA breach prediction + automated alerts
-- KPI performance trend analysis with amber/red flags
-- AI-assisted root cause classification
-- Predictive KPI performance forecasting
-- Natural language report summaries
-- Prometheus / Grafana / Datadog monitoring integrations
+- ~~SLA breach prediction + automated alerts~~ → **Sprint 18**
+- ~~KPI performance trend analysis with amber/red flags~~ → **Sprint 18**
+- Automated quarterly report generation and distribution → Sprint 19
+- Engineer workload rebalancing suggestions → Sprint 19
+- AI-assisted root cause classification → Phase 3
+- Predictive KPI performance forecasting → Phase 3
+- Natural language report summaries → Phase 3
+- Prometheus / Grafana / Datadog monitoring integrations → Phase 3
+
+---
+
+## Sprint 18 · Phase 2 — SLA Breach Prediction + KPI Trend Analysis
+
+**Target milestone:** M11  
+**Status:** 🔵 IN PROGRESS  
+**Branch:** `feature/sprint-18-intelligence`  
+**Phase:** 2 — Intelligence
+
+### Goal
+
+Bring predictive and analytical intelligence to Lotris's existing operational data:
+
+1. **SLA Breach Prediction** — Identify in-progress tickets likely to breach their resolution SLA before they do. Surface amber/red warnings in the ticket list and dashboard. Notify the assignee and team lead automatically.
+2. **KPI Trend Analysis** — Compute trajectory for each active KPI metric. Flag when a metric is on course to miss its target by period end. Surface sparklines and amber/red flags in the KPI dashboard.
+
+Both features read existing MSSQL + PostgreSQL data. No new user-facing input forms are required. The risk surface is analytics-only (read path); no ticket state machine changes.
+
+---
+
+### Design Decisions
+
+- **SLA prediction model**: Linear projection — `elapsed_time / (elapsed_time + remaining_capacity)`. If projected resolution time > SLA deadline, flag. No ML in Phase 2.
+- **KPI trend model**: Linear regression on `KPI_Actuals` rows for the current period. If the projected end-of-period score < target, flag amber (within 10%) or red (>10% below).
+- **Prediction cadence**: SLA scan runs every 5 minutes via BullMQ cron (new `sla-predictor` queue). KPI trend scan runs every 30 minutes (`kpi-trend` queue).
+- **Warning thresholds (SLA)**:
+  - 🟡 Amber: ≥70% of resolution SLA window consumed with ticket still open
+  - 🔴 Red: ≥90% of resolution SLA window consumed with ticket still open
+- **Warning thresholds (KPI)**:
+  - 🟡 Amber: projected score is between 85%–99% of target
+  - 🔴 Red: projected score is below 85% of target
+- **Dedup**: Alerts fire at most once per ticket per threshold crossing (Redis key `sla-alert:{ticketId}:{level}`, TTL = SLA deadline). KPI alerts fire at most once per metric per period per level.
+- **Notification targets**:
+  - SLA amber/red → ticket assignee + team lead (email + in-app SSE)
+  - KPI amber/red → individual engineer (in-app SSE); team lead (email digest, daily at 08:00)
+- **Dashboard widgets**:
+  - SLA: amber/red ticket count badges on main dashboard queue section (02); amber/red row colouring in ticket list
+  - KPI: sparkline chart per metric in KPI dashboard (04); amber/red flag pill next to each metric
+- **New DB columns** (MSSQL): `tickets.sla_warning_level` enum (`NONE | AMBER | RED`) — set by the predictor job; cleared on ticket resolve/close.
+- **New DB table** (PostgreSQL): `kpi_trend_snapshots` — stores computed trajectory point per metric per period (for sparkline history).
+- **No new tRPC mutations for end users** — all writes are internal (BullMQ jobs only).
+
+---
+
+### Inter-Agent Dependencies
+
+```
+B-SI-1 (DB migration + Drizzle schema) must complete before any other backend job.
+B-SI-5 (tRPC analytics procedures) must complete before F-SI-1 and F-SI-3.
+B-SI-4 (BullMQ jobs) is independent of frontend — can run in parallel with frontend jobs.
+F-SI-2 (sparklines) depends on F-SI-1 (KPI dashboard data hook) being wired first.
+```
+
+---
+
+### Backend Dev Agent Jobs
+
+- [ ] `B-SI-1` — **DB migration `0008_sla_prediction.sql`**: Add `sla_warning_level` column to `Tickets` (`NVARCHAR(10) DEFAULT 'NONE' CHECK IN ('NONE','AMBER','RED')`). Create `kpi_trend_snapshots` table in PostgreSQL (via Drizzle postgres schema):
+  ```sql
+  -- PostgreSQL only
+  CREATE TABLE kpi_trend_snapshots (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id   UUID NOT NULL,
+    engineer_id UUID NOT NULL,
+    kpi_def_id  UUID NOT NULL,
+    period_key  VARCHAR(20) NOT NULL,   -- e.g. '2026-Q2'
+    snapshot_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actual_to_date NUMERIC(10,4),
+    projected_eop  NUMERIC(10,4),
+    target         NUMERIC(10,4),
+    warning_level  VARCHAR(10) NOT NULL DEFAULT 'NONE'
+  );
+  CREATE INDEX ON kpi_trend_snapshots (tenant_id, engineer_id, kpi_def_id, period_key);
+  ```
+  Drizzle MSSQL schema: update `tickets.ts` to add `slaWarningLevel`. Drizzle PG schema: create `kpi-trend-snapshots.ts` in `packages/db/src/schemas/pg/`.
+
+- [ ] `B-SI-2` — **`SlaPredictor` service** (`apps/api/src/modules/tickets/sla-predictor.service.ts`):
+  - `computeWarningLevel(ticket: TicketRow, now: Date): 'NONE' | 'AMBER' | 'RED'`
+    - Fetch `sla_deadline` + `assigned_at`. Compute `pct = (now - assigned_at) / (sla_deadline - assigned_at)`.
+    - Returns `'RED'` if pct ≥ 0.90, `'AMBER'` if pct ≥ 0.70, else `'NONE'`.
+  - `scanAndUpdate(tenantId: string)`: SELECT all IN_PROGRESS tickets for tenant, compute warning level, batch UPDATE `sla_warning_level` where changed.
+  - `shouldAlert(ticketId, level, redis)`: Redis key `sla-alert:{ticketId}:{level}` — SET NX, TTL to minutes remaining before SLA. Returns false if key already exists.
+  - If level changed to AMBER or RED and `shouldAlert` passes: queue `SLA_WARNING` notification job (assignee + team lead, email + SSE).
+  - Must include `tenantId` filter on every query. No cross-tenant reads.
+
+- [ ] `B-SI-3` — **`KpiTrendAnalyser` service** (`apps/api/src/modules/analytics/kpi-trend.service.ts`):
+  - `computeTrend(engineerId, kpiDefId, periodKey, tenantId)`:
+    - SELECT `KPI_Actuals` rows for this engineer + kpi_def + period ordered by `recorded_at`.
+    - Simple linear regression: project value at period end date.
+    - Fetch target from `KPI_Engineer_Assignments` (with `KPI_Team_Targets` and `KPI_Definitions` fallback).
+    - Compute `warningLevel`: if `projected / target < 0.85` → `RED`; if `< 0.99` → `AMBER`; else `NONE`. Invert for direction=`LOWER_IS_BETTER`.
+  - `scanAllEngineers(tenantId)`: iterate all active `KPI_Engineer_Assignments` for period, call `computeTrend`, write a `kpi_trend_snapshots` row (PostgreSQL), update Redis key `kpi-trend:{engineerId}:{kpiDefId}:{period}` with latest level (TTL 2h).
+  - `shouldAlert(engineerId, kpiDefId, period, level, redis)`: Redis key `kpi-alert:{engineerId}:{kpiDefId}:{period}:{level}` SET NX TTL 23h. Returns false if already sent today.
+  - If warning level is AMBER or RED and `shouldAlert` passes: queue `KPI_WARNING` notification job (engineer in-app SSE; add to team lead daily digest list in Redis sorted set).
+
+- [ ] `B-SI-4` — **BullMQ jobs** (`workers/jobs/src/`):
+  - `sla-predictor.worker.ts`: new worker consuming `sla-predictor` queue. Repeatable cron job `*/5 * * * *` (every 5 min). Per-tenant: calls `SlaPredictor.scanAndUpdate` via HTTP to API or directly imports service. Pattern: **direct import** of `SlaPredictor` logic (no HTTP round-trip — duplicate the pure scan logic in the worker). Idempotent: running twice produces the same result.
+  - `kpi-trend.worker.ts`: new worker consuming `kpi-trend` queue. Repeatable cron job `0 */30 * * * *` (every 30 min). Calls `KpiTrendAnalyser.scanAllEngineers` logic (same pattern — duplicate pure logic). Idempotent.
+  - `digest.worker.ts`: repeatable cron `0 8 * * *` (08:00 daily). Reads team lead digest Redis sorted set, compiles KPI warning summary email per team lead, clears the set. Uses existing nodemailer transport from `notifications.worker.ts`.
+  - Register all three workers in `workers/jobs/src/index.ts` with graceful shutdown.
+  - All BullMQ jobs must be idempotent. Add `jobId` based on `tenantId + date + queue` to prevent duplicate scheduling on worker restart.
+
+- [ ] `B-SI-5` — **tRPC analytics procedures** — add to `apps/api/src/trpc/router.ts`:
+  - `analytics.slaWarnings`: returns `{ ticketId, title, priority, slaDeadline, warningLevel, assigneeName, teamName }[]` filtered by `warningLevel IN ('AMBER','RED')` for the tenant. Requires TEAM_LEAD+ role.
+  - `analytics.kpiTrends`: returns latest `kpi_trend_snapshots` rows per engineer per kpi_def for the current period (from PostgreSQL). Fields: `{ engineerId, engineerName, kpiDefId, kpiName, actualToDate, projectedEop, target, warningLevel }`. Requires TEAM_LEAD+ role.
+  - `analytics.myKpiTrends`: same as `kpiTrends` but scoped to `req.user.userId`. Requires ENGINEER+ role.
+  - Export all new types to `packages/types/src/trpc.ts`.
+
+- [ ] `B-SI-6` — **Notification types** — add to `notifications.service.ts`:
+  - `queueSlaWarning(payload: SlaWarningPayload)`: adds job to `notifications` queue with type `SLA_WARNING`.
+  - `queueKpiWarning(payload: KpiWarningPayload)`: adds job to `notifications` queue with type `KPI_WARNING` (in-app SSE only).
+  - Update `notifications.worker.ts` to handle `SLA_WARNING` (email to assignee + lead) and `KPI_WARNING` (SSE event push to engineer's SSE stream).
+  - `SlaWarningPayload`: `{ tenantId, ticketId, ticketRef, ticketTitle, assigneeEmail, leadEmail, warningLevel, slaDeadline, minutesRemaining }`.
+  - `KpiWarningPayload`: `{ tenantId, engineerId, engineerName, kpiName, projectedScore, target, warningLevel, periodKey }`.
+
+---
+
+### Frontend Dev Agent Jobs
+
+- [ ] `F-SI-1` — **KPI dashboard trend data hook** (`apps/web/app/(app)/kpis/page.tsx` + hooks):
+  - Add `trpc['analytics.myKpiTrends'].useQuery()` to the KPI dashboard page (Engineer view).
+  - Add `trpc['analytics.kpiTrends'].useQuery()` for TEAM_LEAD+ view.
+  - Data shape available for F-SI-2 sparklines and F-SI-3 flags.
+
+- [ ] `F-SI-2` — **KPI sparklines** (`components/kpis/kpi-trend-sparkline.tsx`):
+  - New component: Tremor `Sparkline` (or `AreaChart` mini) showing `actualToDate` progress over time.
+  - Props: `snapshots: { snapshotAt: string; actualToDate: number }[]`, `target: number`, `direction: 'HIGHER' | 'LOWER'`.
+  - Render inside each KPI metric row in the KPI dashboard. Width: ~80px inline. No axes — just the line + target marker.
+  - Show a loading skeleton while data is fetching.
+
+- [ ] `F-SI-3` — **KPI warning flag pills** (`components/kpis/kpi-warning-badge.tsx`):
+  - New component: pill badge with amber/red colouring.
+  - `AMBER`: `bg-amber-100 text-amber-800` (light mode), `bg-amber-900 text-amber-200` (dark).
+  - `RED`: `bg-red-100 text-red-800` (light), `bg-red-900 text-red-200` (dark).
+  - Props: `level: 'NONE' | 'AMBER' | 'RED'`. Returns `null` for `NONE`.
+  - Mount next to each metric name in the KPI dashboard metric rows and in the KPI agreement metrics table (read-only view).
+
+- [ ] `F-SI-4` — **SLA warning badges in ticket list** (`components/tickets/tickets-table.tsx`):
+  - Add `slaWarningLevel` to the column data from `trpc['tickets.list']`.
+  - Amber/red row highlight: if `slaWarningLevel === 'RED'` apply `bg-red-50 dark:bg-red-950` row class; `AMBER` → `bg-amber-50 dark:bg-amber-950`.
+  - SLA countdown badge (`sla-badge.tsx`) already turns red/amber by time — keep that logic. Add a `⚠` icon prefix to the SLA cell when `slaWarningLevel` is set and level is RED, to distinguish "system-predicted breach" from "countdown approaching".
+
+- [ ] `F-SI-5` — **SLA warning summary on main dashboard** (`apps/web/app/(app)/dashboard/page.tsx`):
+  - In the queue health section, add a "SLA at Risk" stat card: count of AMBER + count of RED tickets for the tenant.
+  - Wired to `trpc['analytics.slaWarnings'].useQuery()` (TEAM_LEAD+ only, rendered conditionally by role).
+  - Card: two counters side by side — `{ amberCount } Amber` / `{ redCount } Red`. Clicking either deep-links to `/tickets?slaWarning=amber` or `/tickets?slaWarning=red` (filter applied via URL param).
+  - Add `slaWarning` as an optional query param to `trpc['tickets.list']` → map to `WHERE sla_warning_level = ?` in `TicketsService`.
+
+---
+
+### QA Checks (Sprint 18)
+
+**SLA Prediction**
+- [ ] Ticket with `assigned_at = 2h ago`, `sla_deadline = 2h from now` (50% consumed) → `slaWarningLevel = NONE`
+- [ ] Ticket with `assigned_at = 7h ago`, `sla_deadline = 1h from now` (87.5% consumed) → `slaWarningLevel = AMBER`
+- [ ] Ticket with `assigned_at = 9h ago`, `sla_deadline = 30min from now` (94.7% consumed) → `slaWarningLevel = RED`
+- [ ] SLA warning alert not re-fired within same threshold window (Redis dedup key present)
+- [ ] `sla-predictor` BullMQ job runs every 5 min — confirm with `pm2 logs lotris-workers`
+- [ ] Running predictor twice in a row produces identical DB state (idempotent)
+- [ ] `analytics.slaWarnings` requires TEAM_LEAD or above — ENGINEER role returns 403
+- [ ] Ticket in RESOLVED/CLOSED state → `slaWarningLevel` set to `NONE` on next scan
+
+**KPI Trends**
+- [ ] `KPI_Actuals` with 3 data points, trajectory heading below target → snapshot written with `RED` or `AMBER` level
+- [ ] `KPI_Actuals` with trajectory above target → snapshot written with `NONE` level
+- [ ] `kpi-trend` BullMQ job runs every 30 min — confirm with `pm2 logs lotris-workers`
+- [ ] KPI direction `LOWER_IS_BETTER`: projection below target (good) → `NONE`; projection above target → `AMBER/RED`
+- [ ] `analytics.myKpiTrends` returns only current engineer's trends — no other engineer's data
+- [ ] KPI digest email enqueued at 08:00 daily for team leads with outstanding warnings
+
+**UI**
+- [ ] Amber row highlight visible in ticket list for AMBER ticket (light + dark mode)
+- [ ] Red row highlight visible in ticket list for RED ticket (light + dark mode)
+- [ ] `⚠` icon prefix visible on SLA badge cell for RED tickets
+- [ ] SLA at Risk dashboard card shows correct amber/red counts
+- [ ] Clicking "Amber" count in dashboard card navigates to `/tickets?slaWarning=amber` with correct filter applied
+- [ ] KPI sparkline renders without errors when `snapshots` array is empty (shows flat line or skeleton)
+- [ ] KPI warning flag pills render amber/red in both light and dark mode
+- [ ] All new UI tested at 1280px, 768px, 375px
+
+---
+
+### Known Issues / Env Requirements
+- No new env vars required for core prediction (uses existing MSSQL + PostgreSQL + Redis connections).
+- `KPI_ACTUALS` must have at least 2 data points in the current period for trend projection to be meaningful. Trend service returns `null` projection with `NONE` level if fewer than 2 actuals.
+- `sla_deadline` and `assigned_at` must be non-null on a ticket for SLA prediction to run (ASSIGNED/IN_PROGRESS states always have these set by the Queue Engine).

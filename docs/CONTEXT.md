@@ -1,6 +1,6 @@
 # Lotris — Project Context
 
-> Last updated: May 2026 — Sprint 17 complete (Ticket Intake: public web form `/request`, IMAP email poller, CategoryRouting config, source field on tickets INTERNAL/SELF_SERVICE/EMAIL/API, ACK + resolved email notifications, source badges in ticket table and drawer)
+> Last updated: May 2026 — Sprint 18 IN PROGRESS (Phase 2: SLA Breach Prediction + KPI Trend Analysis; branch `feature/sprint-18-intelligence`). Sprint 17 complete and merged to dev (`af06b9c`).
 
 ---
 
@@ -294,9 +294,11 @@ lotris/
 **Core ticket entities:**
 Tenants · Users (Engineers) · Roles · Teams · Tickets · Ticket_Comments · Tasks · Task_Assignments · Task_Checklist_Items · Notifications · Audit_Logs · Assignment_History · Queue_Config · Category_Routing
 
-> **Tickets** carry a `source` field (`INTERNAL | SELF_SERVICE | EMAIL | API`) and optional `requester_name`, `requester_email` columns for externally-submitted tickets. The `Category_Routing` table maps category strings to a default team and priority, used by the intake module to auto-route incoming requests.
+> **Tickets** carry a `source` field (`INTERNAL | SELF_SERVICE | EMAIL | API`) and optional `requester_name`, `requester_email` columns for externally-submitted tickets. The `Category_Routing` table maps category strings to a default team and priority, used by the intake module to auto-route incoming requests. Sprint 18 adds `sla_warning_level` (`NONE | AMBER | RED`) — computed by the SLA predictor BullMQ job every 5 minutes.
 
 > **Tasks** carry a `source` field (`LEAD_ASSIGNED | SELF_LOGGED`) and a `created_by` FK. Self-logged tasks are visible to the team lead and feed KPI actuals the same way lead-assigned tasks do.
+
+> **Sprint 18 (Phase 2) additions:** `kpi_trend_snapshots` table in PostgreSQL — stores one row per engineer/KPI/period snapshot with `actual_to_date`, `projected_eop`, `target`, and `warning_level`. Used for sparkline charts and early-warning flags in the KPI dashboard.
 
 **KPI entities:**
 KPI_Definitions · KPI_Team_Targets · KPI_Engineer_Assignments · KPI_Agreements · KPI_Agreement_Areas · KPI_Agreement_Metrics · KPI_Results · KPI_Actuals
@@ -537,15 +539,16 @@ Auth & Tenancy
 | M8 — UI Quality | 15     | Dark mode, dashboard accuracy, tickets page fully functional, role-gated assign |
 | M9 — QA & Monitor + KPI My Agreement | 16  | Queue/Tickets/Tasks role-visibility, Monitor wall, cross-team access, mobile CSS, KPI My Agreement, TEAM_LEAD builder access, Daily period, submit button fix |
 | M10 — Ticket Intake               | 17  | Public web form (`/request`), IMAP email poller, CategoryRouting config, source field on tickets, ACK + resolved notifications, source badges in UI |
+| M11 — Phase 2: Intelligence       | 18  | SLA breach prediction (amber/red warnings, notifications), KPI trend analysis (sparklines, flag pills, daily digest email) |
 
 ---
 
-### Phase 2 — Intelligence _(post-MVP)_
+### Phase 2 — Intelligence _(in progress — Sprint 18)_
 
-- SLA breach prediction and automated early-warning alerts
-- KPI performance trend analysis with amber/red flags
-- Automated quarterly report generation and distribution
-- Engineer workload rebalancing suggestions
+- **Sprint 18:** SLA breach prediction (linear projection, amber/red warnings in ticket list + dashboard, email + SSE notifications to assignee + lead, BullMQ `sla-predictor` cron every 5 min)
+- **Sprint 18:** KPI performance trend analysis (linear regression on actuals, sparkline charts, amber/red flag pills in KPI dashboard, daily digest email to team leads, BullMQ `kpi-trend` cron every 30 min)
+- **Sprint 19 (planned):** Automated quarterly report generation and distribution
+- **Sprint 19 (planned):** Engineer workload rebalancing suggestions
 
 ### Phase 3 — AI & Automation
 
