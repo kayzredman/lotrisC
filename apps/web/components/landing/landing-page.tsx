@@ -326,16 +326,191 @@ function Navbar() {
   );
 }
 
+// ─── Hero Visual ─────────────────────────────────────────────────────────────
+
+function HeroVisual() {
+  const cards = [
+    {
+      pos: { top: '14%', left: '-3%' } as React.CSSProperties,
+      delay: 1.0,
+      floatDur: 3.2,
+      accent: '#818cf8',
+      borderColor: 'rgba(79,70,229,0.35)',
+      child: (
+        <>
+          <div style={{ fontSize: 10, color: '#818cf8', fontWeight: 700, marginBottom: 6, letterSpacing: '0.05em' }}>⚡ SLA COMPLIANCE</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', lineHeight: 1 }}>94<span style={{ fontSize: 14, fontWeight: 600 }}>%</span></div>
+          <div style={{ fontSize: 10, color: '#22c55e', marginTop: 4, fontWeight: 600 }}>↑ +2.1% this week</div>
+        </>
+      ),
+    },
+    {
+      pos: { top: '38%', right: '-2%' } as React.CSSProperties,
+      delay: 1.2,
+      floatDur: 2.8,
+      accent: '#22c55e',
+      borderColor: 'rgba(34,197,94,0.3)',
+      child: (
+        <>
+          <div style={{ fontSize: 10, color: '#86efac', fontWeight: 700, marginBottom: 6, letterSpacing: '0.05em' }}>✓ RESOLVED TODAY</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', lineHeight: 1 }}>247</div>
+          <div style={{ fontSize: 10, color: '#64748b', marginTop: 4 }}>12 still active</div>
+        </>
+      ),
+    },
+    {
+      pos: { bottom: '22%', left: '-4%' } as React.CSSProperties,
+      delay: 1.4,
+      floatDur: 3.6,
+      accent: '#f59e0b',
+      borderColor: 'rgba(245,158,11,0.3)',
+      child: (
+        <>
+          <div style={{ fontSize: 10, color: '#fbbf24', fontWeight: 700, marginBottom: 6, letterSpacing: '0.05em' }}>🔔 SLA ALERT</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', lineHeight: 1.35 }}>TK-4821 approaching breach</div>
+          <div style={{ fontSize: 10, color: '#ef4444', marginTop: 4, fontWeight: 700 }}>0:47 remaining</div>
+        </>
+      ),
+    },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 80, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 1.0, delay: 0.65, ease: EASE }}
+      style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1040, padding: '0 20px', marginTop: 64 }}
+    >
+      {/* Browser frame */}
+      <div style={{
+        borderRadius: '16px 16px 0 0',
+        overflow: 'hidden',
+        border: '1px solid rgba(255,255,255,0.10)',
+        borderBottom: 'none',
+        boxShadow: '0 -4px 40px rgba(79,70,229,0.18), 0 40px 80px rgba(0,0,0,0.55)',
+      }}>
+        {/* Chrome bar */}
+        <div style={{ background: '#161b2e', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            {(['#ef4444', '#f59e0b', '#22c55e'] as const).map((c) => (
+              <div key={c} style={{ width: 10, height: 10, borderRadius: '50%', background: c, opacity: 0.7 }} />
+            ))}
+          </div>
+          <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: '4px 12px', fontSize: 11, color: '#475569', display: 'flex', alignItems: 'center', gap: 6, maxWidth: 300, margin: '0 auto' }}>
+            <span style={{ fontSize: 9 }}>🔒</span>
+            <span>app.lotris.io/dashboard</span>
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+            {['#334155', '#334155', '#334155'].map((c, i) => (
+              <div key={i} style={{ width: 14, height: 14, borderRadius: 3, background: c }} />
+            ))}
+          </div>
+        </div>
+        {/* Screenshot image */}
+        <div style={{ position: 'relative' }}>
+          <img
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=80"
+            alt="Lotris KPI dashboard view"
+            style={{ width: '100%', display: 'block', height: 460, objectFit: 'cover', objectPosition: 'top center' }}
+          />
+          {/* Bottom fade into page bg */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 180, background: 'linear-gradient(transparent, #0c0e1a 92%)' }} />
+        </div>
+      </div>
+
+      {/* Floating stat cards */}
+      {cards.map(({ pos, delay, floatDur, borderColor, child }, i) => (
+        <div key={i} style={{ position: 'absolute', width: 170, ...pos, zIndex: 10 }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.75, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ delay, duration: 0.55, ease: EASE }}
+          >
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: floatDur, repeat: Infinity, ease: 'easeInOut', delay: i * 0.6 }}
+              style={{
+                background: 'rgba(10,13,28,0.88)',
+                border: `1px solid ${borderColor}`,
+                borderRadius: 14,
+                padding: '14px 16px',
+                backdropFilter: 'blur(12px)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              }}
+            >
+              {child}
+            </motion.div>
+          </motion.div>
+        </div>
+      ))}
+    </motion.div>
+  );
+}
+
+// ─── Screenshot Marquee ───────────────────────────────────────────────────────
+
+const MARQUEE_IMAGES = [
+  { src: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=640&q=70', alt: 'Analytics overview' },
+  { src: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=640&q=70', alt: 'Data visualization' },
+  { src: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=640&q=70', alt: 'IT team collaboration' },
+  { src: 'https://images.unsplash.com/photo-1531973576160-7125cd663d86?auto=format&fit=crop&w=640&q=70', alt: 'Enterprise operations' },
+  { src: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=640&q=70', alt: 'Support engineering' },
+  { src: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=640&q=70', alt: 'KPI reporting' },
+];
+
+function ScreenshotMarquee() {
+  const track = [...MARQUEE_IMAGES, ...MARQUEE_IMAGES]; // doubled for seamless loop
+  const itemW = 280;
+  const gap = 16;
+  const totalW = MARQUEE_IMAGES.length * (itemW + gap);
+
+  return (
+    <div style={{ background: '#070a14', padding: '48px 0', overflow: 'hidden', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      {/* Label */}
+      <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#334155', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Trusted by IT teams across industries
+        </span>
+      </div>
+      {/* Scrolling track */}
+      <div style={{ overflow: 'hidden', maskImage: 'linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)', WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)' }}>
+        <motion.div
+          style={{ display: 'flex', gap: gap }}
+          animate={{ x: [0, -totalW] }}
+          transition={{ duration: 28, repeat: Infinity, ease: 'linear', repeatType: 'loop' }}
+        >
+          {track.map((img, i) => (
+            <div
+              key={i}
+              style={{
+                flexShrink: 0,
+                width: itemW,
+                height: 160,
+                borderRadius: 12,
+                overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.07)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+              }}
+            >
+              <img src={img.src} alt={img.alt} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.8 }} />
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 
 function HeroSection() {
   return (
-    <section style={{ position: 'relative', minHeight: '100vh', background: '#0c0e1a', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '100px 20px 60px' }}>
+    <section style={{ position: 'relative', background: '#0c0e1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', overflow: 'hidden', padding: '110px 20px 0' }}>
       {/* Animated gradient orbs */}
       {[
-        { top: '10%', left: '5%', size: 420, color: 'rgba(79,70,229,0.18)', dur: 12 },
-        { top: '55%', right: '5%', size: 350, color: 'rgba(139,92,246,0.14)', dur: 16 },
-        { top: '25%', left: '55%', size: 280, color: 'rgba(14,165,233,0.10)', dur: 10 },
+        { top: '8%', left: '3%', size: 480, color: 'rgba(79,70,229,0.16)', dur: 12 },
+        { top: '50%', right: '3%', size: 380, color: 'rgba(139,92,246,0.12)', dur: 16 },
+        { top: '20%', left: '52%', size: 300, color: 'rgba(14,165,233,0.09)', dur: 10 },
       ].map((orb, i) => (
         <motion.div
           key={i}
@@ -353,6 +528,7 @@ function HeroSection() {
       {/* Grid overlay */}
       <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)', backgroundSize: '60px 60px', pointerEvents: 'none' }} />
 
+      {/* Text block */}
       <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 760 }}>
         {/* Pill badge */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
@@ -366,7 +542,7 @@ function HeroSection() {
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.65, delay: 0.1, ease: EASE }}
           style={{ fontSize: 'clamp(40px, 6vw, 72px)', fontWeight: 800, color: '#fff', lineHeight: 1.08, letterSpacing: '-0.03em', margin: '0 0 20px' }}
         >
           Your helpdesk,{' '}
@@ -380,7 +556,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.22 }}
-          style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 40px', maxWidth: 580, marginLeft: 'auto', marginRight: 'auto' }}
+          style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 36px', maxWidth: 580, marginLeft: 'auto', marginRight: 'auto' }}
         >
           Stop firefighting. Start performing. Lotris gives IT teams the structure, visibility, and automation to hit every SLA — and <em style={{ color: '#c7d2fe', fontStyle: 'normal' }}>prove it</em>.
         </motion.p>
@@ -390,7 +566,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.34 }}
-          style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 56 }}
+          style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 36 }}
         >
           <Link href="/sign-up"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#4f46e5', color: '#fff', textDecoration: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, boxShadow: '0 0 0 0 rgba(79,70,229,0.5)', transition: 'all 0.2s' }}
@@ -399,21 +575,21 @@ function HeroSection() {
           >
             Get Started Free →
           </Link>
-          <a href="#how-it-works"
+          <Link href="/login"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', textDecoration: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600, border: '1px solid rgba(255,255,255,0.12)', transition: 'all 0.2s' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'none'; }}
           >
-            ▶ See it in action
-          </a>
+            Sign in to your account
+          </Link>
         </motion.div>
 
         {/* Live stats pills */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.55, duration: 0.6 }}
-          style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}
+          transition={{ delay: 0.5, duration: 0.6 }}
+          style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}
         >
           {[
             { icon: '⚡', text: '247 tickets resolved today' },
@@ -426,17 +602,35 @@ function HeroSection() {
             </div>
           ))}
         </motion.div>
+
+        {/* Scroll-down CTA — inline, prominent */}
+        <motion.a
+          href="#features"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.75, duration: 0.5 }}
+          style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 8, textDecoration: 'none', cursor: 'pointer' }}
+        >
+          <span style={{ fontSize: 12, fontWeight: 600, color: '#475569', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Explore the platform</span>
+          <motion.div
+            animate={{ y: [0, 7, 0] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+            style={{
+              width: 44, height: 44, borderRadius: '50%',
+              border: '2px solid rgba(99,102,241,0.45)',
+              background: 'rgba(79,70,229,0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#818cf8', fontSize: 20, lineHeight: 1,
+              boxShadow: '0 0 20px rgba(79,70,229,0.2)',
+            }}
+          >
+            ↓
+          </motion.div>
+        </motion.a>
       </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        animate={{ y: [0, 8, 0] }}
-        transition={{ duration: 2, repeat: Infinity }}
-        style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, color: '#475569', fontSize: 11 }}
-      >
-        <span>Scroll</span>
-        <span>↓</span>
-      </motion.div>
+      {/* Hero visual: browser frame + floating cards */}
+      <HeroVisual />
     </section>
   );
 }
@@ -855,6 +1049,7 @@ export function LandingPage() {
     <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitFontSmoothing: 'antialiased' }}>
       <Navbar />
       <HeroSection />
+      <ScreenshotMarquee />
       <PainPointsSection />
       <FeaturesSection />
       <HowItWorksSection />
