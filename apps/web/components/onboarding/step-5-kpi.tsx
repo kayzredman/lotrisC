@@ -2,52 +2,47 @@
 
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
+import { Clock, Star, BarChart2, Settings, Check } from 'lucide-react';
 
-type Template = 'response_resolution' | 'csat' | 'balanced' | 'custom';
-
-const TEMPLATES: {
-  id: Template;
-  title: string;
-  description: string;
-  tags: string[];
-}[] = [
+const KPI_CARDS = [
   {
-    id: 'response_resolution',
-    title: 'Response & Resolution',
-    description: 'Focus on speed: first-response time, resolution time, and SLA compliance.',
-    tags: ['MTTR', 'MTTFR', 'SLA'],
+    key: 'response_resolution' as const,
+    icon: Clock,
+    name: 'Response & Resolution',
+    desc: 'MTTF, MTTR, SLA breach rate. Best for teams focused on speed.',
   },
   {
-    id: 'csat',
-    title: 'CSAT Focus',
-    description: 'Measure customer satisfaction, NPS, and reopen rates.',
-    tags: ['CSAT', 'NPS', 'Reopen Rate'],
+    key: 'csat' as const,
+    icon: Star,
+    name: 'Customer Satisfaction',
+    desc: 'CSAT, NPS, reopen rate. Best for service-desk quality focus.',
   },
   {
-    id: 'balanced',
-    title: 'Balanced Scorecard',
-    description: 'Combines speed, quality, satisfaction, and volume into one framework.',
-    tags: ['MTTR', 'SLA', 'CSAT', 'Volume'],
+    key: 'balanced' as const,
+    icon: BarChart2,
+    name: 'Balanced Scorecard',
+    desc: 'Equal weight across speed, quality, and volume. Recommended for new teams.',
   },
   {
-    id: 'custom',
-    title: 'Custom',
-    description: 'Skip presets and define your own KPIs in the KPI Manager.',
-    tags: ['Manual setup'],
+    key: 'custom' as const,
+    icon: Settings,
+    name: 'Custom (blank)',
+    desc: 'Start from scratch. Define your own KPI definitions and weights.',
   },
-];
+] as const;
 
-interface Props {
-  onBack: () => void;
-  onNext: () => void;
-}
+type KpiKey = typeof KPI_CARDS[number]['key'];
 
-export function Step5Kpi({ onBack, onNext }: Props) {
-  const [selected, setSelected] = useState<Template>('balanced');
-  const [error, setError] = useState('');
+interface Props { onSuccess: () => void; }
+
+export function Step5Kpi({ onSuccess }: Props) {
+  const [selected, setSelected]       = useState<KpiKey>('response_resolution');
+  const [frequency, setFrequency]     = useState('monthly');
+  const [reportEmail, setReportEmail] = useState('');
+  const [error, setError]             = useState('');
 
   const setTemplate = trpc['onboarding.setKpiTemplate'].useMutation({
-    onSuccess: onNext,
+    onSuccess,
     onError: (e) => setError(e.message),
   });
 
@@ -58,100 +53,98 @@ export function Step5Kpi({ onBack, onNext }: Props) {
   }
 
   return (
-    <div style={{ maxWidth: 640 }}>
-      <h1 style={h1}>KPI Framework</h1>
-      <p style={subtext}>
-        Choose a KPI template to get started. These create a set of draft KPI definitions that you
-        can activate and customise in the KPI Manager.
+    <form id="ob-step-form" onSubmit={handleSubmit}>
+      <h1 style={{ fontSize: 26, fontWeight: 700, color: '#0F172A', margin: '0 0 8px', letterSpacing: '-0.4px' }}>
+        Choose your KPI framework
+      </h1>
+      <p style={{ fontSize: 14, color: '#64748B', margin: '0 0 32px', lineHeight: 1.6 }}>
+        Pick a starting template. You can customise weights and add custom KPIs from the KPI admin page at any time.
       </p>
 
-      <form onSubmit={handleSubmit}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 14,
-            marginBottom: 28,
-          }}
-        >
-          {TEMPLATES.map((t) => {
-            const active = selected === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setSelected(t.id)}
-                style={{
-                  textAlign: 'left',
-                  padding: 16,
-                  borderRadius: 10,
-                  border: active ? '2px solid #4F46E5' : '2px solid #E2E8F0',
-                  background: active ? '#EEF2FF' : '#fff',
-                  cursor: 'pointer',
-                  transition: 'border-color 0.15s',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#0F172A' }}>{t.title}</p>
-                  {active && (
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        background: '#4F46E5',
-                        color: '#fff',
-                        padding: '2px 8px',
-                        borderRadius: 99,
-                        marginLeft: 6,
-                        flexShrink: 0,
-                      }}
-                    >
-                      Selected
-                    </span>
-                  )}
-                </div>
-                <p style={{ margin: '0 0 10px', fontSize: 12, color: '#64748B', lineHeight: 1.5 }}>
-                  {t.description}
-                </p>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {t.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 600,
-                        background: active ? '#C7D2FE' : '#F1F5F9',
-                        color: active ? '#3730A3' : '#64748B',
-                        padding: '2px 8px',
-                        borderRadius: 99,
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+      {/* KPI card grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 36 }}>
+        {KPI_CARDS.map((card) => {
+          const isSelected = selected === card.key;
+          const Icon = card.icon;
+          return (
+            <button
+              key={card.key}
+              type="button"
+              onClick={() => setSelected(card.key)}
+              style={{
+                position: 'relative',
+                textAlign: 'left',
+                padding: '18px 16px',
+                borderRadius: 10,
+                border: isSelected ? '2px solid #4F46E5' : '1px solid #E2E8F0',
+                background: isSelected ? 'rgba(79,70,229,0.04)' : '#fff',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                transition: 'border-color 0.15s, background 0.15s',
+              }}
+            >
+              {/* Check indicator (top-right) */}
+              <div style={{
+                position: 'absolute', top: 12, right: 12,
+                width: 20, height: 20, borderRadius: '50%',
+                background: isSelected ? '#4F46E5' : '#F1F5F9',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.15s, opacity 0.15s',
+                opacity: isSelected ? 1 : 0.4,
+              }}>
+                <Check size={11} strokeWidth={3} style={{ color: isSelected ? '#fff' : '#94A3B8' }} />
+              </div>
 
-        {error && <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 12 }}>{error}</p>}
+              {/* Icon box */}
+              <div style={{
+                width: 38, height: 38, borderRadius: 9,
+                background: isSelected ? 'rgba(79,70,229,0.12)' : '#F8FAFC',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: 12,
+              }}>
+                <Icon size={18} style={{ color: isSelected ? '#4F46E5' : '#64748B' }} />
+              </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <button type="button" onClick={onBack} style={ghostBtnStyle}>← Back</button>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button type="button" onClick={onNext} style={ghostBtnStyle}>Skip</button>
-            <button type="submit" disabled={setTemplate.isPending} style={primaryBtnStyle}>
-              {setTemplate.isPending ? 'Applying…' : 'Finish Setup →'}
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', marginBottom: 5 }}>{card.name}</div>
+              <div style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>{card.desc}</div>
             </button>
-          </div>
+          );
+        })}
+      </div>
+
+      {/* Reporting cadence section */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.8px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Reporting cadence</span>
+        <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div>
+          <label style={labelSt}>KPI review frequency</label>
+          <select value={frequency} onChange={e => setFrequency(e.target.value)} style={selectSt}>
+            <option value="monthly">Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="weekly">Weekly</option>
+          </select>
         </div>
-      </form>
-    </div>
+        <div>
+          <label style={labelSt}>Auto-send report to</label>
+          <input
+            type="email"
+            value={reportEmail}
+            onChange={e => setReportEmail(e.target.value)}
+            placeholder="admin@acme.io"
+            style={inputSt}
+          />
+        </div>
+      </div>
+
+      {error && <p style={{ color: '#EF4444', fontSize: 13, marginTop: 16 }}>{error}</p>}
+    </form>
   );
 }
 
-const h1: React.CSSProperties = { fontSize: 28, fontWeight: 700, color: '#0F172A', margin: '0 0 6px' };
-const subtext: React.CSSProperties = { color: '#64748B', margin: '0 0 28px', fontSize: 15 };
-const primaryBtnStyle: React.CSSProperties = { padding: '10px 28px', borderRadius: 8, background: '#4F46E5', color: '#fff', border: 'none', fontWeight: 600, fontSize: 14, cursor: 'pointer' };
-const ghostBtnStyle: React.CSSProperties = { ...primaryBtnStyle, background: 'transparent', color: '#64748B', border: '1px solid #E2E8F0' };
+const labelSt: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6 };
+const inputSt: React.CSSProperties = { width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 13.5, color: '#0F172A', background: '#fff', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' };
+const selectSt: React.CSSProperties = { ...inputSt, cursor: 'pointer' };
+

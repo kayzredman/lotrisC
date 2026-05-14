@@ -2,171 +2,164 @@
 
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
+import { Zap, Mail, X } from 'lucide-react';
+
+const ROLES = [
+  { label: 'Engineer',    id: 5 },
+  { label: 'Team Lead',   id: 4 },
+  { label: 'IT Manager',  id: 3 },
+];
 
 interface SentInvite {
   email: string;
   teamName: string;
+  roleName: string;
+  status: 'sent' | 'awaiting';
 }
 
-interface Props {
-  onBack: () => void;
-  onNext: () => void;
-}
+interface Props { onSuccess: () => void; }
 
-export function Step3Invite({ onBack, onNext }: Props) {
-  const [emailsRaw, setEmailsRaw] = useState('');
-  const [teamId, setTeamId] = useState('');
+export function Step3Invite({ onSuccess }: Props) {
+  const [emailInput, setEmailInput] = useState('');
+  const [teamId, setTeamId]         = useState('');
+  const [roleId, setRoleId]         = useState(5);
   const [sentInvites, setSentInvites] = useState<SentInvite[]>([]);
-  const [error, setError] = useState('');
+  const [sending, setSending]       = useState(false);
+  const [sendError, setSendError]   = useState('');
 
   const { data: teamsData } = trpc['admin.teams.list'].useQuery();
-  const teamsRaw = (teamsData?.teams ?? []) as Array<{ id: string; name: string }>;
+  const teams = (teamsData ?? []) as { id: string; name: string }[];
 
   const createUser = trpc['admin.users.create'].useMutation();
 
-  function parseEmails(raw: string): string[] {
-    return raw
-      .split(/[\s,;]+/)
-      .map((e) => e.trim().toLowerCase())
-      .filter((e) => e.includes('@'));
+  async function handleSend() {
+    setSendError('');
+    const emails = emailInput.split(/[\s,;]+/).map(e => e.trim()).filter(Boolean);
+    if (emails.length === 0) return setSendError('Enter at least one email address.');
+    const roleName = ROLES.find(r => r.id === roleId)?.label ?? 'Engineer';
+    const team = teams.find(t => t.id === teamId);
+    setSending(true);
+    let failed = 0;
+    for (const email of emails) {
+      try {
+        await createUser.mutateAsync({
+          email,
+          fullName: email.split('@')[0].replace(/[._]/g, ' '),
+          roleId,
+          teamId: teamId || undefined,
+        });
+        setSentInvites(prev => [...prev, { email, teamName: team?.name ?? '—', roleName, status: 'sent' }]);
+      } catch { failed++; }
+    }
+    if (failed > 0) setSendError(`${failed} invite(s) failed. Others were sent.`);
+    setEmailInput('');
+    setSending(false);
   }
 
-  async function handleSend(e: React.FormEvent) {
+  function handleRemoveInvite(email: string) {
+    setSentInvites(prev => prev.filter(i => i.email !== email));
+  }
+
+  function handleContinue(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
-    const emails = parseEmails(emailsRaw);
-    if (emails.length === 0) return setError('Please enter at least one valid email address.');
-
-    const teamName = teamsRaw.find((t) => t.id === teamId)?.name ?? '';
-
-    const results = await Promise.allSettled(
-      emails.map((email) =>
-        createUser.mutateAsync({
-          email,
-          teamId: teamId || undefined,
-          roleId: 'ENGINEER',
-        }),
-      ),
-    );
-
-    const succeeded = emails.filter((_, i) => results[i]?.status === 'fulfilled');
-    if (succeeded.length > 0) {
-      setSentInvites((prev) => [
-        ...prev,
-        ...succeeded.map((email) => ({ email, teamName })),
-      ]);
-      setEmailsRaw('');
-    }
-
-    const failed = results.filter((r) => r.status === 'rejected').length;
-    if (failed > 0) setError(`${failed} invite(s) failed. Others were sent.`);
+    onSuccess();
   }
 
   return (
-    <div style={{ maxWidth: 600 }}>
-      <h1 style={h1}>Invite engineers</h1>
-      <p style={subtext}>
-        Invite your team members now, or skip — they can be added later from the Users page.
+    <form id="ob-step-form" onSubmit={handleContinue}>
+      <h1 style={{ fontSize: 26, fontWeight: 700, color: '#0F172A', margin: '0 0 8px', letterSpacing: '-0.4px' }}>
+        Invite your engineers
+      </h1>
+      <p style={{ fontSize: 14, color: '#64748B', margin: '0 0 24px', lineHeight: 1.6 }}>
+        Send sign-up invitations now. Engineers don&apos;t need to accept before you finish setup — your work continues uninterrupted.
       </p>
 
-      {/* Non-blocking callout */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 10,
-          background: '#F0FDF4',
-          border: '1px solid #BBF7D0',
-          borderRadius: 8,
-          padding: '12px 14px',
-          marginBottom: 24,
-          fontSize: 13,
-          color: '#166534',
-        }}
-      >
-        <span>⚡</span>
-        <span>This step is optional — engineers can be invited at any time from the Admin panel.</span>
+      {/* Tip callout */}
+      <div style={{ display: 'flex', gap: 12, background: 'rgba(79,70,229,0.06)', border: '1px solid rgba(79,70,229,0.18)', borderRadius: 10, padding: '14px 16px', marginBottom: 28 }}>
+        <Zap size={15} style={{ color: '#4F46E5', flexShrink: 0, marginTop: 1 }} />
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#4F46E5', marginBottom: 3 }}>Invites don&apos;t block your setup</div>
+          <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.55 }}>
+            Invitation emails are sent immediately. Engineers can sign up at their own pace — your wizard and ticket queue work either way.
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={handleSend} style={{ marginBottom: 24 }}>
-        <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>Email Addresses</label>
-          <textarea
-            value={emailsRaw}
-            onChange={(e) => setEmailsRaw(e.target.value)}
-            placeholder="alice@company.com, bob@company.com"
-            rows={3}
-            style={{ ...inputStyle, resize: 'vertical' }}
-          />
-          <span style={{ fontSize: 11, color: '#94A3B8' }}>Separate multiple emails with commas or newlines</span>
-        </div>
+      {/* Email input area + controls */}
+      <div style={{ marginBottom: 16 }}>
+        <label style={labelSt}>Email addresses</label>
+        <input
+          value={emailInput}
+          onChange={e => setEmailInput(e.target.value)}
+          placeholder="Paste emails or add one at a time"
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSend(); } }}
+          style={{ ...inputSt, marginBottom: 8 }}
+        />
+        <span style={{ fontSize: 11.5, color: '#94A3B8' }}>Press <kbd style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 4, padding: '1px 5px', fontSize: 10 }}>Enter</kbd> to add multiple addresses.</span>
+      </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>Assign to Team (optional)</label>
-          <select value={teamId} onChange={(e) => setTeamId(e.target.value)} style={selectStyle}>
-            <option value="">No specific team</option>
-            {teamsRaw.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
+      {/* Team + Role + Send row */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 24, flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 160px' }}>
+          <label style={labelSt}>Team</label>
+          <select value={teamId} onChange={e => setTeamId(e.target.value)} style={selectSt}>
+            <option value="">— no team —</option>
+            {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
-
-        {error && <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 8 }}>{error}</p>}
-
-        <button type="submit" disabled={createUser.isPending} style={{ ...primaryBtnStyle, width: '100%' }}>
-          {createUser.isPending ? 'Sending…' : 'Send Invites'}
+        <div style={{ flex: '1 1 140px' }}>
+          <label style={labelSt}>Role</label>
+          <select value={roleId} onChange={e => setRoleId(Number(e.target.value))} style={selectSt}>
+            {ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+          </select>
+        </div>
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={sending}
+          style={{ padding: '9px 20px', background: '#4F46E5', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}
+        >
+          {sending ? 'Sending…' : 'Send Invites'}
         </button>
-      </form>
+      </div>
+
+      {sendError && <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 16 }}>{sendError}</p>}
 
       {/* Sent invites list */}
       {sentInvites.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Sent</h3>
-          {sentInvites.map((inv, i) => (
-            <div
-              key={i}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '8px 12px',
-                background: '#F8FAFC',
-                borderRadius: 6,
-                marginBottom: 4,
-                fontSize: 13,
-              }}
-            >
-              <span>{inv.email} {inv.teamName && <span style={{ color: '#94A3B8' }}>· {inv.teamName}</span>}</span>
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  background: '#DCFCE7',
-                  color: '#166534',
-                  padding: '2px 8px',
-                  borderRadius: 99,
-                }}
-              >
-                Sent
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.8px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Sent invites</span>
+            <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+          </div>
+          {sentInvites.map((invite) => (
+            <div key={invite.email} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 10, alignItems: 'center', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <Mail size={13} style={{ color: '#94A3B8', flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{invite.email}</span>
+                {invite.teamName !== '—' && <span style={{ fontSize: 11, color: '#64748B', whiteSpace: 'nowrap' }}>· {invite.teamName}</span>}
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 99, background: '#DBEAFE', color: '#1D4ED8', whiteSpace: 'nowrap' }}>
+                Invite sent
               </span>
+              <button type="button" onClick={() => handleRemoveInvite(invite.email)} style={{ width: 22, height: 22, borderRadius: 5, border: '1px solid #E2E8F0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#94A3B8', flexShrink: 0 }}>
+                <X size={11} />
+              </button>
             </div>
           ))}
-        </div>
-      )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <button onClick={onBack} style={ghostBtnStyle}>← Back</button>
-        <button onClick={onNext} style={primaryBtnStyle}>
-          {sentInvites.length > 0 ? 'Continue →' : 'Skip for now →'}
-        </button>
-      </div>
-    </div>
+          {/* Info callout */}
+          <div style={{ display: 'flex', gap: 8, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '10px 14px', marginTop: 12, fontSize: 13, color: '#1E40AF' }}>
+            <span style={{ fontWeight: 600 }}>{sentInvites.length} invite{sentInvites.length !== 1 ? 's' : ''} sent.</span>
+            <span style={{ color: '#3B82F6' }}>Engineers will receive sign-up links by email. You can manage invites in the Admin panel.</span>
+          </div>
+        </>
+      )}
+    </form>
   );
 }
 
-const h1: React.CSSProperties = { fontSize: 28, fontWeight: 700, color: '#0F172A', margin: '0 0 6px' };
-const subtext: React.CSSProperties = { color: '#64748B', margin: '0 0 24px', fontSize: 15 };
-const labelStyle: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6 };
-const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 14, color: '#0F172A', background: '#fff', boxSizing: 'border-box' };
-const selectStyle: React.CSSProperties = { ...inputStyle, cursor: 'pointer' };
-const primaryBtnStyle: React.CSSProperties = { padding: '10px 28px', borderRadius: 8, background: '#4F46E5', color: '#fff', border: 'none', fontWeight: 600, fontSize: 14, cursor: 'pointer' };
-const ghostBtnStyle: React.CSSProperties = { ...primaryBtnStyle, background: 'transparent', color: '#64748B', border: '1px solid #E2E8F0' };
+const labelSt: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6 };
+const inputSt: React.CSSProperties = { width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 13.5, color: '#0F172A', background: '#fff', boxSizing: 'border-box', fontFamily: 'inherit' };
+const selectSt: React.CSSProperties = { ...inputSt, cursor: 'pointer' };
+
