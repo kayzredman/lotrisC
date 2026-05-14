@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Sprint 20 IN PROGRESS (`feature/sprint-20-onboarding`). Onboarding Wizard.
+> Last updated: May 2026 — Sprint 20 COMPLETE (`dev` @ `34e51dd`, tag `v0.20.0`, Milestone M13). Onboarding Wizard shipped.
 
 ---
 
@@ -21,7 +21,7 @@
 | 17     | Ticket Intake — Web Form + Email + Category Routing | ✅ COMPLETE | `dev` @ `af06b9c` | M10 |
 | 18     | Phase 2 — SLA Breach Prediction + KPI Trend Analysis | ✅ Complete    | `dev` @ `4d640a9` | M11 |
 | 19     | Phase 2 — Automated Reports + Workload Rebalancing   | ✅ COMPLETE    | `dev` @ `ca32cff`, tag `v0.19.0` | M12 |
-| 20     | Onboarding Wizard                                    | 🔵 IN PROGRESS | `feature/sprint-20-onboarding`   | M13 |
+| 20     | Onboarding Wizard                                    | ✅ COMPLETE    | `dev` @ `34e51dd`, tag `v0.20.0` | M13 |
 
 ---
 
@@ -930,7 +930,7 @@ F-AR-2 and F-AR-3 (Workload panel) depend on B-AR-6.
 ## Sprint 20 · Onboarding Wizard
 
 **Target milestone:** M13
-**Status:** 🔵 IN PROGRESS
+**Status:** ✅ COMPLETE
 **Branch:** `feature/sprint-20-onboarding`
 **Mockup:** `mockups/06-onboarding-v2.html`
 
