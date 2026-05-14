@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { FileText, Download, Clock, Calendar, Plus, Search, BarChart2, CheckCircle, AlertCircle, Settings } from 'lucide-react';
+import { FileText, Download, Clock, Calendar, Plus, Search, BarChart2, CheckCircle, AlertCircle, Settings, Trash2, Lock } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ReportSettingsPanel } from './report-settings-panel';
 
@@ -47,7 +47,20 @@ export function ReportsLayout() {
   const { data: liveReports, isLoading: reportsLoading } = trpc['reports.list'].useQuery(undefined, { staleTime: 15_000 });
   const { data: schedules } = trpc['reports.schedules.list'].useQuery(undefined, { staleTime: 15_000 });
 
-  const isAdmin = me?.roleName === 'ADMIN' || me?.roleName === 'SUPERADMIN';
+  const isAdmin     = me?.roleName === 'ADMIN' || me?.roleName === 'SUPERADMIN';
+  const canAccessReports = ['TEAM_LEAD', 'IT_MANAGER', 'ADMIN', 'SUPERADMIN'].includes(me?.roleName ?? '');
+
+  // Schedule mutations
+  const utils = trpc.useUtils();
+  const [showAddSchedule, setShowAddSchedule] = useState(false);
+  const [schedForm, setSchedForm] = useState({ reportType: 'TICKET_SUMMARY', format: 'PDF', frequency: 'WEEKLY', recipients: '' });
+  const createScheduleMutation = trpc['reports.schedules.create'].useMutation({
+    onSuccess: () => { setShowAddSchedule(false); setSchedForm({ reportType: 'TICKET_SUMMARY', format: 'PDF', frequency: 'WEEKLY', recipients: '' }); void utils['reports.schedules.list'].invalidate(); },
+  });
+  const deleteScheduleMutation = trpc['reports.schedules.delete'].useMutation({
+    onSuccess: () => void utils['reports.schedules.list'].invalidate(),
+  });
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const dateRangeParams = (range: string): { dateFrom: string; dateTo: string } => {
     const to = new Date();
@@ -88,6 +101,17 @@ export function ReportsLayout() {
   };
 
   const filtered = activeType === 'All' ? DEMO_REPORTS : DEMO_REPORTS.filter(r => r.type === activeType);
+
+  // Role gate — ENGINEER sees Not Authorised
+  if (me && !canAccessReports) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 320, gap: 12 }}>
+        <Lock size={32} style={{ color: 'var(--text-light)' }} />
+        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Not Authorised</div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', maxWidth: 340 }}>Reports are available to Team Leads, Managers and Admins. Contact your manager for access.</div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -279,6 +303,129 @@ export function ReportsLayout() {
                           <div className="v2-row-actions">
                             <button type="button" className="v2-row-action-btn" title="Download">
                               <Download size={11} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {/* ── Scheduled Reports section (below history table) ── */}
+          <div className="v2-card" style={{ marginTop: 20 }}>
+            <div className="v2-card-header">
+              <div>
+                <div className="v2-card-title"><Calendar size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle', color: 'var(--blue)' }} />Scheduled Reports</div>
+                <div className="v2-card-subtitle">Auto-generated on a recurring schedule and emailed to recipients</div>
+              </div>
+              <button type="button" className="v2-btn v2-btn-primary v2-btn-sm" onClick={() => setShowAddSchedule(true)}>
+                <Plus size={12} /> Add Schedule
+              </button>
+            </div>
+
+            {/* Add Schedule inline form */}
+            {showAddSchedule && (
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Report Type</label>
+                    <select className="v2-select" style={{ width: '100%' }} value={schedForm.reportType} onChange={e => setSchedForm(f => ({ ...f, reportType: e.target.value }))}>
+                      <option value="TICKET_SUMMARY">Ticket Summary</option>
+                      <option value="SLA_COMPLIANCE">SLA Compliance</option>
+                      <option value="KPI_REPORT">KPI Performance</option>
+                      <option value="ENGINEER_PERF">Agent Performance</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Format</label>
+                    <select className="v2-select" style={{ width: '100%' }} value={schedForm.format} onChange={e => setSchedForm(f => ({ ...f, format: e.target.value }))}>
+                      <option value="PDF">PDF</option>
+                      <option value="EXCEL">Excel</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Frequency</label>
+                    <select className="v2-select" style={{ width: '100%' }} value={schedForm.frequency} onChange={e => setSchedForm(f => ({ ...f, frequency: e.target.value }))}>
+                      <option value="WEEKLY">Weekly</option>
+                      <option value="MONTHLY">Monthly</option>
+                      <option value="QUARTERLY">Quarterly</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Recipients (comma-separated emails)</label>
+                  <input
+                    type="text"
+                    className="v2-input"
+                    style={{ width: '100%' }}
+                    placeholder="alice@company.com, bob@company.com"
+                    value={schedForm.recipients}
+                    onChange={e => setSchedForm(f => ({ ...f, recipients: e.target.value }))}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    className="v2-btn v2-btn-primary v2-btn-sm"
+                    disabled={createScheduleMutation.isPending || !schedForm.recipients.trim()}
+                    onClick={() => {
+                      const emails = schedForm.recipients.split(',').map(e => e.trim()).filter(Boolean);
+                      createScheduleMutation.mutate({ reportType: schedForm.reportType as 'TICKET_SUMMARY' | 'SLA_COMPLIANCE' | 'KPI_REPORT' | 'ENGINEER_PERF', format: schedForm.format as 'PDF' | 'EXCEL', frequency: schedForm.frequency as 'WEEKLY' | 'MONTHLY' | 'QUARTERLY', recipients: JSON.stringify(emails) });
+                    }}
+                  >
+                    {createScheduleMutation.isPending ? 'Saving…' : 'Save Schedule'}
+                  </button>
+                  <button type="button" className="v2-btn v2-btn-ghost v2-btn-sm" onClick={() => setShowAddSchedule(false)}>Cancel</button>
+                </div>
+              </div>
+            )}
+
+            <div className="v2-table-wrap">
+              <table className="v2-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Format</th>
+                    <th>Frequency</th>
+                    <th>Recipients</th>
+                    <th>Next Run</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(!schedules || schedules.length === 0) && (
+                    <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>No scheduled reports. Click &quot;Add Schedule&quot; to create one.</td></tr>
+                  )}
+                  {schedules?.map(s => (
+                    <tr key={s.id}>
+                      <td><span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{s.reportType.replace(/_/g, ' ')}</span></td>
+                      <td><span className={`v2-badge ${s.format === 'EXCEL' ? 'v2-badge-green' : 'v2-badge-red'}`}>{s.format}</span></td>
+                      <td><span className="v2-badge v2-badge-indigo">{s.frequency}</span></td>
+                      <td>
+                        <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                          {(() => { try { const arr = JSON.parse(s.recipients) as string[]; return arr.slice(0,2).join(', ') + (arr.length > 2 ? ` +${arr.length - 2}` : ''); } catch { return s.recipients; } })()}
+                        </span>
+                      </td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{s.nextRunAt ? new Date(s.nextRunAt).toLocaleString() : '—'}</span></td>
+                      <td><span className={`v2-badge ${s.isActive === 'true' ? 'v2-badge-green' : 'v2-badge-gray'}`}>{s.isActive === 'true' ? 'Active' : 'Paused'}</span></td>
+                      <td>
+                        {deleteConfirmId === s.id ? (
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button type="button" className="v2-btn v2-btn-danger v2-btn-sm" style={{ fontSize: 10, padding: '2px 8px' }}
+                              onClick={() => { deleteScheduleMutation.mutate({ id: s.id }); setDeleteConfirmId(null); }}>
+                              Confirm
+                            </button>
+                            <button type="button" className="v2-btn v2-btn-ghost v2-btn-sm" style={{ fontSize: 10, padding: '2px 8px' }} onClick={() => setDeleteConfirmId(null)}>
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="v2-row-actions">
+                            <button type="button" className="v2-row-action-btn" title="Delete" onClick={() => setDeleteConfirmId(s.id)}>
+                              <Trash2 size={11} />
                             </button>
                           </div>
                         )}
