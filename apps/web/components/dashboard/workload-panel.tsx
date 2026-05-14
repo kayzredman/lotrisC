@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Users, AlertCircle, CheckCircle, ArrowRightLeft, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import type { WorkloadSuggestion, TeamWorkloadResult } from '@lotris/types';
+import type { WorkloadSuggestion } from '@lotris/types';
 
 // ── Single-team panel (used for TEAM_LEAD) ───────────────────────────────────
 
@@ -166,24 +166,13 @@ function TeamLoadPanel({ teamId, teamName, inline }: TeamPanelProps) {
 
 function AllTeamsWorkloadPanel() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const utils = trpc.useUtils();
 
-  const { data: allTeams, isLoading } = trpc['analytics.workloadSuggestions'].useQuery(
+  // Use dashboard.teamWorkload (no-input endpoint) for the team list
+  const { data: teamList, isLoading } = trpc['dashboard.teamWorkload'].useQuery(
     undefined,
     { staleTime: 60_000, refetchInterval: 120_000 },
   );
-
-  const totalSuggestions = allTeams?.reduce((n, t) => n + t.suggestions.length, 0) ?? 0;
-
-  const batchReassignMutation = trpc['tickets.batchReassign'].useMutation({
-    onSuccess: () => void utils['analytics.workloadSuggestions'].invalidate(),
-  });
-
-  const handleApplyAll = (team: TeamWorkloadResult) => {
-    batchReassignMutation.mutate({
-      reassignments: team.suggestions.map((s) => ({ ticketId: s.ticketId, toEngineerId: s.toEngineerId })),
-    });
-  };
+  const teams = (teamList ?? []) as { id: string; name: string; tag: string; queued: number; pct: number }[];
 
   return (
     <div className="v2-card">
@@ -192,72 +181,38 @@ function AllTeamsWorkloadPanel() {
           <Users size={15} style={{ color: 'var(--indigo)' }} />
           Workload Rebalancing
         </div>
-        {totalSuggestions > 0 && (
-          <span className="v2-badge v2-badge-amber">{totalSuggestions} suggestion{totalSuggestions !== 1 ? 's' : ''} across teams</span>
-        )}
+        <span className="v2-card-subtitle">{teams.length} team{teams.length !== 1 ? 's' : ''}</span>
       </div>
 
       {isLoading && (
         <div className="v2-card-body" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: 13 }}>
-          <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading all teams…
+          <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading teams…
         </div>
       )}
 
-      {allTeams?.map((team) => {
-        const isOpen = !!expanded[team.teamId];
-        const hasSuggestions = team.suggestions.length > 0;
+      {teams.map((team) => {
+        const isOpen = !!expanded[team.id];
         return (
-          <div key={team.teamId} style={{ borderTop: '1px solid var(--border)' }}>
+          <div key={team.id} style={{ borderTop: '1px solid var(--border)' }}>
             <button
               type="button"
-              onClick={() => setExpanded(e => ({ ...e, [team.teamId]: !isOpen }))}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-primary)' }}
+              onClick={() => setExpanded(e => ({ ...e, [team.id]: !isOpen }))}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-primary)', fontFamily: 'inherit' }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                <strong>{team.teamId}</strong>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{team.engineers.length} engineers</span>
+                <strong>{team.name}</strong>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{team.queued} open tickets</span>
               </span>
-              {hasSuggestions && <span className="v2-badge v2-badge-amber">{team.suggestions.length} suggestion{team.suggestions.length !== 1 ? 's' : ''}</span>}
+              <div style={{ height: 5, width: 60, borderRadius: 3, background: 'var(--bg-tertiary)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${team.pct}%`, borderRadius: 3, background: loadColor(team.pct) }} />
+              </div>
             </button>
 
+            {/* Expanded: delegate to TeamLoadPanel which queries analytics.teamWorkload */}
             {isOpen && (
               <div style={{ padding: '0 16px 16px' }}>
-                {/* Load bars */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: team.suggestions.length > 0 ? 14 : 0 }}>
-                  {team.engineers.map((eng) => (
-                    <div key={eng.engineerId}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                        <span style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-primary)' }}>{eng.fullName}</span>
-                        <span style={{ fontSize: 11.5, fontWeight: 700, color: loadColor(eng.loadPct) }}>{eng.openTickets}/{eng.maxCapacity} ({eng.loadPct}%)</span>
-                      </div>
-                      <div style={{ height: 5, borderRadius: 3, background: 'var(--bg-tertiary)', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${Math.min(eng.loadPct, 100)}%`, borderRadius: 3, background: loadColor(eng.loadPct) }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Suggestions */}
-                {team.suggestions.map((s) => (
-                  <div key={s.ticketId} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, padding: '6px 10px', marginBottom: 4, borderRadius: 6, background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.12)' }}>
-                    <ArrowRightLeft size={11} style={{ color: 'var(--indigo)', flexShrink: 0 }} />
-                    <span style={{ flex: 1 }}>{s.ticketTitle}</span>
-                    <span style={{ color: 'var(--text-muted)' }}>{s.fromEngineerName} → <strong>{s.toEngineerName}</strong></span>
-                  </div>
-                ))}
-
-                {team.suggestions.length > 0 && (
-                  <button
-                    type="button"
-                    className="v2-btn v2-btn-primary v2-btn-sm"
-                    style={{ marginTop: 10 }}
-                    onClick={() => handleApplyAll(team)}
-                    disabled={batchReassignMutation.isPending}
-                  >
-                    <ArrowRightLeft size={11} /> Apply {team.suggestions.length} Suggestion{team.suggestions.length !== 1 ? 's' : ''}
-                  </button>
-                )}
+                <TeamLoadPanel teamId={team.id} teamName={team.name} inline />
               </div>
             )}
           </div>

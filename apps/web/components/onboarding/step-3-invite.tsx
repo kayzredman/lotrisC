@@ -20,27 +20,59 @@ interface SentInvite {
 interface Props { onSuccess: () => void; }
 
 export function Step3Invite({ onSuccess }: Props) {
-  const [emailInput, setEmailInput] = useState('');
-  const [teamId, setTeamId]         = useState('');
-  const [roleId, setRoleId]         = useState(5);
+  const [emailInput, setEmailInput]   = useState('');
+  const [stagedEmails, setStagedEmails] = useState<string[]>([]);
+  const [teamId, setTeamId]           = useState('');
+  const [roleId, setRoleId]           = useState(5);
   const [sentInvites, setSentInvites] = useState<SentInvite[]>([]);
-  const [sending, setSending]       = useState(false);
-  const [sendError, setSendError]   = useState('');
+  const [sending, setSending]         = useState(false);
+  const [sendError, setSendError]     = useState('');
 
   const { data: teamsData } = trpc['admin.teams.list'].useQuery();
   const teams = (teamsData ?? []) as { id: string; name: string }[];
 
   const createUser = trpc['admin.users.create'].useMutation();
 
+  function stageEmail(raw: string) {
+    const emails = raw.split(/[\s,;]+/).map(e => e.trim()).filter(e => e.includes('@'));
+    if (emails.length === 0) return;
+    setStagedEmails(prev => {
+      const next = [...prev];
+      emails.forEach(e => { if (!next.includes(e)) next.push(e); });
+      return next;
+    });
+    setEmailInput('');
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      stageEmail(emailInput);
+    }
+  }
+
+  function handleBlur() {
+    if (emailInput.trim()) stageEmail(emailInput);
+  }
+
+  function removeStaged(email: string) {
+    setStagedEmails(prev => prev.filter(e => e !== email));
+  }
+
   async function handleSend() {
     setSendError('');
-    const emails = emailInput.split(/[\s,;]+/).map(e => e.trim()).filter(Boolean);
-    if (emails.length === 0) return setSendError('Enter at least one email address.');
+    // Also stage whatever is still in the input box
+    const allEmails = [...stagedEmails];
+    if (emailInput.trim().includes('@')) {
+      const extra = emailInput.split(/[\s,;]+/).map(e => e.trim()).filter(e => e.includes('@'));
+      extra.forEach(e => { if (!allEmails.includes(e)) allEmails.push(e); });
+    }
+    if (allEmails.length === 0) return setSendError('Add at least one email address first.');
     const roleName = ROLES.find(r => r.id === roleId)?.label ?? 'Engineer';
     const team = teams.find(t => t.id === teamId);
     setSending(true);
     let failed = 0;
-    for (const email of emails) {
+    for (const email of allEmails) {
       try {
         await createUser.mutateAsync({
           email,
@@ -52,6 +84,7 @@ export function Step3Invite({ onSuccess }: Props) {
       } catch { failed++; }
     }
     if (failed > 0) setSendError(`${failed} invite(s) failed. Others were sent.`);
+    setStagedEmails([]);
     setEmailInput('');
     setSending(false);
   }
@@ -85,17 +118,42 @@ export function Step3Invite({ onSuccess }: Props) {
         </div>
       </div>
 
-      {/* Email input area + controls */}
+      {/* Email chip input */}
       <div style={{ marginBottom: 16 }}>
         <label style={labelSt}>Email addresses</label>
+        {/* Chip container */}
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: 6,
+          padding: stagedEmails.length > 0 ? '8px 10px 4px' : '0',
+          border: stagedEmails.length > 0 ? '1px solid #C7D2FE' : 'none',
+          borderRadius: 8, background: stagedEmails.length > 0 ? 'rgba(79,70,229,0.03)' : 'transparent',
+          marginBottom: stagedEmails.length > 0 ? 8 : 0,
+        }}>
+          {stagedEmails.map(email => (
+            <span key={email} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: '#EEF2FF', border: '1px solid #C7D2FE', color: '#3730A3',
+              borderRadius: 6, padding: '3px 8px', fontSize: 12.5, fontWeight: 500,
+            }}>
+              {email}
+              <button type="button" onClick={() => removeStaged(email)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#818CF8', padding: 0, lineHeight: 1, display: 'flex', alignItems: 'center' }}>
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+        </div>
         <input
           value={emailInput}
           onChange={e => setEmailInput(e.target.value)}
-          placeholder="Paste emails or add one at a time"
-          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSend(); } }}
-          style={{ ...inputSt, marginBottom: 8 }}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          placeholder={stagedEmails.length > 0 ? 'Add another email…' : 'alice@acme.io, bob@acme.io…'}
+          style={{ ...inputSt, marginBottom: 6 }}
         />
-        <span style={{ fontSize: 11.5, color: '#94A3B8' }}>Press <kbd style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 4, padding: '1px 5px', fontSize: 10 }}>Enter</kbd> to add multiple addresses.</span>
+        <span style={{ fontSize: 11.5, color: '#94A3B8' }}>
+          Press <kbd style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 4, padding: '1px 5px', fontSize: 10 }}>Enter</kbd> or <kbd style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 4, padding: '1px 5px', fontSize: 10 }}>,</kbd> after each address to queue it.
+          {stagedEmails.length > 0 && <strong style={{ color: '#4F46E5', marginLeft: 6 }}>{stagedEmails.length} queued</strong>}
+        </span>
       </div>
 
       {/* Team + Role + Send row */}

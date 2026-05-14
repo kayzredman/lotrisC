@@ -91,8 +91,8 @@ export function DashboardPageClient() {
   // Team workload — use live data if available, else DEMO
   const liveTeams = (teamWorkloadQ.data as { id?: string; name?: string; tag?: string; queued?: number; pct?: number }[] | undefined);
   const teams = (liveTeams && liveTeams.length > 0)
-    ? liveTeams.map(t => ({ name: t.tag ?? t.name ?? '–', queued: t.queued ?? 0, pct: t.pct ?? 0 }))
-    : DEMO.teams;
+    ? liveTeams.map(t => ({ id: t.id ?? '', name: t.tag ?? t.name ?? '–', queued: t.queued ?? 0, pct: t.pct ?? 0 }))
+    : DEMO.teams.map((t, i) => ({ id: String(i), ...t }));
 
   const trendMax = Math.max(...DEMO.trend.map(t => t.opened));
 
@@ -274,7 +274,7 @@ export function DashboardPageClient() {
           </div>
           <div className="v2-card-body">
             {teams.map(t => (
-              <div key={t.name} style={{ marginBottom: 14 }}>
+              <div key={t.id || t.name} style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
                   <span style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-primary)' }}>{t.name}</span>
                   <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{t.queued} queued</span>
@@ -309,7 +309,7 @@ export function DashboardPageClient() {
               </thead>
               <tbody>
                 {agents.map((a, i) => (
-                  <tr key={a.name}>
+                  <tr key={`${a.name}-${i}`}>
                     <td><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-light)' }}>#{i + 1}</span></td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

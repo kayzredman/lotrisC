@@ -13,8 +13,6 @@
     "isolatedModules": true,
     "lib": ["ES2022"],
     "target": "ES2022",
-    "baseUrl": ".",
-    "ignoreDeprecations": "5.0",
     "paths": {
       "drizzle-orm/mssql-core": ["./stubs/drizzle-mssql-core.ts"],
       "drizzle-orm/mssql2": ["./stubs/drizzle-mssql2.ts"]
