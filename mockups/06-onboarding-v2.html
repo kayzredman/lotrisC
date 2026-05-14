@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotris v2 — Onboarding Wizard</title>
+  <link rel="stylesheet" href="style-v2.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+
+    /* ═══════════════════════════════════════════════════════
+       ONBOARDING SHELL — full-screen, no sidebar, focused
+    ═══════════════════════════════════════════════════════ */
+    body { background: var(--bg); overflow-x: hidden; }
+
+    .ob-shell {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Left Rail (dark, sticky) ──────────────────────── */
+    .ob-rail {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      padding: 36px 28px 32px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ambient glow circles (decorative) */
+    .ob-rail::before {
+      content: '';
+      position: absolute;
+      width: 280px; height: 280px;
+      border-radius: 50%;
+      background: var(--indigo);
+      opacity: 0.07;
+      top: -80px; right: -100px;
+      pointer-events: none;
+    }
+    .ob-rail::after {
+      content: '';
+      position: absolute;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background: #6366F1;
+      opacity: 0.05;
+      bottom: 80px; left: -60px;
+      pointer-events: none;
+    }
+
+    .ob-rail-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 44px;
+      position: relative; z-index: 1;
+    }
+    .ob-rail-logo-icon {
+      width: 34px; height: 34px;
+      background: var(--indigo);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 800; color: white;
+      letter-spacing: -0.5px;
+    }
+    .ob-rail-logo-text {
+      font-size: 18px; font-weight: 700;
+      color: white; letter-spacing: -0.3px;
+    }
+    .ob-rail-logo-sub {
+      font-size: 9px; color: rgba(255,255,255,0.22);
+      letter-spacing: 1.1px; text-transform: uppercase;
+    }
+
+    /* headline copy */
+    .ob-rail-copy { position: relative; z-index: 1; margin-bottom: 40px; }
+    .ob-rail-copy h2 {
+      font-size: 17px; font-weight: 700; color: white;
+      letter-spacing: -0.3px; margin-bottom: 7px; line-height: 1.35;
+    }
+    .ob-rail-copy p {
+      font-size: 12.5px; color: rgba(255,255,255,0.42);
+      line-height: 1.6;
+    }
+
+    /* overall progress bar */
+    .ob-overall-progress {
+      position: relative; z-index: 1;
+      margin-bottom: 32px;
+    }
+    .ob-overall-label {
+      display: flex; justify-content: space-between;
+      font-size: 10.5px; font-weight: 600; margin-bottom: 6px;
+      color: rgba(255,255,255,0.38);
+      letter-spacing: 0.3px;
+    }
+    .ob-overall-label span:last-child { color: #A5B4FC; }
+    .ob-progress-track {
+      height: 4px; background: rgba(255,255,255,0.08);
+      border-radius: 99px; overflow: hidden;
+    }
+    .ob-progress-fill {
+      height: 100%; border-radius: 99px;
+      background: linear-gradient(90deg, #6366F1, #818CF8);
+      transition: width 0.4s ease;
+    }
+
+    /* step list */
+    .ob-steps { position: relative; z-index: 1; flex: 1; }
+
+    .ob-step-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      padding: 10px 0;
+      position: relative;
+    }
+
+    /* vertical connector line between steps */
+    .ob-step-row:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 13px;
+      top: 38px;
+      width: 2px;
+      height: calc(100% - 14px);
+      background: rgba(255,255,255,0.07);
+    }
+    .ob-step-row.done:not(:last-child)::after { background: rgba(99,102,241,0.35); }
+
+    .ob-step-icon {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 11px; font-weight: 700;
+      margin-top: 1px;
+    }
+    .ob-step-row.done .ob-step-icon {
+      background: rgba(99,102,241,0.25);
+      color: #A5B4FC;
+      border: 1.5px solid rgba(99,102,241,0.45);
+    }
+    .ob-step-row.active .ob-step-icon {
+      background: var(--indigo);
+      color: white;
+      border: 1.5px solid #6366F1;
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.18);
+    }
+    .ob-step-row.pending .ob-step-icon {
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.2);
+      border: 1.5px solid rgba(255,255,255,0.08);
+    }
+
+    .ob-step-content { flex: 1; }
+    .ob-step-title {
+      font-size: 12.5px; font-weight: 600;
+      transition: color 0.15s;
+    }
+    .ob-step-row.done .ob-step-title { color: rgba(255,255,255,0.55); }
+    .ob-step-row.active .ob-step-title { color: white; }
+    .ob-step-row.pending .ob-step-title { color: rgba(255,255,255,0.22); }
+    .ob-step-sub {
+      font-size: 11px;
+      margin-top: 1px;
+      line-height: 1.4;
+    }
+    .ob-step-row.done .ob-step-sub { color: rgba(255,255,255,0.2); }
+    .ob-step-row.active .ob-step-sub { color: rgba(255,255,255,0.42); }
+    .ob-step-row.pending .ob-step-sub { color: rgba(255,255,255,0.12); }
+
+    .ob-step-badge {
+      font-size: 9.5px; font-weight: 700;
+      padding: 1px 6px; border-radius: 20px;
+      margin-top: 4px; display: inline-block;
+    }
+    .ob-step-row.done .ob-step-badge {
+      background: rgba(99,102,241,0.18); color: #A5B4FC;
+    }
+    .ob-step-row.active .ob-step-badge {
+      background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.55);
+    }
+
+    /* ── Right Panel (form area) ───────────────────────── */
+    .ob-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+    }
+
+    /* thin top accent bar */
+    .ob-panel-accent {
+      height: 3px;
+      background: linear-gradient(90deg, #6366F1 0%, #818CF8 60%, transparent 100%);
+    }
+
+    .ob-panel-inner {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 52px 40px 40px;
+    }
+
+    .ob-form-wrap {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    /* step header (number + title) */
+    .ob-form-step-num {
+      font-size: 11px; font-weight: 700;
+      color: var(--indigo);
+      letter-spacing: 1.2px; text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .ob-form-title {
+      font-size: 24px; font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.5px; margin-bottom: 6px;
+      line-height: 1.2;
+    }
+    .ob-form-sub {
+      font-size: 13.5px; color: var(--text-muted);
+      margin-bottom: 32px; line-height: 1.6;
+    }
+
+    /* ── Form Elements ─────────────────────────────────── */
+    .ob-field-group { margin-bottom: 20px; }
+    .ob-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .ob-field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+    label.ob-label {
+      display: block;
+      font-size: 12px; font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    label.ob-label span.required {
+      color: var(--red); margin-left: 2px;
+    }
+    label.ob-label span.hint {
+      font-weight: 400; color: var(--text-muted); margin-left: 4px;
+    }
+
+    .ob-input {
+      width: 100%;
+      height: 40px;
+      padding: 0 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      color: var(--text-primary);
+      background: white;
+      outline: none;
+      transition: border-color 0.14s, box-shadow 0.14s;
+      font-family: inherit;
+    }
+    .ob-input:focus {
+      border-color: var(--indigo);
+      box-shadow: var(--shadow-focus);
+    }
+    .ob-input::placeholder { color: var(--text-light); }
+
+    .ob-input-icon-wrap {
+      position: relative;
+    }
+    .ob-input-icon-wrap .ob-input { padding-left: 38px; }
+    .ob-input-prefix-icon {
+      position: absolute;
+      left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--text-light);
+      display: flex; align-items: center;
+    }
+    .ob-input-prefix-icon svg { width: 14px; height: 14px; stroke-width: 1.8; }
+
+    .ob-select {
+      width: 100%;
+      height: 40px;
+      padding: 0 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      color: var(--text-primary);
+      background: white;
+      outline: none;
+      appearance: none;
+      cursor: pointer;
+      font-family: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+    .ob-select:focus { border-color: var(--indigo); box-shadow: var(--shadow-focus); }
+
+    /* color picker chips (for team colour) */
+    .ob-color-chips {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;
+    }
+    .ob-color-chip {
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 2.5px solid transparent;
+      cursor: pointer; transition: transform 0.12s;
+    }
+    .ob-color-chip:hover { transform: scale(1.15); }
+    .ob-color-chip.selected {
+      border-color: var(--indigo);
+      box-shadow: 0 0 0 2px white, 0 0 0 4px var(--indigo);
+    }
+
+    /* ── Team card list (Step 2) ───────────────────────── */
+    .ob-team-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+
+    .ob-team-card {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: var(--shadow-xs);
+      transition: border-color 0.14s;
+    }
+    .ob-team-card:hover { border-color: var(--indigo-border); }
+
+    .ob-team-avatar {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; color: white;
+      flex-shrink: 0;
+    }
+
+    .ob-team-meta { flex: 1; }
+    .ob-team-name { font-size: 13.5px; font-weight: 700; color: var(--text-primary); }
+    .ob-team-desc { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+
+    .ob-team-lead-chip {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11.5px; color: var(--text-muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px 9px;
+    }
+    .ob-team-lead-chip svg { width: 11px; height: 11px; }
+    .ob-team-actions { display: flex; gap: 4px; }
+
+    .ob-add-team-btn {
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      width: 100%;
+      padding: 11px;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius-md);
+      background: transparent;
+      font-size: 13px; font-weight: 600; color: var(--text-muted);
+      cursor: pointer; transition: all 0.14s;
+      font-family: inherit;
+    }
+    .ob-add-team-btn:hover {
+      border-color: var(--indigo);
+      color: var(--indigo);
+      background: var(--indigo-dim);
+    }
+    .ob-add-team-btn svg { width: 14px; height: 14px; }
+
+    /* ── Invite rows (Step 3) ──────────────────────────── */
+    .ob-invite-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+
+    .ob-invite-row {
+      display: grid;
+      grid-template-columns: 1fr 160px 36px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .ob-invite-status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 600; padding: 4px 9px;
+      border-radius: 20px;
+    }
+    .ob-invite-status-pill.sent {
+      background: #EFF6FF; color: #2563EB;
+      border: 1px solid #BFDBFE;
+    }
+    .ob-invite-status-pill.pending {
+      background: var(--yellow-bg); color: var(--yellow);
+      border: 1px solid var(--yellow-border);
+    }
+    .ob-invite-status-pill svg { width: 10px; height: 10px; }
+
+    /* non-blocking callout */
+    .ob-callout {
+      display: flex; align-items: flex-start; gap: 11px;
+      padding: 13px 16px;
+      border-radius: var(--radius-md);
+      margin-bottom: 20px;
+    }
+    .ob-callout.info {
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+    }
+    .ob-callout.tip {
+      background: var(--indigo-dim);
+      border: 1px solid var(--indigo-border);
+    }
+    .ob-callout-icon { flex-shrink: 0; padding-top: 1px; }
+    .ob-callout-icon svg { width: 15px; height: 15px; }
+    .ob-callout.info .ob-callout-icon svg { color: #2563EB; }
+    .ob-callout.tip .ob-callout-icon svg { color: var(--indigo); }
+    .ob-callout-text { font-size: 12.5px; line-height: 1.55; }
+    .ob-callout.info .ob-callout-text { color: #1D4ED8; }
+    .ob-callout.tip .ob-callout-text { color: var(--indigo); }
+    .ob-callout-text strong { font-weight: 700; display: block; margin-bottom: 2px; }
+
+    /* ── SLA config (Step 4) ───────────────────────────── */
+    .ob-sla-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .ob-sla-table th {
+      font-size: 11px; font-weight: 700;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px;
+      padding: 8px 12px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .ob-sla-table td {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      background: white;
+      vertical-align: middle;
+    }
+    .ob-sla-table tr:hover td { background: #FAFBFF; }
+    .ob-sla-priority-dot {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12.5px; font-weight: 600;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-red { background: var(--red); }
+    .dot-orange { background: var(--orange); }
+    .dot-yellow { background: #CA8A04; }
+    .dot-blue { background: var(--blue); }
+    .ob-input-sm {
+      width: 80px; height: 34px; padding: 0 10px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 12.5px; text-align: center;
+      color: var(--text-primary); background: white; outline: none;
+      font-family: inherit;
+    }
+    .ob-input-sm:focus { border-color: var(--indigo); box-shadow: var(--shadow-focus); }
+
+    /* ── KPI step (Step 5) ─────────────────────────────── */
+    .ob-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+
+    .ob-kpi-card {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.14s;
+      position: relative;
+    }
+    .ob-kpi-card:hover { border-color: var(--indigo-border); box-shadow: var(--shadow-sm); }
+    .ob-kpi-card.selected {
+      border-color: var(--indigo);
+      background: var(--indigo-dim);
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.08);
+    }
+    .ob-kpi-card-check {
+      position: absolute; top: 12px; right: 12px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--indigo); color: white;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.14s;
+    }
+    .ob-kpi-card.selected .ob-kpi-card-check { opacity: 1; }
+    .ob-kpi-card-check svg { width: 10px; height: 10px; stroke-width: 3; }
+    .ob-kpi-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--indigo-dim); color: var(--indigo);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 10px;
+    }
+    .ob-kpi-icon svg { width: 15px; height: 15px; }
+    .ob-kpi-name { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+    .ob-kpi-desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.45; }
+
+    /* ── Nav footer ────────────────────────────────────── */
+    .ob-nav {
+      border-top: 1px solid var(--border);
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: white;
+      box-shadow: 0 -1px 0 var(--border);
+    }
+
+    .ob-nav-left { display: flex; align-items: center; gap: 8px; }
+    .ob-nav-right { display: flex; align-items: center; gap: 8px; }
+
+    .ob-nav-step-label {
+      font-size: 12px; color: var(--text-muted);
+    }
+    .ob-nav-step-label strong { color: var(--text-primary); }
+
+    .ob-skip-link {
+      font-size: 12px; color: var(--text-muted);
+      text-decoration: underline; cursor: pointer;
+      background: none; border: none; font-family: inherit;
+      transition: color 0.12s;
+    }
+    .ob-skip-link:hover { color: var(--indigo); }
+
+    /* ── Step tab switcher (for the demo) ─────────────── */
+    .demo-tabs {
+      display: flex; gap: 6px;
+      padding: 14px 20px 0;
+      background: var(--sidebar-bg);
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      z-index: 999;
+      justify-content: center;
+    }
+    .demo-tab {
+      font-size: 11px; font-weight: 600; padding: 5px 12px;
+      border-radius: 5px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.4);
+      cursor: pointer; transition: all 0.12s;
+      font-family: inherit; margin-bottom: 10px;
+    }
+    .demo-tab:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+    .demo-tab.active { background: var(--indigo); color: white; border-color: var(--indigo); }
+
+    /* ── Form section divider ──────────────────────────── */
+    .ob-section-label {
+      font-size: 10.5px; font-weight: 700;
+      color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 24px 0 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ob-section-label::after {
+      content: '';
+      flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* inline tag (for bulk paste hint) */
+    .ob-kbd {
+      display: inline-block;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 10.5px; font-weight: 600;
+      padding: 1px 5px;
+      color: var(--text-primary);
+      font-family: monospace;
+    }
+
+    /* completed checkmark animation */
+    @keyframes checkIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .ob-step-row.done .ob-step-icon svg { animation: checkIn 0.25s ease; }
+
+    /* ── Success state (Step 5 complete) ───────────────── */
+    .ob-success-wrap {
+      text-align: center;
+      padding: 20px 0 40px;
+    }
+    .ob-success-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.05));
+      border: 2px solid rgba(99,102,241,0.25);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+    }
+    .ob-success-icon svg { width: 32px; height: 32px; color: var(--indigo); }
+    .ob-success-title {
+      font-size: 26px; font-weight: 800; color: var(--text-primary);
+      letter-spacing: -0.5px; margin-bottom: 8px;
+    }
+    .ob-success-sub {
+      font-size: 14px; color: var(--text-muted);
+      max-width: 420px; margin: 0 auto 32px; line-height: 1.6;
+    }
+    .ob-success-stats {
+      display: flex; justify-content: center; gap: 32px; margin-bottom: 36px;
+    }
+    .ob-success-stat {
+      text-align: center;
+    }
+    .ob-success-stat-val {
+      font-size: 22px; font-weight: 800; color: var(--text-primary);
+      letter-spacing: -0.5px;
+    }
+    .ob-success-stat-label {
+      font-size: 11.5px; color: var(--text-muted); margin-top: 2px;
+    }
+
+    /* checklist summary on success */
+    .ob-success-checklist {
+      text-align: left;
+      max-width: 360px; margin: 0 auto 32px;
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .ob-success-check-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--text-primary);
+    }
+    .ob-success-check-row:last-child { border-bottom: none; }
+    .ob-success-check-row svg { width: 15px; height: 15px; color: var(--green); flex-shrink: 0; }
+
+    /* step visibility - JS controlled */
+    .ob-step-view { display: none; }
+    .ob-step-view.visible { display: block; }
+
+    /* badge row */
+    .ob-badge-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .ob-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+      border: 1px solid transparent;
+    }
+    .ob-badge.indigo { background: var(--indigo-dim); color: var(--indigo); border-color: var(--indigo-border); }
+    .ob-badge.green  { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+    .ob-badge.amber  { background: var(--yellow-bg); color: var(--yellow); border-color: var(--yellow-border); }
+
+    /* textarea */
+    .ob-textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-md);
+      font-size: 13px; color: var(--text-primary);
+      background: white; outline: none; resize: vertical;
+      min-height: 80px; font-family: inherit; line-height: 1.5;
+    }
+    .ob-textarea:focus { border-color: var(--indigo); box-shadow: var(--shadow-focus); }
+    .ob-textarea::placeholder { color: var(--text-light); }
+
+    /* ── Rail footer: save indicator + exit/reset ──── */
+    .ob-rail-footer {
+      position: relative; z-index: 1;
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .ob-save-indicator {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: rgba(255,255,255,0.25);
+      margin-bottom: 8px;
+      transition: color 0.3s;
+    }
+    .ob-save-indicator svg { width: 12px; height: 12px; }
+    .ob-save-indicator.flash { color: #A5B4FC; }
+    .ob-rail-action {
+      display: flex; align-items: center; gap: 7px;
+      width: 100%; padding: 7px 0;
+      background: none; border: none; cursor: pointer;
+      font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.28);
+      font-family: inherit; text-align: left;
+      transition: color 0.14s;
+    }
+    .ob-rail-action:hover { color: rgba(255,255,255,0.65); }
+    .ob-rail-action.danger:hover { color: #FCA5A5; }
+    .ob-rail-action svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+    /* ── Resume banner ──────────────────────────────── */
+    .ob-resume-banner {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: var(--indigo-dim);
+      border: 1px solid var(--indigo-border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin-bottom: 24px;
+    }
+    .ob-resume-banner > .ob-resume-icon { width: 15px; height: 15px; flex-shrink: 0; color: var(--indigo); margin-top: 1px; }
+    .ob-resume-banner-text { flex: 1; font-size: 13px; color: var(--indigo); line-height: 1.5; }
+    .ob-resume-dismiss {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted); padding: 1px; flex-shrink: 0;
+      display: flex; align-items: center;
+      transition: color 0.12s;
+    }
+    .ob-resume-dismiss:hover { color: var(--text-primary); }
+    .ob-resume-dismiss svg { width: 14px; height: 14px; }
+
+    /* ── Start-over modal ───────────────────────────── */
+    .ob-modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.42);
+      backdrop-filter: blur(3px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    .ob-modal {
+      background: white; border-radius: 12px;
+      padding: 32px; width: 380px;
+      max-width: calc(100vw - 48px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      text-align: center;
+    }
+    .ob-modal-icon {
+      width: 52px; height: 52px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 18px;
+    }
+    .ob-modal-icon.warning { background: #FEF3C7; border: 1.5px solid #FDE68A; }
+    .ob-modal-icon.warning svg { width: 22px; height: 22px; color: #D97706; }
+    .ob-modal h3 { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+    .ob-modal p { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
+    .ob-modal-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── User picker — Step 2 Team Lead ─────────────── */
+    .ob-user-picker-wrap { position: relative; }
+    .ob-role-change-notice {
+      display: none; align-items: center; gap: 6px;
+      margin-top: 6px; font-size: 11.5px; color: var(--indigo);
+      background: var(--indigo-dim); border: 1px solid var(--indigo-border);
+      border-radius: var(--radius-sm); padding: 5px 10px;
+    }
+    .ob-role-change-notice svg { width: 12px; height: 12px; flex-shrink: 0; }
+    .ob-lead-role-tag {
+      display: inline-flex; align-items: center;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.3px;
+      padding: 1px 5px; border-radius: 10px; margin-left: 4px;
+      vertical-align: middle;
+      background: var(--indigo-dim); color: var(--indigo);
+      border: 1px solid var(--indigo-border);
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- ── DEMO TAB SWITCHER (prototype navigation only) ──── -->
+<div class="demo-tabs">
+  <button class="demo-tab active" onclick="showStep(1)">1 · Org</button>
+  <button class="demo-tab" onclick="showStep(2)">2 · Teams</button>
+  <button class="demo-tab" onclick="showStep(3)">3 · Invite</button>
+  <button class="demo-tab" onclick="showStep(4)">4 · SLA</button>
+  <button class="demo-tab" onclick="showStep(5)">5 · KPIs</button>
+  <button class="demo-tab" onclick="showStep(6)">✓ Done</button>
+</div>
+
+<div class="ob-shell">
+
+  <!-- ════════════════════════════════
+       LEFT RAIL
+  ════════════════════════════════ -->
+  <aside class="ob-rail">
+
+    <div class="ob-rail-logo">
+      <div class="ob-rail-logo-icon">L</div>
+      <div>
+        <div class="ob-rail-logo-text">Lotris</div>
+        <div class="ob-rail-logo-sub">Performance Platform</div>
+      </div>
+    </div>
+
+    <div class="ob-rail-copy">
+      <h2>Let's get your team set up</h2>
+      <p>This takes about 5 minutes. You can come back and change anything later.</p>
+    </div>
+
+    <!-- overall progress bar -->
+    <div class="ob-overall-progress">
+      <div class="ob-overall-label">
+        <span>OVERALL PROGRESS</span>
+        <span id="progress-pct">20%</span>
+      </div>
+      <div class="ob-progress-track">
+        <div class="ob-progress-fill" id="progress-fill" style="width: 20%"></div>
+      </div>
+    </div>
+
+    <!-- step list -->
+    <div class="ob-steps">
+
+      <div class="ob-step-row active" id="rail-1">
+        <div class="ob-step-icon">1</div>
+        <div class="ob-step-content">
+          <div class="ob-step-title">Organisation Setup</div>
+          <div class="ob-step-sub">Name, logo &amp; timezone</div>
+        </div>
+      </div>
+
+      <div class="ob-step-row pending" id="rail-2">
+        <div class="ob-step-icon">2</div>
+        <div class="ob-step-content">
+          <div class="ob-step-title">Build Your Teams</div>
+          <div class="ob-step-sub">Create teams, assign leads</div>
+        </div>
+      </div>
+
+      <div class="ob-step-row pending" id="rail-3">
+        <div class="ob-step-icon">3</div>
+        <div class="ob-step-content">
+          <div class="ob-step-title">Invite Engineers</div>
+          <div class="ob-step-sub">Send sign-up invites</div>
+        </div>
+      </div>
+
+      <div class="ob-step-row pending" id="rail-4">
+        <div class="ob-step-icon">4</div>
+        <div class="ob-step-content">
+          <div class="ob-step-title">SLA &amp; Queue Config</div>
+          <div class="ob-step-sub">Response times &amp; capacity</div>
+        </div>
+      </div>
+
+      <div class="ob-step-row pending" id="rail-5">
+        <div class="ob-step-icon">5</div>
+        <div class="ob-step-content">
+          <div class="ob-step-title">KPI Framework</div>
+          <div class="ob-step-sub">Choose your KPI template</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- rail footer: auto-save status + exit + reset -->
+    <div class="ob-rail-footer">
+      <div class="ob-save-indicator" id="save-indicator">
+        <i data-lucide="cloud"></i>
+        <span>Progress auto-saved</span>
+      </div>
+      <button class="ob-rail-action" onclick="saveAndExit()">
+        <i data-lucide="log-out"></i> Save &amp; exit
+      </button>
+      <button class="ob-rail-action danger" onclick="confirmReset()">
+        <i data-lucide="rotate-ccw"></i> Cancel &amp; start again
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ════════════════════════════════
+       RIGHT PANEL
+  ════════════════════════════════ -->
+  <section class="ob-panel">
+    <div class="ob-panel-accent"></div>
+
+    <div class="ob-panel-inner">
+      <div class="ob-form-wrap">
+
+        <!-- Resume banner — shown when admin returns mid-wizard -->
+        <div id="resume-banner" class="ob-resume-banner" style="display:none">
+          <i data-lucide="bookmark-check" class="ob-resume-icon"></i>
+          <div class="ob-resume-banner-text">
+            Welcome back — you left off at <strong><span class="ob-resume-step">Step 3: Invite Engineers</span></strong>.
+            Picking up where you left off.
+          </div>
+          <button class="ob-resume-dismiss" onclick="dismissResume()"><i data-lucide="x"></i></button>
+        </div>
+
+        <!-- ─────────────────────────────────────
+             STEP 1 — Organisation Setup
+        ───────────────────────────────────── -->
+        <div class="ob-step-view visible" id="step-1">
+
+          <div class="ob-form-step-num">Step 1 of 5</div>
+          <div class="ob-form-title">Tell us about your organisation</div>
+          <div class="ob-form-sub">
+            This sets your workspace identity. Your engineers will see this name when they log in.
+          </div>
+
+          <div class="ob-field-group">
+            <div class="ob-field-row">
+              <div>
+                <label class="ob-label">Organisation name <span class="required">*</span></label>
+                <div class="ob-input-icon-wrap">
+                  <span class="ob-input-prefix-icon"><i data-lucide="building-2"></i></span>
+                  <input class="ob-input" type="text" placeholder="e.g. Acme IT Services" value="Acme IT Services" />
+                </div>
+              </div>
+              <div>
+                <label class="ob-label">Short code <span class="hint">(3–5 chars)</span></label>
+                <input class="ob-input" type="text" placeholder="e.g. ACME" value="ACME" style="text-transform:uppercase" />
+              </div>
+            </div>
+          </div>
+
+          <div class="ob-field-group">
+            <label class="ob-label">Report header / brand name <span class="hint">(shown on PDF reports)</span></label>
+            <input class="ob-input" type="text" placeholder="e.g. Acme IT Department" value="Acme IT Department" />
+          </div>
+
+          <div class="ob-field-group">
+            <div class="ob-field-row">
+              <div>
+                <label class="ob-label">Default timezone <span class="required">*</span></label>
+                <select class="ob-select">
+                  <option>Africa/Lagos (WAT UTC+1)</option>
+                  <option>Europe/London (GMT/BST)</option>
+                  <option>America/New_York (ET)</option>
+                  <option>Asia/Singapore (SGT)</option>
+                  <option>UTC</option>
+                </select>
+              </div>
+              <div>
+                <label class="ob-label">Industry</label>
+                <select class="ob-select">
+                  <option>Financial Services</option>
+                  <option>Healthcare</option>
+                  <option>Technology</option>
+                  <option>Government</option>
+                  <option>Retail</option>
+                  <option>Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="ob-section-label">Branding</div>
+
+          <div class="ob-field-group">
+            <div class="ob-field-row">
+              <div>
+                <label class="ob-label">Brand colour</label>
+                <div class="ob-color-chips">
+                  <div class="ob-color-chip selected" style="background:#4F46E5" title="Indigo"></div>
+                  <div class="ob-color-chip" style="background:#0EA5E9" title="Sky"></div>
+                  <div class="ob-color-chip" style="background:#10B981" title="Emerald"></div>
+                  <div class="ob-color-chip" style="background:#F59E0B" title="Amber"></div>
+                  <div class="ob-color-chip" style="background:#EF4444" title="Red"></div>
+                  <div class="ob-color-chip" style="background:#8B5CF6" title="Violet"></div>
+                  <div class="ob-color-chip" style="background:#EC4899" title="Pink"></div>
+                  <div class="ob-color-chip" style="background:#0F172A" title="Slate"></div>
+                </div>
+              </div>
+              <div>
+                <label class="ob-label">Logo <span class="hint">(optional)</span></label>
+                <button class="btn btn-secondary btn-sm" style="height:40px;width:100%;justify-content:center;">
+                  <i data-lucide="upload"></i> Upload logo
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- ─────────────────────────────────────
+             STEP 2 — Build Teams
+        ───────────────────────────────────── -->
+        <div class="ob-step-view" id="step-2">
+
+          <div class="ob-form-step-num">Step 2 of 5</div>
+          <div class="ob-form-title">Build your team structure</div>
+          <div class="ob-form-sub">
+            Each team gets its own queue, SLA settings, and KPI targets. You can always add more teams later.
+          </div>
+
+          <div class="ob-team-list">
+
+            <div class="ob-team-card">
+              <div class="ob-team-avatar" style="background:#4F46E5">IT</div>
+              <div class="ob-team-meta">
+                <div class="ob-team-name">IT Support — Level 1</div>
+                <div class="ob-team-desc">First-line triage and resolution</div>
+              </div>
+              <div class="ob-team-lead-chip">
+                <i data-lucide="user"></i> Sarah K.
+                <span class="ob-lead-role-tag">TL</span>
+              </div>
+              <div class="ob-team-actions">
+                <button class="btn btn-ghost btn-xs"><i data-lucide="pencil"></i></button>
+                <button class="btn btn-ghost btn-xs" style="color:var(--red)"><i data-lucide="trash-2"></i></button>
+              </div>
+            </div>
+
+            <div class="ob-team-card">
+              <div class="ob-team-avatar" style="background:#0EA5E9">IN</div>
+              <div class="ob-team-meta">
+                <div class="ob-team-name">Infrastructure</div>
+                <div class="ob-team-desc">Network, servers &amp; security</div>
+              </div>
+              <div class="ob-team-lead-chip">
+                <i data-lucide="user"></i> Marcus D.
+                <span class="ob-lead-role-tag">TL</span>
+              </div>
+              <div class="ob-team-actions">
+                <button class="btn btn-ghost btn-xs"><i data-lucide="pencil"></i></button>
+                <button class="btn btn-ghost btn-xs" style="color:var(--red)"><i data-lucide="trash-2"></i></button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- add new team inline form (collapsed by default) -->
+          <div style="background:white;border:1.5px solid var(--indigo-border);border-radius:var(--radius-md);padding:16px;margin-bottom:12px;">
+            <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:14px;display:flex;align-items:center;gap:7px;">
+              <i data-lucide="plus-circle" style="width:14px;height:14px;color:var(--indigo)"></i>
+              New Team
+            </div>
+            <div class="ob-field-row" style="margin-bottom:12px">
+              <div>
+                <label class="ob-label">Team name <span class="required">*</span></label>
+                <input class="ob-input" type="text" placeholder="e.g. Applications" />
+              </div>
+              <div>
+                <label class="ob-label">Team Lead <span class="hint">(from existing users)</span></label>
+                <div class="ob-user-picker-wrap">
+                  <select class="ob-select" id="new-team-lead" onchange="handleLeadChange(this)">
+                    <option value="" data-role="">— assign later —</option>
+                    <option value="u1" data-role="engineer">James O. &nbsp;·&nbsp; Engineer</option>
+                    <option value="u2" data-role="engineer">Priya S. &nbsp;·&nbsp; Engineer</option>
+                    <option value="u3" data-role="it_manager">Dan W. &nbsp;·&nbsp; IT Manager</option>
+                    <option value="u4" data-role="team_lead">Sarah K. &nbsp;·&nbsp; Team Lead</option>
+                    <option value="u5" data-role="team_lead">Marcus D. &nbsp;·&nbsp; Team Lead</option>
+                  </select>
+                  <div class="ob-role-change-notice" id="role-change-notice">
+                    <i data-lucide="badge-check"></i>
+                    <span>Will be promoted to <strong>Team Lead</strong> on account activation</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="margin-bottom:12px">
+              <label class="ob-label">Description <span class="hint">(optional)</span></label>
+              <input class="ob-input" type="text" placeholder="What does this team handle?" />
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary btn-sm"><i data-lucide="check"></i> Add Team</button>
+              <button class="btn btn-ghost btn-sm">Cancel</button>
+            </div>
+          </div>
+
+          <button class="ob-add-team-btn">
+            <i data-lucide="plus"></i> Add another team
+          </button>
+
+        </div>
+
+
+        <!-- ─────────────────────────────────────
+             STEP 3 — Invite Engineers
+        ───────────────────────────────────── -->
+        <div class="ob-step-view" id="step-3">
+
+          <div class="ob-form-step-num">Step 3 of 5</div>
+          <div class="ob-form-title">Invite your engineers</div>
+          <div class="ob-form-sub">
+            Send sign-up invitations now. Engineers don't need to accept before you finish setup — your work continues uninterrupted.
+          </div>
+
+          <!-- non-blocking info callout -->
+          <div class="ob-callout tip">
+            <div class="ob-callout-icon"><i data-lucide="zap"></i></div>
+            <div class="ob-callout-text">
+              <strong>Invites don't block your setup</strong>
+              Invitations are sent immediately and engineers can join at any time. You'll see a live status for each invite on your admin panel.
+            </div>
+          </div>
+
+          <div style="margin-bottom:10px;">
+            <label class="ob-label">
+              Paste emails or add one at a time
+              <span class="hint">— separate multiple with commas or <span class="ob-kbd">Enter</span></span>
+            </label>
+            <div class="ob-textarea" contenteditable="true" style="cursor:text;min-height:60px">
+              alice@acme.io, bob@acme.io
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="flex:1;margin:0">
+              <label class="ob-label" style="margin-bottom:4px">Assign to team</label>
+              <select class="ob-select">
+                <option>IT Support — Level 1</option>
+                <option>Infrastructure</option>
+                <option>— assign later —</option>
+              </select>
+            </div>
+            <div style="flex:1">
+              <label class="ob-label" style="margin-bottom:4px">Role</label>
+              <select class="ob-select">
+                <option>Engineer</option>
+                <option>Team Lead</option>
+                <option>IT Manager</option>
+              </select>
+            </div>
+            <div style="padding-top:18px">
+              <button class="btn btn-primary" style="height:40px;white-space:nowrap;">
+                <i data-lucide="send"></i> Send Invites
+              </button>
+            </div>
+          </div>
+
+          <div class="ob-section-label">Sent invites</div>
+
+          <div class="ob-invite-list">
+            <div class="ob-invite-row">
+              <div class="ob-input-icon-wrap">
+                <span class="ob-input-prefix-icon"><i data-lucide="mail"></i></span>
+                <input class="ob-input" type="email" value="alice@acme.io" readonly style="background:var(--bg);cursor:default;" />
+              </div>
+              <div class="ob-invite-status-pill sent">
+                <i data-lucide="check-circle"></i> Invite sent
+              </div>
+              <button class="btn btn-ghost btn-xs" style="color:var(--red)"><i data-lucide="x"></i></button>
+            </div>
+            <div class="ob-invite-row">
+              <div class="ob-input-icon-wrap">
+                <span class="ob-input-prefix-icon"><i data-lucide="mail"></i></span>
+                <input class="ob-input" type="email" value="bob@acme.io" readonly style="background:var(--bg);cursor:default;" />
+              </div>
+              <div class="ob-invite-status-pill sent">
+                <i data-lucide="check-circle"></i> Invite sent
+              </div>
+              <button class="btn btn-ghost btn-xs" style="color:var(--red)"><i data-lucide="x"></i></button>
+            </div>
+            <div class="ob-invite-row">
+              <div class="ob-input-icon-wrap">
+                <span class="ob-input-prefix-icon"><i data-lucide="mail"></i></span>
+                <input class="ob-input" type="email" value="carol@acme.io" readonly style="background:var(--bg);cursor:default;" />
+              </div>
+              <div class="ob-invite-status-pill pending">
+                <i data-lucide="clock"></i> Awaiting signup
+              </div>
+              <button class="btn btn-ghost btn-xs" style="color:var(--red)"><i data-lucide="x"></i></button>
+            </div>
+          </div>
+
+          <div class="ob-callout info" style="margin-top:20px;margin-bottom:0">
+            <div class="ob-callout-icon"><i data-lucide="info"></i></div>
+            <div class="ob-callout-text">
+              <strong>3 invites sent · 2 accepted</strong>
+              You can track invite statuses from <strong>Admin → Users</strong> at any time. Pending invites expire after 7 days.
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- ─────────────────────────────────────
+             STEP 4 — SLA & Queue Config
+        ───────────────────────────────────── -->
+        <div class="ob-step-view" id="step-4">
+
+          <div class="ob-form-step-num">Step 4 of 5</div>
+          <div class="ob-form-title">Set your SLA &amp; queue rules</div>
+          <div class="ob-form-sub">
+            Define how quickly tickets must be responded to and how many tickets each engineer can carry. These become your team's performance baseline.
+          </div>
+
+          <div class="ob-section-label">SLA Response Times</div>
+
+          <table class="ob-sla-table">
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>First Response</th>
+                <th>Resolution</th>
+                <th>Escalation After</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="ob-sla-priority-dot"><div class="dot dot-red"></div> Critical</div></td>
+                <td><input class="ob-input-sm" value="15" /> <span style="font-size:11.5px;color:var(--text-muted);margin-left:4px">min</span></td>
+                <td><input class="ob-input-sm" value="2" /> <span style="font-size:11.5px;color:var(--text-muted);margin-left:4px">hrs</span></td>
+                <td><input class="ob-input-sm" value="1" /> <span style="font-size:11.5px;color:var(--text-muted);margin-left:4px">hrs</span></td>
+              </tr>
+              <tr>
+                <td><div class="ob-sla-priority-dot"><div class="dot dot-orange"></div> High</div></td>
+                <td><input class="ob-input-sm" value="30" /> <span style="font-size:11.5px;color:var(--text-muted);margin-left:4px">min</span></td>
+                <td><input class="ob-input-sm" value="4" /> <span style="font-size:11.5px;color:var(--text-muted);margin-left:4px">hrs</span></td>
+                <td><input class="ob-input-sm" value="2" /> <span style="font-size:11.5px;color:var(--text-muted);margin-left:4px">hrs</span></td>
+              </tr>
+              <tr>
+                <td><div class="ob-sla-priority-dot"><div class="dot dot-yellow"></div> Medium</div></td>
+                <td><input class="ob-input-sm" value="2" /> <span style="font-size:11.5px;color:var(--text-muted);margin-left:4px">hrs</span></td>
+                <td><input class="ob-input-sm" value="8" /> <span style="font-size:11.5px;color:var(--text-muted);margin-left:4px">hrs</span></td>
+                <td><input class="ob-input-sm" value="4" /> <span style="font-size:11.5px;color:var(--text-muted);margin-left:4px">hrs</span></td>
+              </tr>
+              <tr>
+                <td><div class="ob-sla-priority-dot"><div class="dot dot-blue"></div> Low</div></td>
+                <td><input class="ob-input-sm" value="4" /> <span style="font-size:11.5px;color:var(--text-muted);margin-left:4px">hrs</span></td>
+                <td><input class="ob-input-sm" value="24" /> <span style="font-size:11.5px;color:var(--text-muted);margin-left:4px">hrs</span></td>
+                <td><input class="ob-input-sm" value="12" /> <span style="font-size:11.5px;color:var(--text-muted);margin-left:4px">hrs</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="ob-section-label">Queue &amp; Capacity</div>
+
+          <div class="ob-field-row" style="margin-bottom:16px">
+            <div>
+              <label class="ob-label">Max open tickets per engineer</label>
+              <div class="ob-input-icon-wrap">
+                <span class="ob-input-prefix-icon"><i data-lucide="users"></i></span>
+                <input class="ob-input" type="number" value="10" min="1" max="50" />
+              </div>
+            </div>
+            <div>
+              <label class="ob-label">Queue algorithm</label>
+              <select class="ob-select">
+                <option>Priority → SLA deadline (recommended)</option>
+                <option>FIFO (first in, first out)</option>
+                <option>Round-robin by engineer</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="ob-field-row">
+            <div>
+              <label class="ob-label">Auto-assign new tickets</label>
+              <select class="ob-select">
+                <option>Yes — assign to least-loaded engineer</option>
+                <option>No — engineers claim from queue</option>
+              </select>
+            </div>
+            <div>
+              <label class="ob-label">Escalation target team</label>
+              <select class="ob-select">
+                <option>Infrastructure</option>
+                <option>IT Support — Level 1</option>
+                <option>— none —</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- ─────────────────────────────────────
+             STEP 5 — KPI Framework
+        ───────────────────────────────────── -->
+        <div class="ob-step-view" id="step-5">
+
+          <div class="ob-form-step-num">Step 5 of 5</div>
+          <div class="ob-form-title">Choose your KPI framework</div>
+          <div class="ob-form-sub">
+            Pick a starting template. You can customise weights and add custom KPIs from the KPI admin page at any time.
+          </div>
+
+          <div class="ob-kpi-grid">
+
+            <div class="ob-kpi-card selected">
+              <div class="ob-kpi-card-check"><i data-lucide="check"></i></div>
+              <div class="ob-kpi-icon"><i data-lucide="clock"></i></div>
+              <div class="ob-kpi-name">Response &amp; Resolution</div>
+              <div class="ob-kpi-desc">MTTF, MTTR, SLA breach rate. Best for teams focused on speed.</div>
+            </div>
+
+            <div class="ob-kpi-card">
+              <div class="ob-kpi-card-check"><i data-lucide="check"></i></div>
+              <div class="ob-kpi-icon"><i data-lucide="star"></i></div>
+              <div class="ob-kpi-name">Customer Satisfaction</div>
+              <div class="ob-kpi-desc">CSAT, NPS, reopen rate. Best for service-desk quality focus.</div>
+            </div>
+
+            <div class="ob-kpi-card">
+              <div class="ob-kpi-card-check"><i data-lucide="check"></i></div>
+              <div class="ob-kpi-icon"><i data-lucide="bar-chart-2"></i></div>
+              <div class="ob-kpi-name">Balanced Scorecard</div>
+              <div class="ob-kpi-desc">Equal weight across speed, quality, and volume. Recommended for new teams.</div>
+            </div>
+
+            <div class="ob-kpi-card">
+              <div class="ob-kpi-card-check"><i data-lucide="check"></i></div>
+              <div class="ob-kpi-icon"><i data-lucide="settings"></i></div>
+              <div class="ob-kpi-name">Custom (blank)</div>
+              <div class="ob-kpi-desc">Start from scratch. Define your own KPI definitions and weights.</div>
+            </div>
+
+          </div>
+
+          <div class="ob-section-label">Reporting cadence</div>
+
+          <div class="ob-field-row">
+            <div>
+              <label class="ob-label">KPI review frequency</label>
+              <select class="ob-select">
+                <option>Monthly</option>
+                <option>Quarterly</option>
+                <option>Weekly</option>
+              </select>
+            </div>
+            <div>
+              <label class="ob-label">Auto-send report to</label>
+              <input class="ob-input" type="email" placeholder="admin@acme.io" value="admin@acme.io" />
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- ─────────────────────────────────────
+             STEP 6 — All Done!
+        ───────────────────────────────────── -->
+        <div class="ob-step-view" id="step-6">
+
+          <div class="ob-success-wrap">
+
+            <div class="ob-success-icon">
+              <i data-lucide="check-circle-2"></i>
+            </div>
+
+            <div class="ob-success-title">You're all set, Sarah!</div>
+            <div class="ob-success-sub">
+              Acme IT Services is live on Lotris. Your team can start receiving and resolving tickets right now.
+            </div>
+
+            <div class="ob-success-stats">
+              <div class="ob-success-stat">
+                <div class="ob-success-stat-val">2</div>
+                <div class="ob-success-stat-label">Teams created</div>
+              </div>
+              <div class="ob-success-stat">
+                <div class="ob-success-stat-val">3</div>
+                <div class="ob-success-stat-label">Invites sent</div>
+              </div>
+              <div class="ob-success-stat">
+                <div class="ob-success-stat-val">4</div>
+                <div class="ob-success-stat-label">SLA tiers configured</div>
+              </div>
+              <div class="ob-success-stat">
+                <div class="ob-success-stat-val">1</div>
+                <div class="ob-success-stat-label">KPI template active</div>
+              </div>
+            </div>
+
+            <div class="ob-success-checklist">
+              <div class="ob-success-check-row">
+                <i data-lucide="check-circle-2"></i> Organisation configured
+              </div>
+              <div class="ob-success-check-row">
+                <i data-lucide="check-circle-2"></i> 2 teams created with leads assigned
+              </div>
+              <div class="ob-success-check-row">
+                <i data-lucide="check-circle-2"></i> 3 engineers invited (2 accepted, 1 pending)
+              </div>
+              <div class="ob-success-check-row">
+                <i data-lucide="check-circle-2"></i> SLA rules &amp; queue config saved
+              </div>
+              <div class="ob-success-check-row">
+                <i data-lucide="check-circle-2"></i> KPI framework: Response &amp; Resolution
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-primary" style="padding:10px 28px;font-size:14px">
+                <i data-lucide="layout-dashboard"></i>
+                Go to Dashboard
+              </button>
+              <button class="btn btn-secondary">
+                <i data-lucide="users"></i>
+                View my teams
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div><!-- /form-wrap -->
+    </div><!-- /panel-inner -->
+
+    <!-- ── Bottom Nav ─────────────────────────────────── -->
+    <div class="ob-nav" id="ob-nav">
+      <div class="ob-nav-left">
+        <button class="btn btn-secondary" id="btn-back" onclick="prevStep()">
+          <i data-lucide="arrow-left"></i> Back
+        </button>
+        <span class="ob-nav-step-label">Step <strong id="nav-current">1</strong> of 5</span>
+      </div>
+      <div class="ob-nav-right">
+        <button class="ob-skip-link" id="btn-skip">Skip this step</button>
+        <button class="btn btn-primary" id="btn-next" onclick="nextStep()" style="padding:9px 22px;">
+          Continue <i data-lucide="arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+  </section>
+
+</div><!-- /ob-shell -->
+
+<!-- ── Start-over confirmation modal ────────────────── -->
+<div class="ob-modal-backdrop" id="modal-reset" style="display:none" onclick="if(event.target===this)closeModal('modal-reset')">
+  <div class="ob-modal">
+    <div class="ob-modal-icon warning">
+      <i data-lucide="rotate-ccw"></i>
+    </div>
+    <h3>Cancel &amp; start again?</h3>
+    <p>This clears all your setup progress. You'll go back to Step 1 — Organisation Setup. This action can't be undone.</p>
+    <div class="ob-modal-actions">
+      <button style="padding:9px 20px;background:#EF4444;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:13px" onclick="doReset()">
+        <i data-lucide="trash-2" style="width:14px;height:14px"></i> Yes, start fresh
+      </button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-reset')" style="padding:9px 20px">
+        Keep going
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ────────────────────────────────────────────
+  let currentStep = 1;
+  const totalSteps = 5;
+  const STORAGE_KEY = 'lotris_onboarding_draft';
+
+  const progressMap = { 1: 20, 2: 40, 3: 60, 4: 80, 5: 100 };
+
+  const stepMeta = {
+    1: { title: 'Organisation Setup',   sub: 'Name, logo & timezone',         skipable: false },
+    2: { title: 'Build Your Teams',     sub: 'Create teams, assign leads',     skipable: false },
+    3: { title: 'Invite Engineers',     sub: 'Send sign-up invites',           skipable: true  },
+    4: { title: 'SLA & Queue Config',   sub: 'Response times & capacity',      skipable: true  },
+    5: { title: 'KPI Framework',        sub: 'Choose your KPI template',       skipable: true  },
+  };
+
+  const stepNames = {
+    1: 'Organisation Setup', 2: 'Build Your Teams',
+    3: 'Invite Engineers',   4: 'SLA & Queue Config',
+    5: 'KPI Framework',
+  };
+
+  // ── Persistence ──────────────────────────────────────
+  function saveProgress(step) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, savedAt: Date.now() })); } catch(e) {}
+    flashSaveIndicator();
+  }
+
+  function loadProgress() {
+    try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw); } catch(e) {}
+    return null;
+  }
+
+  function clearProgress() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  }
+
+  function flashSaveIndicator() {
+    const el = document.getElementById('save-indicator');
+    if (!el) return;
+    el.classList.add('flash');
+    el.querySelector('span').textContent = 'Draft saved · just now';
+    setTimeout(() => {
+      el.classList.remove('flash');
+      el.querySelector('span').textContent = 'Progress auto-saved';
+    }, 2200);
+  }
+
+  // ── Resume / Reset actions ───────────────────────────
+  function saveAndExit() {
+    saveProgress(currentStep);
+    // Demo: show what "returning" looks like — banner appears, user can see resume flow
+    showResumeBanner(currentStep);
+    // Production: window.location.href = '/dashboard';
+  }
+
+  function confirmReset() {
+    document.getElementById('modal-reset').style.display = 'flex';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+
+  function doReset() {
+    clearProgress();
+    closeModal('modal-reset');
+    const banner = document.getElementById('resume-banner');
+    if (banner) banner.style.display = 'none';
+    showStep(1);
+  }
+
+  function dismissResume() {
+    const banner = document.getElementById('resume-banner');
+    if (banner) banner.style.display = 'none';
+  }
+
+  function showResumeBanner(step) {
+    const banner = document.getElementById('resume-banner');
+    if (!banner) return;
+    banner.querySelector('.ob-resume-step').textContent = 'Step ' + step + ': ' + (stepNames[step] || '');
+    banner.style.display = 'flex';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  // ── Team Lead picker (Step 2) ────────────────────────
+  function handleLeadChange(sel) {
+    const wrap   = sel.closest('.ob-user-picker-wrap');
+    const notice = wrap && wrap.querySelector('.ob-role-change-notice');
+    if (!notice) return;
+    const opt  = sel.options[sel.selectedIndex];
+    const role = opt && opt.dataset.role;
+    if (role && role !== 'team_lead' && sel.value !== '') {
+      const name = opt.text.split('·')[0].trim();
+      notice.querySelector('span').innerHTML =
+        '<strong>' + name + '</strong> will be promoted to <strong>Team Lead</strong> on account activation';
+      notice.style.display = 'flex';
+    } else {
+      notice.style.display = 'none';
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  // ── Render ───────────────────────────────────────────
+  function showStep(n) {
+    currentStep = n;
+
+    // auto-save on every transition (not the done screen)
+    if (n >= 1 && n <= 5) saveProgress(n);
+
+    // show/hide form panels
+    for (let i = 1; i <= 6; i++) {
+      const el = document.getElementById('step-' + i);
+      if (el) el.classList.toggle('visible', i === n);
+    }
+
+    // update rail step states
+    for (let i = 1; i <= 5; i++) {
+      const row = document.getElementById('rail-' + i);
+      if (!row) continue;
+      row.classList.remove('done', 'active', 'pending');
+      if (i < n) {
+        row.classList.add('done');
+        row.querySelector('.ob-step-icon').innerHTML =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      } else if (i === n) {
+        row.classList.add('active');
+        row.querySelector('.ob-step-icon').textContent = i;
+      } else {
+        row.classList.add('pending');
+        row.querySelector('.ob-step-icon').textContent = i;
+      }
+    }
+
+    // progress bar
+    const pct = n > 5 ? 100 : progressMap[n];
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = pct + '%';
+
+    // nav footer
+    const nav        = document.getElementById('ob-nav');
+    const btnBack    = document.getElementById('btn-back');
+    const btnNext    = document.getElementById('btn-next');
+    const btnSkip    = document.getElementById('btn-skip');
+    const navCurrent = document.getElementById('nav-current');
+
+    if (n === 6) {
+      nav.style.display = 'none';
+      clearProgress(); // wizard complete — no resume needed
+    } else {
+      nav.style.display = '';
+      navCurrent.textContent = n;
+      btnBack.disabled      = (n === 1);
+      btnBack.style.opacity = (n === 1) ? '0.38' : '1';
+      btnSkip.style.display = stepMeta[n] && stepMeta[n].skipable ? '' : 'none';
+      btnNext.innerHTML     = n === 5
+        ? 'Finish setup <i data-lucide="check"></i>'
+        : 'Continue <i data-lucide="arrow-right"></i>';
+    }
+
+    // update demo tabs
+    document.querySelectorAll('.demo-tab').forEach(function(t, idx) {
+      t.classList.toggle('active', idx + 1 === n);
+    });
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function nextStep() { if (currentStep < 6) showStep(currentStep + 1); }
+  function prevStep()  { if (currentStep > 1) showStep(currentStep - 1); }
+
+  // ── Init: restore saved progress ────────────────────
+  document.addEventListener('DOMContentLoaded', function() {
+    const saved = loadProgress();
+    if (saved && saved.step > 1 && saved.step <= 5) {
+      showResumeBanner(saved.step);
+      showStep(saved.step);
+    } else {
+      showStep(1);
+    }
+  });
+</script>
+
+</body>
+</html>
