@@ -1,6 +1,6 @@
 # Lotris — Project Context
 
-> Last updated: May 2026 — Sprint 18 COMPLETE (merged to `dev` 2026-05-13, commit `4d640a9`). Sprint 19 next: automated quarterly reports + engineer workload rebalancing.
+> Last updated: May 2026 — Sprint 19 COMPLETE (merged to `dev` 2026-05-13, commit `ca32cff`, tag `v0.19.0`, Milestone M12). Automated Reports + Workload Rebalancing complete.
 
 ---
 
@@ -548,8 +548,8 @@ Auth & Tenancy
 
 - **Sprint 18 ✅:** SLA breach prediction (linear projection, amber/red warnings in ticket list + dashboard, email + SSE notifications to assignee + lead, BullMQ `sla-predictor` cron every 5 min)
 - **Sprint 18 ✅:** KPI performance trend analysis (linear regression on actuals, sparkline charts, amber/red flag pills in KPI dashboard, daily digest email to team leads, BullMQ `kpi-trend` cron every 30 min)
-- **Sprint 19 🔵:** Automated quarterly/monthly/weekly report scheduling — `report-gen` BullMQ worker executes due schedules, generates PDF/Excel, emails recipients; tRPC report procedures; Reports UI page
-- **Sprint 19 🔵:** Engineer workload rebalancing — `WorkloadAnalyser` computes per-engineer open-ticket load vs. `Queue_Config.max_capacity_per_engineer`, generates reassignment suggestions, `tickets.batchReassign` mutation, workload panel on dashboard with one-click Apply
+- **Sprint 19 ✅:** Automated quarterly/monthly/weekly report scheduling — `report-gen` BullMQ worker executes due schedules, generates PDF/Excel, emails recipients; tRPC report procedures; Reports UI page
+- **Sprint 19 ✅:** Engineer workload rebalancing — `WorkloadAnalyser` computes per-engineer open-ticket load vs. `Queue_Config.max_capacity_per_engineer`, generates reassignment suggestions, `tickets.batchReassign` mutation, workload panel on dashboard with one-click Apply
 
 ### Phase 3 — AI & Automation
 

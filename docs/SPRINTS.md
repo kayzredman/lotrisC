@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Sprint 18 COMPLETE (`dev` @ `4d640a9`). Sprint 19 IN PROGRESS: Automated Reports + Workload Rebalancing.
+> Last updated: May 2026 — Sprint 19 COMPLETE (`dev` @ `ca32cff`, tag `v0.19.0`, Milestone M12). Automated Reports + Workload Rebalancing shipped.
 
 ---
 
@@ -678,8 +678,8 @@ F-SI-2 (sparklines) depends on F-SI-1 (KPI dashboard data hook) being wired firs
 ## Sprint 19 · Phase 2 — Automated Reports + Workload Rebalancing
 
 **Target milestone:** M12  
-**Status:** 🔵 IN PROGRESS  
-**Branch:** `feature/sprint-19-reports-workload`  
+**Status:** ✅ COMPLETE  
+**Branch:** `feature/sprint-19-reports-workload` → merged `dev` @ `ca32cff` · tag `v0.19.0`  
 **Phase:** 2 — Intelligence
 
 ### Goal
