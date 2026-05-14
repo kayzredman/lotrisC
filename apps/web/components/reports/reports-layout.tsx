@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { FileText, Download, Clock, Calendar, Plus, Search, BarChart2, CheckCircle, AlertCircle } from 'lucide-react';
+import { FileText, Download, Clock, Calendar, Plus, Search, BarChart2, CheckCircle, AlertCircle, Settings } from 'lucide-react';
+import { trpc } from '@/lib/trpc';
+import { ReportSettingsPanel } from './report-settings-panel';
 
 // ── Marketing demo data (match 05-reports-v2.html exactly) ──────────────────
 const REPORT_TYPE_TABS = [
@@ -33,12 +35,19 @@ const FORMAT_COLORS: Record<string, string> = {
 export function ReportsLayout() {
   const [activeType, setActiveType] = useState('All');
   const [showGenerate, setShowGenerate] = useState(false);
+  const [activeTab, setActiveTab] = useState<'history' | 'settings'>('history');
   const [reportType, setReportType] = useState('TICKET_SUMMARY');
   const [format, setFormat] = useState('PDF');
   const [dateRange, setDateRange] = useState('last_30');
   const [generating, setGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState<{ ok: boolean; message: string } | null>(null);
   const { getToken } = useAuth();
+
+  const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
+  const { data: liveReports, isLoading: reportsLoading } = trpc['reports.list'].useQuery(undefined, { staleTime: 15_000 });
+  const { data: schedules } = trpc['reports.schedules.list'].useQuery(undefined, { staleTime: 15_000 });
+
+  const isAdmin = me?.roleName === 'ADMIN' || me?.roleName === 'SUPERADMIN';
 
   const dateRangeParams = (range: string): { dateFrom: string; dateTo: string } => {
     const to = new Date();
@@ -89,8 +98,8 @@ export function ReportsLayout() {
           <p>Generate, schedule and download performance reports</p>
         </div>
         <div className="v2-page-header-actions">
-          <button type="button" className="v2-btn v2-btn-secondary v2-btn-sm" onClick={() => setShowGenerate(false)}>
-            <Clock size={12} /> Scheduled (6)
+          <button type="button" className="v2-btn v2-btn-secondary v2-btn-sm" onClick={() => { setShowGenerate(false); setActiveTab('history'); }}>
+            <Clock size={12} /> Scheduled ({schedules?.length ?? 0})
           </button>
           <button type="button" className="v2-btn v2-btn-primary v2-btn-sm" onClick={() => setShowGenerate(true)}>
             <Plus size={12} /> Generate Report
@@ -101,10 +110,10 @@ export function ReportsLayout() {
       {/* Stats bar */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         {[
-          { value: '24', label: 'Saved Reports',    icon: <FileText size={13} />,  color: 'var(--indigo)' },
-          { value: '6',  label: 'Scheduled',         icon: <Calendar size={13} />,  color: 'var(--blue)'   },
-          { value: '148',label: 'Downloads MTD',     icon: <Download size={13} />,  color: 'var(--green)'  },
-          { value: '2h', label: 'Last Generated',    icon: <Clock size={13} />,     color: 'var(--text-muted)' },
+          { value: String(liveReports?.length ?? '—'), label: 'Saved Reports', icon: <FileText size={13} />, color: 'var(--indigo)' },
+          { value: String(schedules?.length ?? '—'),   label: 'Scheduled',     icon: <Calendar size={13} />, color: 'var(--blue)'   },
+          { value: String(liveReports?.filter(r => r.status === 'DONE').length ?? '—'), label: 'Completed', icon: <Download size={13} />, color: 'var(--green)' },
+          { value: liveReports?.filter(r => r.status === 'PROCESSING').length ? 'Running' : 'Idle', label: 'Queue Status', icon: <Clock size={13} />, color: 'var(--text-muted)' },
         ].map(s => (
           <div key={s.label} className="v2-card" style={{ flex: '1 1 120px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ color: s.color }}>{s.icon}</div>
@@ -115,6 +124,29 @@ export function ReportsLayout() {
           </div>
         ))}
       </div>
+
+      {/* Tab bar: History | Settings (admin only) */}
+      {!showGenerate && (
+        <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
+          <button
+            type="button"
+            className={`v2-filter-tab${activeTab === 'history' ? ' active' : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            Report History
+          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              className={`v2-filter-tab${activeTab === 'settings' ? ' active' : ''}`}
+              onClick={() => setActiveTab('settings')}
+            >
+              <Settings size={11} style={{ marginRight: 4 }} />
+              Settings
+            </button>
+          )}
+        </div>
+      )}
 
       {showGenerate ? (
         /* Generate form */
@@ -179,7 +211,10 @@ export function ReportsLayout() {
           </div>
         </div>
       ) : (
-        /* Report list */
+        /* Report list or Settings */
+        activeTab === 'settings' && isAdmin ? (
+          <ReportSettingsPanel />
+        ) : (
         <>
           <div className="v2-filter-bar">
             <div className="v2-filter-tabs">
@@ -209,36 +244,44 @@ export function ReportsLayout() {
                     <th>Report Name</th>
                     <th>Type</th>
                     <th>Format</th>
-                    <th>Frequency</th>
+                    <th>Status</th>
                     <th>Generated</th>
-                    <th>Size</th>
-                    <th>Downloads</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(r => (
-                    <tr key={r.name}>
+                  {reportsLoading && (
+                    <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>Loading…</td></tr>
+                  )}
+                  {!reportsLoading && (!liveReports || liveReports.length === 0) && (
+                    <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>No reports generated yet.</td></tr>
+                  )}
+                  {liveReports?.map(r => (
+                    <tr key={r.id}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <FileText size={14} style={{ color: 'var(--indigo)', flexShrink: 0 }} />
-                          <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{r.name}</span>
+                          <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                            {r.reportType.replace(/_/g, ' ')} — {r.dateFrom ?? ''}{r.dateTo ? ` to ${r.dateTo}` : ''}
+                          </span>
                         </div>
                       </td>
-                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.type}</span></td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.reportType}</span></td>
+                      <td><span className={`v2-badge ${r.format === 'EXCEL' ? 'v2-badge-green' : 'v2-badge-red'}`}>{r.format}</span></td>
                       <td>
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          {r.formats.map(f => <span key={f} className={`v2-badge ${FORMAT_COLORS[f] ?? 'v2-badge-gray'}`}>{f}</span>)}
-                        </div>
+                        <span className={`v2-badge ${r.status === 'DONE' ? 'v2-badge-green' : r.status === 'FAILED' ? 'v2-badge-red' : 'v2-badge-amber'}`}>
+                          {r.status}
+                        </span>
                       </td>
-                      <td><span className="v2-badge v2-badge-indigo">{r.freq}</span></td>
-                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.date}</span></td>
-                      <td><span style={{ fontSize: 12, color: 'var(--text-light)' }}>{r.size}</span></td>
-                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.downloads}</span></td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.createdAt ? new Date(r.createdAt).toLocaleString() : '—'}</span></td>
                       <td>
-                        <div className="v2-row-actions">
-                          <button type="button" className="v2-row-action-btn" title="Download"><Download size={11} /></button>
-                        </div>
+                        {r.status === 'DONE' && r.filePath && (
+                          <div className="v2-row-actions">
+                            <button type="button" className="v2-row-action-btn" title="Download">
+                              <Download size={11} />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -247,6 +290,7 @@ export function ReportsLayout() {
             </div>
           </div>
         </>
+        )
       )}
     </div>
   );

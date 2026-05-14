@@ -1,6 +1,9 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { getPostgresDb, reportJobs, reportSchedules, eq, and, desc } from '@lotris/db';
+import { getPostgresDb, reportJobs, reportSchedules, eq, and, desc, lte } from '@lotris/db';
 import { v4 as uuid } from 'uuid';
+import * as nodemailer from 'nodemailer';
+import * as fs from 'fs';
+import * as path from 'path';
 import type { TrpcAuth } from '@lotris/types';
 import { ReportsPdfService } from './reports-pdf.service';
 import { ReportsExcelService } from './reports-excel.service';
@@ -92,6 +95,7 @@ export class ReportsService {
   async createSchedule(auth: TrpcAuth, dto: CreateScheduleDto) {
     const pg = getPostgresDb();
     const id = uuid();
+    const nextRunAt = this.computeNextRunAt(dto.frequency, 'UTC');
     await pg.insert(reportSchedules).values({
       id,
       tenantId: auth.tenantId,
@@ -101,6 +105,7 @@ export class ReportsService {
       recipients: dto.recipients,
       teamId: dto.teamId,
       createdBy: auth.userId,
+      nextRunAt,
     });
     return { id };
   }
@@ -120,4 +125,176 @@ export class ReportsService {
       .delete(reportSchedules)
       .where(and(eq(reportSchedules.id, id), eq(reportSchedules.tenantId, auth.tenantId)));
   }
+
+  // ── Scheduling helpers ────────────────────────────────────────────────────
+
+  /**
+   * Compute next run date for a given frequency.
+   * WEEKLY  → next Monday 08:00 in the given timezone
+   * MONTHLY → 1st of next month 08:00 in the given timezone
+   * QUARTERLY → 1st of next quarter (Jan/Apr/Jul/Oct) 08:00 in the given timezone
+   */
+  computeNextRunAt(frequency: string, timezone = 'UTC'): Date {
+    const now = new Date();
+    // Work in UTC, then adjust for timezone offset
+    const localHour = 8; // 08:00 local time
+
+    if (frequency === 'WEEKLY') {
+      const d = new Date(now);
+      const day = d.getUTCDay(); // 0=Sun, 1=Mon, ...
+      const daysUntilMonday = day === 0 ? 1 : 8 - day;
+      d.setUTCDate(d.getUTCDate() + daysUntilMonday);
+      d.setUTCHours(this.localHourToUtc(localHour, timezone), 0, 0, 0);
+      return d;
+    }
+
+    if (frequency === 'MONTHLY') {
+      const d = new Date(now);
+      d.setUTCMonth(d.getUTCMonth() + 1, 1);
+      d.setUTCHours(this.localHourToUtc(localHour, timezone), 0, 0, 0);
+      return d;
+    }
+
+    // QUARTERLY
+    const d = new Date(now);
+    const currentMonth = d.getUTCMonth(); // 0-indexed
+    const currentQuarterStartMonth = Math.floor(currentMonth / 3) * 3;
+    const nextQuarterStartMonth = currentQuarterStartMonth + 3;
+    if (nextQuarterStartMonth >= 12) {
+      d.setUTCFullYear(d.getUTCFullYear() + 1, 0, 1);
+    } else {
+      d.setUTCMonth(nextQuarterStartMonth, 1);
+    }
+    d.setUTCHours(this.localHourToUtc(localHour, timezone), 0, 0, 0);
+    return d;
+  }
+
+  /**
+   * Advance nextRunAt after a schedule has fired (used by worker).
+   */
+  advanceNextRunAt(current: Date, frequency: string, timezone = 'UTC'): Date {
+    return this.computeNextRunAt(frequency, timezone);
+  }
+
+  /**
+   * Fetch schedules due for the given tenant (nextRunAt <= now and isActive).
+   */
+  async processDueSchedules(tenantId: string): Promise<{ id: string; reportType: string; format: string; recipients: string; teamId?: string | null }[]> {
+    const pg = getPostgresDb();
+    const now = new Date();
+    const rows = await pg
+      .select({
+        id: reportSchedules.id,
+        reportType: reportSchedules.reportType,
+        format: reportSchedules.format,
+        frequency: reportSchedules.frequency,
+        recipients: reportSchedules.recipients,
+        teamId: reportSchedules.teamId,
+      })
+      .from(reportSchedules)
+      .where(
+        and(
+          eq(reportSchedules.tenantId, tenantId),
+          eq(reportSchedules.isActive, 'true'),
+          lte(reportSchedules.nextRunAt, now),
+        ),
+      );
+
+    // Advance nextRunAt for all due schedules
+    for (const row of rows) {
+      const next = this.computeNextRunAt(row.frequency, 'UTC');
+      await pg
+        .update(reportSchedules)
+        .set({ lastRunAt: now, nextRunAt: next })
+        .where(and(eq(reportSchedules.id, row.id), eq(reportSchedules.tenantId, tenantId)));
+    }
+
+    return rows;
+  }
+
+  /**
+   * Send a report file to a list of recipients.
+   * If the file exceeds sizeLimitMb, send a message noting the report is available
+   * for download instead of attaching it.
+   */
+  async emailReportToRecipients(
+    filePath: string,
+    recipients: string[],
+    sizeLimitMb: number,
+    brandName: string,
+    reportType: string,
+  ): Promise<void> {
+    if (!recipients.length) return;
+
+    const smtpHost = process.env['SMTP_HOST'];
+    const smtpPort = parseInt(process.env['SMTP_PORT'] ?? '587', 10);
+    const smtpUser = process.env['SMTP_USER'];
+    const smtpPass = process.env['SMTP_PASS'];
+    const smtpFrom = process.env['SMTP_FROM'] ?? `noreply@lotris.io`;
+
+    if (!smtpHost || !smtpUser || !smtpPass) {
+      this.logger.warn('SMTP not configured — skipping email dispatch for report');
+      return;
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: { user: smtpUser, pass: smtpPass },
+    });
+
+    let fileSizeMb = 0;
+    try {
+      const stat = fs.statSync(filePath);
+      fileSizeMb = stat.size / (1024 * 1024);
+    } catch {
+      this.logger.error(`Email dispatch: file not found at ${filePath}`);
+      return;
+    }
+
+    const subject = `${brandName} — ${reportType.replace(/_/g, ' ')} Report`;
+
+    if (fileSizeMb <= sizeLimitMb) {
+      const ext = path.extname(filePath).toLowerCase();
+      const mime = ext === '.xlsx'
+        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        : 'application/pdf';
+
+      await transporter.sendMail({
+        from: smtpFrom,
+        to: recipients,
+        subject,
+        text: `Please find the ${reportType.replace(/_/g, ' ')} report attached.`,
+        attachments: [{ filename: path.basename(filePath), path: filePath, contentType: mime }],
+      });
+    } else {
+      await transporter.sendMail({
+        from: smtpFrom,
+        to: recipients,
+        subject,
+        text: `Your ${reportType.replace(/_/g, ' ')} report is ready but exceeds the attachment size limit (${sizeLimitMb} MB). Please log in to ${brandName} to download it.`,
+      });
+    }
+
+    this.logger.log(`Report emailed to ${recipients.length} recipient(s)`);
+  }
+
+  // ── Private helpers ───────────────────────────────────────────────────────
+
+  private localHourToUtc(localHour: number, timezone: string): number {
+    try {
+      // Use Intl to determine the UTC offset for the given timezone at this moment
+      const now = new Date();
+      const localStr = now.toLocaleString('en-GB', { timeZone: timezone, hour: 'numeric', hour12: false });
+      const utcStr = now.toLocaleString('en-GB', { timeZone: 'UTC', hour: 'numeric', hour12: false });
+      const localH = parseInt(localStr, 10);
+      const utcH = parseInt(utcStr, 10);
+      const offsetH = utcH - localH; // positive = ahead of UTC
+      return ((localHour + offsetH) % 24 + 24) % 24;
+    } catch {
+      return localHour; // fall back to treating localHour as UTC
+    }
+  }
 }
+

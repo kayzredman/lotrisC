@@ -6,3 +6,4 @@ export * from './analytics-kpi-summary';
 export * from './analytics-sla-daily';
 export * from './reports';
 export * from './kpi-trend-snapshots';
+export * from './report-config';

@@ -1,4 +1,4 @@
-export type { TrpcContext, TrpcAuth, UserRole, TicketStatus, TicketPriority, TaskSource, TaskType, KpiMetricType, KpiDirection, KpiScope, KpiAgreementStatus, ServiceStatus, ServiceHealthEntry, QueueDepthEntry, HealthSnapshot, IncidentEntry, SlaWarningRow, KpiTrendRow } from './context';
+export type { TrpcContext, TrpcAuth, UserRole, TicketStatus, TicketPriority, TaskSource, TaskType, KpiMetricType, KpiDirection, KpiScope, KpiAgreementStatus, ServiceStatus, ServiceHealthEntry, QueueDepthEntry, HealthSnapshot, IncidentEntry, SlaWarningRow, KpiTrendRow, EngineerLoad, WorkloadSuggestion, TeamWorkloadResult, ReportConfigDefaults } from './context';
 
 /**
  * AppRouter type — exported from apps/api/src/trpc/router.ts and re-exported here.

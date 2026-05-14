@@ -16,13 +16,14 @@ export class ReportsPdfService {
     dateFrom?: string,
     dateTo?: string,
     _teamId?: string,
+    brandName = 'Lotris',
   ): Promise<string> {
     const filePath = path.join(os.tmpdir(), `lotris-report-${uuid()}.pdf`);
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
 
-    this.writeHeader(doc, reportType);
+    this.writeHeader(doc, reportType, brandName);
 
     switch (reportType) {
       case 'TICKET_SUMMARY':
@@ -49,11 +50,11 @@ export class ReportsPdfService {
     });
   }
 
-  private writeHeader(doc: PDFKit.PDFDocument, reportType: string): void {
+  private writeHeader(doc: PDFKit.PDFDocument, reportType: string, brandName = 'Lotris'): void {
     doc
       .fontSize(20)
       .fillColor('#1a1a2e')
-      .text('Lotris — IT Help Desk Report', { align: 'center' });
+      .text(`${brandName} — IT Help Desk Report`, { align: 'center' });
     doc.moveDown(0.5);
     doc
       .fontSize(14)

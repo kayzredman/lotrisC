@@ -1,7 +1,7 @@
 import { router, protectedProcedure, adminProcedure, managerProcedure, kpiAgreementProcedure, publicProcedure } from './trpc';
 import { TRPCError } from '@trpc/server';
 import { HealthService } from '../modules/health/health.service';
-import { getMssqlDb, getPostgresDb, users, teams, roles, auditLogs, tickets, kpiDefinitions, kpiTrendSnapshots, eq, and, sql, desc, inArray } from '@lotris/db';
+import { getMssqlDb, getPostgresDb, users, teams, roles, auditLogs, tickets, kpiDefinitions, kpiTrendSnapshots, eq, and, sql, desc, inArray, lte } from '@lotris/db';
 import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
 import { QueueService } from '../modules/queue/queue.service';
@@ -10,6 +10,11 @@ import { TasksService } from '../modules/tasks/tasks.service';
 import { KpiService } from '../modules/kpi/kpi.service';
 import { DashboardCacheService } from '../modules/analytics/dashboard-cache.service';
 import { AdminService } from '../modules/admin/admin.service';
+import { ReportsService } from '../modules/reports/reports.service';
+import { ReportsPdfService } from '../modules/reports/reports-pdf.service';
+import { ReportsExcelService } from '../modules/reports/reports-excel.service';
+import { ReportsConfigService } from '../modules/reports/reports-config.service';
+import { WorkloadAnalyserService } from '../modules/analytics/workload-analyser.service';
 import type { CreateUserDto } from '../modules/admin/dto/create-user.dto';
 import type { CreateTeamDto } from '../modules/admin/dto/create-team.dto';
 import type { UpdateTeamDto } from '../modules/admin/dto/update-team.dto';
@@ -880,6 +885,149 @@ export const appRouter = router({
         warningLevel:  s.warningLevel as 'NONE' | 'AMBER' | 'RED',
         snapshotAt:    s.snapshotAt instanceof Date ? s.snapshotAt.toISOString() : String(s.snapshotAt),
       }));
+    }),
+
+  // ── reports (B-AR-4) ─────────────────────────────────────────────────────
+
+  'reports.list': kpiAgreementProcedure.query(async ({ ctx }) => {
+    const svc = new ReportsService(new ReportsPdfService(), new ReportsExcelService());
+    return svc.listReports(ctx.auth);
+  }),
+
+  'reports.generate': kpiAgreementProcedure
+    .input(z.object({
+      reportType: z.enum(['TICKET_SUMMARY', 'SLA_COMPLIANCE', 'KPI_REPORT', 'ENGINEER_PERF']),
+      format: z.enum(['PDF', 'EXCEL']),
+      dateFrom: z.string().optional(),
+      dateTo: z.string().optional(),
+      teamId: z.string().uuid().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new ReportsService(new ReportsPdfService(), new ReportsExcelService());
+      return svc.generateReport(ctx.auth, input);
+    }),
+
+  'reports.jobStatus': kpiAgreementProcedure
+    .input(z.object({ jobId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const svc = new ReportsService(new ReportsPdfService(), new ReportsExcelService());
+      return svc.getJobStatus(ctx.auth, input.jobId);
+    }),
+
+  'reports.schedules.list': kpiAgreementProcedure.query(async ({ ctx }) => {
+    const svc = new ReportsService(new ReportsPdfService(), new ReportsExcelService());
+    return svc.listSchedules(ctx.auth);
+  }),
+
+  'reports.schedules.create': kpiAgreementProcedure
+    .input(z.object({
+      reportType: z.enum(['TICKET_SUMMARY', 'SLA_COMPLIANCE', 'KPI_REPORT', 'ENGINEER_PERF']),
+      format: z.enum(['PDF', 'EXCEL']),
+      frequency: z.enum(['WEEKLY', 'MONTHLY', 'QUARTERLY']),
+      recipients: z.string(), // JSON array string
+      teamId: z.string().uuid().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new ReportsService(new ReportsPdfService(), new ReportsExcelService());
+      return svc.createSchedule(ctx.auth, input);
+    }),
+
+  'reports.schedules.delete': kpiAgreementProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new ReportsService(new ReportsPdfService(), new ReportsExcelService());
+      return svc.deleteSchedule(ctx.auth, input.id);
+    }),
+
+  'reports.config.get': kpiAgreementProcedure.query(async ({ ctx }) => {
+    const svc = new ReportsConfigService();
+    return svc.getConfig(ctx.auth.tenantId);
+  }),
+
+  'reports.config.update': adminProcedure
+    .input(z.object({
+      brandName: z.string().max(120).optional(),
+      defaultTimezone: z.string().max(60).optional(),
+      attachmentSizeLimitMb: z.number().int().min(1).max(50).optional(),
+      retentionDays: z.number().int().min(0).max(365).optional(),
+      defaultRecipients: z.string().optional(), // JSON array string
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const svc = new ReportsConfigService();
+      await svc.upsertConfig(ctx.auth.tenantId, input);
+      return { ok: true };
+    }),
+
+  // ── analytics workload (B-AR-6) ──────────────────────────────────────────
+
+  'analytics.teamWorkload': kpiAgreementProcedure
+    .input(z.object({ teamId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const svc = new WorkloadAnalyserService();
+      return svc.analyseTeam(ctx.auth.tenantId, input.teamId);
+    }),
+
+  'analytics.workloadSuggestions': kpiAgreementProcedure
+    .input(z.object({ teamId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const svc = new WorkloadAnalyserService();
+      const result = await svc.analyseTeam(ctx.auth.tenantId, input.teamId);
+      return result.suggestions;
+    }),
+
+  // ── tickets.batchReassign (B-AR-6) ───────────────────────────────────────
+
+  'tickets.batchReassign': kpiAgreementProcedure
+    .input(z.object({
+      reassignments: z.array(z.object({
+        ticketId: z.string().uuid(),
+        toEngineerId: z.string().uuid(),
+      })).min(1).max(20),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getMssqlDb();
+      const now = new Date();
+      const ALLOWED_ROLES = ['SUPERADMIN', 'ADMIN', 'IT_MANAGER', 'TEAM_LEAD'];
+      if (!ALLOWED_ROLES.includes(ctx.auth.role)) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Insufficient role for ticket reassignment' });
+      }
+
+      const results: { ticketId: string; ok: boolean }[] = [];
+
+      for (const { ticketId, toEngineerId } of input.reassignments) {
+        // Verify ticket belongs to tenant and is not ESCALATED/RESOLVED/CLOSED
+        const ticket = await db
+          .select({ id: tickets.id, status: tickets.status, teamId: tickets.teamId })
+          .from(tickets)
+          .where(and(eq(tickets.id, ticketId), eq(tickets.tenantId, ctx.auth.tenantId)))
+          .limit(1);
+
+        if (!ticket[0] || ['ESCALATED', 'RESOLVED', 'CLOSED'].includes(ticket[0].status)) {
+          results.push({ ticketId, ok: false });
+          continue;
+        }
+
+        // Verify target engineer belongs to tenant
+        const engineer = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(and(eq(users.id, toEngineerId), eq(users.tenantId, ctx.auth.tenantId), eq(users.isActive, 1)))
+          .limit(1);
+
+        if (!engineer[0]) {
+          results.push({ ticketId, ok: false });
+          continue;
+        }
+
+        await db
+          .update(tickets)
+          .set({ assigneeId: toEngineerId, status: 'ASSIGNED', assignedAt: now, updatedAt: now })
+          .where(and(eq(tickets.id, ticketId), eq(tickets.tenantId, ctx.auth.tenantId)));
+
+        results.push({ ticketId, ok: true });
+      }
+
+      return { results, reassigned: results.filter((r) => r.ok).length };
     }),
 });
 
