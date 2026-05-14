@@ -125,3 +125,44 @@ export interface KpiTrendRow {
   warningLevel: 'NONE' | 'AMBER' | 'RED';
   snapshotAt: string;           // ISO timestamp
 }
+
+// ─── Sprint 19: Workload analysis types ──────────────────────────────────────
+
+/** Per-engineer workload snapshot within a team. */
+export interface EngineerLoad {
+  engineerId: string;
+  fullName: string;
+  openTickets: number;
+  maxCapacity: number;
+  /** Percentage 0-200+; ≥100 = overloaded */
+  loadPct: number;
+  isUnavailable: boolean;
+}
+
+/** A single suggested ticket reassignment to balance team load. */
+export interface WorkloadSuggestion {
+  ticketId: string;
+  ticketTitle: string;
+  fromEngineerId: string;
+  fromEngineerName: string;
+  toEngineerId: string;
+  toEngineerName: string;
+}
+
+/** Complete workload analysis for a team. */
+export interface TeamWorkloadResult {
+  teamId: string;
+  engineers: EngineerLoad[];
+  suggestions: WorkloadSuggestion[];
+}
+
+// ─── Sprint 19: Report config type ───────────────────────────────────────────
+
+/** Merged tenant report configuration (with defaults applied). */
+export interface ReportConfigDefaults {
+  brandName: string;
+  defaultTimezone: string;
+  attachmentSizeLimitMb: number;
+  retentionDays: number;
+  defaultRecipients: string[];
+}

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsInt, Min, Max, MaxLength } from 'class-validator';
 
 const REPORT_TYPES = ['TICKET_SUMMARY', 'SLA_COMPLIANCE', 'KPI_REPORT', 'ENGINEER_PERF'] as const;
 const FORMATS = ['PDF', 'EXCEL'] as const;
@@ -45,4 +45,32 @@ export class CreateScheduleDto {
   @IsString()
   @IsOptional()
   teamId?: string;
+}
+
+export class UpdateReportConfigDto {
+  @IsString()
+  @IsOptional()
+  @MaxLength(120)
+  brandName?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(60)
+  defaultTimezone?: string;
+
+  @IsInt()
+  @IsOptional()
+  @Min(1)
+  @Max(50)
+  attachmentSizeLimitMb?: number;
+
+  @IsInt()
+  @IsOptional()
+  @Min(0)
+  @Max(365)
+  retentionDays?: number;
+
+  @IsString()
+  @IsOptional()
+  defaultRecipients?: string; // JSON array of email strings
 }

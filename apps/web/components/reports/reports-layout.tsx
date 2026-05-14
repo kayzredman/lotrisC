@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { FileText, Download, Clock, Calendar, Plus, Search, BarChart2, CheckCircle, AlertCircle } from 'lucide-react';
+import { FileText, Download, Clock, Calendar, Plus, Search, BarChart2, CheckCircle, AlertCircle, Settings, Trash2, Lock } from 'lucide-react';
+import { trpc } from '@/lib/trpc';
+import { ReportSettingsPanel } from './report-settings-panel';
 
 // ── Marketing demo data (match 05-reports-v2.html exactly) ──────────────────
 const REPORT_TYPE_TABS = [
@@ -33,12 +35,32 @@ const FORMAT_COLORS: Record<string, string> = {
 export function ReportsLayout() {
   const [activeType, setActiveType] = useState('All');
   const [showGenerate, setShowGenerate] = useState(false);
+  const [activeTab, setActiveTab] = useState<'history' | 'settings'>('history');
   const [reportType, setReportType] = useState('TICKET_SUMMARY');
   const [format, setFormat] = useState('PDF');
   const [dateRange, setDateRange] = useState('last_30');
   const [generating, setGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState<{ ok: boolean; message: string } | null>(null);
   const { getToken } = useAuth();
+
+  const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
+  const { data: liveReports, isLoading: reportsLoading } = trpc['reports.list'].useQuery(undefined, { staleTime: 15_000 });
+  const { data: schedules } = trpc['reports.schedules.list'].useQuery(undefined, { staleTime: 15_000 });
+
+  const isAdmin     = me?.roleName === 'ADMIN' || me?.roleName === 'SUPERADMIN';
+  const canAccessReports = ['TEAM_LEAD', 'IT_MANAGER', 'ADMIN', 'SUPERADMIN'].includes(me?.roleName ?? '');
+
+  // Schedule mutations
+  const utils = trpc.useUtils();
+  const [showAddSchedule, setShowAddSchedule] = useState(false);
+  const [schedForm, setSchedForm] = useState({ reportType: 'TICKET_SUMMARY', format: 'PDF', frequency: 'WEEKLY', recipients: '' });
+  const createScheduleMutation = trpc['reports.schedules.create'].useMutation({
+    onSuccess: () => { setShowAddSchedule(false); setSchedForm({ reportType: 'TICKET_SUMMARY', format: 'PDF', frequency: 'WEEKLY', recipients: '' }); void utils['reports.schedules.list'].invalidate(); },
+  });
+  const deleteScheduleMutation = trpc['reports.schedules.delete'].useMutation({
+    onSuccess: () => void utils['reports.schedules.list'].invalidate(),
+  });
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const dateRangeParams = (range: string): { dateFrom: string; dateTo: string } => {
     const to = new Date();
@@ -80,6 +102,17 @@ export function ReportsLayout() {
 
   const filtered = activeType === 'All' ? DEMO_REPORTS : DEMO_REPORTS.filter(r => r.type === activeType);
 
+  // Role gate — ENGINEER sees Not Authorised
+  if (me && !canAccessReports) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 320, gap: 12 }}>
+        <Lock size={32} style={{ color: 'var(--text-light)' }} />
+        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Not Authorised</div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', maxWidth: 340 }}>Reports are available to Team Leads, Managers and Admins. Contact your manager for access.</div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Page header */}
@@ -89,8 +122,8 @@ export function ReportsLayout() {
           <p>Generate, schedule and download performance reports</p>
         </div>
         <div className="v2-page-header-actions">
-          <button type="button" className="v2-btn v2-btn-secondary v2-btn-sm" onClick={() => setShowGenerate(false)}>
-            <Clock size={12} /> Scheduled (6)
+          <button type="button" className="v2-btn v2-btn-secondary v2-btn-sm" onClick={() => { setShowGenerate(false); setActiveTab('history'); }}>
+            <Clock size={12} /> Scheduled ({schedules?.length ?? 0})
           </button>
           <button type="button" className="v2-btn v2-btn-primary v2-btn-sm" onClick={() => setShowGenerate(true)}>
             <Plus size={12} /> Generate Report
@@ -101,10 +134,10 @@ export function ReportsLayout() {
       {/* Stats bar */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         {[
-          { value: '24', label: 'Saved Reports',    icon: <FileText size={13} />,  color: 'var(--indigo)' },
-          { value: '6',  label: 'Scheduled',         icon: <Calendar size={13} />,  color: 'var(--blue)'   },
-          { value: '148',label: 'Downloads MTD',     icon: <Download size={13} />,  color: 'var(--green)'  },
-          { value: '2h', label: 'Last Generated',    icon: <Clock size={13} />,     color: 'var(--text-muted)' },
+          { value: String(liveReports?.length ?? '—'), label: 'Saved Reports', icon: <FileText size={13} />, color: 'var(--indigo)' },
+          { value: String(schedules?.length ?? '—'),   label: 'Scheduled',     icon: <Calendar size={13} />, color: 'var(--blue)'   },
+          { value: String(liveReports?.filter(r => r.status === 'DONE').length ?? '—'), label: 'Completed', icon: <Download size={13} />, color: 'var(--green)' },
+          { value: liveReports?.filter(r => r.status === 'PROCESSING').length ? 'Running' : 'Idle', label: 'Queue Status', icon: <Clock size={13} />, color: 'var(--text-muted)' },
         ].map(s => (
           <div key={s.label} className="v2-card" style={{ flex: '1 1 120px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ color: s.color }}>{s.icon}</div>
@@ -115,6 +148,29 @@ export function ReportsLayout() {
           </div>
         ))}
       </div>
+
+      {/* Tab bar: History | Settings (admin only) */}
+      {!showGenerate && (
+        <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
+          <button
+            type="button"
+            className={`v2-filter-tab${activeTab === 'history' ? ' active' : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            Report History
+          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              className={`v2-filter-tab${activeTab === 'settings' ? ' active' : ''}`}
+              onClick={() => setActiveTab('settings')}
+            >
+              <Settings size={11} style={{ marginRight: 4 }} />
+              Settings
+            </button>
+          )}
+        </div>
+      )}
 
       {showGenerate ? (
         /* Generate form */
@@ -179,7 +235,10 @@ export function ReportsLayout() {
           </div>
         </div>
       ) : (
-        /* Report list */
+        /* Report list or Settings */
+        activeTab === 'settings' && isAdmin ? (
+          <ReportSettingsPanel />
+        ) : (
         <>
           <div className="v2-filter-bar">
             <div className="v2-filter-tabs">
@@ -209,36 +268,167 @@ export function ReportsLayout() {
                     <th>Report Name</th>
                     <th>Type</th>
                     <th>Format</th>
-                    <th>Frequency</th>
+                    <th>Status</th>
                     <th>Generated</th>
-                    <th>Size</th>
-                    <th>Downloads</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(r => (
-                    <tr key={r.name}>
+                  {reportsLoading && (
+                    <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>Loading…</td></tr>
+                  )}
+                  {!reportsLoading && (!liveReports || liveReports.length === 0) && (
+                    <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>No reports generated yet.</td></tr>
+                  )}
+                  {liveReports?.map(r => (
+                    <tr key={r.id}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <FileText size={14} style={{ color: 'var(--indigo)', flexShrink: 0 }} />
-                          <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{r.name}</span>
+                          <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                            {r.reportType.replace(/_/g, ' ')} — {r.dateFrom ?? ''}{r.dateTo ? ` to ${r.dateTo}` : ''}
+                          </span>
                         </div>
                       </td>
-                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.type}</span></td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.reportType}</span></td>
+                      <td><span className={`v2-badge ${r.format === 'EXCEL' ? 'v2-badge-green' : 'v2-badge-red'}`}>{r.format}</span></td>
                       <td>
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          {r.formats.map(f => <span key={f} className={`v2-badge ${FORMAT_COLORS[f] ?? 'v2-badge-gray'}`}>{f}</span>)}
-                        </div>
+                        <span className={`v2-badge ${r.status === 'DONE' ? 'v2-badge-green' : r.status === 'FAILED' ? 'v2-badge-red' : 'v2-badge-amber'}`}>
+                          {r.status}
+                        </span>
                       </td>
-                      <td><span className="v2-badge v2-badge-indigo">{r.freq}</span></td>
-                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.date}</span></td>
-                      <td><span style={{ fontSize: 12, color: 'var(--text-light)' }}>{r.size}</span></td>
-                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.downloads}</span></td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.createdAt ? new Date(r.createdAt).toLocaleString() : '—'}</span></td>
                       <td>
-                        <div className="v2-row-actions">
-                          <button type="button" className="v2-row-action-btn" title="Download"><Download size={11} /></button>
-                        </div>
+                        {r.status === 'DONE' && r.filePath && (
+                          <div className="v2-row-actions">
+                            <button type="button" className="v2-row-action-btn" title="Download">
+                              <Download size={11} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {/* ── Scheduled Reports section (below history table) ── */}
+          <div className="v2-card" style={{ marginTop: 20 }}>
+            <div className="v2-card-header">
+              <div>
+                <div className="v2-card-title"><Calendar size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle', color: 'var(--blue)' }} />Scheduled Reports</div>
+                <div className="v2-card-subtitle">Auto-generated on a recurring schedule and emailed to recipients</div>
+              </div>
+              <button type="button" className="v2-btn v2-btn-primary v2-btn-sm" onClick={() => setShowAddSchedule(true)}>
+                <Plus size={12} /> Add Schedule
+              </button>
+            </div>
+
+            {/* Add Schedule inline form */}
+            {showAddSchedule && (
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Report Type</label>
+                    <select className="v2-select" style={{ width: '100%' }} value={schedForm.reportType} onChange={e => setSchedForm(f => ({ ...f, reportType: e.target.value }))}>
+                      <option value="TICKET_SUMMARY">Ticket Summary</option>
+                      <option value="SLA_COMPLIANCE">SLA Compliance</option>
+                      <option value="KPI_REPORT">KPI Performance</option>
+                      <option value="ENGINEER_PERF">Agent Performance</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Format</label>
+                    <select className="v2-select" style={{ width: '100%' }} value={schedForm.format} onChange={e => setSchedForm(f => ({ ...f, format: e.target.value }))}>
+                      <option value="PDF">PDF</option>
+                      <option value="EXCEL">Excel</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Frequency</label>
+                    <select className="v2-select" style={{ width: '100%' }} value={schedForm.frequency} onChange={e => setSchedForm(f => ({ ...f, frequency: e.target.value }))}>
+                      <option value="WEEKLY">Weekly</option>
+                      <option value="MONTHLY">Monthly</option>
+                      <option value="QUARTERLY">Quarterly</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Recipients (comma-separated emails)</label>
+                  <input
+                    type="text"
+                    className="v2-input"
+                    style={{ width: '100%' }}
+                    placeholder="alice@company.com, bob@company.com"
+                    value={schedForm.recipients}
+                    onChange={e => setSchedForm(f => ({ ...f, recipients: e.target.value }))}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    className="v2-btn v2-btn-primary v2-btn-sm"
+                    disabled={createScheduleMutation.isPending || !schedForm.recipients.trim()}
+                    onClick={() => {
+                      const emails = schedForm.recipients.split(',').map(e => e.trim()).filter(Boolean);
+                      createScheduleMutation.mutate({ reportType: schedForm.reportType as 'TICKET_SUMMARY' | 'SLA_COMPLIANCE' | 'KPI_REPORT' | 'ENGINEER_PERF', format: schedForm.format as 'PDF' | 'EXCEL', frequency: schedForm.frequency as 'WEEKLY' | 'MONTHLY' | 'QUARTERLY', recipients: JSON.stringify(emails) });
+                    }}
+                  >
+                    {createScheduleMutation.isPending ? 'Saving…' : 'Save Schedule'}
+                  </button>
+                  <button type="button" className="v2-btn v2-btn-ghost v2-btn-sm" onClick={() => setShowAddSchedule(false)}>Cancel</button>
+                </div>
+              </div>
+            )}
+
+            <div className="v2-table-wrap">
+              <table className="v2-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Format</th>
+                    <th>Frequency</th>
+                    <th>Recipients</th>
+                    <th>Next Run</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(!schedules || schedules.length === 0) && (
+                    <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>No scheduled reports. Click &quot;Add Schedule&quot; to create one.</td></tr>
+                  )}
+                  {schedules?.map(s => (
+                    <tr key={s.id}>
+                      <td><span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{s.reportType.replace(/_/g, ' ')}</span></td>
+                      <td><span className={`v2-badge ${s.format === 'EXCEL' ? 'v2-badge-green' : 'v2-badge-red'}`}>{s.format}</span></td>
+                      <td><span className="v2-badge v2-badge-indigo">{s.frequency}</span></td>
+                      <td>
+                        <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                          {(() => { try { const arr = JSON.parse(s.recipients) as string[]; return arr.slice(0,2).join(', ') + (arr.length > 2 ? ` +${arr.length - 2}` : ''); } catch { return s.recipients; } })()}
+                        </span>
+                      </td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{s.nextRunAt ? new Date(s.nextRunAt).toLocaleString() : '—'}</span></td>
+                      <td><span className={`v2-badge ${s.isActive === 'true' ? 'v2-badge-green' : 'v2-badge-gray'}`}>{s.isActive === 'true' ? 'Active' : 'Paused'}</span></td>
+                      <td>
+                        {deleteConfirmId === s.id ? (
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button type="button" className="v2-btn v2-btn-danger v2-btn-sm" style={{ fontSize: 10, padding: '2px 8px' }}
+                              onClick={() => { deleteScheduleMutation.mutate({ id: s.id }); setDeleteConfirmId(null); }}>
+                              Confirm
+                            </button>
+                            <button type="button" className="v2-btn v2-btn-ghost v2-btn-sm" style={{ fontSize: 10, padding: '2px 8px' }} onClick={() => setDeleteConfirmId(null)}>
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="v2-row-actions">
+                            <button type="button" className="v2-row-action-btn" title="Delete" onClick={() => setDeleteConfirmId(s.id)}>
+                              <Trash2 size={11} />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -247,6 +437,7 @@ export function ReportsLayout() {
             </div>
           </div>
         </>
+        )
       )}
     </div>
   );

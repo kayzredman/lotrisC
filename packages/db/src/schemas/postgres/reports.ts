@@ -36,6 +36,8 @@ export const reportSchedules = pgTable('report_schedules', {
   isActive: varchar('is_active', { length: 5 }).notNull().default('true'),
   createdBy: varchar('created_by', { length: 36 }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  nextRunAt: timestamp('next_run_at', { withTimezone: true }),
+  lastRunAt: timestamp('last_run_at', { withTimezone: true }),
 });
 
 export type ReportSchedule = typeof reportSchedules.$inferSelect;

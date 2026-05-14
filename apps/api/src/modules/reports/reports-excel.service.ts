@@ -15,10 +15,11 @@ export class ReportsExcelService {
     dateFrom?: string,
     dateTo?: string,
     _teamId?: string,
+    brandName = 'Lotris',
   ): Promise<string> {
     const filePath = path.join(os.tmpdir(), `lotris-report-${uuid()}.xlsx`);
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'Lotris';
+    workbook.creator = brandName;
     workbook.created = new Date();
 
     switch (reportType) {

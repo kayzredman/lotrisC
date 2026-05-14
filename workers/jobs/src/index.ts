@@ -8,6 +8,7 @@ import { createNotificationsWorker } from './notifications.worker';
 import { createSlaPredictorWorker } from './sla-predictor.worker';
 import { createKpiTrendWorker } from './kpi-trend.worker';
 import { createDigestWorker } from './digest.worker';
+import { createReportGenWorker } from './report-gen.worker';
 
 const env = getEnv();
 
@@ -54,6 +55,7 @@ const notificationsWorker = createNotificationsWorker(connection);
 const slaPredictorWorker  = createSlaPredictorWorker(connection);
 const kpiTrendWorker      = createKpiTrendWorker(connection);
 const digestWorker        = createDigestWorker(connection);
+const reportGenWorker     = createReportGenWorker(connection, reportGenQueue);
 
 // Register ETL repeatable daily job (idempotent — BullMQ deduplicates by jobId)
 registerEtlRepeatableJob(etlSyncQueue).catch((err) =>
@@ -83,9 +85,16 @@ digestQueue.add(
   { repeat: { pattern: '0 8 * * *' }, jobId: 'digest-repeatable', removeOnComplete: { count: 5 } },
 ).catch((err) => console.error('Failed to register digest job:', err));
 
+/** Report schedules: hourly at :00 */
+reportGenQueue.add(
+  'PROCESS_SCHEDULES',
+  {},
+  { repeat: { pattern: '0 * * * *' }, jobId: 'report-schedule-repeatable', removeOnComplete: { count: 5 } },
+).catch((err) => console.error('Failed to register report schedule job:', err));
+
 console.log('⚙️   Lotris BullMQ Worker process starting…');
 console.log('   Queues registered: sla-timers, auto-assign, notifications, report-gen, etl-sync, sla-predictor, kpi-trend, digest');
-console.log('   Workers active:    sla-timers, auto-assign, notifications, etl-sync, sla-predictor, kpi-trend, digest');
+console.log('   Workers active:    sla-timers, auto-assign, notifications, etl-sync, sla-predictor, kpi-trend, digest, report-gen');
 
 // ── Graceful shutdown ──────────────────────────────────────────────────────
 async function shutdown() {
@@ -98,6 +107,7 @@ async function shutdown() {
     slaPredictorWorker.close(),
     kpiTrendWorker.close(),
     digestWorker.close(),
+    reportGenWorker.close(),
     slaTimersQueue.close(),
     autoAssignQueue.close(),
     notificationsQueue.close(),

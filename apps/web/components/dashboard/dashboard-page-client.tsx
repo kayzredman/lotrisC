@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '../../lib/trpc/client';
+import { WorkloadPanel } from './workload-panel';
 import {
   Ticket, AlertTriangle, CheckCircle2, TrendingUp,
   Clock, Activity, ArrowUpRight, RefreshCw,
@@ -436,6 +437,17 @@ export function DashboardPageClient() {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Sprint 19: Workload Rebalancing Panel (TEAM_LEAD+) ───────────── */}
+      {['TEAM_LEAD', 'IT_MANAGER', 'ADMIN', 'SUPERADMIN'].includes(role) && (
+        <div style={{ marginTop: 16 }}>
+          <WorkloadPanel
+            role={role}
+            teamId={me?.teamId ?? undefined}
+            teamName={isTeamLead ? 'My Team' : undefined}
+          />
         </div>
       )}
     </div>
