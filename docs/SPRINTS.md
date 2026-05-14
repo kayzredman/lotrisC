@@ -727,9 +727,12 @@ No new external dependencies. All work uses the existing stack (BullMQ, ExcelJS,
 ```
 B-AR-1 (DB migration + Drizzle schema update) must complete before B-AR-2 and B-AR-3.
 B-AR-4 (tRPC report procedures) depends on B-AR-2 (ReportsService next_run_at logic).
-B-AR-5 (WorkloadAnalyser) is independent — can run in parallel with report jobs.
+B-AR-7 (report_config schema + ReportsConfigService) is independent — can run in parallel with B-AR-2/3.
+B-AR-7 must complete before B-AR-3 (worker reads config) and before B-AR-4 (tRPC config procedures).
+B-AR-5 (WorkloadAnalyser) is independent — can run in parallel with all report jobs.
 B-AR-6 (tRPC workload procedures) depends on B-AR-5.
 F-AR-1 (Reports UI) depends on B-AR-4 (tRPC procedures wired).
+F-AR-4 (Report Settings panel) depends on B-AR-7 (tRPC config procedures).
 F-AR-2 and F-AR-3 (Workload panel) depend on B-AR-6.
 ```
 
@@ -794,6 +797,37 @@ F-AR-2 and F-AR-3 (Workload panel) depend on B-AR-6.
   - `'analytics.workloadSuggestions'`: `kpiAgreementProcedure.query()` — calls `workloadAnalyser.analyseAllTeams(tenantId)`. Returns `TeamWorkloadResult[]`.
   - `'tickets.batchReassign'`: `kpiAgreementProcedure.input(z.object({ reassignments: z.array(z.object({ ticketId: z.string().uuid(), toEngineerId: z.string().uuid() })).min(1).max(20) })).mutation()` — iterates reassignments, calls `ticketsService.assignTicket()` for each, collects errors without aborting remaining items. Returns `{ applied: number, failed: { ticketId: string; reason: string }[] }`.
 
+- [ ] `B-AR-7` — **Report Config** — tenant-level settings that govern report generation behaviour. All fields are optional overrides; hardcoded defaults apply when unset.
+  - **DB migration** `packages/db/migrations/pg/0004_report_config.sql`:
+    ```sql
+    CREATE TABLE report_config (
+      id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      tenant_id               VARCHAR(36) UNIQUE NOT NULL,
+      brand_name              VARCHAR(120),         -- PDF header company name (default: 'Lotris')
+      default_timezone        VARCHAR(60),          -- e.g. 'Africa/Lagos' (default: 'UTC')
+      attachment_size_limit_mb INT,                 -- switch to download link above this (default: 10)
+      retention_days          INT,                  -- 0 = never purge (default: 30)
+      default_recipients      TEXT,                 -- JSON array; appended to every schedule's recipients
+      updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    ```
+  - **Drizzle PG schema** `packages/db/src/schemas/postgres/report-config.ts` — `reportConfig` table; export `ReportConfig`, `NewReportConfig`. Add to `packages/db/src/schemas/postgres/index.ts`.
+  - **`ReportsConfigService`** (`apps/api/src/modules/reports/reports-config.service.ts`):
+    - `getConfig(tenantId: string): Promise<ReportConfigDefaults>` — SELECT from `report_config` WHERE `tenant_id = ?`; merge with hardcoded defaults for any null fields. Returns `{ brandName, defaultTimezone, attachmentSizeLimitMb, retentionDays, defaultRecipients: string[] }`.
+    - `upsertConfig(tenantId: string, dto: UpdateReportConfigDto): Promise<void>` — INSERT … ON CONFLICT (tenant_id) DO UPDATE.
+  - **`UpdateReportConfigDto`** in `apps/api/src/modules/reports/dto/index.ts`:
+    - `brandName?: string` (max 120 chars)
+    - `defaultTimezone?: string` (validated against a whitelist of IANA tz strings, or left as free text with a note to validate at runtime via `Intl.DateTimeFormat`)
+    - `attachmentSizeLimitMb?: number` (min 1, max 50)
+    - `retentionDays?: number` (min 0, max 365)
+    - `defaultRecipients?: string` (JSON array of email strings)
+  - **Wire into generation pipeline**: `ReportsPdfService.writeHeader()` and `ReportsExcelService` must call `reportsConfigService.getConfig(tenantId)` and use `brandName` in the PDF/Excel header. `computeNextRunAt()` must use `defaultTimezone` when computing MONTHLY/QUARTERLY boundaries. `emailReportToRecipients()` must merge `defaultRecipients` with the schedule's own recipients list. Attachment size check uses `attachmentSizeLimitMb`.
+  - **Wire into `report-gen.worker.ts`**: worker instantiates `ReportsConfigService` directly (same pattern as PDF/Excel services — no NestJS DI).
+  - **`ReportsModule`**: add `ReportsConfigService` to providers and exports.
+  - **tRPC procedures** — add to `apps/api/src/trpc/router.ts`:
+    - `'reports.config.get'`: `kpiAgreementProcedure.query()` — returns `ReportConfigDefaults` for the tenant. Accessible to TEAM_LEAD+ (so TEAM_LEAD can read settings; only ADMIN+ can update).
+    - `'reports.config.update'`: `adminProcedure.input(UpdateReportConfigDtoSchema).mutation()` — calls `reportsConfigService.upsertConfig()`. ADMIN/SUPERADMIN only.
+
 ---
 
 ### Frontend Dev Agent Jobs
@@ -803,6 +837,19 @@ F-AR-2 and F-AR-3 (Workload panel) depend on B-AR-6.
   - **Report History table**: calls `trpc['reports.list'].useQuery()`. Columns: Type, Format, Period, Status (badge), Generated At, Actions (Download button for DONE). Refresh every 10s while any row is in PROCESSING state.
   - **Scheduled Reports section**: calls `trpc['reports.schedules.list'].useQuery()`. Table: Type, Format, Frequency, Recipients, Next Run, Actions (Delete). "+ Add Schedule" button opens a drawer form — fields: reportType, format, frequency, recipients (comma-separated emails textarea), teamId (optional). Submit calls `trpc['reports.schedules.create'].useMutation()`. Delete calls `trpc['reports.schedules.delete'].useMutation()` with confirm dialog.
   - Role gate: page only accessible to TEAM_LEAD, IT_MANAGER, ADMIN, SUPERADMIN. ENGINEER sees a "Not authorised" state.
+  - **Report Settings tab** (ADMIN/SUPERADMIN only — tab hidden for TEAM_LEAD/IT_MANAGER): rendered as a separate tab or collapsible section at the bottom of the Reports page. Contains the `F-AR-4` component.
+
+- [ ] `F-AR-4` — **Report Settings panel** (`apps/web/components/reports/report-settings-panel.tsx`):
+  - Reads current config via `trpc['reports.config.get'].useQuery()`. Displays current values (or defaults) for each field.
+  - Inline edit form — only rendered when `role` is `ADMIN` or `SUPERADMIN`. IT_MANAGER and TEAM_LEAD see a read-only view with a "Contact your admin to change these settings" note.
+  - **Fields**:
+    - `brandName` — text input, placeholder `"Lotris"`. Used in PDF/Excel headers.
+    - `defaultTimezone` — searchable select populated from a curated IANA timezone list (common zones + full list via `Intl.supportedValuesOf('timeZone')`). Shown as `"UTC (default)"`.
+    - `attachmentSizeLimitMb` — number input (1–50). Helper text: `"Reports above this size are sent as a download link instead of an email attachment."`
+    - `retentionDays` — number input (0–365). Helper text: `"0 = never delete generated files."`
+    - `defaultRecipients` — textarea, one email per line (converted to JSON array on submit). Helper text: `"Added to every scheduled report automatically. Leave blank to use per-schedule recipients only."`
+  - "Save Settings" button calls `trpc['reports.config.update'].useMutation()`. On success: toast `"Report settings saved."`. On error: inline field-level validation messages.
+  - Invalidates `reports.config.get` on success so the read-only view updates immediately.
 
 - [ ] `F-AR-2` — **Workload panel** (`apps/web/components/dashboard/workload-panel.tsx`):
   - Visible on the main dashboard (`02-dashboard-v2.html` "Queue Health" section), TEAM_LEAD+ only.
@@ -843,8 +890,22 @@ F-AR-2 and F-AR-3 (Workload panel) depend on B-AR-6.
 - [ ] Apply All triggers notifications to affected engineers (via existing `TicketsService.assignTicket` path)
 - [ ] `analytics.workloadSuggestions` blocked for ENGINEER role (403)
 
+**Report Config**
+- [ ] `reports.config.get` returns defaults for a tenant with no saved config (all fields null → defaults applied)
+- [ ] `reports.config.update` with `brandName = "Acme IT"` → next PDF report shows `"Acme IT — IT Help Desk Report"` in the header
+- [ ] `reports.config.update` with `defaultTimezone = "Africa/Lagos"` → MONTHLY schedule `next_run_at` computed as 1st of next month at 08:00 WAT (UTC+1), not UTC
+- [ ] `defaultRecipients` from config are merged (not replaced) with per-schedule recipients — no duplicate emails in merged list
+- [ ] `reports.config.update` blocked for TEAM_LEAD and IT_MANAGER roles (403)
+- [ ] `reports.config.get` accessible to TEAM_LEAD (read-only)
+- [ ] `attachmentSizeLimitMb = 2` → a >2 MB PDF is sent as a download link, not an attachment
+- [ ] `retentionDays = 0` → cleanup job skips that tenant's files
+
 **UI**
 - [ ] Reports page accessible to TEAM_LEAD; ENGINEER sees "Not authorised" state
+- [ ] Report Settings tab/section visible only to ADMIN and SUPERADMIN; hidden for TEAM_LEAD and IT_MANAGER
+- [ ] TEAM_LEAD on Report Settings sees read-only values with "Contact your admin" note
+- [ ] Timezone select shows human-readable labels (e.g. "Africa/Lagos (WAT UTC+1)")
+- [ ] Save Settings toast appears on success; field errors appear inline on validation failure
 - [ ] Polling stops when all `PROCESSING` report jobs resolve
 - [ ] Workload panel visible on dashboard for TEAM_LEAD, hidden for ENGINEER
 - [ ] Engineer load bars show correct colour thresholds (green / amber / red)
@@ -857,5 +918,7 @@ F-AR-2 and F-AR-3 (Workload panel) depend on B-AR-6.
 
 - `REPORT_OUTPUT_DIR` — optional env var for prod. If unset, files go to `os.tmpdir()` (temp files are lost on server restart in prod; set this to a persistent volume mount).
 - `EMAIL_HOST`, `EMAIL_USER`, `EMAIL_PASS` — required for report email delivery. Falls back to `jsonTransport` (dev-only, no emails sent) if unset — same pattern as `notifications.worker.ts`.
-- `GENERATE_REPORT` worker jobs use `new ReportsPdfService()` / `new ReportsExcelService()` (no NestJS DI in BullMQ workers). These services only depend on `@lotris/db` helpers — no injected dependencies. Confirm this before implementation.
+- `GENERATE_REPORT` worker jobs use `new ReportsPdfService()` / `new ReportsExcelService()` / `new ReportsConfigService()` (no NestJS DI in BullMQ workers). These services only depend on `@lotris/db` helpers — no injected dependencies. Confirm this before implementation.
+- `defaultTimezone` is used only for computing `next_run_at` boundaries (e.g. "1st of next month at 08:00 in the tenant's timezone"). All timestamps stored in the DB remain UTC. Use the `Temporal` API or `date-fns-tz` for timezone-aware date arithmetic — do not add a new dep; `date-fns-tz` is already in the web package; if not available in workers, use `Intl.DateTimeFormat` offset arithmetic.
+- `defaultRecipients` merge: deduplicate by lowercased email address before sending. Never send the same address twice even if it appears in both the schedule list and the default list.
 - `WorkloadAnalyser` is read-only (SELECT only). No tickets are modified until `tickets.batchReassign` is explicitly called by a TEAM_LEAD+.
