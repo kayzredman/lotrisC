@@ -8,6 +8,7 @@ export const tenants = mssqlTable(
     name: nvarchar('name', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 100 }).notNull().unique(),
     isActive: bit('is_active').notNull().default(1),
+    onboardingCompletedAt: datetime2('onboarding_completed_at', { precision: 3 }),
     createdAt: datetime2('created_at', { precision: 3 }).notNull(),
     updatedAt: datetime2('updated_at', { precision: 3 }).notNull(),
   },

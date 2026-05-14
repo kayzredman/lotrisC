@@ -1,7 +1,7 @@
 import { router, protectedProcedure, adminProcedure, managerProcedure, kpiAgreementProcedure, publicProcedure } from './trpc';
 import { TRPCError } from '@trpc/server';
 import { HealthService } from '../modules/health/health.service';
-import { getMssqlDb, getPostgresDb, users, teams, roles, auditLogs, tickets, kpiDefinitions, kpiTrendSnapshots, eq, and, sql, desc, inArray, lte } from '@lotris/db';
+import { getMssqlDb, getPostgresDb, users, teams, roles, auditLogs, tickets, kpiDefinitions, kpiTrendSnapshots, tenants, slaConfigs, eq, and, sql, desc, inArray, lte } from '@lotris/db';
 import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
 import { QueueService } from '../modules/queue/queue.service';
@@ -1029,6 +1029,172 @@ export const appRouter = router({
 
       return { results, reassigned: results.filter((r) => r.ok).length };
     }),
+
+  // ── onboarding ───────────────────────────────────────────────────────────────
+
+  /**
+   * onboarding.getStatus — returns whether the tenant has completed the wizard.
+   * PENDING  = onboardingCompletedAt is null
+   * COMPLETE = onboardingCompletedAt is set
+   */
+  'onboarding.getStatus': adminProcedure.query(async ({ ctx }) => {
+    const db = await getMssqlDb();
+    const [tenant] = await db
+      .select({ onboardingCompletedAt: tenants.onboardingCompletedAt })
+      .from(tenants)
+      .where(eq(tenants.id, ctx.auth.tenantId))
+      .limit(1);
+
+    const [teamCount] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(teams)
+      .where(and(eq(teams.tenantId, ctx.auth.tenantId), eq(teams.isActive, 1)));
+
+    return {
+      status: tenant?.onboardingCompletedAt ? 'COMPLETE' : 'PENDING',
+      completedAt: tenant?.onboardingCompletedAt ?? null,
+      teamCount: Number(teamCount?.count ?? 0),
+    } as { status: 'PENDING' | 'COMPLETE'; completedAt: Date | null; teamCount: number };
+  }),
+
+  /**
+   * onboarding.saveOrg — update tenant name (Step 1).
+   */
+  'onboarding.saveOrg': adminProcedure
+    .input(z.object({
+      name: z.string().min(1).max(255),
+      slug: z.string().min(2).max(100).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getMssqlDb();
+      await db
+        .update(tenants)
+        .set({ name: input.name, slug: input.slug, updatedAt: new Date() })
+        .where(eq(tenants.id, ctx.auth.tenantId));
+      return { ok: true };
+    }),
+
+  /**
+   * onboarding.saveSla — upsert tenant-level SLA defaults (Step 4).
+   * Maps wizard "first response" → pickupSlaMinutes, "resolution" → resolutionSlaMinutes.
+   * Inserts a tenant-level record (teamId = null) if none exists, otherwise updates.
+   */
+  'onboarding.saveSla': adminProcedure
+    .input(z.object({
+      pickupSlaMinutes:     z.number().int().min(1),
+      resolutionSlaMinutes: z.number().int().min(1),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getMssqlDb();
+      const now = new Date();
+
+      const [existing] = await db
+        .select({ id: slaConfigs.id })
+        .from(slaConfigs)
+        .where(and(
+          eq(slaConfigs.tenantId, ctx.auth.tenantId),
+          sql`${slaConfigs.teamId} IS NULL`,
+        ))
+        .limit(1);
+
+      if (existing) {
+        await db
+          .update(slaConfigs)
+          .set({ pickupSlaMinutes: input.pickupSlaMinutes, resolutionSlaMinutes: input.resolutionSlaMinutes, updatedAt: now })
+          .where(eq(slaConfigs.id, existing.id));
+      } else {
+        const crypto = await import('crypto');
+        await db.insert(slaConfigs).values({
+          id:                   crypto.randomUUID(),
+          tenantId:             ctx.auth.tenantId,
+          teamId:               null,
+          pickupSlaMinutes:     input.pickupSlaMinutes,
+          resolutionSlaMinutes: input.resolutionSlaMinutes,
+          createdAt:            now,
+          updatedAt:            now,
+        });
+      }
+
+      return { ok: true };
+    }),
+
+  /**
+   * onboarding.setKpiTemplate — bulk-create KPI definitions from a preset.
+   * Idempotent: deletes existing DRAFT definitions for the tenant first, then
+   * inserts the template set. Does not touch ACTIVE or ARCHIVED definitions.
+   */
+  'onboarding.setKpiTemplate': adminProcedure
+    .input(z.object({
+      template: z.enum(['response_resolution', 'csat', 'balanced', 'custom']),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.template === 'custom') return { ok: true, created: 0 };
+
+      const db = await getMssqlDb();
+      const crypto = await import('crypto');
+      const now = new Date();
+
+      type KpiSeed = { name: string; description: string; metricType: string; direction: string; scope: string; defaultTarget: string; weight: string };
+
+      const templates: Record<string, KpiSeed[]> = {
+        response_resolution: [
+          { name: 'Mean Time to First Response', description: 'Average time from ticket open to first engineer response', metricType: 'TIME_MINUTES', direction: 'LOWER_BETTER', scope: 'INDIVIDUAL', defaultTarget: '30', weight: '35' },
+          { name: 'Mean Time to Resolution',     description: 'Average time from ticket open to resolution', metricType: 'TIME_HOURS', direction: 'LOWER_BETTER', scope: 'INDIVIDUAL', defaultTarget: '4', weight: '35' },
+          { name: 'SLA Compliance Rate',         description: 'Percentage of tickets resolved within SLA', metricType: 'PERCENTAGE', direction: 'HIGHER_BETTER', scope: 'TEAM', defaultTarget: '95', weight: '30' },
+        ],
+        csat: [
+          { name: 'Customer Satisfaction Score', description: 'Average CSAT score from post-resolution surveys', metricType: 'SCORE', direction: 'HIGHER_BETTER', scope: 'INDIVIDUAL', defaultTarget: '4.5', weight: '40' },
+          { name: 'Net Promoter Score',          description: 'NPS from periodic tenant surveys', metricType: 'SCORE', direction: 'HIGHER_BETTER', scope: 'ORG', defaultTarget: '50', weight: '30' },
+          { name: 'Reopen Rate',                 description: 'Percentage of tickets reopened after resolution', metricType: 'PERCENTAGE', direction: 'LOWER_BETTER', scope: 'INDIVIDUAL', defaultTarget: '5', weight: '30' },
+        ],
+        balanced: [
+          { name: 'Mean Time to First Response', description: 'Average time from ticket open to first engineer response', metricType: 'TIME_MINUTES', direction: 'LOWER_BETTER', scope: 'INDIVIDUAL', defaultTarget: '30', weight: '25' },
+          { name: 'SLA Compliance Rate',         description: 'Percentage of tickets resolved within SLA', metricType: 'PERCENTAGE', direction: 'HIGHER_BETTER', scope: 'TEAM', defaultTarget: '95', weight: '25' },
+          { name: 'Customer Satisfaction Score', description: 'Average CSAT score from post-resolution surveys', metricType: 'SCORE', direction: 'HIGHER_BETTER', scope: 'INDIVIDUAL', defaultTarget: '4.2', weight: '25' },
+          { name: 'Tickets Resolved per Day',    description: 'Average number of tickets closed per engineer per day', metricType: 'COUNT', direction: 'HIGHER_BETTER', scope: 'INDIVIDUAL', defaultTarget: '8', weight: '25' },
+        ],
+      };
+
+      const rows = templates[input.template] ?? [];
+
+      // Remove existing DRAFT definitions for this tenant (idempotent re-run)
+      await db
+        .delete(kpiDefinitions)
+        .where(and(eq(kpiDefinitions.tenantId, ctx.auth.tenantId), eq(kpiDefinitions.status, 'DRAFT')));
+
+      if (rows.length > 0) {
+        await db.insert(kpiDefinitions).values(
+          rows.map((r) => ({
+            id:            crypto.randomUUID(),
+            tenantId:      ctx.auth.tenantId,
+            name:          r.name,
+            description:   r.description,
+            metricType:    r.metricType,
+            direction:     r.direction,
+            scope:         r.scope,
+            defaultTarget: r.defaultTarget,
+            weight:        r.weight,
+            status:        'DRAFT',
+            createdAt:     now,
+            updatedAt:     now,
+          })),
+        );
+      }
+
+      return { ok: true, created: rows.length };
+    }),
+
+  /**
+   * onboarding.complete — mark the tenant's onboarding as done.
+   */
+  'onboarding.complete': adminProcedure.mutation(async ({ ctx }) => {
+    const db = await getMssqlDb();
+    await db
+      .update(tenants)
+      .set({ onboardingCompletedAt: new Date(), updatedAt: new Date() })
+      .where(eq(tenants.id, ctx.auth.tenantId));
+    return { ok: true };
+  }),
 });
 
 export type AppRouter = typeof appRouter;

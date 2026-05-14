@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Sprint 19 COMPLETE (`dev` @ `ca32cff`, tag `v0.19.0`, Milestone M12). Automated Reports + Workload Rebalancing shipped.
+> Last updated: May 2026 — Sprint 20 IN PROGRESS (`feature/sprint-20-onboarding`). Onboarding Wizard.
 
 ---
 
@@ -20,7 +20,8 @@
 | 16     | QA Fixes · Monitor Wall · Role Visibility · KPI My Agreement | ✅ COMPLETE | `dev` @ `3e2b17e`    | M9 |
 | 17     | Ticket Intake — Web Form + Email + Category Routing | ✅ COMPLETE | `dev` @ `af06b9c` | M10 |
 | 18     | Phase 2 — SLA Breach Prediction + KPI Trend Analysis | ✅ Complete    | `dev` @ `4d640a9` | M11 |
-| 19     | Phase 2 — Automated Reports + Workload Rebalancing   | 🔵 IN PROGRESS | `feature/sprint-19-reports-workload` | M12 |
+| 19     | Phase 2 — Automated Reports + Workload Rebalancing   | ✅ COMPLETE    | `dev` @ `ca32cff`, tag `v0.19.0` | M12 |
+| 20     | Onboarding Wizard                                    | 🔵 IN PROGRESS | `feature/sprint-20-onboarding`   | M13 |
 
 ---
 
@@ -922,3 +923,58 @@ F-AR-2 and F-AR-3 (Workload panel) depend on B-AR-6.
 - `defaultTimezone` is used only for computing `next_run_at` boundaries (e.g. "1st of next month at 08:00 in the tenant's timezone"). All timestamps stored in the DB remain UTC. Use the `Temporal` API or `date-fns-tz` for timezone-aware date arithmetic — do not add a new dep; `date-fns-tz` is already in the web package; if not available in workers, use `Intl.DateTimeFormat` offset arithmetic.
 - `defaultRecipients` merge: deduplicate by lowercased email address before sending. Never send the same address twice even if it appears in both the schedule list and the default list.
 - `WorkloadAnalyser` is read-only (SELECT only). No tickets are modified until `tickets.batchReassign` is explicitly called by a TEAM_LEAD+.
+
+
+---
+
+## Sprint 20 · Onboarding Wizard
+
+**Target milestone:** M13
+**Status:** 🔵 IN PROGRESS
+**Branch:** `feature/sprint-20-onboarding`
+**Mockup:** `mockups/06-onboarding-v2.html`
+
+### Goal
+Guided 5-step onboarding wizard for first-time ADMIN / SUPERADMIN users. Wizard
+auto-triggers on first login when the tenant has no teams. Progress persists via
+localStorage so the admin can save & exit then resume later. Invites are
+non-blocking (fire-and-forget). Completing Step 5 marks `onboardingCompletedAt`
+on the tenant record.
+
+### Design Decisions
+- Wizard lives at `/onboarding` inside a dedicated `(onboarding)` route group
+  (no AppShell — full-screen isolated layout matching the mockup)
+- Auto-redirect: `OnboardingGuard` client component in `(app)/layout.tsx` calls
+  `onboarding.getStatus`; if `PENDING` and role is ADMIN+, redirects to
+  `/onboarding`
+- Team Leads are selected from existing users via `users.list`; selecting - Team Leads are selected from existing users via `users.list`; selecting - Team Le`
+- Invites use existing `admin.users.creat- Invites use existing `e - Invites use existing `admint; invite status is derived from `users.isActive`
+- SLA step writes tenant-level SLA defaults (teamId = NULL) to `SLA_Configs`;
+  pickupSlaMinutes mapped from "First Response" field, resolutionSlaMinutes from
+  "Resolution" field (Critical priority values used as tenant default)
+- KPI template creates a batch of KPI definitions from a preset list; templates:
+  'response_resolution' | 'csat' | 'balanced' | 'custom'
+- `onboardingCompletedAt` on Tenants — single nullable DATETIME2 column; NULL =
+  not yet completed
+
+### Backend Dev Agent Jobs
+- [x] `B-OB-1` — SQL migration `0009_onboarding_state.sql`
+- [x] `B-OB-2` — Drizzle schema: add `onboardingCompletedAt` to `tenants.ts`
+- [x] `B-OB-3` — tRPC procedures: `onboarding.getStatus`, `onboarding.saveOrg`,
+      `onboarding.saveSla`, `onboarding.setKpiTemplate`, `onboarding.complete`
+
+### Frontend Dev Agent Jobs
+- [x] `F-OB-1` — `apps/web/app/(onboarding)/layout.tsx` — Providers-only layout
+- [x] `F-OB-2` — `apps/web/app/(onboarding)/onboarding/page.tsx`
+- [x] `F-OB-3` — `apps/web/components/onboarding/onboarding-wizard.tsx`
+- [x] `F-OB-4` — Step components: step-1-org, step-2-teams, step-3-invite,
+      step-4-sla, step-5-kpi, step-done
+- [x] `F-OB-5` — `apps/web/components/onboarding/onboarding-guard.tsx`
+- [x] `F-OB- [x] `F-OB- [x] `F-OB- [x] `F-OB- [x] `F-OB- [x] `F-OB- [x] `F-OB- [x] `F-OB- cks
+- [ ] `/onboarding` renders wizard without AppShell (no sidebar/topbar)
+- [ ] ENGINEER navigating to `/onboarding` is blocked (redirected- [ ] ENGINEER nav ] `onboarding.getStatus` returns PENDING for a tenant with 0 teams
+- [ ] `onboarding.getSt- [ ] `onboarding.getSt- [ ] `onboarding.getSt- [ ] `onboarding.getSt- [ ] team- [ ] `onboarding.getSt- [ ] `onboarding.getSt- [ ] `onboarding.getSt- [ ] `on non- [ ] `onboarding.getSt- [ ] `onboarding.getSt- [ ] `onboarding.getSt- [ ] `oser- [ ] `onboarding.getSt-ig (teamId = null)
+- [ ] `onboarding.setKpiTemplate` bulk-creates KPI definitions; idemp- [ ] `onboarding.setKpiTemplate` bulk-creates KPI definitions; subsequent
+      `getStatus` returns COMPLETE
+- [ ] OnboardingGuard does NOT redirect ADMIN who has already completed onboarding
+- [ ] localStorage key `l- [ ] localStorage key `l- [ ] localS persistence
