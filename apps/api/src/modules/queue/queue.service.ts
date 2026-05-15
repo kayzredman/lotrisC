@@ -25,10 +25,6 @@ import type { UpdateQueueConfigDto, QueueListQueryDto } from './dto';
 export class QueueService {
   constructor(private readonly notifications: NotificationsService) {}
 
-  private get db() {
-    return getMssqlDb();
-  }
-
   // ── Queue list (UNASSIGNED tickets for the engineer's team) ──────────────
 
   async listQueue(auth: TrpcAuth, query: QueueListQueryDto) {

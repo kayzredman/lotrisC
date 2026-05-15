@@ -86,7 +86,7 @@ export class SlaPredictor {
       ? await db
           .select({ id: users.id, email: users.email })
           .from(users)
-          .where(and(eq(users.tenantId, tenantId), sql`${users.id} IN (${sql.raw(assigneeIds.map(() => '?').join(','))})`, ...assigneeIds.map((_, i) => sql`1=1`)))
+          .where(and(eq(users.tenantId, tenantId), sql`${users.id} IN (${sql.raw(assigneeIds.map(() => '?').join(','))})`, ...assigneeIds.map(() => sql`1=1`)))
           : [];
     // Note: for complex IN() we use raw SQL to avoid stub limitations
     const assigneeEmailMap = new Map<string, string>();

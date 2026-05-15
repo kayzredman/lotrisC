@@ -1,7 +1,7 @@
 import { router, protectedProcedure, adminProcedure, managerProcedure, kpiAgreementProcedure, publicProcedure } from './trpc';
 import { TRPCError } from '@trpc/server';
 import { HealthService } from '../modules/health/health.service';
-import { getMssqlDb, getPostgresDb, users, teams, roles, auditLogs, tickets, kpiDefinitions, kpiTrendSnapshots, tenants, slaConfigs, eq, and, sql, desc, inArray, lte } from '@lotris/db';
+import { getMssqlDb, getPostgresDb, users, teams, roles, auditLogs, tickets, kpiDefinitions, kpiTrendSnapshots, tenants, slaConfigs, eq, and, sql, desc } from '@lotris/db';
 import { z } from 'zod';
 import { TicketsService } from '../modules/tickets/tickets.service';
 import { QueueService } from '../modules/queue/queue.service';
@@ -789,7 +789,6 @@ export const appRouter = router({
       const now = new Date();
       const yr  = now.getFullYear();
       const mo  = String(now.getMonth() + 1).padStart(2, '0');
-      const q   = Math.ceil((now.getMonth() + 1) / 3);
       const period = input.periodKey ?? `${yr}-${mo}`;
 
       // Fetch latest snapshot per (engineerId, kpiDefId) for the period
@@ -806,9 +805,6 @@ export const appRouter = router({
       if (snaps.length === 0) return [];
 
       // Enrich with engineer names and KPI names from MSSQL
-      const engineerIds = [...new Set(snaps.map((s) => s.engineerId))];
-      const kpiDefIds   = [...new Set(snaps.map((s) => s.kpiDefId))];
-
       const engineerRows = await db.execute<{ id: string; full_name: string }>(
         sql`SELECT id, full_name FROM Users WHERE tenant_id = ${tenantId}`,
       );

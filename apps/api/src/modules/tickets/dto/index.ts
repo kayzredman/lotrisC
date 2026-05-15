@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsIn, IsUUID, MaxLength, IsEmail, Min, Max, IsInt } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsIn, IsUUID, MaxLength, IsEmail, IsInt } from 'class-validator';
 
 const PRIORITY_VALUES = [1, 2, 3, 4] as const;
 const SOURCE_VALUES = ['INTERNAL', 'EMAIL', 'SELF_SERVICE', 'API'] as const;

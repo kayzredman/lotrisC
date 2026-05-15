@@ -1,5 +1,5 @@
 import { getEnv } from '@lotris/config';
-import { Queue, Worker } from 'bullmq';
+import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 import { createSlaTimersWorker } from './sla-timers.worker';
 import { createAutoAssignWorker } from './auto-assign.worker';

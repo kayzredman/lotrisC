@@ -3,8 +3,8 @@ import type IORedis from 'ioredis';
 import { getPostgresDb, reportSchedules, reportJobs, reportConfig, eq, and, lte } from '@lotris/db';
 import { v4 as uuid } from 'uuid';
 import * as nodemailer from 'nodemailer';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 // Workers instantiate these services with `new` (no NestJS DI).
 // Safe because both services depend only on @lotris/db helpers.
 import { ReportsPdfService } from '../../../apps/api/src/modules/reports/reports-pdf.service';
@@ -34,8 +34,6 @@ interface GenerateReportJobData {
   brandName: string;
   attachmentSizeLimitMb: number;
 }
-
-const OPEN_STATUSES = ['NEW', 'TEAM_ASSIGNED', 'UNASSIGNED', 'ASSIGNED', 'IN_PROGRESS'];
 
 // ── Tenant config fetch (no NestJS DI — use raw DB query) ──────────────────
 
@@ -122,11 +120,11 @@ async function emailReport(
 ): Promise<void> {
   if (!recipients.length) return;
 
-  const smtpHost = process.env['SMTP_HOST'];
-  const smtpPort = parseInt(process.env['SMTP_PORT'] ?? '587', 10);
-  const smtpUser = process.env['SMTP_USER'];
-  const smtpPass = process.env['SMTP_PASS'];
-  const smtpFrom = process.env['SMTP_FROM'] ?? 'noreply@lotris.io';
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = parseInt(process.env.SMTP_PORT ?? '587', 10);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const smtpFrom = process.env.SMTP_FROM ?? 'noreply@lotris.io';
 
   if (!smtpHost || !smtpUser || !smtpPass) {
     console.warn(`[report-gen] SMTP not configured — skipping email for ${filePath}`);

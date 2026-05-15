@@ -1,6 +1,6 @@
-import { Worker, Job } from 'bullmq';
-import IORedis from 'ioredis';
-import { getMssqlDb, tickets, ticketHistory, users, queueConfigs, eq, and, count, asc, sql } from '@lotris/db';
+import { Worker, type Job } from 'bullmq';
+import type IORedis from 'ioredis';
+import { getMssqlDb, tickets, ticketHistory, users, queueConfigs, eq, and, count, sql } from '@lotris/db';
 
 interface AutoAssignJobData {
   ticketId: string;

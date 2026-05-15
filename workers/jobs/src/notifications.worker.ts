@@ -89,7 +89,6 @@ function createTransport() {
 async function sendIntakeAck(payload: IntakeAckJob): Promise<void> {
   const env = getEnv();
   const transport = createTransport();
-  const appUrl = env.APP_BASE_URL;
 
   const subject = `[${payload.ticketRef}] We've received your request`;
   const html = `

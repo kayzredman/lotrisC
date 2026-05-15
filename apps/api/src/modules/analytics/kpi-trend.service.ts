@@ -9,8 +9,6 @@ import {
   users,
   eq,
   and,
-  asc,
-  sql,
 } from '@lotris/db';
 import { v4 as uuid } from 'uuid';
 import IORedis from 'ioredis';

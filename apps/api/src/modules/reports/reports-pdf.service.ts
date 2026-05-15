@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -8,7 +8,6 @@ import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class ReportsPdfService {
-  private readonly logger = new Logger(ReportsPdfService.name);
 
   async generate(
     tenantId: string,

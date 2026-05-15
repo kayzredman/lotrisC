@@ -12,7 +12,6 @@ import {
   ArrayMaxSize,
   IsPositive,
   ValidateNested,
-  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 

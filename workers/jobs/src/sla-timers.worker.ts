@@ -1,7 +1,6 @@
-import { Worker, Job } from 'bullmq';
-import IORedis from 'ioredis';
-import { getMssqlDb, tickets, ticketHistory, users, eq, and, count, sql } from '@lotris/db';
-import { v4 as uuidv4 } from 'uuid';
+import { Worker, type Job } from 'bullmq';
+import type IORedis from 'ioredis';
+import { getMssqlDb, tickets, ticketHistory, eq, and } from '@lotris/db';
 
 interface SlaJobData {
   ticketId: string;

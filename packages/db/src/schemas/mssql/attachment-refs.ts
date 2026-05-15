@@ -1,7 +1,6 @@
 import {
   mssqlTable,
   varchar,
-  int,
   bigint,
   datetime2,
   nvarchar,

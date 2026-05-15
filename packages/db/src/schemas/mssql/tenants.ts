@@ -1,4 +1,4 @@
-import { mssqlTable, varchar, int, bit, datetime2, nvarchar, index } from 'drizzle-orm/mssql-core';
+import { mssqlTable, varchar, bit, datetime2, nvarchar } from 'drizzle-orm/mssql-core';
 
 export const tenants = mssqlTable(
   'Tenants',

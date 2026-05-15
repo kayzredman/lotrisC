@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { fastifyTRPCPlugin, type FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import { getEnv } from '@lotris/config';
 import { AppModule } from './app.module';
-import { appRouter, type AppRouter } from './trpc/router';
+import { appRouter } from './trpc/router';
 import { createContext } from './trpc/context';
 
 async function bootstrap() {
@@ -51,7 +51,7 @@ async function bootstrap() {
   });
 
   // ── OpenAPI (REST v1) — skip in tsx/dev (emitDecoratorMetadata not available) ──
-  if (env.NODE_ENV !== 'production' && process.env['ENABLE_SWAGGER'] === 'true') {
+  if (env.NODE_ENV !== 'production' && process.env.ENABLE_SWAGGER === 'true') {
     const config = new DocumentBuilder()
       .setTitle('Lotris API')
       .setDescription('Lotris REST v1 — for third-party integrations')

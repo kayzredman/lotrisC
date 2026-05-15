@@ -5,14 +5,10 @@ import {
   getPostgresDb,
   analyticsTicketDaily,
   analyticsSlaDaily,
-  analyticsEngineerPerf,
   tickets,
-  users,
-  kpiResults,
   eq,
   and,
   sql,
-  desc,
 } from '@lotris/db';
 import { v4 as uuid } from 'uuid';
 

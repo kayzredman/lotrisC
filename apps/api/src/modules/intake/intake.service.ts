@@ -35,7 +35,6 @@ export interface PublicTicketRequestDto {
 export class IntakeService implements OnApplicationBootstrap {
   private readonly logger = new Logger(IntakeService.name);
   private redis: IORedis | null = null;
-  private imapInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(private readonly notifications: NotificationsService) {}
 
@@ -204,7 +203,7 @@ export class IntakeService implements OnApplicationBootstrap {
 
     // Poll immediately at startup, then every 60 seconds
     void this.pollEmailInbox().catch((err) => this.logger.error('Initial IMAP poll failed', err));
-    this.imapInterval = setInterval(
+    setInterval(
       () => void this.pollEmailInbox().catch((err) => this.logger.error('IMAP poll error', err)),
       60_000,
     );

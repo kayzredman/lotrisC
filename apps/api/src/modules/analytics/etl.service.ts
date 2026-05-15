@@ -4,7 +4,6 @@ import {
   getMssqlDb,
   analyticsTicketDaily,
   analyticsEngineerPerf,
-  analyticsKpiSummary,
   analyticsSlaDaily,
   tickets,
   users,

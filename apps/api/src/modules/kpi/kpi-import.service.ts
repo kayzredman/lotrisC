@@ -3,7 +3,6 @@ import {
   getMssqlDb,
   kpiAgreementAreas,
   kpiAgreementMetrics,
-  kpiAgreements,
   eq,
 } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
@@ -45,12 +44,11 @@ export class KpiImportService {
     if (ext === 'csv') {
       // ExcelJS CSV reader accepts a readable stream; convert buffer via Readable.from
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { Readable } = require('stream') as typeof import('stream');
+      const { Readable } = require('node:stream') as typeof import('stream');
       await workbook.csv.read(Readable.from(file.buffer));
     } else {
       // ExcelJS xlsx.load() uses older Buffer type definition incompatible with Node 24 generics
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
+      // @ts-expect-error ExcelJS xlsx.load() Buffer type incompatible with Node 24 generics
       await workbook.xlsx.load(Buffer.from(file.buffer));
     }
 
@@ -98,7 +96,7 @@ export class KpiImportService {
    * Apply column mapping and insert metric rows into the first area of the agreement.
    * Creates a default area "Imported Metrics" if none exists.
    */
-  async importWithMapping(auth: TrpcAuth, agreementId: string, dto: ImportColumnMappingDto) {
+  async importWithMapping(auth: TrpcAuth, agreementId: string, _dto: ImportColumnMappingDto) {
     const agreement = await this.kpi.getAgreement(auth, agreementId);
     if (agreement.status !== 'DRAFT') {
       throw new BadRequestException('Can only import into DRAFT agreements');

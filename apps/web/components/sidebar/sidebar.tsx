@@ -29,6 +29,7 @@ type NavItem = {
   href: string;
   icon: React.ElementType;
   badge?: number;
+  newTab?: boolean;
 };
 
 const MAIN_NAV: NavItem[] = [
@@ -38,15 +39,15 @@ const MAIN_NAV: NavItem[] = [
   { label: 'Tasks',     href: '/tasks',      icon: CheckSquare },
   { label: 'KPIs',      href: '/kpis',       icon: BarChart3 },
   { label: 'Reports',   href: '/reports',    icon: FileText  },
-  { label: 'Monitor',   href: '/monitor',    icon: MonitorPlay },
+  { label: 'Monitor',   href: '/monitor',    icon: MonitorPlay, newTab: true },
 ];
 
 const ADMIN_NAV: NavItem[] = [
-  { label: 'Teams',           href: '/admin',               icon: Users      },
-  { label: 'KPI Setup',       href: '/admin/kpi-setup',     icon: Settings2  },
-  { label: 'KPI Agreement',   href: '/kpis/agreements',     icon: FilePenLine },
-  { label: 'System Health',   href: '/system-health',       icon: Activity   },
-  { label: 'Audit Log',       href: '/audit-log',           icon: ShieldCheck },
+  { label: 'Teams',           href: '/admin',               icon: Users,       newTab: true },
+  { label: 'KPI Setup',       href: '/admin/kpi-setup',     icon: Settings2,   newTab: true },
+  { label: 'KPI Agreement',   href: '/kpis/agreements',     icon: FilePenLine, newTab: true },
+  { label: 'System Health',   href: '/system-health',       icon: Activity,    newTab: true },
+  { label: 'Audit Log',       href: '/audit-log',           icon: ShieldCheck, newTab: true },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
@@ -57,9 +58,6 @@ const ROLE_LABELS: Record<string, string> = {
   ENGINEER: 'Engineer',
   EXECUTIVE: 'Executive',
 };
-
-// Which roles can see the Admin section in the sidebar
-const ADMIN_NAV_ROLES = new Set(['SUPERADMIN', 'ADMIN', 'IT_MANAGER', 'TEAM_LEAD']);
 
 type SidebarProps = {
   isOpen?: boolean;
@@ -152,6 +150,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               href={item.href}
               className={`v2-nav-item${active ? ' active' : ''}`}
               onClick={handleNavClick}
+              {...(item.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
             >
               <span className="v2-nav-icon">
                 <item.icon size={14} />
@@ -190,6 +189,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   href={item.href}
                   className={`v2-nav-item${active ? ' active' : ''}`}
                   onClick={handleNavClick}
+                  {...(item.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 >
                   <span className="v2-nav-icon">
                     <item.icon size={14} />

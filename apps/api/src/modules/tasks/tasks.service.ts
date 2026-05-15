@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { getMssqlDb, tasks, taskAssignments, taskChecklistItems, users, eq, and, sql, count, asc, desc, inArray } from '@lotris/db';
+import { getMssqlDb, tasks, taskAssignments, taskChecklistItems, users, eq, and, sql, count, asc, desc } from '@lotris/db';
 import { v4 as uuidv4 } from 'uuid';
 import type { TrpcAuth } from '@lotris/types';
 import type {
@@ -21,10 +21,6 @@ const isLeadRole = (role: TrpcAuth['role']) => LEAD_ROLES.includes(role);
 
 @Injectable()
 export class TasksService {
-  private get db() {
-    return getMssqlDb();
-  }
-
   private async getDb() {
     return getMssqlDb();
   }
@@ -202,7 +198,7 @@ export class TasksService {
 
   async update(auth: TrpcAuth, taskId: string, dto: UpdateTaskDto) {
     const db = await this.getDb();
-    const task = await this.findById(auth, taskId);
+    await this.findById(auth, taskId);
     const now = new Date();
 
     const updates: Partial<typeof tasks.$inferInsert> = { updatedAt: now };

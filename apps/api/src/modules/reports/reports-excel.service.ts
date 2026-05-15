@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import * as path from 'path';
 import * as os from 'os';
@@ -7,7 +7,6 @@ import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class ReportsExcelService {
-  private readonly logger = new Logger(ReportsExcelService.name);
 
   async generate(
     tenantId: string,

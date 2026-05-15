@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { exec } from 'child_process';
-import * as path from 'path';
+import { exec } from 'node:child_process';
+import * as path from 'node:path';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 import { getEnv } from '@lotris/config';
@@ -104,7 +104,7 @@ export class HealthService {
     try {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 2000);
-      const res = await fetch(`http://localhost:${process.env['WEB_PORT'] ?? 3000}`, {
+      const res = await fetch(`http://localhost:${process.env.WEB_PORT ?? 3000}`, {
         signal: ctrl.signal,
       });
       clearTimeout(timer);

@@ -17,8 +17,6 @@ const ORG_LEVEL_ROLES: TrpcAuth['role'][] = ['SUPERADMIN', 'ADMIN', 'IT_MANAGER'
 export class DashboardCacheService {
   private readonly logger = new Logger(DashboardCacheService.name);
 
-  constructor() {}
-
   private getRedis(): Redis | null {
     try {
       // Access ioredis client via global redis connection (injected via BullMQ's ioredis)

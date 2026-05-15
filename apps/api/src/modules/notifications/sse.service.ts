@@ -1,5 +1,5 @@
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
-import type { ServerResponse } from 'http';
+import type { ServerResponse } from 'node:http';
 import IORedis from 'ioredis';
 import { getEnv } from '@lotris/config';
 

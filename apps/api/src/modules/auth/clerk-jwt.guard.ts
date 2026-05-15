@@ -16,7 +16,7 @@ export class ClerkJwtGuard implements CanActivate {
       auth: unknown;
     }>();
 
-    const authHeader = request.headers['authorization'];
+    const authHeader = request.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
       throw new UnauthorizedException('Missing or invalid Authorization header');
     }

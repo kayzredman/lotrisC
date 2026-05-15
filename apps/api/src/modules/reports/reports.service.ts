@@ -172,7 +172,7 @@ export class ReportsService {
   /**
    * Advance nextRunAt after a schedule has fired (used by worker).
    */
-  advanceNextRunAt(current: Date, frequency: string, timezone = 'UTC'): Date {
+  advanceNextRunAt(_current: Date, frequency: string, timezone = 'UTC'): Date {
     return this.computeNextRunAt(frequency, timezone);
   }
 

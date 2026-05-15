@@ -4,7 +4,6 @@ import {
   bit,
   datetime2,
   nvarchar,
-  bigint,
   index,
 } from 'drizzle-orm/mssql-core';
 import { tickets } from './tickets';

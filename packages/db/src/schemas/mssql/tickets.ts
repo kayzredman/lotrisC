@@ -6,7 +6,6 @@ import {
   datetime2,
   nvarchar,
   index,
-  decimal,
 } from 'drizzle-orm/mssql-core';
 import { tenants } from './tenants';
 import { teams } from './teams';
