@@ -4,7 +4,7 @@
 > _"Where performance surfaces."_
 
 [![Status](https://img.shields.io/badge/status-in%20development-blue)]()
-[![Phase](https://img.shields.io/badge/phase-1%20sprint%2017%20complete-teal)]()
+[![Phase](https://img.shields.io/badge/phase-sprint%2023%20complete-teal)]()
 [![License](https://img.shields.io/badge/license-private-lightgrey)]()
 
 ---
@@ -61,7 +61,7 @@ The system uses a **hybrid queue-based assignment model**: tickets are routed to
 
 ---
 
-## Build Status — Sprint 17 (May 2026)
+## Build Status — Sprint 23 (May 2026)
 
 | Milestone | Sprint | Status |
 |-----------|--------|--------|
@@ -75,8 +75,29 @@ The system uses a **hybrid queue-based assignment model**: tickets are routed to
 | M8 — UI Polish + Tickets Repair | 14–15 | ✅ Complete |
 | M9 — QA Fixes + Monitor Wall + KPI My Agreement | 16 | ✅ Complete |
 | M10 — Ticket Intake — Web Form + Email + Category Routing | 17 | ✅ Complete |
+| M11 — SLA Breach Prediction + KPI Trend Analysis | 18 | ✅ Complete |
+| M12 — Automated Reports + Workload Rebalancing | 19 | ✅ Complete |
+| M13 — Onboarding Wizard | 20 | ✅ Complete |
+| M14 — Landing Page Branding Sweep + KPI Agreement Section | 21 | ✅ Complete |
+| M15 — Tooling Hardening + Nav UX + Staging Infra | 22–23 | ✅ Complete |
 
-**Live on dev branch.** Next: Phase 2 analytics intelligence.
+**Live on `dev` branch.**
+
+---
+
+## Staging Deployment
+
+| Layer | Platform | Notes |
+|-------|----------|-------|
+| Frontend | [Vercel](https://vercel.com) | Auto-deploys from `dev`; `vercel.json` at repo root |
+| API | [Railway](https://railway.app) | NestJS/Fastify; build: `pnpm --filter @lotris/api build` |
+| Workers | [Railway](https://railway.app) | BullMQ; build: `pnpm --filter @lotris/workers build` |
+| MSSQL | Railway Docker | `mcr.microsoft.com/mssql/server:2022-latest` |
+| PostgreSQL | [Neon](https://neon.tech) | Free tier; analytics DB |
+| Redis | [Upstash](https://upstash.com) | Free tier; cache + queues |
+
+> Full step-by-step setup guide: [`docs/STAGING.md`](docs/STAGING.md)  
+> Environment variable template: [`.env.staging.example`](.env.staging.example)
 
 ---
 
