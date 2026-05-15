@@ -278,8 +278,11 @@ function ReportsMockup() {
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
+const NAV_LINKS = ['Features', 'How it works', 'Pricing'] as const;
+
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);
@@ -287,46 +290,141 @@ function Navbar() {
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
+  // Close drawer when user scrolls (they've committed to the page)
+  useEffect(() => {
+    if (!menuOpen) return;
+    const fn = () => setMenuOpen(false);
+    window.addEventListener('scroll', fn, { passive: true, once: true });
+    return () => window.removeEventListener('scroll', fn);
+  }, [menuOpen]);
+
+  const frosted = scrolled || menuOpen;
+
   return (
-    <motion.nav
-      initial={{ y: -60, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5, ease: EASE }}
-      style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        display: 'flex', alignItems: 'center', padding: '0 40px', height: 64,
-        background: scrolled ? 'rgba(12,14,26,0.85)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(16px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
-        transition: 'background 0.3s, backdrop-filter 0.3s, border-color 0.3s',
-      }}
-    >
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 'auto' }}>
-        <LotrisMark height={28} uid="nav" />
-        <span style={{ fontSize: 18, fontWeight: 800, color: '#F8FAFC', letterSpacing: '-0.04em' }}>Lotris</span>
-      </div>
-      {/* Links */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 32, marginRight: 32 }}>
-        {['Features', 'How it works', 'Pricing'].map((label) => (
-          <a key={label} href={`#${label.toLowerCase().replace(' ', '-')}`} style={{ fontSize: 14, color: '#94a3b8', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}
+    <>
+      <motion.nav
+        initial={{ y: -60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: EASE }}
+        style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+          display: 'flex', alignItems: 'center', padding: '0 24px', height: 64,
+          background: frosted ? 'rgba(12,14,26,0.92)' : 'transparent',
+          backdropFilter: frosted ? 'blur(18px)' : 'none',
+          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
+          transition: 'background 0.3s, backdrop-filter 0.3s, border-color 0.3s',
+        }}
+      >
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 'auto' }}>
+          <LotrisMark height={28} uid="nav" />
+          <span style={{ fontSize: 18, fontWeight: 800, color: '#F8FAFC', letterSpacing: '-0.04em' }}>Lotris</span>
+        </div>
+
+        {/* Desktop links — hidden on mobile */}
+        <div className="hidden md:flex" style={{ alignItems: 'center', gap: 32, marginRight: 32 }}>
+          {NAV_LINKS.map((label) => (
+            <a key={label} href={`#${label.toLowerCase().replace(/ /g, '-')}`}
+              style={{ fontSize: 14, color: '#94a3b8', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
+            >{label}</a>
+          ))}
+        </div>
+
+        {/* Desktop CTAs — hidden on mobile */}
+        <div className="hidden md:flex" style={{ alignItems: 'center', gap: 10 }}>
+          <Link href="/login"
+            style={{ fontSize: 13, color: '#94a3b8', textDecoration: 'none', padding: '6px 14px', fontWeight: 500, transition: 'color 0.2s' }}
             onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
             onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
-          >{label}</a>
-        ))}
-      </div>
-      {/* CTAs */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Link href="/login" style={{ fontSize: 13, color: '#94a3b8', textDecoration: 'none', padding: '6px 14px', fontWeight: 500, transition: 'color 0.2s' }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
-        >Sign in</Link>
-        <Link href="/sign-up" style={{ fontSize: 13, background: '#4f46e5', color: '#fff', textDecoration: 'none', padding: '7px 18px', borderRadius: 8, fontWeight: 600, transition: 'background 0.2s' }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = '#4338ca')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = '#4f46e5')}
-        >Get Started</Link>
-      </div>
-    </motion.nav>
+          >Sign in</Link>
+          <Link href="/sign-up"
+            style={{ fontSize: 13, background: '#4f46e5', color: '#fff', textDecoration: 'none', padding: '7px 18px', borderRadius: 8, fontWeight: 600, transition: 'background 0.2s' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#4338ca')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#4f46e5')}
+          >Get Started</Link>
+        </div>
+
+        {/* Hamburger button — visible on mobile only */}
+        <button
+          className="md:hidden"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, color: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8 }}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {menuOpen ? (
+              <motion.svg key="x" width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"
+                initial={{ rotate: -45, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 45, opacity: 0 }} transition={{ duration: 0.15 }}>
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </motion.svg>
+            ) : (
+              <motion.svg key="burger" width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"
+                initial={{ rotate: 45, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -45, opacity: 0 }} transition={{ duration: 0.15 }}>
+                <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+              </motion.svg>
+            )}
+          </AnimatePresence>
+        </button>
+      </motion.nav>
+
+      {/* Mobile drawer — slides down from nav bar */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            key="mobile-nav-drawer"
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.22, ease: EASE }}
+            className="md:hidden"
+            style={{
+              position: 'fixed', top: 64, left: 0, right: 0, zIndex: 99,
+              background: 'rgba(10,12,24,0.97)',
+              backdropFilter: 'blur(20px)',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              padding: '8px 24px 28px',
+            }}
+          >
+            {/* Nav links */}
+            <nav aria-label="Mobile navigation">
+              {NAV_LINKS.map((label, i) => (
+                <motion.a
+                  key={label}
+                  href={`#${label.toLowerCase().replace(/ /g, '-')}`}
+                  onClick={() => setMenuOpen(false)}
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.06, duration: 0.2, ease: EASE }}
+                  style={{
+                    display: 'block', fontSize: 17, color: '#cbd5e1', textDecoration: 'none',
+                    fontWeight: 500, padding: '14px 0',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  }}
+                >{label}</motion.a>
+              ))}
+            </nav>
+
+            {/* CTA buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.18, duration: 0.22, ease: EASE }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}
+            >
+              <Link href="/sign-up" onClick={() => setMenuOpen(false)}
+                style={{ fontSize: 15, background: '#4f46e5', color: '#fff', textDecoration: 'none', padding: '13px 0', borderRadius: 10, fontWeight: 600, textAlign: 'center', display: 'block' }}
+              >Get Started Free →</Link>
+              <Link href="/login" onClick={() => setMenuOpen(false)}
+                style={{ fontSize: 14, color: '#94a3b8', textDecoration: 'none', fontWeight: 500, textAlign: 'center', padding: '10px 0', display: 'block' }}
+              >Sign in to your account</Link>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -676,7 +774,7 @@ const painPoints = [
 
 function PainPointsSection() {
   return (
-    <section id="features" style={{ padding: '100px 40px', background: '#fff' }}>
+    <section id="features" style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: '#fff' }}>
       <div style={{ maxWidth: 1140, margin: '0 auto' }}>
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 64 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#4f46e5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Sound familiar?</div>
@@ -686,7 +784,7 @@ function PainPointsSection() {
         </motion.div>
 
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 22 }}
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: 22 }}
         >
           {painPoints.map((p) => (
             <motion.div key={p.title} variants={fadeUp}
@@ -771,7 +869,7 @@ const features = [
 
 function FeaturesSection() {
   return (
-    <section style={{ padding: '80px 40px', background: '#f8fafc' }}>
+    <section style={{ padding: 'clamp(48px,6vw,80px) clamp(20px,5vw,40px)', background: '#f8fafc' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 80 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#4f46e5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>The Platform</div>
@@ -867,7 +965,7 @@ function KpiAgreementSection() {
   const dot3Active = beat3In;
 
   return (
-    <section ref={sectionRef} style={{ padding: '120px 40px', background: '#080a14', position: 'relative', overflow: 'hidden' }}>
+    <section ref={sectionRef} style={{ padding: 'clamp(64px,9vw,120px) clamp(20px,5vw,40px)', background: '#080a14', position: 'relative', overflow: 'hidden' }}>
       {/* Ambient glow */}
       <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translateX(-50%)', width: 800, height: 400, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(79,70,229,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
@@ -887,8 +985,8 @@ function KpiAgreementSection() {
         {/* Layout: timeline dot rail + content */}
         <div style={{ display: 'flex', gap: 48, alignItems: 'flex-start' }}>
 
-          {/* Left timeline rail */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0, paddingTop: 8, flexShrink: 0, width: 24 }}>
+          {/* Left timeline rail — hidden on mobile to give content full width */}
+          <div className="hidden sm:flex" style={{ flexDirection: 'column', alignItems: 'center', gap: 0, paddingTop: 8, flexShrink: 0, width: 24 }}>
             {[dot1Active, dot2Active, dot3Active].map((active, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{
@@ -946,7 +1044,7 @@ function KpiAgreementSection() {
                 variants={stagger}
                 initial="hidden"
                 animate={beat2In ? 'visible' : 'hidden'}
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, position: 'relative' }}
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: 20, position: 'relative' }}
               >
                 {agreementSteps.map((s, i) => (
                   <motion.div key={s.n} variants={fadeUp}
@@ -1079,7 +1177,7 @@ const steps = [
 
 function HowItWorksSection() {
   return (
-    <section id="how-it-works" style={{ padding: '100px 40px', background: '#0c0e1a' }}>
+    <section id="how-it-works" style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: '#0c0e1a' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 72 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>How It Works</div>
@@ -1088,7 +1186,7 @@ function HowItWorksSection() {
           </h2>
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, position: 'relative' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 24, position: 'relative' }}>
           {steps.map((s, i) => (
             <motion.div
               key={s.n}
@@ -1136,7 +1234,7 @@ function NumbersSection() {
   ];
 
   return (
-    <section style={{ padding: '100px 40px', background: 'linear-gradient(135deg, #1e1b4b 0%, #0c0e1a 60%, #0f172a 100%)' }}>
+    <section style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: 'linear-gradient(135deg, #1e1b4b 0%, #0c0e1a 60%, #0f172a 100%)' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 64 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>By The Numbers</div>
@@ -1194,7 +1292,7 @@ const testimonials = [
 
 function TestimonialsSection() {
   return (
-    <section style={{ padding: '100px 40px', background: '#fff' }}>
+    <section style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: '#fff' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 64 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#4f46e5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>What teams are saying</div>
@@ -1202,7 +1300,7 @@ function TestimonialsSection() {
         </motion.div>
 
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 24 }}
         >
           {testimonials.map((t) => (
             <motion.div key={t.name} variants={fadeUp}
@@ -1233,7 +1331,7 @@ function CtaSection() {
   const [submitted, setSubmitted] = useState(false);
 
   return (
-    <section id="pricing" style={{ padding: '100px 40px', background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #0c0e1a 100%)', position: 'relative', overflow: 'hidden' }}>
+    <section id="pricing" style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #0c0e1a 100%)', position: 'relative', overflow: 'hidden' }}>
       {/* Orb */}
       <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 6, repeat: Infinity }}
         style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%)', pointerEvents: 'none' }}
@@ -1311,7 +1409,7 @@ function CtaSection() {
 
 function Footer() {
   return (
-    <footer style={{ background: '#0c0e1a', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '40px 40px 24px' }}>
+    <footer style={{ background: '#0c0e1a', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '40px clamp(20px,5vw,40px) 24px' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 32, marginBottom: 40 }}>
           {/* Brand */}
