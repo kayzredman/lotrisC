@@ -7,8 +7,20 @@ export const metadata: Metadata = {
     default: 'Lotris',
     template: '%s — Lotris',
   },
-  description: 'Multi-tenant IT Help Desk Ticket & KPI Management System',
+  description: 'Multi-tenant IT Help Desk Ticket & KPI Management System. Where performance surfaces.',
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/icon.svg',
+  },
+  openGraph: {
+    title: 'Lotris',
+    description: 'Where performance surfaces.',
+    siteName: 'Lotris',
+    type: 'website',
+  },
 };
 
 export const viewport: Viewport = {

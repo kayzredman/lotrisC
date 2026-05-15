@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lotris — Status Panel Mark · Final Direction</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #080A14; color: #E2E8F0; }
+
+  .page-header { padding: 56px 56px 40px; border-bottom: 1px solid #1E2235; }
+  .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #4F46E5; margin-bottom: 10px; }
+  .page-header h1 { font-size: 36px; font-weight: 900; letter-spacing: -0.03em; color: #F8FAFC; margin-bottom: 6px; }
+  .page-header p { font-size: 15px; color: #64748B; max-width: 560px; line-height: 1.7; }
+
+  .section { padding: 64px 56px; border-bottom: 1px solid #1E2235; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #3B4263; margin-bottom: 40px; }
+
+  /* Hero */
+  .hero-layout { display: flex; gap: 80px; align-items: flex-start; }
+  .hero-mark-stage {
+    background: #080A14;
+    border-radius: 20px;
+    padding: 56px 64px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .hero-info { flex: 1; padding-top: 8px; }
+  .hero-info h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; color: #F8FAFC; margin-bottom: 12px; }
+  .hero-info p { font-size: 14px; color: #64748B; line-height: 1.75; margin-bottom: 28px; }
+
+  .legend { display: flex; flex-direction: column; gap: 10px; }
+  .legend-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; background: #0C0E1A; border: 1px solid #1E2235; }
+  .leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .leg-dot.r { background: #EF4444; opacity: 0.6; }
+  .leg-dot.a { background: #F59E0B; opacity: 0.7; }
+  .leg-dot.g { background: #10B981; box-shadow: 0 0 8px #10B981; }
+  .legend-row span { font-size: 13px; color: #94A3B8; }
+  .legend-row strong { color: #E2E8F0; font-weight: 600; }
+
+  /* Scales */
+  .scales-row { display: flex; gap: 40px; align-items: flex-end; flex-wrap: wrap; }
+  .scale-block { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .scale-label { font-size: 10px; font-weight: 600; color: #3B4263; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* Lockups grid */
+  .lockups { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
+  .lp { background: #0C0E1A; padding: 44px 40px; display: flex; flex-direction: column; gap: 20px; }
+  .lp-label { font-size: 11px; font-weight: 600; color: #3B4263; letter-spacing: 0.08em; text-transform: uppercase; }
+  .lp-stage { display: flex; align-items: center; justify-content: center; padding: 28px 32px; border-radius: 12px; }
+  .lp-stage.dark { background: #080A14; }
+  .lp-stage.light { background: #F1F5F9; }
+  .lp-stage.indigo { background: #4F46E5; }
+  .lp-stage.card { background: #0C0E1A; border: 1px solid #1E2235; }
+
+  .footer { padding: 36px 56px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #1E2235; }
+  .footer p { font-size: 11px; color: #2D3456; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="eyebrow">Lotris · Final Direction · Status Panel Mark</div>
+  <h1>Three Lights. One Resolved.</h1>
+  <p>Concept E — the status panel — with the green light stepped up: full glow, and a checkmark inside it. Red and amber stay lit but dimmed (monitored). Green pops with the resolve symbol. Every IT ops person reads this instantly.</p>
+</div>
+
+<!-- HERO -->
+<div class="section">
+  <div class="section-label">The Mark</div>
+  <div class="hero-layout">
+
+    <div class="hero-mark-stage">
+      <!-- ===== HERO SVG ===== -->
+      <svg width="200" height="128" viewBox="0 0 200 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+        <!-- Panel housing -->
+        <rect x="4" y="16" width="192" height="96" rx="18" fill="#111425" stroke="#1E2235" stroke-width="1.5"/>
+        <!-- Subtle inner shadow top -->
+        <rect x="4" y="16" width="192" height="8" rx="18" fill="url(#panelTop)"/>
+        <!-- Panel screws -->
+        <circle cx="20" cy="100" r="3" fill="#0C0E1A"/>
+        <circle cx="20" cy="100" r="1.5" fill="#1E2235"/>
+        <circle cx="180" cy="100" r="3" fill="#0C0E1A"/>
+        <circle cx="180" cy="100" r="1.5" fill="#1E2235"/>
+
+        <!-- ——— RED LIGHT (dimmed — "being tracked") ——— -->
+        <circle cx="50" cy="60" r="20" fill="#0C0E1A" stroke="#EF4444" stroke-width="1" stroke-opacity="0.4"/>
+        <circle cx="50" cy="60" r="13" fill="#EF4444" fill-opacity="0.12"/>
+        <circle cx="50" cy="60" r="9" fill="#EF4444" fill-opacity="0.45"/>
+        <!-- Dim reflection -->
+        <circle cx="46.5" cy="56" r="2.5" fill="#FCA5A5" fill-opacity="0.3"/>
+
+        <!-- ——— AMBER LIGHT (moderate — "in progress") ——— -->
+        <circle cx="100" cy="60" r="20" fill="#0C0E1A" stroke="#F59E0B" stroke-width="1" stroke-opacity="0.5"/>
+        <circle cx="100" cy="60" r="13" fill="#F59E0B" fill-opacity="0.15"/>
+        <circle cx="100" cy="60" r="9" fill="#F59E0B" fill-opacity="0.65"/>
+        <!-- Dim reflection -->
+        <circle cx="96.5" cy="56" r="2.5" fill="#FDE68A" fill-opacity="0.45"/>
+
+        <!-- ——— GREEN LIGHT (HERO — "resolved / on track") ——— -->
+        <!-- Outer pulse glow rings -->
+        <circle cx="152" cy="60" r="32" fill="#10B981" fill-opacity="0.05"/>
+        <circle cx="152" cy="60" r="26" fill="#10B981" fill-opacity="0.09"/>
+        <!-- Housing ring -->
+        <circle cx="152" cy="60" r="20" fill="#0C0E1A" stroke="#10B981" stroke-width="1.8"/>
+        <!-- Inner glow -->
+        <circle cx="152" cy="60" r="15" fill="#10B981" fill-opacity="0.18"/>
+        <!-- Light fill -->
+        <circle cx="152" cy="60" r="11" fill="#10B981"/>
+        <!-- Bright centre -->
+        <circle cx="152" cy="60" r="6" fill="#34D399"/>
+        <!-- ✓ Checkmark inside (white, bold) -->
+        <path d="M146 60 L150 64.5 L159 54" stroke="white" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Reflection highlight -->
+        <circle cx="148" cy="55.5" r="3" fill="#A7F3D0" fill-opacity="0.6"/>
+
+        <defs>
+          <linearGradient id="panelTop" x1="100" y1="16" x2="100" y2="24" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#2D3456" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#111425" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="hero-info">
+      <h2>Status Panel</h2>
+      <p>Three indicator lights in a panel housing. Red and amber are on — but quiet — monitored. The green light fully opens up with a glow and a checkmark: <em>this is what resolved looks like.</em> Universally understood by every IT professional on the planet.</p>
+      <div class="legend">
+        <div class="legend-row">
+          <div class="leg-dot r"></div>
+          <span><strong>Red</strong> — P1 critical. Lit, tracked, escalated. In Lotris's system.</span>
+        </div>
+        <div class="legend-row">
+          <div class="leg-dot a"></div>
+          <span><strong>Amber</strong> — In progress. SLA clock running. Being managed.</span>
+        </div>
+        <div class="legend-row">
+          <div class="leg-dot g"></div>
+          <span><strong>Green ✓</strong> — Resolved. SLA met. This is the goal state Lotris drives you toward.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCALES -->
+<div class="section">
+  <div class="section-label">At Every Scale</div>
+  <div class="scales-row">
+
+    <!-- 96px -->
+    <div class="scale-block">
+      <div style="background:#1A1D2E; border-radius:22px; width:96px; height:96px; display:flex; align-items:center; justify-content:center">
+        <svg width="76" height="48" viewBox="0 0 76 48" fill="none">
+          <rect x="2" y="2" width="72" height="44" rx="9" fill="#111425" stroke="#1E2235" stroke-width="1"/>
+          <!-- Red -->
+          <circle cx="18" cy="24" r="10" fill="#0C0E1A" stroke="#EF4444" stroke-width="0.8" stroke-opacity="0.4"/>
+          <circle cx="18" cy="24" r="6.5" fill="#EF4444" fill-opacity="0.4"/>
+          <!-- Amber -->
+          <circle cx="38" cy="24" r="10" fill="#0C0E1A" stroke="#F59E0B" stroke-width="0.8" stroke-opacity="0.5"/>
+          <circle cx="38" cy="24" r="6.5" fill="#F59E0B" fill-opacity="0.6"/>
+          <!-- Green hero -->
+          <circle cx="58" cy="24" r="14" fill="#10B981" fill-opacity="0.08"/>
+          <circle cx="58" cy="24" r="10" fill="#0C0E1A" stroke="#10B981" stroke-width="1"/>
+          <circle cx="58" cy="24" r="6.5" fill="#10B981"/>
+          <circle cx="58" cy="24" r="4" fill="#34D399"/>
+          <path d="M54 24 L57 27.5 L63 19.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="56" cy="21" r="1.5" fill="#A7F3D0" fill-opacity="0.6"/>
+        </svg>
+      </div>
+      <span class="scale-label">96px icon</span>
+    </div>
+
+    <!-- 64px -->
+    <div class="scale-block">
+      <div style="background:#1A1D2E; border-radius:16px; width:64px; height:64px; display:flex; align-items:center; justify-content:center">
+        <svg width="54" height="34" viewBox="0 0 54 34" fill="none">
+          <rect x="1" y="1" width="52" height="32" rx="7" fill="#111425" stroke="#1E2235" stroke-width="0.8"/>
+          <circle cx="13" cy="17" r="7" fill="#0C0E1A" stroke="#EF4444" stroke-width="0.7" stroke-opacity="0.4"/>
+          <circle cx="13" cy="17" r="4.5" fill="#EF4444" fill-opacity="0.4"/>
+          <circle cx="27" cy="17" r="7" fill="#0C0E1A" stroke="#F59E0B" stroke-width="0.7" stroke-opacity="0.5"/>
+          <circle cx="27" cy="17" r="4.5" fill="#F59E0B" fill-opacity="0.6"/>
+          <circle cx="41" cy="17" r="10" fill="#10B981" fill-opacity="0.08"/>
+          <circle cx="41" cy="17" r="7" fill="#0C0E1A" stroke="#10B981" stroke-width="0.8"/>
+          <circle cx="41" cy="17" r="4.5" fill="#10B981"/>
+          <circle cx="41" cy="17" r="2.5" fill="#34D399"/>
+          <path d="M38 17 L40.5 19.5 L45 14" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="scale-label">64px</span>
+    </div>
+
+    <!-- 40px -->
+    <div class="scale-block">
+      <div style="background:#1A1D2E; border-radius:12px; width:48px; height:48px; display:flex; align-items:center; justify-content:center">
+        <svg width="40" height="26" viewBox="0 0 40 26" fill="none">
+          <rect x="1" y="1" width="38" height="24" rx="5.5" fill="#111425" stroke="#1E2235" stroke-width="0.7"/>
+          <circle cx="10" cy="13" r="5.5" fill="#0C0E1A" stroke="#EF4444" stroke-width="0.6" stroke-opacity="0.4"/>
+          <circle cx="10" cy="13" r="3.5" fill="#EF4444" fill-opacity="0.4"/>
+          <circle cx="20" cy="13" r="5.5" fill="#0C0E1A" stroke="#F59E0B" stroke-width="0.6" stroke-opacity="0.5"/>
+          <circle cx="20" cy="13" r="3.5" fill="#F59E0B" fill-opacity="0.6"/>
+          <circle cx="30" cy="13" r="8" fill="#10B981" fill-opacity="0.1"/>
+          <circle cx="30" cy="13" r="5.5" fill="#0C0E1A" stroke="#10B981" stroke-width="0.7"/>
+          <circle cx="30" cy="13" r="3.5" fill="#10B981"/>
+          <circle cx="30" cy="13" r="2" fill="#34D399"/>
+          <path d="M27.5 13 L29.5 15.2 L33.5 10.2" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="scale-label">40px</span>
+    </div>
+
+    <!-- favicon -->
+    <div class="scale-block">
+      <div style="background:#1A1D2E; border-radius:7px; width:32px; height:32px; display:flex; align-items:center; justify-content:center">
+        <svg width="26" height="18" viewBox="0 0 26 18" fill="none">
+          <rect x="0.5" y="0.5" width="25" height="17" rx="4" fill="#111425" stroke="#1E2235" stroke-width="0.5"/>
+          <circle cx="7" cy="9" r="4" fill="#EF4444" fill-opacity="0.4"/>
+          <circle cx="13" cy="9" r="4" fill="#F59E0B" fill-opacity="0.55"/>
+          <circle cx="19" cy="9" r="5" fill="#10B981" fill-opacity="0.15"/>
+          <circle cx="19" cy="9" r="3.5" fill="#10B981"/>
+          <path d="M17 9 L18.5 10.8 L21.5 6.8" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="scale-label">favicon</span>
+    </div>
+
+    <div style="width:1px; height:70px; background:#1E2235; margin:0 8px; align-self:center"></div>
+
+    <!-- Light bg -->
+    <div class="scale-block">
+      <div style="background:#F8FAFC; border-radius:18px; width:80px; height:80px; display:flex; align-items:center; justify-content:center; border: 1px solid #E2E8F0">
+        <svg width="62" height="40" viewBox="0 0 62 40" fill="none">
+          <rect x="1" y="1" width="60" height="38" rx="8" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+          <circle cx="15" cy="20" r="9" fill="#F8FAFC" stroke="#EF4444" stroke-width="1" stroke-opacity="0.5"/>
+          <circle cx="15" cy="20" r="6" fill="#EF4444" fill-opacity="0.45"/>
+          <circle cx="31" cy="20" r="9" fill="#F8FAFC" stroke="#F59E0B" stroke-width="1" stroke-opacity="0.6"/>
+          <circle cx="31" cy="20" r="6" fill="#F59E0B" fill-opacity="0.65"/>
+          <circle cx="47" cy="20" r="13" fill="#10B981" fill-opacity="0.1"/>
+          <circle cx="47" cy="20" r="9" fill="#F8FAFC" stroke="#10B981" stroke-width="1.2"/>
+          <circle cx="47" cy="20" r="6" fill="#10B981"/>
+          <circle cx="47" cy="20" r="3.5" fill="#34D399"/>
+          <path d="M43.5 20 L46 22.8 L51.5 15.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="45" cy="17" r="1.5" fill="#A7F3D0" fill-opacity="0.7"/>
+        </svg>
+      </div>
+      <span class="scale-label">light bg</span>
+    </div>
+
+    <!-- Sidebar in-product -->
+    <div class="scale-block">
+      <div style="background:#0C0E1A; border:1px solid #1E2235; border-radius:10px; padding:12px 16px; display:flex; align-items:center; gap:10px">
+        <svg width="32" height="22" viewBox="0 0 32 22" fill="none">
+          <rect x="0.5" y="0.5" width="31" height="21" rx="5.5" fill="#111425" stroke="#1E2235" stroke-width="0.7"/>
+          <circle cx="8" cy="11" r="5" fill="#0C0E1A" stroke="#EF4444" stroke-width="0.6" stroke-opacity="0.5"/>
+          <circle cx="8" cy="11" r="3.5" fill="#EF4444" fill-opacity="0.4"/>
+          <circle cx="16" cy="11" r="5" fill="#0C0E1A" stroke="#F59E0B" stroke-width="0.6" stroke-opacity="0.5"/>
+          <circle cx="16" cy="11" r="3.5" fill="#F59E0B" fill-opacity="0.6"/>
+          <circle cx="24" cy="11" r="7" fill="#10B981" fill-opacity="0.12"/>
+          <circle cx="24" cy="11" r="5" fill="#0C0E1A" stroke="#10B981" stroke-width="0.7"/>
+          <circle cx="24" cy="11" r="3.5" fill="#10B981"/>
+          <path d="M21.5 11 L23.5 13.2 L27 8.5" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span style="font-size:16px; font-weight:800; color:#F8FAFC; letter-spacing:-0.5px; font-family:Inter,sans-serif">Lotris</span>
+      </div>
+      <span class="scale-label">product sidebar</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- WORDMARK LOCKUPS -->
+<div class="section">
+  <div class="section-label">Full Lockups</div>
+  <div class="lockups">
+
+    <!-- Dark horizontal -->
+    <div class="lp">
+      <span class="lp-label">Horizontal · Dark</span>
+      <div class="lp-stage dark">
+        <svg width="280" height="64" viewBox="0 0 280 64" fill="none">
+          <!-- Panel mark at 58px wide -->
+          <rect x="0" y="10" width="62" height="44" rx="9" fill="#111425" stroke="#1E2235" stroke-width="1"/>
+          <circle cx="14" cy="32" r="9" fill="#0C0E1A" stroke="#EF4444" stroke-width="0.8" stroke-opacity="0.4"/>
+          <circle cx="14" cy="32" r="5.5" fill="#EF4444" fill-opacity="0.4"/>
+          <circle cx="31" cy="32" r="9" fill="#0C0E1A" stroke="#F59E0B" stroke-width="0.8" stroke-opacity="0.5"/>
+          <circle cx="31" cy="32" r="5.5" fill="#F59E0B" fill-opacity="0.6"/>
+          <circle cx="48" cy="32" r="13" fill="#10B981" fill-opacity="0.08"/>
+          <circle cx="48" cy="32" r="9" fill="#0C0E1A" stroke="#10B981" stroke-width="1"/>
+          <circle cx="48" cy="32" r="5.5" fill="#10B981"/>
+          <circle cx="48" cy="32" r="3" fill="#34D399"/>
+          <path d="M44.5 32 L47 35 L52.5 27.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="46" cy="28.5" r="1.5" fill="#A7F3D0" fill-opacity="0.6"/>
+          <!-- Wordmark -->
+          <text x="76" y="43" font-family="Inter, sans-serif" font-weight="800" font-size="34" letter-spacing="-1.5" fill="#F8FAFC">LOTRIS</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Light horizontal -->
+    <div class="lp">
+      <span class="lp-label">Horizontal · Light</span>
+      <div class="lp-stage light">
+        <svg width="280" height="64" viewBox="0 0 280 64" fill="none">
+          <rect x="0" y="10" width="62" height="44" rx="9" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+          <circle cx="14" cy="32" r="9" fill="#F8FAFC" stroke="#EF4444" stroke-width="0.8" stroke-opacity="0.5"/>
+          <circle cx="14" cy="32" r="5.5" fill="#EF4444" fill-opacity="0.45"/>
+          <circle cx="31" cy="32" r="9" fill="#F8FAFC" stroke="#F59E0B" stroke-width="0.8" stroke-opacity="0.6"/>
+          <circle cx="31" cy="32" r="5.5" fill="#F59E0B" fill-opacity="0.65"/>
+          <circle cx="48" cy="32" r="13" fill="#10B981" fill-opacity="0.12"/>
+          <circle cx="48" cy="32" r="9" fill="#F8FAFC" stroke="#10B981" stroke-width="1.2"/>
+          <circle cx="48" cy="32" r="5.5" fill="#10B981"/>
+          <circle cx="48" cy="32" r="3" fill="#34D399"/>
+          <path d="M44.5 32 L47 35 L52.5 27.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="76" y="43" font-family="Inter, sans-serif" font-weight="800" font-size="34" letter-spacing="-1.5" fill="#0F172A">LOTRIS</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Indigo -->
+    <div class="lp">
+      <span class="lp-label">Horizontal · Indigo (brand primary)</span>
+      <div class="lp-stage indigo">
+        <svg width="280" height="64" viewBox="0 0 280 64" fill="none">
+          <rect x="0" y="10" width="62" height="44" rx="9" fill="#4338CA" stroke="white" stroke-width="0.5" stroke-opacity="0.2"/>
+          <circle cx="14" cy="32" r="9" fill="#3730A3" stroke="white" stroke-width="0.8" stroke-opacity="0.25"/>
+          <circle cx="14" cy="32" r="5.5" fill="#EF4444" fill-opacity="0.7"/>
+          <circle cx="31" cy="32" r="9" fill="#3730A3" stroke="white" stroke-width="0.8" stroke-opacity="0.25"/>
+          <circle cx="31" cy="32" r="5.5" fill="#F59E0B" fill-opacity="0.85"/>
+          <circle cx="48" cy="32" r="13" fill="white" fill-opacity="0.08"/>
+          <circle cx="48" cy="32" r="9" fill="#3730A3" stroke="#A7F3D0" stroke-width="1.2"/>
+          <circle cx="48" cy="32" r="5.5" fill="#10B981"/>
+          <circle cx="48" cy="32" r="3" fill="#34D399"/>
+          <path d="M44.5 32 L47 35 L52.5 27.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="46" cy="28.5" r="1.5" fill="white" fill-opacity="0.5"/>
+          <text x="76" y="43" font-family="Inter, sans-serif" font-weight="800" font-size="34" letter-spacing="-1.5" fill="white">LOTRIS</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Stacked + tagline -->
+    <div class="lp">
+      <span class="lp-label">Stacked + Tagline</span>
+      <div class="lp-stage dark">
+        <svg width="200" height="110" viewBox="0 0 200 110" fill="none">
+          <!-- Panel mark centred, bigger -->
+          <rect x="36" y="0" width="128" height="60" rx="12" fill="#111425" stroke="#1E2235" stroke-width="1"/>
+          <circle cx="66" cy="30" r="14" fill="#0C0E1A" stroke="#EF4444" stroke-width="1" stroke-opacity="0.4"/>
+          <circle cx="66" cy="30" r="9" fill="#EF4444" fill-opacity="0.4"/>
+          <circle cx="100" cy="30" r="14" fill="#0C0E1A" stroke="#F59E0B" stroke-width="1" stroke-opacity="0.5"/>
+          <circle cx="100" cy="30" r="9" fill="#F59E0B" fill-opacity="0.6"/>
+          <circle cx="134" cy="30" r="20" fill="#10B981" fill-opacity="0.07"/>
+          <circle cx="134" cy="30" r="14" fill="#0C0E1A" stroke="#10B981" stroke-width="1.3"/>
+          <circle cx="134" cy="30" r="9" fill="#10B981"/>
+          <circle cx="134" cy="30" r="5" fill="#34D399"/>
+          <path d="M129 30 L132.5 34 L140 23" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="131" cy="26" r="2" fill="#A7F3D0" fill-opacity="0.55"/>
+          <!-- Wordmark -->
+          <text x="100" y="85" font-family="Inter, sans-serif" font-weight="900" font-size="26" letter-spacing="-1" fill="#F8FAFC" text-anchor="middle">LOTRIS</text>
+          <!-- Tagline -->
+          <text x="100" y="103" font-family="Inter, sans-serif" font-weight="500" font-size="10.5" letter-spacing="0.07em" fill="#2D3456" text-anchor="middle">WHERE PERFORMANCE SURFACES</text>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DARK / WHITE APP CONTEXT -->
+<div class="section" style="border-bottom:none">
+  <div class="section-label">In-Product Contexts</div>
+  <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start">
+
+    <!-- Dark sidebar -->
+    <div style="background:#0C0E1A; border:1px solid #1E2235; border-radius:14px; padding:24px 20px; width:220px; display:flex; flex-direction:column; gap:20px">
+      <!-- Logo row -->
+      <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:#111425; border-radius:8px; border:1px solid #1E2235">
+        <svg width="34" height="22" viewBox="0 0 34 22" fill="none">
+          <rect x="0.5" y="0.5" width="33" height="21" rx="5.5" fill="#111425" stroke="#1E2235" stroke-width="0.7"/>
+          <circle cx="9" cy="11" r="6" fill="#080A14" stroke="#EF4444" stroke-width="0.7" stroke-opacity="0.5"/>
+          <circle cx="9" cy="11" r="3.5" fill="#EF4444" fill-opacity="0.4"/>
+          <circle cx="17" cy="11" r="6" fill="#080A14" stroke="#F59E0B" stroke-width="0.7" stroke-opacity="0.5"/>
+          <circle cx="17" cy="11" r="3.5" fill="#F59E0B" fill-opacity="0.6"/>
+          <circle cx="25" cy="11" r="8" fill="#10B981" fill-opacity="0.12"/>
+          <circle cx="25" cy="11" r="6" fill="#080A14" stroke="#10B981" stroke-width="0.8"/>
+          <circle cx="25" cy="11" r="3.5" fill="#10B981"/>
+          <path d="M22.5 11 L24.5 13.2 L28 8.5" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span style="font-size:16px;font-weight:800;color:#F8FAFC;letter-spacing:-0.5px;font-family:Inter,sans-serif">Lotris</span>
+      </div>
+      <!-- Nav items placeholder -->
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="height:8px;border-radius:4px;background:#1E2235;width:80%"></div>
+        <div style="height:8px;border-radius:4px;background:#1A1D2E;width:65%"></div>
+        <div style="height:8px;border-radius:4px;background:#1A1D2E;width:72%"></div>
+        <div style="height:8px;border-radius:4px;background:#1A1D2E;width:55%"></div>
+      </div>
+    </div>
+
+    <!-- Top nav bar -->
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:0;overflow:hidden;width:480px">
+      <div style="background:white;border-bottom:1px solid #E2E8F0;padding:12px 20px;display:flex;align-items:center;gap:12px">
+        <svg width="28" height="18" viewBox="0 0 28 18" fill="none">
+          <rect x="0.5" y="0.5" width="27" height="17" rx="4.5" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="0.7"/>
+          <circle cx="7" cy="9" r="5" fill="#F8FAFC" stroke="#EF4444" stroke-width="0.7" stroke-opacity="0.5"/>
+          <circle cx="7" cy="9" r="3" fill="#EF4444" fill-opacity="0.45"/>
+          <circle cx="14" cy="9" r="5" fill="#F8FAFC" stroke="#F59E0B" stroke-width="0.7" stroke-opacity="0.6"/>
+          <circle cx="14" cy="9" r="3" fill="#F59E0B" fill-opacity="0.65"/>
+          <circle cx="21" cy="9" r="7" fill="#10B981" fill-opacity="0.1"/>
+          <circle cx="21" cy="9" r="4.5" fill="#F8FAFC" stroke="#10B981" stroke-width="0.8"/>
+          <circle cx="21" cy="9" r="3" fill="#10B981"/>
+          <path d="M19 9 L20.5 10.8 L24 6.5" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span style="font-size:17px;font-weight:800;color:#0F172A;letter-spacing:-0.5px;font-family:Inter,sans-serif">Lotris</span>
+        <span style="font-size:11px;background:#F1F5F9;color:#64748B;padding:3px 8px;border-radius:20px;margin-left:4px;font-weight:600">IT Help Desk</span>
+      </div>
+      <div style="padding:14px 20px;display:flex;flex-direction:column;gap:8px">
+        <div style="height:8px;border-radius:4px;background:#F1F5F9;width:90%"></div>
+        <div style="height:8px;border-radius:4px;background:#F1F5F9;width:75%"></div>
+      </div>
+    </div>
+
+    <!-- Login / landing hero -->
+    <div style="background:#080A14;border:1px solid #1E2235;border-radius:14px;padding:28px 32px;width:260px;display:flex;flex-direction:column;align-items:center;gap:16px">
+      <svg width="80" height="52" viewBox="0 0 80 52" fill="none">
+        <rect x="1" y="1" width="78" height="50" rx="10" fill="#111425" stroke="#1E2235" stroke-width="1"/>
+        <circle cx="20" cy="26" r="11" fill="#0C0E1A" stroke="#EF4444" stroke-width="0.8" stroke-opacity="0.5"/>
+        <circle cx="20" cy="26" r="7" fill="#EF4444" fill-opacity="0.4"/>
+        <circle cx="40" cy="26" r="11" fill="#0C0E1A" stroke="#F59E0B" stroke-width="0.8" stroke-opacity="0.55"/>
+        <circle cx="40" cy="26" r="7" fill="#F59E0B" fill-opacity="0.6"/>
+        <circle cx="60" cy="26" r="16" fill="#10B981" fill-opacity="0.08"/>
+        <circle cx="60" cy="26" r="11" fill="#0C0E1A" stroke="#10B981" stroke-width="1.2"/>
+        <circle cx="60" cy="26" r="7" fill="#10B981"/>
+        <circle cx="60" cy="26" r="4" fill="#34D399"/>
+        <path d="M56 26 L59 29.5 L65 21.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="58" cy="22.5" r="1.8" fill="#A7F3D0" fill-opacity="0.55"/>
+      </svg>
+      <div style="text-align:center">
+        <div style="font-size:24px;font-weight:900;color:#F8FAFC;letter-spacing:-0.04em;font-family:Inter,sans-serif">LOTRIS</div>
+        <div style="font-size:11px;color:#2D3456;margin-top:4px;letter-spacing:0.05em">Where performance surfaces.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">
+  <p>Lotris · Status Panel Mark · May 2026 · Concept E refined</p>
+  <p>Green light ✓ — the resolved state — is the hero of this mark.</p>
+</div>
+
+</body>
+</html>

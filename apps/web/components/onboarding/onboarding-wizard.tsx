@@ -7,6 +7,7 @@ import {
   Cloud, LogOut, RotateCcw, ArrowLeft, ArrowRight,
   Check, BookmarkCheck, X, RotateCcw as ResetIcon,
 } from 'lucide-react';
+import { LotrisLogo } from '@/components/brand/lotris-mark';
 import { Step1Org } from './step-1-org';
 import { Step2Teams } from './step-2-teams';
 import { Step3Invite } from './step-3-invite';
@@ -153,13 +154,7 @@ export function OnboardingWizard() {
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 44, position: 'relative', zIndex: 1 }}>
-          <div style={{ width: 34, height: 34, background: 'var(--indigo)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, color: '#fff', letterSpacing: '-0.5px' }}>
-            L
-          </div>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: '-0.3px' }}>Lotris</div>
-            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', letterSpacing: '1.1px', textTransform: 'uppercase' }}>Performance Platform</div>
-          </div>
+          <LotrisLogo variant="dark" markHeight={32} uid="ob" showTagline />
         </div>
 
         {/* Headline copy */}

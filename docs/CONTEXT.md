@@ -570,6 +570,76 @@ Auth & Tenancy
 | Tone             | Professional, clear, authoritative — never loud         |
 | Colour direction | Deep navy / teal / clean white — enterprise trustworthy |
 
+### Logo Mark — Status Panel (finalised May 2026)
+
+The Lotris logo is a **hardware status-panel mark**: three indicator lights (red/amber/green) in a dark rounded housing.
+
+| Light  | Colour  | Meaning                        |
+|--------|---------|--------------------------------|
+| Red    | #EF4444 | P1 critical — tracked & in system |
+| Amber  | #F59E0B | In progress — SLA clock running |
+| **Green ✓** | **#10B981** | **Resolved — the goal state Lotris drives you toward** |
+
+Green is the **hero light**: full glow rings, bright fill (#10B981 → #34D399 centre), white ✓ checkmark path.
+Red and amber stay lit but dimmed (opacity reduced) — they are monitored, not panicked.
+
+### Brand Asset Files
+
+All static SVG brand assets live in `apps/web/public/brand/`:
+
+| File | Usage |
+|------|-------|
+| `icon.svg` | Full panel mark (200×128 viewBox, transparent bg) |
+| `logo-dark.svg` | Horizontal lockup — white wordmark, transparent bg (dark surfaces) |
+| `logo-light.svg` | Horizontal lockup — dark wordmark, transparent bg (light surfaces) |
+| `logo-indigo.svg` | Horizontal lockup — all white on indigo bg (brand-coloured surfaces) |
+| `logo-stacked.svg` | Stacked mark + "LOTRIS" + tagline (splash / OG images) |
+
+`apps/web/app/icon.svg` — 32×32 square favicon; Next.js App Router auto-generates the browser tab icon from this file.
+
+### React Brand Components
+
+**`apps/web/components/brand/lotris-mark.tsx`** exports two components:
+
+- **`LotrisMark`** — just the panel SVG mark. Props: `height` (px, default 28), `uid` (SVG gradient ID prefix).
+- **`LotrisLogo`** — mark + wordmark text. Props: `variant` (`'dark'` | `'light'`), `markHeight`, `uid`, `showTagline`.
+
+### Logo Usage Map (all pages)
+
+| Page / Location | Component | Variant | markHeight | showTagline |
+|---|---|---|---|---|
+| App sidebar header | `LotrisMark` | — | 26 | — |
+| Landing page nav | `LotrisLogo` | dark | 28 | false |
+| Landing page footer | `LotrisLogo` | dark | 22 | false |
+| Login — left panel | `LotrisLogo` | dark | 34 | **true** |
+| Login — right form | `LotrisLogo` | light | 26 | false |
+| Sign-up — left panel | `LotrisLogo` | dark | 34 | **true** |
+| Sign-up — right form | `LotrisLogo` | light | 26 | false |
+| Onboarding wizard (left) | `LotrisLogo` | dark | 32 | **true** |
+| Public request header | `LotrisLogo` | dark | 22 | false |
+
+### Landing Page Sections (`apps/web/components/landing/landing-page.tsx`)
+
+The public marketing landing page (`/`) is a single-page scroll with the following sections in order:
+
+| Section | Component | Background | Key Content |
+|---------|-----------|------------|-------------|
+| Nav | `<nav>` | `#0C0E1A` sticky | `LotrisLogo`, CTA buttons |
+| Hero | `HeroSection` | `#0C0E1A` + gradient | Headline, stat cards, scrolling marquee, Unsplash bg image |
+| Pain Points | `PainPointsSection` | `#fff` | 6 image cards (5 pain points + resolution card); real Unsplash header photos |
+| Features | `FeaturesSection` | `#f8fafc` | 4 alternating feature rows: Tickets, KPI Dashboard, Workload Balancing, Automated Reports |
+| **KPI Agreement** | `KpiAgreementSection` | `#080a14` | Three-beat animated section — problem statement → 3-step flow → feature spotlight; animated DRAFT→PENDING REVIEW→ACTIVE status trail; left-margin timeline dots |
+| How It Works | `HowItWorksSection` | `#0C0E1A` | 3 step cards with Unsplash photos and step badge overlays |
+| By The Numbers | `NumbersSection` | dark gradient | 4 animated counter stats |
+| Testimonials | `TestimonialsSection` | `#fff` | 3 quote cards |
+| CTA | `CtaSection` | indigo gradient | `LotrisMark` icon, email capture, early access CTA |
+| Footer | footer | `#0C0E1A` | Logo, nav links, legal |
+
+**KPI Agreement section beats:**
+1. **Problem** (slides from left) — empathetic quote + 3 red-bordered "before" pills
+2. **Flow** (stagger up) — Build / Sign Off / Tracked Live cards + animated status trail
+3. **Spotlight** (split slide) — 1:1 review photo + "Set the bar. Agree on it. Own it." + 4 ✓ bullets
+
 ### Alternative Taglines
 
 - _"Tickets resolved. Targets met. Clarity delivered."_

@@ -2,6 +2,8 @@
  * Public layout — no Clerk auth, no sidebar.
  * Used by the external-facing /request web form.
  */
+import { LotrisLogo } from '@/components/brand/lotris-mark';
+
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
@@ -14,14 +16,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         alignItems: 'center',
         borderBottom: '1px solid rgba(255,255,255,0.05)',
       }}>
-        <span style={{
-          fontSize: 16,
-          fontWeight: 700,
-          color: '#fff',
-          letterSpacing: '-0.3px',
-        }}>
-          Lotris
-        </span>
+        <LotrisLogo variant="dark" markHeight={22} uid="pub" />
       </header>
 
       {/* Page content */}

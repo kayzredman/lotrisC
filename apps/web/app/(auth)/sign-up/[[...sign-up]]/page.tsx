@@ -1,6 +1,7 @@
 import { SignUp } from '@clerk/nextjs';
 import type { Metadata } from 'next';
 import { Ticket, BarChart2, ShieldCheck } from 'lucide-react';
+import { LotrisLogo } from '@/components/brand/lotris-mark';
 import styles from '../../login/[[...sign-in]]/login.module.css';
 
 export const metadata: Metadata = { title: 'Accept invite — Lotris' };
@@ -13,8 +14,7 @@ export default function SignUpPage() {
         {/* ── Left branding panel ── */}
         <div className={styles.loginPanel}>
           <div className={styles.panelLogo}>
-            <div className={styles.panelLogoIcon}>L</div>
-            <span className={styles.panelLogoText}>Lotris</span>
+            <LotrisLogo variant="dark" markHeight={34} uid="signup-panel" showTagline />
           </div>
 
           <h1 className={styles.panelHeadline}>
@@ -65,8 +65,7 @@ export default function SignUpPage() {
 
             <div className={styles.formWelcome}>
               <div className={styles.formLogo}>
-                <div className={styles.formLogoIcon}>L</div>
-                <span className={styles.formLogoText}>Lotris</span>
+                <LotrisLogo variant="light" markHeight={26} uid="signup-form" />
               </div>
               <h2 className={styles.formWelcomeHeading}>Create your account</h2>
               <p className={styles.formWelcomeSub}>Complete your invite to get started.</p>

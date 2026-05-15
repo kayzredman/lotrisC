@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lotris — Logo Concept Exploration v1</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #06080f;
+    color: #e2e8f0;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    padding: 60px 60px 40px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .page-header h1 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #4f46e5;
+    margin-bottom: 10px;
+  }
+  .page-header h2 {
+    font-size: 32px;
+    font-weight: 800;
+    color: #f1f5f9;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .page-header p {
+    font-size: 14px;
+    color: #64748b;
+    max-width: 560px;
+    line-height: 1.6;
+  }
+
+  /* ── Grid ── */
+  .concepts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+  }
+
+  .concept-card {
+    border-right: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 56px 60px;
+  }
+  .concept-card:nth-child(even) { border-right: none; }
+
+  .concept-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #334155;
+    margin-bottom: 6px;
+  }
+  .concept-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: #f1f5f9;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .concept-desc {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.6;
+    max-width: 380px;
+    margin-bottom: 40px;
+  }
+
+  /* ── Logo Stage ── */
+  .logo-stages {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 36px;
+  }
+  .stage {
+    flex: 1;
+    min-width: 160px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    position: relative;
+  }
+  .stage-label {
+    position: absolute;
+    bottom: 10px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.4;
+  }
+  .stage-dark  { background: #0c0e1a; }
+  .stage-light { background: #f8fafc; }
+  .stage-light .stage-label { color: #0f172a; }
+
+  /* ── Wordmark typography ── */
+  .wm { font-family: 'Inter', sans-serif; font-weight: 800; letter-spacing: -0.03em; }
+
+  /* ── Tag row ── */
+  .tag-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag {
+    font-size: 11px;
+    font-weight: 500;
+    color: #475569;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 100px;
+    padding: 3px 10px;
+  }
+
+  /* ── Section divider ── */
+  .section-divider {
+    padding: 20px 60px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #1e293b;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  /* ── Full-width colour showcase (bottom) ── */
+  .color-showcase {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .cs-cell {
+    padding: 40px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid rgba(255,255,255,0.05);
+  }
+  .cs-cell:last-child { border-right: none; }
+</style>
+</head>
+<body>
+
+<!-- ─────────────────────────────────────────────
+     PAGE HEADER
+───────────────────────────────────────────── -->
+<div class="page-header">
+  <h1>Lotris · Brand Identity Exploration</h1>
+  <h2>Logo Concept Directions — v1</h2>
+  <p>Six distinct logo directions exploring lettermarks, product-metaphor marks, and abstract systems marks. Each direction shown on dark, light, and with full wordmark.</p>
+</div>
+
+<div class="concepts-grid">
+
+  <!-- ═══════════════════════════════════════
+       CONCEPT 1 — "KPI Bars L"
+  ════════════════════════════════════════ -->
+  <div class="concept-card">
+    <div class="concept-label">Concept 01</div>
+    <div class="concept-name">KPI Bars</div>
+    <div class="concept-desc">The letter "L" is built from three ascending bar-chart columns. The baseline mirrors an axis — immediately reading as performance data visualised. Bold, on-brand, scalable.</div>
+
+    <div class="logo-stages">
+      <!-- Dark bg — colour -->
+      <div class="stage stage-dark">
+        <svg width="120" height="44" viewBox="0 0 120 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Bar 1 (short) -->
+          <rect x="0" y="22" width="12" height="22" rx="2" fill="url(#g1a)"/>
+          <!-- Bar 2 (medium) -->
+          <rect x="15" y="11" width="12" height="33" rx="2" fill="url(#g1a)"/>
+          <!-- Bar 3 (tall) -->
+          <rect x="30" y="0" width="12" height="44" rx="2" fill="url(#g1a)"/>
+          <!-- Horizontal baseline stroke (the L foot) -->
+          <rect x="0" y="40" width="54" height="4" rx="2" fill="url(#g1a)"/>
+          <!-- Wordmark -->
+          <text x="62" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#f1f5f9" class="wm">otris</text>
+          <defs>
+            <linearGradient id="g1a" x1="0" y1="0" x2="0" y2="44" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#818cf8"/>
+              <stop offset="100%" stop-color="#4f46e5"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label" style="color:#f1f5f9">Dark / Colour</div>
+      </div>
+
+      <!-- Light bg — colour -->
+      <div class="stage stage-light">
+        <svg width="120" height="44" viewBox="0 0 120 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="22" width="12" height="22" rx="2" fill="url(#g1b)"/>
+          <rect x="15" y="11" width="12" height="33" rx="2" fill="url(#g1b)"/>
+          <rect x="30" y="0" width="12" height="44" rx="2" fill="url(#g1b)"/>
+          <rect x="0" y="40" width="54" height="4" rx="2" fill="url(#g1b)"/>
+          <text x="62" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#0f172a">otris</text>
+          <defs>
+            <linearGradient id="g1b" x1="0" y1="0" x2="0" y2="44" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#4338ca"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label">Light / Colour</div>
+      </div>
+
+      <!-- Icon only — dark -->
+      <div class="stage stage-dark" style="min-width:80px;max-width:90px;flex:0">
+        <svg width="46" height="44" viewBox="0 0 46 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="22" width="12" height="22" rx="2" fill="url(#g1c)"/>
+          <rect x="15" y="11" width="12" height="33" rx="2" fill="url(#g1c)"/>
+          <rect x="30" y="0" width="12" height="44" rx="2" fill="url(#g1c)"/>
+          <rect x="0" y="40" width="45" height="4" rx="2" fill="url(#g1c)"/>
+          <defs>
+            <linearGradient id="g1c" x1="0" y1="0" x2="0" y2="44" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#818cf8"/>
+              <stop offset="100%" stop-color="#4f46e5"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label" style="color:#f1f5f9">Icon</div>
+      </div>
+    </div>
+
+    <div class="tag-row">
+      <span class="tag">Strong lettermark</span>
+      <span class="tag">KPI-direct</span>
+      <span class="tag">Scalable to favicon</span>
+      <span class="tag">Enterprise-ready</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       CONCEPT 2 — "Ticket Surface"
+  ════════════════════════════════════════ -->
+  <div class="concept-card">
+    <div class="concept-label">Concept 02</div>
+    <div class="concept-name">Ticket Surface</div>
+    <div class="concept-desc">A rounded-rectangle ticket with a rising trend line cutting diagonally through it — "performance surfaces" visualised. Merges the two core product pillars in a single glyph.</div>
+
+    <div class="logo-stages">
+      <div class="stage stage-dark">
+        <svg width="136" height="44" viewBox="0 0 136 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Ticket body -->
+          <rect x="0" y="0" width="44" height="44" rx="10" fill="rgba(79,70,229,0.18)" stroke="url(#g2a)" stroke-width="1.5"/>
+          <!-- Trend line inside ticket -->
+          <polyline points="6,36 16,24 26,18 38,8" stroke="url(#g2a)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <!-- Upward arrow tip -->
+          <polyline points="32,6 38,8 36,14" stroke="url(#g2a)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <!-- Notch left -->
+          <path d="M0 19 Q5 22 0 25" stroke="url(#g2a)" stroke-width="1.5" fill="rgba(6,8,15,1)"/>
+          <!-- Notch right -->
+          <path d="M44 19 Q39 22 44 25" stroke="url(#g2a)" stroke-width="1.5" fill="rgba(6,8,15,1)"/>
+          <!-- Wordmark -->
+          <text x="54" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#f1f5f9">Lotris</text>
+          <defs>
+            <linearGradient id="g2a" x1="0" y1="44" x2="44" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#4f46e5"/>
+              <stop offset="100%" stop-color="#06b6d4"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label" style="color:#f1f5f9">Dark / Colour</div>
+      </div>
+
+      <div class="stage stage-light">
+        <svg width="136" height="44" viewBox="0 0 136 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="44" height="44" rx="10" fill="rgba(79,70,229,0.10)" stroke="url(#g2b)" stroke-width="1.5"/>
+          <polyline points="6,36 16,24 26,18 38,8" stroke="url(#g2b)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <polyline points="32,6 38,8 36,14" stroke="url(#g2b)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M0 19 Q5 22 0 25" stroke="url(#g2b)" stroke-width="1.5" fill="rgba(248,250,252,1)"/>
+          <path d="M44 19 Q39 22 44 25" stroke="url(#g2b)" stroke-width="1.5" fill="rgba(248,250,252,1)"/>
+          <text x="54" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#0f172a">Lotris</text>
+          <defs>
+            <linearGradient id="g2b" x1="0" y1="44" x2="44" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#4338ca"/>
+              <stop offset="100%" stop-color="#0891b2"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label">Light / Colour</div>
+      </div>
+
+      <div class="stage stage-dark" style="min-width:80px;max-width:90px;flex:0">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="44" height="44" rx="10" fill="rgba(79,70,229,0.22)" stroke="url(#g2c)" stroke-width="1.5"/>
+          <polyline points="6,36 16,24 26,18 38,8" stroke="url(#g2c)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <polyline points="32,6 38,8 36,14" stroke="url(#g2c)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <defs>
+            <linearGradient id="g2c" x1="0" y1="44" x2="44" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#4f46e5"/>
+              <stop offset="100%" stop-color="#06b6d4"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label" style="color:#f1f5f9">Icon</div>
+      </div>
+    </div>
+
+    <div class="tag-row">
+      <span class="tag">Product-direct</span>
+      <span class="tag">Dual-metaphor</span>
+      <span class="tag">Friendly</span>
+      <span class="tag">Recognisable at small size</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       CONCEPT 3 — "Signal Pulse"
+  ════════════════════════════════════════ -->
+  <div class="concept-card">
+    <div class="concept-label">Concept 03</div>
+    <div class="concept-name">Signal Pulse</div>
+    <div class="concept-desc">An EKG-style pulse line that rises to form an "L" peak — referencing real-time monitoring, system uptime, and live KPI tracking. Techy and kinetic; great for digital-first brands.</div>
+
+    <div class="logo-stages">
+      <div class="stage stage-dark">
+        <svg width="136" height="44" viewBox="0 0 136 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Pulse path: flat → spike → flat (forms an L-shoulder) -->
+          <path d="M2,28 L10,28 L14,28 L18,8 L22,36 L26,28 L34,28 L34,28 L38,28 L40,28" stroke="url(#g3a)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <!-- Glow circle at peak -->
+          <circle cx="18" cy="8" r="3.5" fill="url(#g3a)"/>
+          <!-- Bottom baseline -->
+          <line x1="2" y1="38" x2="40" y2="38" stroke="rgba(79,70,229,0.25)" stroke-width="1" stroke-dasharray="2 3"/>
+          <!-- Wordmark -->
+          <text x="52" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#f1f5f9">Lotris</text>
+          <defs>
+            <linearGradient id="g3a" x1="2" y1="28" x2="40" y2="8" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#4f46e5"/>
+              <stop offset="60%" stop-color="#818cf8"/>
+              <stop offset="100%" stop-color="#22d3ee"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label" style="color:#f1f5f9">Dark / Colour</div>
+      </div>
+
+      <div class="stage stage-light">
+        <svg width="136" height="44" viewBox="0 0 136 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2,28 L10,28 L14,28 L18,8 L22,36 L26,28 L34,28 L34,28 L38,28 L40,28" stroke="url(#g3b)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <circle cx="18" cy="8" r="3.5" fill="url(#g3b)"/>
+          <line x1="2" y1="38" x2="40" y2="38" stroke="rgba(79,70,229,0.20)" stroke-width="1" stroke-dasharray="2 3"/>
+          <text x="52" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#0f172a">Lotris</text>
+          <defs>
+            <linearGradient id="g3b" x1="2" y1="28" x2="40" y2="8" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#4338ca"/>
+              <stop offset="60%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#0891b2"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label">Light / Colour</div>
+      </div>
+
+      <div class="stage stage-dark" style="min-width:80px;max-width:90px;flex:0">
+        <svg width="42" height="44" viewBox="0 0 42 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2,28 L10,28 L14,28 L18,8 L22,36 L26,28 L34,28 L38,28 L40,28" stroke="url(#g3c)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <circle cx="18" cy="8" r="3.5" fill="url(#g3c)"/>
+          <defs>
+            <linearGradient id="g3c" x1="2" y1="28" x2="40" y2="8" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#4f46e5"/>
+              <stop offset="100%" stop-color="#22d3ee"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label" style="color:#f1f5f9">Icon</div>
+      </div>
+    </div>
+
+    <div class="tag-row">
+      <span class="tag">Live / real-time feel</span>
+      <span class="tag">Tech-forward</span>
+      <span class="tag">Dynamic</span>
+      <span class="tag">Animation potential</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       CONCEPT 4 — "Diamond Grid"
+  ════════════════════════════════════════ -->
+  <div class="concept-card">
+    <div class="concept-label">Concept 04</div>
+    <div class="concept-name">Diamond Grid</div>
+    <div class="concept-desc">Four nodes connected in a diamond lattice, each representing a core pillar: Tickets, SLA, KPIs, Reports. The central connection = the Lotris platform. Abstract, modern, distinctly enterprise-software.</div>
+
+    <div class="logo-stages">
+      <div class="stage stage-dark">
+        <svg width="136" height="48" viewBox="0 0 136 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Diamond connector lines -->
+          <line x1="8" y1="24" x2="24" y2="8"  stroke="rgba(99,102,241,0.45)" stroke-width="1.5"/>
+          <line x1="24" y1="8"  x2="40" y2="24" stroke="rgba(99,102,241,0.45)" stroke-width="1.5"/>
+          <line x1="40" y1="24" x2="24" y2="40" stroke="rgba(99,102,241,0.45)" stroke-width="1.5"/>
+          <line x1="24" y1="40" x2="8"  y2="24" stroke="rgba(99,102,241,0.45)" stroke-width="1.5"/>
+          <!-- Inner cross -->
+          <line x1="8"  y1="24" x2="40" y2="24" stroke="rgba(99,102,241,0.25)" stroke-width="1"/>
+          <line x1="24" y1="8"  x2="24" y2="40" stroke="rgba(99,102,241,0.25)" stroke-width="1"/>
+          <!-- Outer nodes -->
+          <circle cx="24" cy="8"  r="4" fill="url(#g4a)"/>
+          <circle cx="40" cy="24" r="4" fill="url(#g4a)"/>
+          <circle cx="24" cy="40" r="3" fill="rgba(79,70,229,0.6)"/>
+          <circle cx="8"  cy="24" r="3" fill="rgba(79,70,229,0.6)"/>
+          <!-- Centre node -->
+          <circle cx="24" cy="24" r="5.5" fill="url(#g4a)"/>
+          <!-- Wordmark -->
+          <text x="54" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#f1f5f9">Lotris</text>
+          <defs>
+            <linearGradient id="g4a" x1="8" y1="8" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#818cf8"/>
+              <stop offset="100%" stop-color="#4f46e5"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label" style="color:#f1f5f9">Dark / Colour</div>
+      </div>
+
+      <div class="stage stage-light">
+        <svg width="136" height="48" viewBox="0 0 136 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="8" y1="24" x2="24" y2="8"  stroke="rgba(79,70,229,0.35)" stroke-width="1.5"/>
+          <line x1="24" y1="8"  x2="40" y2="24" stroke="rgba(79,70,229,0.35)" stroke-width="1.5"/>
+          <line x1="40" y1="24" x2="24" y2="40" stroke="rgba(79,70,229,0.35)" stroke-width="1.5"/>
+          <line x1="24" y1="40" x2="8"  y2="24" stroke="rgba(79,70,229,0.35)" stroke-width="1.5"/>
+          <line x1="8"  y1="24" x2="40" y2="24" stroke="rgba(79,70,229,0.18)" stroke-width="1"/>
+          <line x1="24" y1="8"  x2="24" y2="40" stroke="rgba(79,70,229,0.18)" stroke-width="1"/>
+          <circle cx="24" cy="8"  r="4" fill="url(#g4b)"/>
+          <circle cx="40" cy="24" r="4" fill="url(#g4b)"/>
+          <circle cx="24" cy="40" r="3" fill="rgba(99,102,241,0.55)"/>
+          <circle cx="8"  cy="24" r="3" fill="rgba(99,102,241,0.55)"/>
+          <circle cx="24" cy="24" r="5.5" fill="url(#g4b)"/>
+          <text x="54" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#0f172a">Lotris</text>
+          <defs>
+            <linearGradient id="g4b" x1="8" y1="8" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#4338ca"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label">Light / Colour</div>
+      </div>
+
+      <div class="stage stage-dark" style="min-width:80px;max-width:90px;flex:0">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="8" y1="24" x2="24" y2="8"  stroke="rgba(99,102,241,0.45)" stroke-width="1.5"/>
+          <line x1="24" y1="8"  x2="40" y2="24" stroke="rgba(99,102,241,0.45)" stroke-width="1.5"/>
+          <line x1="40" y1="24" x2="24" y2="40" stroke="rgba(99,102,241,0.45)" stroke-width="1.5"/>
+          <line x1="24" y1="40" x2="8"  y2="24" stroke="rgba(99,102,241,0.45)" stroke-width="1.5"/>
+          <line x1="8"  y1="24" x2="40" y2="24" stroke="rgba(99,102,241,0.22)" stroke-width="1"/>
+          <line x1="24" y1="8"  x2="24" y2="40" stroke="rgba(99,102,241,0.22)" stroke-width="1"/>
+          <circle cx="24" cy="8"  r="4" fill="url(#g4c)"/>
+          <circle cx="40" cy="24" r="4" fill="url(#g4c)"/>
+          <circle cx="24" cy="40" r="3" fill="rgba(79,70,229,0.6)"/>
+          <circle cx="8"  cy="24" r="3" fill="rgba(79,70,229,0.6)"/>
+          <circle cx="24" cy="24" r="5.5" fill="url(#g4c)"/>
+          <defs>
+            <linearGradient id="g4c" x1="8" y1="8" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#818cf8"/>
+              <stop offset="100%" stop-color="#4f46e5"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label" style="color:#f1f5f9">Icon</div>
+      </div>
+    </div>
+
+    <div class="tag-row">
+      <span class="tag">Abstract / modern</span>
+      <span class="tag">Enterprise software feel</span>
+      <span class="tag">Platform metaphor</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       CONCEPT 5 — "Rising Prism"
+  ════════════════════════════════════════ -->
+  <div class="concept-card">
+    <div class="concept-label">Concept 05</div>
+    <div class="concept-name">Rising Prism</div>
+    <div class="concept-desc">An isometric prism with a glowing "surface" face. Directly references the tagline "Where performance surfaces." The three visible faces = Tickets, KPI, and Reporting. Depth and authority in a single mark.</div>
+
+    <div class="logo-stages">
+      <div class="stage stage-dark">
+        <svg width="136" height="48" viewBox="0 0 136 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Isometric cube (left face, right face, top face) -->
+          <!-- Top face (lightest) -->
+          <path d="M20,6 L38,14 L38,14 L20,22 L2,14 Z" fill="url(#g5top)"/>
+          <!-- Left face (medium) -->
+          <path d="M2,14 L20,22 L20,42 L2,34 Z" fill="url(#g5left)"/>
+          <!-- Right face (bright) -->
+          <path d="M20,22 L38,14 L38,34 L20,42 Z" fill="url(#g5right)"/>
+          <!-- Wordmark -->
+          <text x="54" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#f1f5f9">Lotris</text>
+          <defs>
+            <linearGradient id="g5top" x1="2" y1="6" x2="38" y2="22" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#c7d2fe"/>
+              <stop offset="100%" stop-color="#818cf8"/>
+            </linearGradient>
+            <linearGradient id="g5left" x1="2" y1="14" x2="20" y2="42" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#4f46e5"/>
+              <stop offset="100%" stop-color="#312e81"/>
+            </linearGradient>
+            <linearGradient id="g5right" x1="20" y1="14" x2="38" y2="42" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#4338ca"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label" style="color:#f1f5f9">Dark / Colour</div>
+      </div>
+
+      <div class="stage stage-light">
+        <svg width="136" height="48" viewBox="0 0 136 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20,6 L38,14 L20,22 L2,14 Z" fill="url(#g5ltop)"/>
+          <path d="M2,14 L20,22 L20,42 L2,34 Z" fill="url(#g5lleft)"/>
+          <path d="M20,22 L38,14 L38,34 L20,42 Z" fill="url(#g5lright)"/>
+          <text x="54" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#0f172a">Lotris</text>
+          <defs>
+            <linearGradient id="g5ltop" x1="2" y1="6" x2="38" y2="22" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#a5b4fc"/>
+              <stop offset="100%" stop-color="#6366f1"/>
+            </linearGradient>
+            <linearGradient id="g5lleft" x1="2" y1="14" x2="20" y2="42" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#4338ca"/>
+              <stop offset="100%" stop-color="#312e81"/>
+            </linearGradient>
+            <linearGradient id="g5lright" x1="20" y1="14" x2="38" y2="42" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#4f46e5"/>
+              <stop offset="100%" stop-color="#3730a3"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label">Light / Colour</div>
+      </div>
+
+      <div class="stage stage-dark" style="min-width:80px;max-width:90px;flex:0">
+        <svg width="40" height="48" viewBox="0 0 40 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20,6 L38,14 L20,22 L2,14 Z" fill="url(#g5itop)"/>
+          <path d="M2,14 L20,22 L20,42 L2,34 Z" fill="url(#g5ileft)"/>
+          <path d="M20,22 L38,14 L38,34 L20,42 Z" fill="url(#g5iright)"/>
+          <defs>
+            <linearGradient id="g5itop" x1="2" y1="6" x2="38" y2="22" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#c7d2fe"/>
+              <stop offset="100%" stop-color="#818cf8"/>
+            </linearGradient>
+            <linearGradient id="g5ileft" x1="2" y1="14" x2="20" y2="42" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#4f46e5"/>
+              <stop offset="100%" stop-color="#312e81"/>
+            </linearGradient>
+            <linearGradient id="g5iright" x1="20" y1="14" x2="38" y2="42" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#4338ca"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label" style="color:#f1f5f9">Icon</div>
+      </div>
+    </div>
+
+    <div class="tag-row">
+      <span class="tag">Tagline-direct</span>
+      <span class="tag">3D depth</span>
+      <span class="tag">Authoritative</span>
+      <span class="tag">Premium feel</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       CONCEPT 6 — "L-Shield"
+  ════════════════════════════════════════ -->
+  <div class="concept-card">
+    <div class="concept-label">Concept 06</div>
+    <div class="concept-name">L-Shield</div>
+    <div class="concept-desc">A rounded-corner square badge housing a bold "L" — the L's foot extends to a clean baseline while the vertical column ends in a subtle upward notch. Clean, compact, instantly brandable. Ideal for favicons, app icons, and badges.</div>
+
+    <div class="logo-stages">
+      <div class="stage stage-dark">
+        <svg width="136" height="48" viewBox="0 0 136 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Badge bg -->
+          <rect x="0" y="2" width="44" height="44" rx="10" fill="url(#g6bg)"/>
+          <!-- L shape cut from badge -->
+          <rect x="10" y="8" width="8" height="30" rx="2" fill="rgba(255,255,255,0.95)"/>
+          <rect x="10" y="30" width="24" height="8" rx="2" fill="rgba(255,255,255,0.95)"/>
+          <!-- Small notch / accent at L top -->
+          <rect x="14" y="6" width="4" height="5" rx="1.5" fill="rgba(255,255,255,0.4)"/>
+          <!-- Wordmark -->
+          <text x="54" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#f1f5f9">otris</text>
+          <defs>
+            <linearGradient id="g6bg" x1="0" y1="2" x2="44" y2="46" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#4338ca"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label" style="color:#f1f5f9">Dark / Colour</div>
+      </div>
+
+      <div class="stage stage-light">
+        <svg width="136" height="48" viewBox="0 0 136 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="2" width="44" height="44" rx="10" fill="url(#g6lbg)"/>
+          <rect x="10" y="8" width="8" height="30" rx="2" fill="rgba(255,255,255,0.95)"/>
+          <rect x="10" y="30" width="24" height="8" rx="2" fill="rgba(255,255,255,0.95)"/>
+          <rect x="14" y="6" width="4" height="5" rx="1.5" fill="rgba(255,255,255,0.4)"/>
+          <text x="54" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#0f172a">otris</text>
+          <defs>
+            <linearGradient id="g6lbg" x1="0" y1="2" x2="44" y2="46" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#4338ca"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label">Light / Colour</div>
+      </div>
+
+      <div class="stage stage-dark" style="min-width:80px;max-width:90px;flex:0">
+        <svg width="44" height="48" viewBox="0 0 44 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="2" width="44" height="44" rx="10" fill="url(#g6ibg)"/>
+          <rect x="10" y="8" width="8" height="30" rx="2" fill="rgba(255,255,255,0.95)"/>
+          <rect x="10" y="30" width="24" height="8" rx="2" fill="rgba(255,255,255,0.95)"/>
+          <rect x="14" y="6" width="4" height="5" rx="1.5" fill="rgba(255,255,255,0.4)"/>
+          <defs>
+            <linearGradient id="g6ibg" x1="0" y1="2" x2="44" y2="46" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#4338ca"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="stage-label" style="color:#f1f5f9">Icon</div>
+      </div>
+    </div>
+
+    <div class="tag-row">
+      <span class="tag">App-icon ready</span>
+      <span class="tag">Favicon-friendly</span>
+      <span class="tag">Clean / minimal</span>
+      <span class="tag">Versatile</span>
+    </div>
+  </div>
+
+</div><!-- end .concepts-grid -->
+
+<!-- ─────────────────────────────────────────────
+     FULL-WIDTH COLOUR COMPARISON (top picks)
+───────────────────────────────────────────── -->
+<div class="section-divider" style="color:#334155;padding-top:32px">Full-colour system · Top picks in context</div>
+
+<div class="color-showcase">
+  <!-- KPI Bars on dark -->
+  <div class="cs-cell" style="background:#0c0e1a; flex-direction:column; gap:20px;">
+    <svg width="130" height="44" viewBox="0 0 130 44" fill="none">
+      <rect x="0" y="22" width="12" height="22" rx="2" fill="url(#cs1)"/>
+      <rect x="15" y="11" width="12" height="33" rx="2" fill="url(#cs1)"/>
+      <rect x="30" y="0" width="12" height="44" rx="2" fill="url(#cs1)"/>
+      <rect x="0" y="40" width="54" height="4" rx="2" fill="url(#cs1)"/>
+      <text x="62" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#f1f5f9">otris</text>
+      <defs><linearGradient id="cs1" x1="0" y1="0" x2="0" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#4f46e5"/></linearGradient></defs>
+    </svg>
+    <span style="font-size:10px;color:#334155;letter-spacing:0.08em;text-transform:uppercase">01 · KPI Bars — Nav dark</span>
+  </div>
+
+  <!-- Rising Prism on dark -->
+  <div class="cs-cell" style="background:#0c0e1a; flex-direction:column; gap:20px;">
+    <svg width="130" height="48" viewBox="0 0 130 48" fill="none">
+      <path d="M20,6 L38,14 L20,22 L2,14 Z" fill="url(#cstop)"/>
+      <path d="M2,14 L20,22 L20,42 L2,34 Z" fill="url(#csleft)"/>
+      <path d="M20,22 L38,14 L38,34 L20,42 Z" fill="url(#csright)"/>
+      <text x="50" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#f1f5f9">Lotris</text>
+      <defs>
+        <linearGradient id="cstop" x1="2" y1="6" x2="38" y2="22" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#c7d2fe"/><stop offset="100%" stop-color="#818cf8"/></linearGradient>
+        <linearGradient id="csleft" x1="2" y1="14" x2="20" y2="42" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#4f46e5"/><stop offset="100%" stop-color="#312e81"/></linearGradient>
+        <linearGradient id="csright" x1="20" y1="14" x2="38" y2="42" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#4338ca"/></linearGradient>
+      </defs>
+    </svg>
+    <span style="font-size:10px;color:#334155;letter-spacing:0.08em;text-transform:uppercase">05 · Rising Prism — Nav dark</span>
+  </div>
+
+  <!-- L-Shield on white card -->
+  <div class="cs-cell" style="background:#f8fafc; flex-direction:column; gap:20px;">
+    <svg width="130" height="48" viewBox="0 0 130 48" fill="none">
+      <rect x="0" y="2" width="44" height="44" rx="10" fill="url(#cs6)"/>
+      <rect x="10" y="8" width="8" height="30" rx="2" fill="rgba(255,255,255,0.95)"/>
+      <rect x="10" y="30" width="24" height="8" rx="2" fill="rgba(255,255,255,0.95)"/>
+      <text x="54" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#0f172a">otris</text>
+      <defs><linearGradient id="cs6" x1="0" y1="2" x2="44" y2="46" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#4338ca"/></linearGradient></defs>
+    </svg>
+    <span style="font-size:10px;color:#94a3b8;letter-spacing:0.08em;text-transform:uppercase">06 · L-Shield — Light card</span>
+  </div>
+
+  <!-- Ticket Surface on dark -->
+  <div class="cs-cell" style="background:#0c0e1a; flex-direction:column; gap:20px;">
+    <svg width="130" height="48" viewBox="0 0 130 48" fill="none">
+      <rect x="0" y="2" width="44" height="44" rx="10" fill="rgba(79,70,229,0.18)" stroke="url(#cs2s)" stroke-width="1.5"/>
+      <polyline points="6,38 16,26 26,20 38,10" stroke="url(#cs2s)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <polyline points="32,8 38,10 36,16" stroke="url(#cs2s)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <text x="54" y="31" font-family="Inter,sans-serif" font-weight="800" font-size="26" letter-spacing="-1.2" fill="#f1f5f9">Lotris</text>
+      <defs><linearGradient id="cs2s" x1="0" y1="46" x2="44" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#4f46e5"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
+    </svg>
+    <span style="font-size:10px;color:#334155;letter-spacing:0.08em;text-transform:uppercase">02 · Ticket Surface — Nav dark</span>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────
+     FOOTER NOTE
+───────────────────────────────────────────── -->
+<div style="padding:32px 60px;border-top:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between;align-items:center;">
+  <span style="font-size:11px;color:#1e293b;">Lotris Brand Exploration v1 · May 2026</span>
+  <span style="font-size:11px;color:#1e293b;">Typeface: Inter 800 · Primary: #4F46E5 · Dark: #0C0E1A</span>
+</div>
+
+</body>
+</html>

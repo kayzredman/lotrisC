@@ -1,6 +1,7 @@
 import { SignIn } from '@clerk/nextjs';
 import type { Metadata } from 'next';
 import { Ticket, BarChart2, ShieldCheck } from 'lucide-react';
+import { LotrisLogo } from '@/components/brand/lotris-mark';
 import styles from './login.module.css';
 
 export const metadata: Metadata = { title: 'Sign in — Lotris' };
@@ -13,8 +14,7 @@ export default function LoginPage() {
         {/* ── Left branding panel ── */}
         <div className={styles.loginPanel}>
           <div className={styles.panelLogo}>
-            <div className={styles.panelLogoIcon}>L</div>
-            <span className={styles.panelLogoText}>Lotris</span>
+            <LotrisLogo variant="dark" markHeight={34} uid="login-panel" showTagline />
           </div>
 
           <h1 className={styles.panelHeadline}>
@@ -81,8 +81,7 @@ export default function LoginPage() {
             {/* Our own heading — Clerk's header is hidden via appearance */}
             <div className={styles.formWelcome}>
               <div className={styles.formLogo}>
-                <div className={styles.formLogoIcon}>L</div>
-                <span className={styles.formLogoText}>Lotris</span>
+                <LotrisLogo variant="light" markHeight={26} uid="login-form" />
               </div>
               <h2 className={styles.formWelcomeHeading}>Welcome back</h2>
               <p className={styles.formWelcomeSub}>Sign in to your workspace to continue.</p>

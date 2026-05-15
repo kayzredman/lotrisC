@@ -386,6 +386,70 @@ lotris/
 
 ---
 
+## Brand & Design
+
+### Logo Mark — Status Panel
+
+The Lotris logo is a **hardware status-panel mark**: three indicator lights in a dark rounded housing.
+
+| Light | Colour | Meaning |
+|-------|--------|---------|
+| Red | `#EF4444` | P1 critical — tracked & in system |
+| Amber | `#F59E0B` | In progress — SLA clock running |
+| **Green ✓** | **`#10B981`** | **Resolved — the goal state Lotris drives every team toward** |
+
+Green is the hero light: full glow rings, bright centre (`#34D399`), white ✓ checkmark. Red and amber stay lit but dimmed — monitored, not panicked.
+
+### Static Brand Assets (`apps/web/public/brand/`)
+
+| File | Usage |
+|------|-------|
+| `icon.svg` | Full panel mark (200×128 viewBox, transparent bg) |
+| `logo-dark.svg` | Horizontal lockup — white wordmark (dark surfaces) |
+| `logo-light.svg` | Horizontal lockup — dark `#0F172A` wordmark (light surfaces) |
+| `logo-indigo.svg` | Horizontal lockup — all white on indigo `#4338CA` bg |
+| `logo-stacked.svg` | Stacked mark + "LOTRIS" + tagline (splash / OG images) |
+
+`apps/web/app/icon.svg` — 32×32 square favicon; auto-detected by Next.js App Router.
+
+### React Brand Components (`apps/web/components/brand/lotris-mark.tsx`)
+
+| Export | Props | Use |
+|--------|-------|-----|
+| `LotrisMark` | `height`, `uid` | Panel SVG mark only |
+| `LotrisLogo` | `variant` (`dark`\|`light`), `markHeight`, `uid`, `showTagline` | Mark + wordmark |
+
+`showTagline` renders _"Where performance surfaces."_ in small caps below the wordmark — used on dark panel/splash contexts.
+
+### Logo Usage Map
+
+| Location | Component | variant | markHeight | showTagline |
+|---|---|---|---|---|
+| App sidebar | `LotrisMark` | — | 26 | — |
+| Landing nav | `LotrisLogo` | dark | 28 | false |
+| Landing footer | `LotrisLogo` | dark | 22 | false |
+| Login — left panel | `LotrisLogo` | dark | 34 | **true** |
+| Login — right form | `LotrisLogo` | light | 26 | false |
+| Sign-up — left panel | `LotrisLogo` | dark | 34 | **true** |
+| Sign-up — right form | `LotrisLogo` | light | 26 | false |
+| Onboarding wizard | `LotrisLogo` | dark | 32 | **true** |
+| Public /request header | `LotrisLogo` | dark | 22 | false |
+
+### Colour Tokens
+
+| Token | Value | Role |
+|-------|-------|------|
+| Brand indigo | `#4F46E5` | Primary / CTA buttons |
+| Hover indigo | `#4338CA` | Button hover |
+| Dark background | `#0C0E1A` | App shell, auth panels |
+| Panel dark | `#111425` | Sidebar, card backgrounds |
+| Panel border | `#1E2235` | Card / panel borders |
+| Green — resolved | `#10B981` | Hero light, resolved state, success |
+| Amber — active | `#F59E0B` | In-progress state |
+| Red — critical | `#EF4444` | P1 / critical tickets |
+
+---
+
 ## UI Mockups
 
 | File                        | Page                           | Role                 |

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lotris — Combined Concept E+F · Staircase Status</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #080A14; color: #E2E8F0; }
+
+  .page-header { padding: 56px 56px 40px; border-bottom: 1px solid #1E2235; }
+  .page-header .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #4F46E5; margin-bottom: 10px; }
+  .page-header h1 { font-size: 34px; font-weight: 900; letter-spacing: -0.03em; color: #F8FAFC; margin-bottom: 6px; }
+  .page-header p { font-size: 15px; color: #64748B; max-width: 560px; line-height: 1.7; }
+
+  .section { padding: 64px 56px; border-bottom: 1px solid #1E2235; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #3B4263; margin-bottom: 32px; }
+
+  /* ——— HERO (Concept) ——— */
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: start;
+  }
+  .hero-info h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; color: #F8FAFC; margin-bottom: 12px; }
+  .hero-info p { font-size: 14px; color: #64748B; line-height: 1.7; margin-bottom: 28px; }
+
+  .narrative-steps { display: flex; flex-direction: column; gap: 12px; }
+  .ns-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; background: #0C0E1A; border: 1px solid #1E2235; }
+  .ns-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .ns-dot.green  { background: #10B981; box-shadow: 0 0 8px #10B981; }
+  .ns-dot.amber  { background: #F59E0B; }
+  .ns-dot.red    { background: #EF4444; }
+  .ns-text { font-size: 13px; color: #94A3B8; line-height: 1.5; }
+  .ns-text strong { color: #E2E8F0; font-weight: 600; }
+
+  /* ——— VARIATIONS GRID ——— */
+  .vars-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+  .var-panel {
+    background: #0C0E1A;
+    padding: 40px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .var-title { font-size: 14px; font-weight: 700; color: #E2E8F0; }
+  .var-sub { font-size: 12px; color: #3B4263; line-height: 1.5; margin-top: 2px; }
+  .var-stage {
+    background: #080A14;
+    border-radius: 12px;
+    padding: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+  }
+  .var-stage.light { background: #F8FAFC; }
+  .var-stage.mid { background: #1A1D2E; border-radius: 16px; }
+
+  /* ——— SIZES ——— */
+  .sizes-row { display: flex; gap: 48px; align-items: flex-end; flex-wrap: wrap; }
+  .size-block { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .size-label { font-size: 10px; font-weight: 600; color: #3B4263; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* ——— LOCKUPS ——— */
+  .lockups-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
+  .lockup-panel { background: #0C0E1A; padding: 48px 40px; display: flex; flex-direction: column; gap: 16px; }
+  .lockup-label { font-size: 11px; font-weight: 600; color: #3B4263; letter-spacing: 0.08em; text-transform: uppercase; }
+  .lockup-stage { display: flex; align-items: center; justify-content: center; padding: 32px; border-radius: 10px; }
+  .lockup-stage.dark { background: #080A14; }
+  .lockup-stage.light { background: #F1F5F9; }
+  .lockup-stage.product { background: #0C0E1A; border: 1px solid #1E2235; }
+
+  .footer { padding: 40px 56px; display: flex; justify-content: space-between; align-items: center; }
+  .footer p { font-size: 11px; color: #2D3456; }
+</style>
+</head>
+<body>
+
+<!-- ======== HEADER ======== -->
+<div class="page-header">
+  <div class="eyebrow">Lotris · Combined Concept E + F · Logo Exploration</div>
+  <h1>Staircase Status Mark</h1>
+  <p>The staircase tiers from Concept F — now carrying the live status indicators from Concept E. Each priority level wears its own light. The mark reads: <em>we have eyes on every tier, from critical to resolved.</em></p>
+</div>
+
+<!-- ======== HERO CONCEPT ======== -->
+<div class="section">
+  <div class="section-label">The Core Idea</div>
+  <div class="hero-grid">
+
+    <div class="hero-info">
+      <h2>Staircase Status</h2>
+      <p>Three ascending steps (ticket priority tiers P1→P2→P3) each carrying an embedded status indicator. Read bottom-up: critical issues at the base, in-progress in the middle, resolved at the peak. The whole IT ops picture in a single mark.</p>
+
+      <div class="narrative-steps">
+        <div class="ns-row">
+          <div class="ns-dot green"></div>
+          <div class="ns-text"><strong>Top step — P3 / Resolved.</strong> Green indicator glowing. Performance is good. SLAs met.</div>
+        </div>
+        <div class="ns-row">
+          <div class="ns-dot amber"></div>
+          <div class="ns-text"><strong>Middle step — P2 / In Progress.</strong> Amber indicator active. Being worked, watching the clock.</div>
+        </div>
+        <div class="ns-row">
+          <div class="ns-dot red"></div>
+          <div class="ns-text"><strong>Bottom step — P1 / Critical.</strong> Red indicator lit. Tracked, escalated, owned. This is exactly what Lotris is built for.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Hero SVG -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:20px">
+      <div style="background:#080A14; border-radius:16px; padding:48px 56px; display:inline-flex; align-items:center; justify-content:center">
+        <svg width="180" height="148" viewBox="0 0 180 148" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+          <!-- ————— STEP 3 (TOP) + GREEN LIGHT ————— -->
+          <rect x="10" y="14" width="64" height="28" rx="6" fill="#4F46E5"/>
+          <!-- glow on top step -->
+          <rect x="10" y="14" width="64" height="28" rx="6" fill="url(#heroStepGlow)"/>
+          <!-- Green indicator embedded at right end of step 3 -->
+          <!-- Outer glow rings -->
+          <circle cx="88" cy="28" r="22" fill="#10B981" opacity="0.06"/>
+          <circle cx="88" cy="28" r="16" fill="#10B981" opacity="0.12"/>
+          <!-- Light housing (the "casing" that the light sits in) -->
+          <circle cx="88" cy="28" r="12" fill="#1A1D2E" stroke="#10B981" stroke-width="1.5"/>
+          <!-- Light fill -->
+          <circle cx="88" cy="28" r="8" fill="#10B981"/>
+          <!-- Reflection highlight -->
+          <circle cx="85.5" cy="25.5" r="2.5" fill="#A7F3D0" opacity="0.7"/>
+
+          <!-- ————— STEP 2 (MIDDLE) + AMBER LIGHT ————— -->
+          <rect x="10" y="58" width="114" height="28" rx="6" fill="#2D3456"/>
+          <!-- Amber indicator -->
+          <circle cx="138" cy="72" r="16" fill="#F59E0B" opacity="0.08"/>
+          <circle cx="138" cy="72" r="12" fill="#1A1D2E" stroke="#F59E0B" stroke-width="1.5"/>
+          <circle cx="138" cy="72" r="8" fill="#F59E0B"/>
+          <circle cx="135.5" cy="69.5" r="2.5" fill="#FDE68A" opacity="0.7"/>
+
+          <!-- ————— STEP 1 (BOTTOM) + RED LIGHT ————— -->
+          <rect x="10" y="102" width="154" height="28" rx="6" fill="#1E2235"/>
+          <!-- Red indicator -->
+          <circle cx="178" cy="116" r="16" fill="#EF4444" opacity="0.08"/>
+          <circle cx="178" cy="116" r="12" fill="#1A1D2E" stroke="#EF4444" stroke-width="1.5" opacity="0.8"/>
+          <circle cx="178" cy="116" r="8" fill="#EF4444" opacity="0.8"/>
+          <circle cx="175.5" cy="113.5" r="2.5" fill="#FCA5A5" opacity="0.7"/>
+
+          <!-- Step depth/shadow lines (optional — adds dimensionality) -->
+          <line x1="74" y1="42" x2="74" y2="58" stroke="#1E2235" stroke-width="1"/>
+          <line x1="124" y1="86" x2="124" y2="102" stroke="#1E2235" stroke-width="1"/>
+
+          <defs>
+            <linearGradient id="heroStepGlow" x1="10" y1="14" x2="74" y2="42" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#818CF8" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="#4F46E5" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <p style="font-size:12px; color:#2D3456; text-align:center">Each light sits embedded at the right end of its step</p>
+    </div>
+  </div>
+</div>
+
+<!-- ======== COMPOSITION VARIATIONS ======== -->
+<div class="section">
+  <div class="section-label">Composition Variations</div>
+  <div class="vars-grid">
+
+    <!-- Var 1: Lights embedded IN step (flush) -->
+    <div class="var-panel">
+      <div>
+        <div class="var-title">Var 1 — Lights embedded flush</div>
+        <div class="var-sub">Indicator circles are inset into the step's right edge. Clean, compact. The light is part of the step.</div>
+      </div>
+      <div class="var-stage">
+        <svg width="140" height="112" viewBox="0 0 140 112" fill="none">
+          <!-- Step 3 -->
+          <rect x="8" y="10" width="46" height="22" rx="4.5" fill="#4F46E5"/>
+          <!-- Green inset -->
+          <circle cx="65" cy="21" r="9" fill="#1A1D2E"/>
+          <circle cx="65" cy="21" r="6" fill="#10B981"/>
+          <circle cx="63" cy="19" r="1.8" fill="#A7F3D0" opacity="0.7"/>
+          <circle cx="65" cy="21" r="9" fill="#10B981" opacity="0.15"/>
+          <!-- Step 2 -->
+          <rect x="8" y="42" width="82" height="22" rx="4.5" fill="#2D3456"/>
+          <circle cx="101" cy="53" r="9" fill="#1A1D2E"/>
+          <circle cx="101" cy="53" r="6" fill="#F59E0B"/>
+          <circle cx="99" cy="51" r="1.8" fill="#FDE68A" opacity="0.7"/>
+          <!-- Step 1 -->
+          <rect x="8" y="74" width="118" height="22" rx="4.5" fill="#1E2235"/>
+          <circle cx="137" cy="85" r="9" fill="#0C0E1A"/>
+          <circle cx="137" cy="85" r="6" fill="#EF4444" opacity="0.7"/>
+          <circle cx="135" cy="83" r="1.8" fill="#FCA5A5" opacity="0.7"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Var 2: Lights floating on top of step right corner -->
+    <div class="var-panel">
+      <div>
+        <div class="var-title">Var 2 — Lights raised above step</div>
+        <div class="var-sub">Indicator floats slightly above the step's top-right corner. More dimensional — like a physical status lamp mounted on a shelf.</div>
+      </div>
+      <div class="var-stage">
+        <svg width="140" height="112" viewBox="0 0 140 112" fill="none">
+          <!-- Step 3 -->
+          <rect x="8" y="22" width="52" height="18" rx="4" fill="#4F46E5"/>
+          <!-- Green raised above top-right -->
+          <circle cx="68" cy="16" r="8" fill="#1A1D2E" stroke="#10B981" stroke-width="1.2"/>
+          <circle cx="68" cy="16" r="5" fill="#10B981"/>
+          <circle cx="68" cy="16" r="10" fill="#10B981" opacity="0.15"/>
+          <circle cx="66" cy="14" r="1.5" fill="#A7F3D0" opacity="0.8"/>
+          <!-- Connector line -->
+          <line x1="60" y1="22" x2="65" y2="24" stroke="#10B981" stroke-width="0.8" opacity="0.4"/>
+
+          <!-- Step 2 -->
+          <rect x="8" y="50" width="88" height="18" rx="4" fill="#2D3456"/>
+          <circle cx="104" cy="44" r="8" fill="#1A1D2E" stroke="#F59E0B" stroke-width="1.2"/>
+          <circle cx="104" cy="44" r="5" fill="#F59E0B"/>
+          <circle cx="102" cy="42" r="1.5" fill="#FDE68A" opacity="0.8"/>
+          <line x1="96" y1="50" x2="101" y2="51" stroke="#F59E0B" stroke-width="0.8" opacity="0.4"/>
+
+          <!-- Step 1 -->
+          <rect x="8" y="78" width="124" height="18" rx="4" fill="#1E2235"/>
+          <circle cx="140" cy="72" r="8" fill="#1A1D2E" stroke="#EF4444" stroke-width="1.2" opacity="0.8"/>
+          <circle cx="140" cy="72" r="5" fill="#EF4444" opacity="0.8"/>
+          <circle cx="138" cy="70" r="1.5" fill="#FCA5A5" opacity="0.7"/>
+          <line x1="132" y1="78" x2="137" y2="79" stroke="#EF4444" stroke-width="0.8" opacity="0.3"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Var 3: Lights as notch cut-out in the step (MacOS style) -->
+    <div class="var-panel">
+      <div>
+        <div class="var-title">Var 3 — Notch cut-out style</div>
+        <div class="var-sub">Like a physical panel indicator: the step has a circular cutout, and the light fills it. Very product, very hardware ops-room.</div>
+      </div>
+      <div class="var-stage">
+        <svg width="140" height="112" viewBox="0 0 140 112" fill="none">
+          <!-- Step 3 base -->
+          <rect x="8" y="12" width="60" height="22" rx="5" fill="#4F46E5"/>
+          <!-- Notch cut (darker circle inside the step) -->
+          <circle cx="60" cy="23" r="9" fill="#0C0E1A"/>
+          <!-- Light in notch -->
+          <circle cx="60" cy="23" r="6" fill="#10B981"/>
+          <circle cx="58" cy="21" r="2" fill="#A7F3D0" opacity="0.75"/>
+          <circle cx="60" cy="23" r="8" fill="#10B981" opacity="0.18"/>
+
+          <!-- Step 2 base -->
+          <rect x="8" y="46" width="96" height="22" rx="5" fill="#2D3456"/>
+          <circle cx="96" cy="57" r="9" fill="#080A14"/>
+          <circle cx="96" cy="57" r="6" fill="#F59E0B"/>
+          <circle cx="94" cy="55" r="2" fill="#FDE68A" opacity="0.75"/>
+
+          <!-- Step 1 base -->
+          <rect x="8" y="80" width="130" height="22" rx="5" fill="#1E2235"/>
+          <circle cx="130" cy="91" r="9" fill="#080A14"/>
+          <circle cx="130" cy="91" r="6" fill="#EF4444" opacity="0.75"/>
+          <circle cx="128" cy="89" r="2" fill="#FCA5A5" opacity="0.7"/>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Second row of variations -->
+  <div class="vars-grid" style="margin-top:2px">
+
+    <!-- Var 4: Pill-shaped steps (softer, more modern SaaS) -->
+    <div class="var-panel">
+      <div>
+        <div class="var-title">Var 4 — Pill steps (rounded, modern)</div>
+        <div class="var-sub">Fully-rounded "pill" steps feel more contemporary SaaS. Softer brand expression. Works well at small sizes.</div>
+      </div>
+      <div class="var-stage">
+        <svg width="140" height="112" viewBox="0 0 140 112" fill="none">
+          <!-- Step 3 pill -->
+          <rect x="8" y="12" width="52" height="22" rx="11" fill="#4F46E5"/>
+          <circle cx="71" cy="23" r="10" fill="#1A1D2E" stroke="#10B981" stroke-width="1.5"/>
+          <circle cx="71" cy="23" r="6.5" fill="#10B981"/>
+          <circle cx="69" cy="21" r="2" fill="#A7F3D0" opacity="0.8"/>
+          <circle cx="71" cy="23" r="13" fill="#10B981" opacity="0.08"/>
+
+          <!-- Step 2 pill -->
+          <rect x="8" y="45" width="88" height="22" rx="11" fill="#2D3456"/>
+          <circle cx="107" cy="56" r="10" fill="#1A1D2E" stroke="#F59E0B" stroke-width="1.5"/>
+          <circle cx="107" cy="56" r="6.5" fill="#F59E0B"/>
+          <circle cx="105" cy="54" r="2" fill="#FDE68A" opacity="0.8"/>
+
+          <!-- Step 1 pill -->
+          <rect x="8" y="78" width="120" height="22" rx="11" fill="#1E2235"/>
+          <circle cx="139" cy="89" r="10" fill="#1A1D2E" stroke="#EF4444" stroke-width="1.5" opacity="0.8"/>
+          <circle cx="139" cy="89" r="6.5" fill="#EF4444" opacity="0.8"/>
+          <circle cx="137" cy="87" r="2" fill="#FCA5A5" opacity="0.7"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Var 5: Vertical alignment (lights on a diagonal) -->
+    <div class="var-panel">
+      <div>
+        <div class="var-title">Var 5 — Lights form a diagonal</div>
+        <div class="var-sub">The 3 light centers align on a 45° diagonal — creating a secondary visual rhythm that flows R → G across the mark.</div>
+      </div>
+      <div class="var-stage">
+        <svg width="140" height="112" viewBox="0 0 140 112" fill="none">
+          <!-- Step 3 (indigo, narrow) -->
+          <rect x="8" y="10" width="50" height="24" rx="5" fill="#4F46E5"/>
+          <!-- Diagonal: top-right of mark -->
+          <circle cx="58" cy="14" r="10" fill="#1A1D2E" stroke="#10B981" stroke-width="1.5"/>
+          <circle cx="58" cy="14" r="6.5" fill="#10B981"/>
+          <circle cx="56" cy="12" r="2" fill="#A7F3D0" opacity="0.8"/>
+          <circle cx="58" cy="14" r="13" fill="#10B981" opacity="0.1"/>
+
+          <!-- Step 2 (mid) -->
+          <rect x="8" y="44" width="84" height="24" rx="5" fill="#2D3456"/>
+          <circle cx="92" cy="44" r="10" fill="#1A1D2E" stroke="#F59E0B" stroke-width="1.5"/>
+          <circle cx="92" cy="44" r="6.5" fill="#F59E0B"/>
+          <circle cx="90" cy="42" r="2" fill="#FDE68A" opacity="0.8"/>
+
+          <!-- Step 1 (bottom, wide) -->
+          <rect x="8" y="78" width="118" height="24" rx="5" fill="#1E2235"/>
+          <circle cx="126" cy="74" r="10" fill="#1A1D2E" stroke="#EF4444" stroke-width="1.5" opacity="0.8"/>
+          <circle cx="126" cy="74" r="6.5" fill="#EF4444" opacity="0.75"/>
+          <circle cx="124" cy="72" r="2" fill="#FCA5A5" opacity="0.7"/>
+
+          <!-- Subtle diagonal guide (can be removed) -->
+          <line x1="58" y1="14" x2="92" y2="44" stroke="#2D3456" stroke-width="0.8" stroke-dasharray="2 3"/>
+          <line x1="92" y1="44" x2="126" y2="74" stroke="#2D3456" stroke-width="0.8" stroke-dasharray="2 3"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Var 6: Ultra-minimal — no casing, just colored dots on steps -->
+    <div class="var-panel">
+      <div>
+        <div class="var-title">Var 6 — Ultra minimal</div>
+        <div class="var-sub">Reduce the noise. Small simple dots on the right of each step. Maximum legibility at favicon/16px scale. The essentials only.</div>
+      </div>
+      <div class="var-stage">
+        <svg width="120" height="100" viewBox="0 0 120 100" fill="none">
+          <!-- Step 3 -->
+          <rect x="6" y="8" width="46" height="20" rx="4" fill="#4F46E5"/>
+          <circle cx="60" cy="18" r="6" fill="#10B981"/>
+          <circle cx="60" cy="18" r="9" fill="#10B981" opacity="0.18"/>
+
+          <!-- Step 2 -->
+          <rect x="6" y="38" width="76" height="20" rx="4" fill="#2D3456"/>
+          <circle cx="90" cy="48" r="6" fill="#F59E0B"/>
+
+          <!-- Step 1 -->
+          <rect x="6" y="68" width="104" height="20" rx="4" fill="#1E2235"/>
+          <circle cx="118" cy="78" r="6" fill="#EF4444" opacity="0.75"/>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ======== AT SCALE ======== -->
+<div class="section">
+  <div class="section-label">At Every Scale</div>
+  <div class="sizes-row">
+
+    <!-- 96px app icon -->
+    <div class="size-block">
+      <div style="background:#1A1D2E; border-radius:22px; width:96px; height:96px; display:flex; align-items:center; justify-content:center">
+        <svg width="64" height="56" viewBox="0 0 64 56" fill="none">
+          <rect x="4" y="4" width="28" height="12" rx="3" fill="#4F46E5"/>
+          <circle cx="37" cy="10" r="7" fill="#1A1D2E" stroke="#10B981" stroke-width="1.2"/>
+          <circle cx="37" cy="10" r="4.5" fill="#10B981"/>
+          <circle cx="37" cy="10" r="9" fill="#10B981" opacity="0.15"/>
+          <rect x="4" y="22" width="44" height="12" rx="3" fill="#2D3456"/>
+          <circle cx="53" cy="28" r="7" fill="#1A1D2E" stroke="#F59E0B" stroke-width="1.2"/>
+          <circle cx="53" cy="28" r="4.5" fill="#F59E0B"/>
+          <rect x="4" y="40" width="56" height="12" rx="3" fill="#1E2235"/>
+          <circle cx="64" cy="46" r="7" fill="#0C0E1A" stroke="#EF4444" stroke-width="1.2" opacity="0.8"/>
+          <circle cx="64" cy="46" r="4.5" fill="#EF4444" opacity="0.75"/>
+        </svg>
+      </div>
+      <span class="size-label">96px app icon</span>
+    </div>
+
+    <!-- 64px -->
+    <div class="size-block">
+      <div style="background:#1A1D2E; border-radius:16px; width:64px; height:64px; display:flex; align-items:center; justify-content:center">
+        <svg width="44" height="38" viewBox="0 0 44 38" fill="none">
+          <rect x="2" y="2" width="20" height="10" rx="2.5" fill="#4F46E5"/>
+          <circle cx="26" cy="7" r="5" fill="#1A1D2E" stroke="#10B981" stroke-width="1"/>
+          <circle cx="26" cy="7" r="3" fill="#10B981"/>
+          <circle cx="26" cy="7" r="7" fill="#10B981" opacity="0.15"/>
+          <rect x="2" y="16" width="30" height="10" rx="2.5" fill="#2D3456"/>
+          <circle cx="36" cy="21" r="5" fill="#1A1D2E" stroke="#F59E0B" stroke-width="1"/>
+          <circle cx="36" cy="21" r="3" fill="#F59E0B"/>
+          <rect x="2" y="28" width="38" height="10" rx="2.5" fill="#1E2235"/>
+          <circle cx="44" cy="33" r="5" fill="#0C0E1A" stroke="#EF4444" stroke-width="1" opacity="0.8"/>
+          <circle cx="44" cy="33" r="3" fill="#EF4444" opacity="0.75"/>
+        </svg>
+      </div>
+      <span class="size-label">64px</span>
+    </div>
+
+    <!-- 32px -->
+    <div class="size-block">
+      <div style="background:#1A1D2E; border-radius:10px; width:40px; height:40px; display:flex; align-items:center; justify-content:center">
+        <svg width="28" height="24" viewBox="0 0 28 24" fill="none">
+          <rect x="1" y="1" width="12" height="7" rx="2" fill="#4F46E5"/>
+          <circle cx="16" cy="4.5" r="3.5" fill="#1A1D2E" stroke="#10B981" stroke-width="0.8"/>
+          <circle cx="16" cy="4.5" r="2" fill="#10B981"/>
+          <rect x="1" y="9" width="18" height="7" rx="2" fill="#2D3456"/>
+          <circle cx="22" cy="12.5" r="3.5" fill="#1A1D2E" stroke="#F59E0B" stroke-width="0.8"/>
+          <circle cx="22" cy="12.5" r="2" fill="#F59E0B"/>
+          <rect x="1" y="17" width="24" height="7" rx="2" fill="#1E2235"/>
+          <circle cx="28" cy="20.5" r="3.5" fill="#0C0E1A" stroke="#EF4444" stroke-width="0.8" opacity="0.8"/>
+          <circle cx="28" cy="20.5" r="2" fill="#EF4444" opacity="0.75"/>
+        </svg>
+      </div>
+      <span class="size-label">32px</span>
+    </div>
+
+    <!-- 20px favicon -->
+    <div class="size-block">
+      <div style="background:#1A1D2E; border-radius:6px; width:28px; height:28px; display:flex; align-items:center; justify-content:center">
+        <svg width="18" height="16" viewBox="0 0 18 16" fill="none">
+          <rect x="1" y="1" width="7" height="4" rx="1" fill="#4F46E5"/>
+          <circle cx="10" cy="3" r="2.2" fill="#10B981"/>
+          <rect x="1" y="6" width="11" height="4" rx="1" fill="#2D3456"/>
+          <circle cx="14" cy="8" r="2.2" fill="#F59E0B"/>
+          <rect x="1" y="11" width="15" height="4" rx="1" fill="#1E2235"/>
+          <circle cx="18" cy="13" r="2.2" fill="#EF4444" opacity="0.75"/>
+        </svg>
+      </div>
+      <span class="size-label">favicon</span>
+    </div>
+
+    <!-- divider -->
+    <div style="width:1px; height:80px; background:#1E2235; margin:0 8px; align-self:center"></div>
+
+    <!-- On white / light bg -->
+    <div class="size-block">
+      <div style="background:#F8FAFC; border-radius:16px; width:80px; height:80px; display:flex; align-items:center; justify-content:center; border:1px solid #E2E8F0">
+        <svg width="52" height="46" viewBox="0 0 52 46" fill="none">
+          <rect x="2" y="2" width="22" height="12" rx="3" fill="#4F46E5"/>
+          <circle cx="29" cy="8" r="6" fill="#F8FAFC" stroke="#10B981" stroke-width="1.5"/>
+          <circle cx="29" cy="8" r="3.5" fill="#10B981"/>
+          <rect x="2" y="18" width="36" height="12" rx="3" fill="#CBD5E1"/>
+          <circle cx="43" cy="24" r="6" fill="#F8FAFC" stroke="#F59E0B" stroke-width="1.5"/>
+          <circle cx="43" cy="24" r="3.5" fill="#F59E0B"/>
+          <rect x="2" y="34" width="46" height="12" rx="3" fill="#E2E8F0"/>
+          <circle cx="53" cy="40" r="6" fill="#F8FAFC" stroke="#EF4444" stroke-width="1.5" opacity="0.8"/>
+          <circle cx="53" cy="40" r="3.5" fill="#EF4444" opacity="0.75"/>
+        </svg>
+      </div>
+      <span class="size-label">light bg</span>
+    </div>
+
+    <!-- Dark card context -->
+    <div class="size-block">
+      <div style="background:#1E2235; border-radius:12px; padding:12px 16px; display:flex; flex-direction:column; gap:8px; min-width:180px">
+        <div style="display:flex; align-items:center; gap:10px">
+          <svg width="28" height="24" viewBox="0 0 28 24" fill="none">
+            <rect x="1" y="1" width="12" height="7" rx="2" fill="#4F46E5"/>
+            <circle cx="16" cy="4.5" r="3.5" fill="#1A1D2E" stroke="#10B981" stroke-width="0.8"/>
+            <circle cx="16" cy="4.5" r="2" fill="#10B981"/>
+            <rect x="1" y="9" width="18" height="7" rx="2" fill="#2D3456"/>
+            <circle cx="22" cy="12.5" r="3.5" fill="#1A1D2E" stroke="#F59E0B" stroke-width="0.8"/>
+            <circle cx="22" cy="12.5" r="2" fill="#F59E0B"/>
+            <rect x="1" y="17" width="24" height="7" rx="2" fill="#1E2235" stroke="#2D3456" stroke-width="0.5"/>
+            <circle cx="28" cy="20.5" r="3.5" fill="#0C0E1A" stroke="#EF4444" stroke-width="0.8" opacity="0.8"/>
+            <circle cx="28" cy="20.5" r="2" fill="#EF4444" opacity="0.75"/>
+          </svg>
+          <span style="font-size:14px; font-weight:800; color:#F8FAFC; letter-spacing:-0.5px; font-family:Inter,sans-serif">Lotris</span>
+        </div>
+        <div style="font-size:10px; color:#3B4263; letter-spacing:0.04em">Where performance surfaces.</div>
+      </div>
+      <span class="size-label">sidebar context</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ======== WORDMARK LOCKUPS ======== -->
+<div class="section">
+  <div class="section-label">Wordmark Lockups</div>
+  <div class="lockups-grid">
+
+    <!-- Horizontal dark -->
+    <div class="lockup-panel">
+      <span class="lockup-label">Horizontal — Dark</span>
+      <div class="lockup-stage dark">
+        <svg width="240" height="60" viewBox="0 0 240 60" fill="none">
+          <!-- Mark scaled -->
+          <rect x="0" y="8" width="24" height="12" rx="3" fill="#4F46E5"/>
+          <circle cx="29" cy="14" r="7" fill="#1A1D2E" stroke="#10B981" stroke-width="1.2"/>
+          <circle cx="29" cy="14" r="4.5" fill="#10B981"/>
+          <circle cx="29" cy="14" r="9" fill="#10B981" opacity="0.12"/>
+          <rect x="0" y="24" width="38" height="12" rx="3" fill="#2D3456"/>
+          <circle cx="43" cy="30" r="7" fill="#1A1D2E" stroke="#F59E0B" stroke-width="1.2"/>
+          <circle cx="43" cy="30" r="4.5" fill="#F59E0B"/>
+          <rect x="0" y="40" width="52" height="12" rx="3" fill="#1E2235"/>
+          <circle cx="57" cy="46" r="7" fill="#0C0E1A" stroke="#EF4444" stroke-width="1.2" opacity="0.8"/>
+          <circle cx="57" cy="46" r="4.5" fill="#EF4444" opacity="0.75"/>
+          <!-- Wordmark -->
+          <text x="74" y="38" font-family="Inter, sans-serif" font-weight="800" font-size="30" letter-spacing="-1.2" fill="#F8FAFC">LOTRIS</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Horizontal light -->
+    <div class="lockup-panel">
+      <span class="lockup-label">Horizontal — Light</span>
+      <div class="lockup-stage light">
+        <svg width="240" height="60" viewBox="0 0 240 60" fill="none">
+          <rect x="0" y="8" width="24" height="12" rx="3" fill="#4F46E5"/>
+          <circle cx="29" cy="14" r="7" fill="#F1F5F9" stroke="#10B981" stroke-width="1.2"/>
+          <circle cx="29" cy="14" r="4.5" fill="#10B981"/>
+          <rect x="0" y="24" width="38" height="12" rx="3" fill="#CBD5E1"/>
+          <circle cx="43" cy="30" r="7" fill="#F1F5F9" stroke="#F59E0B" stroke-width="1.2"/>
+          <circle cx="43" cy="30" r="4.5" fill="#F59E0B"/>
+          <rect x="0" y="40" width="52" height="12" rx="3" fill="#E2E8F0"/>
+          <circle cx="57" cy="46" r="7" fill="#F1F5F9" stroke="#EF4444" stroke-width="1.2"/>
+          <circle cx="57" cy="46" r="4.5" fill="#EF4444" opacity="0.8"/>
+          <text x="74" y="38" font-family="Inter, sans-serif" font-weight="800" font-size="30" letter-spacing="-1.2" fill="#0F172A">LOTRIS</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Stacked with tagline — dark -->
+    <div class="lockup-panel">
+      <span class="lockup-label">Stacked + Tagline — Dark</span>
+      <div class="lockup-stage dark">
+        <svg width="200" height="96" viewBox="0 0 200 96" fill="none">
+          <!-- Mark centered, medium size -->
+          <g transform="translate(28, 4)">
+            <rect x="0" y="0" width="32" height="14" rx="3" fill="#4F46E5"/>
+            <circle cx="38" cy="7" r="8" fill="#1A1D2E" stroke="#10B981" stroke-width="1.2"/>
+            <circle cx="38" cy="7" r="5" fill="#10B981"/>
+            <circle cx="38" cy="7" r="11" fill="#10B981" opacity="0.1"/>
+            <rect x="0" y="18" width="50" height="14" rx="3" fill="#2D3456"/>
+            <circle cx="56" cy="25" r="8" fill="#1A1D2E" stroke="#F59E0B" stroke-width="1.2"/>
+            <circle cx="56" cy="25" r="5" fill="#F59E0B"/>
+            <rect x="0" y="36" width="68" height="14" rx="3" fill="#1E2235"/>
+            <circle cx="74" cy="43" r="8" fill="#0C0E1A" stroke="#EF4444" stroke-width="1.2" opacity="0.8"/>
+            <circle cx="74" cy="43" r="5" fill="#EF4444" opacity="0.75"/>
+          </g>
+          <!-- Wordmark -->
+          <text x="100" y="74" font-family="Inter, sans-serif" font-weight="900" font-size="28" letter-spacing="-1" fill="#F8FAFC" text-anchor="middle">LOTRIS</text>
+          <!-- Tagline -->
+          <text x="100" y="90" font-family="Inter, sans-serif" font-weight="500" font-size="11" letter-spacing="0.06em" fill="#3B4263" text-anchor="middle">WHERE PERFORMANCE SURFACES</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Wordmark-only product variant -->
+    <div class="lockup-panel">
+      <span class="lockup-label">Product App Header</span>
+      <div class="lockup-stage product">
+        <div style="display:flex; flex-direction:column; gap:20px; width:100%">
+          <!-- Full sidebar style -->
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:#1A1D2E; border-radius:8px">
+            <svg width="24" height="20" viewBox="0 0 24 20" fill="none">
+              <rect x="0" y="0" width="10" height="6" rx="1.5" fill="#4F46E5"/>
+              <circle cx="13" cy="3" r="3" fill="#1A1D2E" stroke="#10B981" stroke-width="0.8"/>
+              <circle cx="13" cy="3" r="1.8" fill="#10B981"/>
+              <rect x="0" y="7" width="16" height="6" rx="1.5" fill="#2D3456"/>
+              <circle cx="19" cy="10" r="3" fill="#1A1D2E" stroke="#F59E0B" stroke-width="0.8"/>
+              <circle cx="19" cy="10" r="1.8" fill="#F59E0B"/>
+              <rect x="0" y="14" width="22" height="6" rx="1.5" fill="#1E2235"/>
+              <circle cx="25" cy="17" r="3" fill="#080A14" stroke="#EF4444" stroke-width="0.8" opacity="0.8"/>
+              <circle cx="25" cy="17" r="1.8" fill="#EF4444" opacity="0.75"/>
+            </svg>
+            <span style="font-size:16px; font-weight:800; letter-spacing:-0.04em; color:#F8FAFC; font-family:Inter,sans-serif">Lotris</span>
+          </div>
+          <!-- Indigo bar variant -->
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:#4F46E5; border-radius:8px">
+            <svg width="24" height="20" viewBox="0 0 24 20" fill="none">
+              <rect x="0" y="0" width="10" height="6" rx="1.5" fill="white" opacity="0.9"/>
+              <circle cx="13" cy="3" r="3" fill="#4F46E5" stroke="#A7F3D0" stroke-width="0.8"/>
+              <circle cx="13" cy="3" r="1.8" fill="#10B981"/>
+              <rect x="0" y="7" width="16" height="6" rx="1.5" fill="white" opacity="0.5"/>
+              <circle cx="19" cy="10" r="3" fill="#4F46E5" stroke="#FDE68A" stroke-width="0.8"/>
+              <circle cx="19" cy="10" r="1.8" fill="#F59E0B"/>
+              <rect x="0" y="14" width="22" height="6" rx="1.5" fill="white" opacity="0.3"/>
+              <circle cx="25" cy="17" r="3" fill="#4338CA" stroke="#FCA5A5" stroke-width="0.8" opacity="0.8"/>
+              <circle cx="25" cy="17" r="1.8" fill="#EF4444" opacity="0.75"/>
+            </svg>
+            <span style="font-size:16px; font-weight:800; letter-spacing:-0.04em; color:white; font-family:Inter,sans-serif">Lotris</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ======== DISCUSSION NOTES ======== -->
+<div class="section" style="border-bottom:none">
+  <div class="section-label">Discussion Points</div>
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; max-width:960px">
+    <div style="background:#0C0E1A; border:1px solid #1E2235; border-radius:10px; padding:20px 24px">
+      <div style="font-size:12px; font-weight:700; color:#4F46E5; margin-bottom:8px; letter-spacing:0.06em; text-transform:uppercase">Step direction?</div>
+      <div style="font-size:13px; color:#64748B; line-height:1.6">Steps currently go <strong style="color:#94A3B8">left-aligned, descending right</strong>. We could flip so widest step is on the right, or make steps ascend bottom-left to top-right (like a growth chart).</div>
+    </div>
+    <div style="background:#0C0E1A; border:1px solid #1E2235; border-radius:10px; padding:20px 24px">
+      <div style="font-size:12px; font-weight:700; color:#4F46E5; margin-bottom:8px; letter-spacing:0.06em; text-transform:uppercase">Light order?</div>
+      <div style="font-size:13px; color:#64748B; line-height:1.6">Currently <strong style="color:#94A3B8">green top / amber mid / red bottom</strong> = "resolved at the peak." Could invert to red-top meaning "top priority = most critical." Which narrative fits your pitch?</div>
+    </div>
+    <div style="background:#0C0E1A; border:1px solid #1E2235; border-radius:10px; padding:20px 24px">
+      <div style="font-size:12px; font-weight:700; color:#4F46E5; margin-bottom:8px; letter-spacing:0.06em; text-transform:uppercase">Step fill?</div>
+      <div style="font-size:13px; color:#64748B; line-height:1.6">Steps are currently <strong style="color:#94A3B8">dark blue-gray except the top (indigo)</strong>. We could make each step match its indicator color (red step, amber step, green step) for a bolder, more colorful take.</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>Lotris · Combined E+F Concept · May 2026 · For internal review</p>
+  <div style="display:flex; gap:20px; align-items:center">
+    <span style="font-size:11px; color:#2D3456">Var 1 (flush) recommended as starting point</span>
+  </div>
+</div>
+
+</body>
+</html>

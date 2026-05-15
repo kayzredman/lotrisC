@@ -22,6 +22,51 @@
 | 18     | Phase 2 — SLA Breach Prediction + KPI Trend Analysis | ✅ Complete    | `dev` @ `4d640a9` | M11 |
 | 19     | Phase 2 — Automated Reports + Workload Rebalancing   | ✅ COMPLETE    | `dev` @ `ca32cff`, tag `v0.19.0` | M12 |
 | 20     | Onboarding Wizard                                    | ✅ COMPLETE    | `dev` @ `34e51dd`, tag `v0.20.0` | M13 |
+| 21     | Landing Page — Branding Sweep + KPI Agreement Section | ✅ COMPLETE  | `dev`                            | M14 |
+
+---
+
+## Sprint 21 · Landing Page — Branding Sweep + KPI Agreement Section
+
+**Target milestone:** M14
+**Status:** ✅ COMPLETE — committed to `dev`, May 2026
+
+### Goal
+Complete branding sweep across all app pages. Create the Lotris logo mark + brand asset system. Upgrade landing page with real professional photography. Add KPI Agreement as a dedicated animated landing page section.
+
+### Deliverables
+
+#### Brand Asset System (Frontend)
+- [x] `apps/web/components/brand/lotris-mark.tsx` — `LotrisMark` + `LotrisLogo` React components; `uid` prop prevents SVG `<defs>` ID collisions across multiple instances on same page
+- [x] `apps/web/app/icon.svg` — 32×32 Next.js App Router favicon
+- [x] `apps/web/public/brand/` — 5 static SVGs: `icon.svg`, `logo-dark.svg`, `logo-light.svg`, `logo-indigo.svg`, `logo-stacked.svg`
+- [x] `apps/web/app/layout.tsx` — root metadata: OG tags, favicon, site name
+
+#### Branding Applied to All Pages
+- [x] Sidebar — `LotrisMark height=26` replaces old "Lo" indigo placeholder
+- [x] Login — `LotrisLogo variant="dark" showTagline` (left panel) + `variant="light"` (right form)
+- [x] Sign-up — same pattern as login
+- [x] Onboarding wizard — `LotrisLogo variant="dark" showTagline` replaces "L" box
+- [x] Public /request layout — `LotrisLogo variant="dark"` in header bar
+- [x] Landing nav + footer — `LotrisLogo` applied
+
+#### Landing Page Content Upgrades
+- [x] **Pain Points section** — 5 + 1 resolution cards; all with real Unsplash header images (176px image strip, gradient overlay, editorial card layout)
+- [x] **How It Works section** — 3 step cards with real Unsplash photos, step badge overlay
+- [x] **KPI Agreement section** (new) — three-beat animated section (between Features and How It Works):
+  - Beat 1: empathetic enterprise problem statement + 3 red-bordered "before" pills (x-slide-in from left on scroll)
+  - Beat 2: 3 image cards (Build → Sign Off → Tracked Live) with stagger-up animation + `DRAFT → PENDING REVIEW → ACTIVE` status trail (each pill pops in, connecting line draws sequentially)
+  - Beat 3: feature spotlight — 1:1 review photo (slides left) + headline + 4 green ✓ bullets (slides right)
+  - Left-margin vertical timeline: 3 dots light up green as each beat enters viewport via `useInView`
+- [x] **CTA section** — rocket emoji replaced with `LotrisMark` panel icon in glowing frosted container (green + indigo ambient glow)
+
+### Design Decisions
+- Logo: 3-light status panel. Green = hero (glow rings + ✓). Red/amber = dimmed but present.
+- `uid` prop: every `LotrisMark`/`LotrisLogo` instance gets a unique prefix for SVG gradient IDs.
+- `variant="dark"` = white wordmark; `variant="light"` = dark wordmark.
+- `showTagline` only on dark splash panels (auth, onboarding) — not compact headers.
+- KPI Agreement section uses `#080a14` (deeper than `#0c0e1a`) to visually distinguish it as a premium feature callout.
+- Beat 1 tone: enterprise-appropriate / empathetic — not confrontational.
 
 ---
 

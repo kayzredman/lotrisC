@@ -1,0 +1,19 @@
+<svg width="280" height="64" viewBox="0 0 280 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Panel mark -->
+  <rect x="0" y="10" width="62" height="44" rx="9" fill="#111425" stroke="#1E2235" stroke-width="1"/>
+  <!-- Red -->
+  <circle cx="14" cy="32" r="9" fill="#0C0E1A" stroke="#EF4444" stroke-width="0.8" stroke-opacity="0.4"/>
+  <circle cx="14" cy="32" r="5.5" fill="#EF4444" fill-opacity="0.4"/>
+  <!-- Amber -->
+  <circle cx="31" cy="32" r="9" fill="#0C0E1A" stroke="#F59E0B" stroke-width="0.8" stroke-opacity="0.5"/>
+  <circle cx="31" cy="32" r="5.5" fill="#F59E0B" fill-opacity="0.6"/>
+  <!-- Green hero -->
+  <circle cx="48" cy="32" r="13" fill="#10B981" fill-opacity="0.08"/>
+  <circle cx="48" cy="32" r="9" fill="#0C0E1A" stroke="#10B981" stroke-width="1"/>
+  <circle cx="48" cy="32" r="5.5" fill="#10B981"/>
+  <circle cx="48" cy="32" r="3" fill="#34D399"/>
+  <path d="M44.5 32 L47 35 L52.5 27.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="46" cy="28.5" r="1.5" fill="#A7F3D0" fill-opacity="0.6"/>
+  <!-- Wordmark -->
+  <text x="76" y="43" font-family="Inter, sans-serif" font-weight="800" font-size="34" letter-spacing="-1.5" fill="#F8FAFC">LOTRIS</text>
+</svg>

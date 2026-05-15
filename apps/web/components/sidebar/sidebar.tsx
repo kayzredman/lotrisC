@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
+import { LotrisMark } from '@/components/brand/lotris-mark';
 import { useState, useRef, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import {
@@ -131,7 +132,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Logo */}
       <div className="v2-sidebar-logo">
         <div className="v2-logo-mark">
-          <div className="v2-logo-icon">Lo</div>
+          <LotrisMark height={26} uid="sb" />
           <div>
             <div className="v2-logo-text">Lotris</div>
             <div className="v2-logo-sub">IT Help Desk</div>
