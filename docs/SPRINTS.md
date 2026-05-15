@@ -1,7 +1,7 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Sprint 22 COMPLETE (`dev`, Milestone M15). Tooling hardening + nav UX.
+> Last updated: May 2026 — Sprint 23 COMPLETE (`dev`, Milestone M15). Staging infra wired.
 
 ---
 
@@ -24,6 +24,42 @@
 | 20     | Onboarding Wizard                                    | ✅ COMPLETE    | `dev` @ `34e51dd`, tag `v0.20.0` | M13 |
 | 21     | Landing Page — Branding Sweep + KPI Agreement Section | ✅ COMPLETE  | `dev`                            | M14 |
 | 22     | Tooling Hardening + Nav UX (new-tab admin/monitor)    | ✅ COMPLETE  | `dev`                            | M15 |
+| 23     | Staging Infra — Vercel + Railway + Neon + Upstash     | ✅ COMPLETE  | `feature/sprint-23-staging-infra` | M15 |
+
+---
+
+## Sprint 23 · Staging Infra
+
+**Target milestone:** M15  
+**Status:** ✅ COMPLETE — `feature/sprint-23-staging-infra`, May 2026
+
+### Goal
+Wire up a zero-cost staging environment using Vercel + Railway + Neon + Upstash. No code changes to any existing module — additive config only.
+
+### Deliverables
+- [x] `vercel.json` — Turborepo-aware Next.js build config; `ignoreCommand` to skip unchanged deploys
+- [x] `.env.staging.example` — full env var template with inline comments; documents which vars go to which platform
+- [x] `docs/STAGING.md` — 8-step setup guide: Neon → Upstash → Railway (MSSQL + API + Workers) → migrations → Clerk webhook → Vercel → smoke test
+- [x] `apps/api/src/modules/health/health.service.ts` — `checkWeb()` now uses `APP_BASE_URL` env var instead of hardcoded `localhost:3000` so System Health correctly pings the Vercel URL in staging
+- [x] `README.md` — build status table updated to Sprint 23; Staging Deployment section added
+- [x] `docs/CONTEXT.md` — Section 13 hosting row updated; Section 13a Staging Stack added
+- [x] `docs/SPRINTS.md` — this entry
+
+### Platform Summary
+| Service | Platform | Cost |
+|---------|----------|------|
+| `apps/web` | Vercel free | $0 |
+| `apps/api` | Railway starter | ~$5/mo |
+| `workers/jobs` | Railway starter | shared credit |
+| MSSQL | Railway Docker | shared credit |
+| PostgreSQL | Neon free | $0 |
+| Redis | Upstash free | $0 |
+
+### Design Decisions
+- Railway for API + Workers + MSSQL keeps the entire backend on one platform (single dashboard, shared private network for MSSQL internal hostname)
+- Neon + Upstash used for PostgreSQL + Redis to keep cost at $0 (both have permanent free tiers vs Railway's credit-based model)
+- No `railway.json` files — Railway build/start commands are documented in `docs/STAGING.md` for the user to enter in the Railway dashboard (avoids per-service config file conflicts in a monorepo)
+- `APP_BASE_URL` reused for System Health web check — zero new env vars added
 
 ---
 

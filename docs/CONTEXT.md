@@ -681,12 +681,29 @@ The public marketing landing page (`/`) is a single-page scroll with the followi
 | Auth           | Clerk                        | Hosted identity; Google + Microsoft social login, OIDC, SAML; Clerk JWT verified by NestJS guard |
 | Notifications  | Nodemailer + SSE             | Email via BullMQ worker; in-app via SSE stream                                                   |
 | Reporting      | ExcelJS + PDFKit             | Excel exports and PDF reports generated in BullMQ worker                                         |
-| Hosting        | Docker → AWS ECS / Azure ACI | Frontend and API containerised as separate services                                              |
-| CI/CD          | GitHub Actions               | Lint → test → build → Docker push → deploy                                                       |
+| Hosting        | Vercel + Railway + Neon + Upstash | Staging: Vercel (web) · Railway (API + Workers + MSSQL) · Neon (PostgreSQL) · Upstash (Redis). See `docs/STAGING.md`. |
+| CI/CD          | GitHub Actions + Vercel/Railway auto-deploy | Push to `dev` → Vercel redeploys web; Railway redeploys API + Workers |
 
 ---
 
-## 14. Folder Structure
+## 13a. Staging Deployment Stack
+
+| Service | Platform | Notes |
+|---------|----------|---------|
+| `apps/web` (Next.js) | Vercel free tier | `vercel.json` at repo root; auto-deploys from `dev` |
+| `apps/api` (NestJS) | Railway | Build: `pnpm --filter @lotris/api build`; Start: `pnpm --filter @lotris/api start` |
+| `workers/jobs` (BullMQ) | Railway | Build: `pnpm --filter @lotris/workers build`; Start: `pnpm --filter @lotris/workers start` |
+| MSSQL | Railway Docker | Image: `mcr.microsoft.com/mssql/server:2022-latest`; internal hostname: `mssql.railway.internal` |
+| PostgreSQL (analytics) | Neon free tier | 0.5 GB; connection string via `DATABASE_URL_POSTGRES` |
+| Redis (cache + queues) | Upstash free tier | 10K cmds/day; TLS; connection string via `REDIS_URL` |
+
+**Key env var wiring:**
+- `NEXT_PUBLIC_API_URL` (Vercel) → Railway API public domain
+- `APP_BASE_URL` (Railway API) → Vercel deployment URL (used by System Health web check)
+- All DB/Redis vars shared between Railway API and Workers services
+
+> Full setup guide: [`docs/STAGING.md`](STAGING.md)  
+> Env var template: [`.env.staging.example`](../.env.staging.example)
 
 ```
 lotris/                          ← monorepo root

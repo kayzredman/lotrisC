@@ -104,7 +104,7 @@ export class HealthService {
     try {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 2000);
-      const res = await fetch(`http://localhost:${process.env.WEB_PORT ?? 3000}`, {
+      const res = await fetch(getEnv().APP_BASE_URL, {
         signal: ctrl.signal,
       });
       clearTimeout(timer);
@@ -113,7 +113,7 @@ export class HealthService {
       return {
         id: 'nextjs-web',
         name: 'Next.js Web',
-        sub: 'web · :3000',
+        sub: `web · ${getEnv().APP_BASE_URL}`,
         status,
         cpu: 0, // not observable from API
         memUsedMb: 0,
@@ -126,7 +126,7 @@ export class HealthService {
       return {
         id: 'nextjs-web',
         name: 'Next.js Web',
-        sub: 'web · :3000',
+        sub: `web · ${getEnv().APP_BASE_URL}`,
         status: 'DOWN',
         cpu: 0,
         memUsedMb: 0,
