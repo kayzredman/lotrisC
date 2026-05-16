@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "node build.js",
-    "start": "ls -la && node build.js && node dist/index.js",
+    "start": "node dist/index.js",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
