@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "rootDirectory": "apps/web",
   "buildCommand": "cd ../.. && pnpm turbo run build --filter=@lotris/web",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "outputDirectory": ".next",
