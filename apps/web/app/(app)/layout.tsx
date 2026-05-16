@@ -1,4 +1,6 @@
 import { Providers } from '@/components/providers';
+
+export const dynamic = 'force-dynamic';
 import { AppShell } from '@/components/layout/app-shell';
 import { OnboardingGuard } from '@/components/onboarding/onboarding-guard';
 
