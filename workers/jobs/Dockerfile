@@ -19,15 +19,8 @@ RUN corepack enable
 
 WORKDIR /app
 
-# Copy workspace root config first (layer-cached until these change)
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json ./
-
-# Copy only the packages workers depends on
-COPY packages/config/  ./packages/config/
-COPY packages/db/      ./packages/db/
-COPY packages/types/   ./packages/types/
-COPY stubs/            ./stubs/
-COPY workers/jobs/     ./workers/jobs/
+# Copy full repo (node_modules, dist, .git excluded via .dockerignore)
+COPY . .
 
 # Install ALL dependencies (including devDependencies for esbuild)
 RUN pnpm install --frozen-lockfile
@@ -46,11 +39,14 @@ RUN corepack enable
 
 WORKDIR /app
 
-# Copy workspace config + only the packages that have runtime deps
+# Copy all workspace package.json files for pnpm workspace resolution
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY packages/config/package.json  ./packages/config/package.json
 COPY packages/db/package.json      ./packages/db/package.json
 COPY packages/types/package.json   ./packages/types/package.json
+COPY packages/ui/package.json      ./packages/ui/package.json
+COPY apps/api/package.json         ./apps/api/package.json
+COPY apps/web/package.json         ./apps/web/package.json
 COPY workers/jobs/package.json     ./workers/jobs/package.json
 
 # Install production deps only (esbuild excluded — only needed for build)

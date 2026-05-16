@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# Node modules (re-installed inside Docker)
+node_modules
+**/node_modules
+
+# Build outputs
+**/dist
+**/.next
+**/build
+
+# Dev/local files
+.env*
+!.env.example
+*.local
+
+# IDE
+.vscode
+.idea
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
