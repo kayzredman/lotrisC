@@ -257,3 +257,30 @@ Both Railway services and Vercel can auto-deploy when `dev` branch is pushed:
 4. Vercel → project → **Settings** → **Delete Project**
 
 > Clerk dev instance has no cost — leave it running.
+
+---
+
+## Known Gotchas & Build Notes
+
+### 1. `import type` breaks NestJS DI in webpack builds
+
+When using `nest build` with webpack (required for monorepo workspace packages to be bundled), TypeScript's `emitDecoratorMetadata` needs the **runtime value** of each injected service class. If a constructor parameter is imported with `import type { SomeService }`, TypeScript erases the import entirely at compile time — the emitted metadata becomes `Object` instead of the actual class token, and NestJS DI throws:
+
+```
+Nest can't resolve dependencies of the SomeGuard (?).
+Please make sure that the argument Object at index [0] is available...
+```
+
+**Rule:** Any class used as a constructor parameter type (i.e. a DI injection target) must use a regular `import`, never `import type`. Types-only imports (`import type { FastifyRequest }`, `import type { TrpcAuth }`) are fine everywhere else.
+
+**Files fixed** (Sprint 23):
+- `apps/api/src/modules/auth/clerk-jwt.guard.ts` — `AuthService`
+- `apps/api/src/modules/tickets/tickets.service.ts` — `NotificationsService`
+
+### 2. Workspace packages must be webpack-bundled, not externalized
+
+Railway (and any Docker/Node production environment) cannot run raw `.ts` files. pnpm workspace packages (`@lotris/config`, `@lotris/types`, `@lotris/db`) have `"main": "./src/index.ts"` for local dev with `tsx`. In production, webpack must bundle them inline — `apps/api/webpack.config.js` allowlists `@lotris/*` from `webpack-node-externals` to achieve this.
+
+### 3. `APP_BASE_URL` must be a valid URL
+
+`packages/config/src/env.ts` validates `APP_BASE_URL` with `z.string().url()`. Setting it to a plain string like `"placeholder"` will cause `process.exit(1)` at startup. Either delete the variable (defaults to `http://localhost:3000`) or set it to a valid URL like `https://lotris-staging.vercel.app` before Vercel is live.
