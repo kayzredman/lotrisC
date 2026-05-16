@@ -2,7 +2,7 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import { verifyToken } from '@clerk/backend';
 import { getEnv } from '@lotris/config';
-import type { AuthService } from './auth.service';
+import { AuthService } from './auth.service';
 
 @Injectable()
 export class ClerkJwtGuard implements CanActivate {

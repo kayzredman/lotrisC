@@ -24,7 +24,7 @@ import type {
   CreateAttachmentRefDto,
   TicketListQueryDto,
 } from './dto';
-import type { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { getEnv } from '@lotris/config';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
