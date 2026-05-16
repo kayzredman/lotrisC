@@ -11,9 +11,11 @@ import { KpiModule } from './modules/kpi/kpi.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { IntakeModule } from './modules/intake/intake.module';
+import { MigrationModule } from './modules/migration/migration.module';
 
 @Module({
   imports: [
+    MigrationModule,
     AuthModule,
     AdminModule,
     WebhooksModule,

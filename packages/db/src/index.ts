@@ -5,7 +5,7 @@ export * from './schemas/mssql';
 export * from './schemas/postgres';
 
 // DB clients
-export { getMssqlDb, type MssqlDb } from './client/mssql';
+export { getMssqlDb, getMssqlPool, type MssqlDb } from './client/mssql';
 export { getPostgresDb, type PostgresDb } from './client/postgres';
 
 // Re-export drizzle query helpers so consumers don't need drizzle-orm as a direct dep
