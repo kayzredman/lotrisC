@@ -54,6 +54,7 @@ COPY packages/types/package.json   ./packages/types/package.json
 COPY workers/jobs/package.json     ./workers/jobs/package.json
 
 # Install production deps only (esbuild excluded — only needed for build)
+# mssql is kept external by the bundle, so it must be installed here
 RUN pnpm install --frozen-lockfile --prod
 
 # Copy the built bundle from builder stage

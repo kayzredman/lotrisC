@@ -1,3 +1,4 @@
+import 'reflect-metadata'; // required by @Injectable() decorators in bundled NestJS services
 import { getEnv } from '@lotris/config';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
