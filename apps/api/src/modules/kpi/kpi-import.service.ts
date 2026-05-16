@@ -47,8 +47,6 @@ export class KpiImportService {
       const { Readable } = require('node:stream') as typeof import('stream');
       await workbook.csv.read(Readable.from(file.buffer));
     } else {
-      // ExcelJS xlsx.load() uses older Buffer type definition incompatible with Node 24 generics
-      // @ts-expect-error ExcelJS xlsx.load() Buffer type incompatible with Node 24 generics
       await workbook.xlsx.load(Buffer.from(file.buffer));
     }
 
