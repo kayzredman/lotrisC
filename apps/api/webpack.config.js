@@ -25,19 +25,6 @@ module.exports = function (options) {
         'drizzle-orm/mssql2': path.resolve(__dirname, '../../stubs/drizzle-mssql2.ts'),
       },
     },
-    module: {
-      ...options.module,
-      rules: [
-        // Replace the default ts-loader rule with transpileOnly: true so that
-        // rootDir constraints are not enforced across workspace boundaries.
-        {
-          test: /\.tsx?$/,
-          use: { loader: 'ts-loader', options: { transpileOnly: true } },
-          exclude: /node_modules/,
-        },
-        // Keep any non-ts rules from the NestJS defaults (e.g. asset loaders).
-        ...(options.module?.rules ?? []).filter((r) => !/\.tsx?/.test(String(r.test))),
-      ],
-    },
+
   };
 };
