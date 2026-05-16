@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
-import { getMssqlPool } from '@lotris/db';
+import { getMssqlPool, ensureMssqlDatabase } from '@lotris/db';
 
 // ── Migration SQL embedded inline (webpack-bundled, no fs access needed) ───────
 
@@ -581,13 +581,17 @@ export class MigrationService implements OnApplicationBootstrap {
     try {
       await this.runMigrations();
     } catch (err) {
-      // Log but don't crash the app — DB may already be migrated
-      this.logger.error('Migration run failed', (err as Error).message);
+      this.logger.error(`Migration run failed: ${(err as Error).message}`);
+      throw err;
     }
   }
 
   private async runMigrations(): Promise<void> {
     this.logger.log('Running MSSQL migrations...');
+
+    // Ensure the target database exists (fresh server starts with only system DBs)
+    await ensureMssqlDatabase();
+
     const pool = await getMssqlPool();
 
     // Ensure tracking table exists

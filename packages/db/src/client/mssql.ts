@@ -63,6 +63,27 @@ async function getPool(): Promise<sql.ConnectionPool> {
   return _pool;
 }
 
+/**
+ * Ensures the target database exists by connecting to master first.
+ * Must be called before getMssqlPool() on a fresh server.
+ */
+export async function ensureMssqlDatabase(): Promise<void> {
+  const config = parseMssqlUrl(getEnv().DATABASE_URL_MSSQL);
+  const dbName = config.database ?? 'lotris';
+  // Connect to master to create the database
+  const masterPool = await sql.connect({ ...config, database: 'master' });
+  try {
+    await masterPool
+      .request()
+      .query(
+        `IF NOT EXISTS (SELECT 1 FROM sys.databases WHERE name = '${dbName}')
+         CREATE DATABASE [${dbName}]`,
+      );
+  } finally {
+    await masterPool.close();
+  }
+}
+
 export async function getMssqlPool(): Promise<sql.ConnectionPool> {
   return getPool();
 }
