@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-const isPublicRoute = createRouteMatcher(['/', '/login(.*)', '/sign-up(.*)', '/api/dev-login(.*)', '/monitor(.*)']);
+const isPublicRoute = createRouteMatcher(['/', '/login(.*)', '/sign-up(.*)', '/api/dev-login(.*)', '/monitor(.*)', '/request(.*)', '/request-access(.*)']);
 
 export default clerkMiddleware(async (auth, request) => {
   const url = new URL(request.url);

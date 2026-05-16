@@ -11,6 +11,7 @@ import { KpiModule } from './modules/kpi/kpi.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { IntakeModule } from './modules/intake/intake.module';
+import { AccessRequestModule } from './modules/access-request/access-request.module';
 import { MigrationModule } from './modules/migration/migration.module';
 
 @Module({
@@ -28,6 +29,7 @@ import { MigrationModule } from './modules/migration/migration.module';
     AnalyticsModule,
     ReportsModule,
     IntakeModule,
+    AccessRequestModule,
   ],
 })
 export class AppModule {}

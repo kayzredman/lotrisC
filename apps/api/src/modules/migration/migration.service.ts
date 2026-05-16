@@ -571,6 +571,21 @@ BEGIN
 END
 `,
   },
+  {
+    name: '0010_access_requests.sql',
+    sql: `
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AccessRequests')
+CREATE TABLE AccessRequests (
+  id           VARCHAR(36)    NOT NULL PRIMARY KEY,
+  name         NVARCHAR(255)  NOT NULL,
+  company_name NVARCHAR(255)  NOT NULL,
+  email        NVARCHAR(255)  NOT NULL,
+  message      NVARCHAR(1000) NULL,
+  status       VARCHAR(20)    NOT NULL DEFAULT 'PENDING',
+  created_at   DATETIME2(3)   NOT NULL DEFAULT GETUTCDATE()
+);
+`,
+  },
 ];
 
 @Injectable()

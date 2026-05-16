@@ -339,11 +339,11 @@ function Navbar() {
             onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
             onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
           >Sign in</Link>
-          <Link href="/sign-up"
+          <Link href="/request-access"
             style={{ fontSize: 13, background: '#4f46e5', color: '#fff', textDecoration: 'none', padding: '7px 18px', borderRadius: 8, fontWeight: 600, transition: 'background 0.2s' }}
             onMouseEnter={(e) => (e.currentTarget.style.background = '#4338ca')}
             onMouseLeave={(e) => (e.currentTarget.style.background = '#4f46e5')}
-          >Get Started</Link>
+          >Request Access</Link>
         </div>
 
         {/* Hamburger button — visible on mobile only */}
@@ -414,9 +414,9 @@ function Navbar() {
               transition={{ delay: 0.18, duration: 0.22, ease: EASE }}
               style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}
             >
-              <Link href="/sign-up" onClick={() => setMenuOpen(false)}
+              <Link href="/request-access" onClick={() => setMenuOpen(false)}
                 style={{ fontSize: 15, background: '#4f46e5', color: '#fff', textDecoration: 'none', padding: '13px 0', borderRadius: 10, fontWeight: 600, textAlign: 'center', display: 'block' }}
-              >Get Started Free →</Link>
+              >Request Access →</Link>
               <Link href="/login" onClick={() => setMenuOpen(false)}
                 style={{ fontSize: 14, color: '#94a3b8', textDecoration: 'none', fontWeight: 500, textAlign: 'center', padding: '10px 0', display: 'block' }}
               >Sign in to your account</Link>
@@ -670,12 +670,12 @@ function HeroSection() {
           transition={{ duration: 0.55, delay: 0.34 }}
           style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 36 }}
         >
-          <Link href="/sign-up"
+          <Link href="/request-access"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#4f46e5', color: '#fff', textDecoration: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, boxShadow: '0 0 0 0 rgba(79,70,229,0.5)', transition: 'all 0.2s' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = '#4338ca'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(79,70,229,0.4)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = '#4f46e5'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 0 0 0 rgba(79,70,229,0.5)'; }}
           >
-            Get Started Free →
+            Request Access →
           </Link>
           <Link href="/login"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', textDecoration: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600, border: '1px solid rgba(255,255,255,0.12)', transition: 'all 0.2s' }}
@@ -819,8 +819,8 @@ function PainPointsSection() {
             <div style={{ padding: '22px 24px 26px' }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#4f46e5', margin: '0 0 8px', lineHeight: 1.3 }}>Lotris solves all of this.</h3>
               <p style={{ fontSize: 13.5, color: '#6366f1', margin: '0 0 18px', lineHeight: 1.65 }}>One platform. Every ticket, every SLA, every KPI — structured, automated, and reported.</p>
-              <Link href="/sign-up" style={{ fontSize: 13, fontWeight: 600, color: '#4f46e5', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                See how it works →
+              <Link href="/request-access" style={{ fontSize: 13, fontWeight: 600, color: '#4f46e5', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                Request access →
               </Link>
             </div>
           </motion.div>
@@ -1384,12 +1384,12 @@ function CtaSection() {
           {/* Or book a demo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: 13, color: '#6366f1' }}>or</span>
-            <Link href="/sign-up"
+            <Link href="/request-access"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 8, color: '#e2e8f0', textDecoration: 'none', fontSize: 13, fontWeight: 600, transition: 'all 0.2s' }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
-              📅 Book a demo
+              📅 Request access
             </Link>
             <Link href="/login"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 8, color: '#e2e8f0', textDecoration: 'none', fontSize: 13, fontWeight: 600, transition: 'all 0.2s' }}
