@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { Users, AlertCircle, CheckCircle, ArrowRightLeft, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
-import { trpc } from '@/lib/trpc';
+import { useDashboardTeamWorkload } from '@/lib/api/hooks/useDashboard';
+import { useAnalyticsTeamWorkload } from '@/lib/api/hooks/useAnalytics';
+import { useBatchReassignTickets } from '@/lib/api/hooks/useTickets';
 import type { WorkloadSuggestion } from '@lotris/types';
 
 // ── Single-team panel (used for TEAM_LEAD) ───────────────────────────────────
@@ -23,30 +25,33 @@ function loadColor(pct: number): string {
 function TeamLoadPanel({ teamId, teamName, inline }: TeamPanelProps) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [applyStatus, setApplyStatus] = useState<{ ok: boolean; message: string } | null>(null);
-  const utils = trpc.useUtils();
 
-  const { data, isLoading, error } = trpc['analytics.teamWorkload'].useQuery(
+  const { data, isLoading, error, refetch } = useAnalyticsTeamWorkload(
     { teamId },
     { staleTime: 60_000, refetchInterval: 120_000 },
   );
 
-  const batchReassignMutation = trpc['tickets.batchReassign'].useMutation({
-    onSuccess: (result) => {
-      setApplyStatus({ ok: true, message: `${result.reassigned} ticket(s) reassigned successfully.` });
-      setShowConfirm(false);
-      void utils['analytics.teamWorkload'].invalidate({ teamId });
-    },
-    onError: (err) => {
-      setApplyStatus({ ok: false, message: err.message ?? 'Reassignment failed.' });
-      setShowConfirm(false);
-    },
-  });
+  const batchReassignMutation = useBatchReassignTickets();
 
   const handleApplyAll = () => {
-    if (!data?.suggestions.length) return;
-    batchReassignMutation.mutate({
-      reassignments: data.suggestions.map((s) => ({ ticketId: s.ticketId, toEngineerId: s.toEngineerId })),
-    });
+    const suggestions = (data as { suggestions?: WorkloadSuggestion[] } | undefined)?.suggestions ?? [];
+    if (!suggestions.length) return;
+    batchReassignMutation.mutate(
+      {
+        reassignments: suggestions.map((s) => ({ ticketId: s.ticketId, toEngineerId: s.toEngineerId })),
+      },
+      {
+        onSuccess: (result) => {
+          setApplyStatus({ ok: true, message: `${result.reassigned} ticket(s) reassigned successfully.` });
+          setShowConfirm(false);
+          void refetch();
+        },
+        onError: (err) => {
+          setApplyStatus({ ok: false, message: err.message ?? 'Reassignment failed.' });
+          setShowConfirm(false);
+        },
+      },
+    );
   };
 
   const inner = (
@@ -168,10 +173,10 @@ function AllTeamsWorkloadPanel() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   // Use dashboard.teamWorkload (no-input endpoint) for the team list
-  const { data: teamList, isLoading } = trpc['dashboard.teamWorkload'].useQuery(
-    undefined,
-    { staleTime: 60_000, refetchInterval: 120_000 },
-  );
+  const { data: teamList, isLoading } = useDashboardTeamWorkload({
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  });
   const teams = (teamList ?? []) as { id: string; name: string; tag: string; queued: number; pct: number }[];
 
   return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useAdminTeams, useCreateAdminUser } from '@/lib/api/hooks/useAdmin';
 import { Zap, Mail, X } from 'lucide-react';
 
 const ROLES = [
@@ -28,10 +28,10 @@ export function Step3Invite({ onSuccess }: Props) {
   const [sending, setSending]         = useState(false);
   const [sendError, setSendError]     = useState('');
 
-  const { data: teamsData } = trpc['admin.teams.list'].useQuery();
+  const { data: teamsData } = useAdminTeams();
   const teams = (teamsData ?? []) as { id: string; name: string }[];
 
-  const createUser = trpc['admin.users.create'].useMutation();
+  const createUser = useCreateAdminUser();
 
   function stageEmail(raw: string) {
     const emails = raw.split(/[\s,;]+/).map(e => e.trim()).filter(e => e.includes('@'));

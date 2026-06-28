@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc';
+import { useAdminTeams, useCreateAdminUser } from '@/lib/api/hooks/useAdmin';
 import { CheckCircle2, Loader2, Mail } from 'lucide-react';
 
 const ROLES = [
@@ -35,25 +35,28 @@ export function InviteUserModal({ onClose, onSuccess }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
-  const teamsQ = trpc['admin.teams.list'].useQuery();
+  const teamsQ = useAdminTeams();
 
-  const inviteMutation = trpc['admin.users.create'].useMutation({
-    onSuccess: () => {
-      setSent(true);
-      onSuccess();
-    },
-    onError: (e) => setError(e.message),
-  });
+  const inviteMutation = useCreateAdminUser();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    inviteMutation.mutate({
-      email: form.email,
-      fullName: form.fullName,
-      roleId: form.roleId,
-      ...(form.teamId ? { teamId: form.teamId } : {}),
-    });
+    inviteMutation.mutate(
+      {
+        email: form.email,
+        fullName: form.fullName,
+        roleId: form.roleId,
+        ...(form.teamId ? { teamId: form.teamId } : {}),
+      },
+      {
+        onSuccess: () => {
+          setSent(true);
+          onSuccess();
+        },
+        onError: (e) => setError(e.message),
+      },
+    );
   };
 
   return (

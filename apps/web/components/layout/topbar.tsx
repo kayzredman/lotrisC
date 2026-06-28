@@ -1,10 +1,10 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
 import { useTheme } from 'next-themes';
 import { Search, Bell, Moon, Sun, Menu } from 'lucide-react';
 import { useState } from 'react';
+import { useCurrentUser } from '@/lib/api/hooks/useAuth';
 
 const PAGE_META: Record<string, { title: string; breadcrumb: string[] }> = {
   '/dashboard':         { title: 'Dashboard',     breadcrumb: ['Home', 'Overview'] },
@@ -33,12 +33,12 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const pathname = usePathname();
   const meta = getPageMeta(pathname);
   const [searchFocused, setSearchFocused] = useState(false);
-  const { user } = useUser();
+  const { data: me } = useCurrentUser();
   const { theme, setTheme } = useTheme();
 
-  const initials = user
-    ? ((user.firstName?.[0] ?? '') + (user.lastName?.[0] ?? '')).toUpperCase() || 'U'
-    : 'RK';
+  const initials = me?.fullName
+    ? me.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'U';
 
   return (
     <header className="v2-topbar">
@@ -97,7 +97,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <div
           className="v2-avatar"
           style={{ width: 30, height: 30, borderRadius: 6, flexShrink: 0, cursor: 'pointer', fontSize: 11 }}
-          title={user ? `${user.firstName} ${user.lastName}` : 'User'}
+          title={me?.fullName ?? 'User'}
         >
           {initials}
         </div>

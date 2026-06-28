@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser, useUsersList } from '@/lib/api/hooks/useAuth';
+import { useCreateTask, useTasksList } from '@/lib/api/hooks/useTasks';
 import TaskDrawer from './task-drawer';
 import CreateTaskModal from './create-task-modal';
 import { Plus, ChevronLeft, ChevronRight, Search } from 'lucide-react';
@@ -65,37 +67,36 @@ export default function TasksTable() {
   const [search, setSearch] = useState('');
   const [page] = useState(1);
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // Role-awareness
-  const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
+  const { data: me } = useCurrentUser({ staleTime: 60_000 });
   const role = (me as { roleName?: string } | undefined)?.roleName ?? '';
   const isEngineer = role === 'ENGINEER';
   const isTeamLead = role === 'TEAM_LEAD';
 
   // Live tasks from MSSQL
-  const { data: liveData } = trpc['tasks.list'].useQuery(
-    { page, limit: 50 },
-    { staleTime: 25_000 },
-  );
+  const { data: liveData } = useTasksList({ page, limit: 50 }, { staleTime: 25_000 });
+
+  const taskItems = (liveData?.items ?? liveData?.tasks ?? []) as Array<Record<string, unknown>>;
 
   // Map live rows → display format
-  const liveRows = liveData?.items.map((t) => {
-    const statusRaw = t.status.toUpperCase();
+  const liveRows = taskItems.map((t) => {
+    const statusRaw = String(t.status).toUpperCase();
     // Determine if overdue: OPEN/IN_PROGRESS with past dueDate
-    const isOverdue = (statusRaw === 'OPEN' || statusRaw === 'IN_PROGRESS') && t.dueDate && new Date(t.dueDate) < new Date();
-    const displayStatus = isOverdue ? 'Overdue' : (TASK_STATUS_LABEL[statusRaw] ?? t.status);
+    const isOverdue = (statusRaw === 'OPEN' || statusRaw === 'IN_PROGRESS') && t.dueDate && new Date(t.dueDate as string) < new Date();
+    const displayStatus = isOverdue ? 'Overdue' : (TASK_STATUS_LABEL[statusRaw] ?? String(t.status));
     const dueDateStr = t.dueDate
-      ? new Date(t.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+      ? new Date(t.dueDate as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
       : '–';
     return {
-      id: t.id,
-      title: t.title,
-      type: TASK_TYPE_LABEL[t.taskType] ?? t.taskType,
-      priority: 'Medium' as string, // tasks schema has no priority; use Medium default
-      assignee: USER_SHORT[t.createdBy] ?? 'Engineer',
+      id: t.id as string,
+      title: t.title as string,
+      type: TASK_TYPE_LABEL[t.taskType as string] ?? String(t.taskType),
+      priority: 'Medium' as string,
+      assignee: USER_SHORT[t.createdBy as string] ?? 'Engineer',
       status: displayStatus,
-      progress: t.progress ?? 0,
+      progress: (t.progress as number) ?? 0,
       dueDate: dueDateStr,
       selfLogged: t.source === 'SELF_LOGGED',
     };
@@ -301,7 +302,7 @@ export default function TasksTable() {
       </div>
 
       {selectedTaskId && <TaskDrawer taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />}
-      {showCreate && <CreateTaskModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); void utils['tasks.list'].invalidate(); }} />}
+      {showCreate && <CreateTaskModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); void queryClient.invalidateQueries({ queryKey: ['tasks', 'list'] }); }} />}
     </div>
   );
 }

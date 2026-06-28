@@ -1,12 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { trpc } from '@/lib/trpc/client';
+import { useOnboardingStatus } from '@/lib/api/hooks/useOnboarding';
 import { CheckCircle2, LayoutDashboard, Users } from 'lucide-react';
 
 export function StepDone() {
   const router = useRouter();
-  const { data: status } = trpc['onboarding.getStatus'].useQuery();
+  const { data: status } = useOnboardingStatus();
 
   const teamCount    = (status as { teamCount?: number } | undefined)?.teamCount ?? 0;
   const inviteCount  = 0; // invite count not tracked in getStatus yet

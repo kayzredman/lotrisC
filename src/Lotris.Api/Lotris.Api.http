@@ -1,0 +1,6 @@
+@Lotris.Api_HostAddress = http://localhost:5153
+
+GET {{Lotris.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useSaveOnboardingOrg } from '@/lib/api/hooks/useOnboarding';
 import { Building2 } from 'lucide-react';
 
 const TIMEZONES = [
@@ -43,10 +43,7 @@ export function Step1Org({ onSuccess }: Props) {
   const [color, setColor]         = useState(BRAND_COLORS[0]);
   const [error, setError]         = useState('');
 
-  const saveOrg = trpc['onboarding.saveOrg'].useMutation({
-    onSuccess,
-    onError: (e) => setError(e.message),
-  });
+  const saveOrg = useSaveOnboardingOrg();
 
   function handleNameChange(v: string) {
     setName(v);
@@ -63,7 +60,10 @@ export function Step1Org({ onSuccess }: Props) {
     setError('');
     if (!name.trim()) return setError('Organisation name is required.');
     if (!slug.trim()) return setError('Short code is required.');
-    saveOrg.mutate({ name: name.trim(), slug });
+    saveOrg.mutate(
+      { name: name.trim(), slug },
+      { onSuccess, onError: (e) => setError(e.message) },
+    );
   }
 
   return (

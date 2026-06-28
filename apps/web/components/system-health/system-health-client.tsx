@@ -7,7 +7,13 @@ import { QueueDepths } from './queue-depths';
 import { IncidentLog } from './incident-log';
 import { DetailPanel } from './detail-panel';
 import { RestartModal } from './restart-modal';
-import { trpc } from '@/lib/trpc';
+import {
+  useHealthSnapshot,
+  useHealthIncidents,
+  useStoreHealth,
+  useRepairStore,
+  useRestartService,
+} from '@/lib/api/hooks/useHealth';
 import type { HealthSnapshot, ServiceHealthEntry } from '@lotris/types';
 import { Pause, Play, Globe, Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw, Package, Wrench } from 'lucide-react';
 
@@ -23,16 +29,14 @@ export function SystemHealthClient() {
   );
 
   // ── Polling fallback via tRPC (also seeds initial data) ──────────────────
-  const { data: polledSnapshot } = (trpc as any)['health.getSnapshot'].useQuery(undefined, {
+  const { data: polledSnapshot } = useHealthSnapshot({
     refetchInterval: paused ? false : 5000,
     staleTime: 1000,
   });
 
-  // Prefer SSE data; fall back to polled
-  const snapshot: HealthSnapshot | null = liveSnapshot ?? polledSnapshot ?? null;
+  const snapshot: HealthSnapshot | null = (liveSnapshot ?? polledSnapshot ?? null) as HealthSnapshot | null;
 
-  // ── Incident log ─────────────────────────────────────────────────────────
-  const { data: incidents } = (trpc as any)['health.getIncidents'].useQuery(
+  const { data: incidents } = useHealthIncidents(
     { limit: 20 },
     { refetchInterval: 30_000 },
   );
@@ -43,10 +47,10 @@ export function SystemHealthClient() {
   const downCount     = snapshot?.services.filter((s) => s.status === 'DOWN').length ?? 0;
 
   // ── Store health ─────────────────────────────────────────────────────────
-  const storeHealthQuery = (trpc as any)['health.storeHealth'].useQuery(undefined, {
-    refetchInterval: (query: unknown) => {
-      const state = (query as { state: { data?: { repairState?: string } } }).state.data?.repairState;
-      return state === 'running' ? 5_000 : 30_000;
+  const storeHealthQuery = useStoreHealth({
+    refetchInterval: (query) => {
+      const state = query.state.data as { repairState?: string } | undefined;
+      return state?.repairState === 'running' ? 5_000 : 30_000;
     },
   });
   const storeHealth = storeHealthQuery.data as {
@@ -56,12 +60,8 @@ export function SystemHealthClient() {
     startedAt?: string;
   } | undefined;
 
-  const repairMutation = (trpc as any)['health.repairStore'].useMutation({
-    onSuccess: () => storeHealthQuery.refetch(),
-  });
-
-  // ── Restart mutation ─────────────────────────────────────────────────────
-  const restartMutation = (trpc as any)['health.restartService'].useMutation();
+  const repairMutation = useRepairStore();
+  const restartMutation = useRestartService();
 
   const handleRestartConfirm = useCallback(
     (serviceName: string) => {
@@ -242,7 +242,7 @@ export function SystemHealthClient() {
                 type="button"
                 className="v2-btn v2-btn-primary v2-btn-sm"
                 style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                onClick={() => repairMutation.mutate({})}
+                onClick={() => repairMutation.mutate(undefined, { onSuccess: () => void storeHealthQuery.refetch() })}
                 disabled={repairMutation.isPending || storeHealth?.healthy === true}
                 title={storeHealth?.healthy ? 'Store is healthy — no repair needed' : 'Run pnpm install --force to restore store integrity'}
               >
@@ -250,8 +250,8 @@ export function SystemHealthClient() {
                 {repairMutation.isPending ? 'Starting…' : 'Repair Store'}
               </button>
             )}
-            {repairMutation.data && (
-              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{repairMutation.data.message}</span>
+            {repairMutation.data !== undefined && (
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Repair started</span>
             )}
             {repairMutation.error && (
               <span style={{ fontSize: 12, color: 'var(--red, #dc2626)' }}>

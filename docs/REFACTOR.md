@@ -1,7 +1,7 @@
 # Lotris — C# Backend Refactor & On-Prem Roadmap
 
 > Last updated: June 2026  
-> Status: **Planning / Phase 0 not started**  
+> Status: **Phase 4 complete** — MSSQL analytics rollups, sysadmin job config, dashboard/analytics REST, IMAP intake; Phase 3 KPI/reports; Phase 2 tasks/admin/SSE  
 > Default branch: `dev` (NestJS stack remains active until parity gate)
 
 This document is the **single entry point** for the next major phase of Lotris: migrating the backend to **ASP.NET Core**, preparing **on-prem deployment**, and evolving the **agent workflow** and **UI/UX standards**.
@@ -55,10 +55,10 @@ Browser
 | Phase | Focus | Duration (est.) |
 |-------|--------|-----------------|
 | **0** | C# scaffold, EF migrations (`dbo` + `analytics` schema), Identity auth, OpenAPI, Dockerfile | 2–3 weeks |
-| **1** | Tickets + queue + Hangfire SLA jobs + integration tests | 3–4 weeks |
-| **2** | Tasks, admin, notifications SSE, audit log | 2–3 weeks |
-| **3** | KPI engine, QuestPDF/ClosedXML reports | 4–5 weeks |
-| **4** | MSSQL analytics rollups, **sysadmin-configurable job timing**, dashboard trends, KPI trends, IMAP intake | 2–3 weeks |
+| **1** | Tickets + queue + Hangfire SLA jobs + integration tests | **Complete** |
+| **2** | Tasks, admin, notifications SSE, audit log | **Complete** — REST parity, MailKit/Hangfire notifications, SSE |
+| **3** | KPI engine, QuestPDF/ClosedXML reports | **Complete** — KPI REST parity, 3-layer scoring, import, Hangfire report jobs |
+| **4** | MSSQL analytics rollups, **sysadmin-configurable job timing**, dashboard trends, KPI trends, IMAP intake | **Complete** |
 | **5** | Frontend OpenAPI migration + **ui-ux-pro-max** UX pass | 4–5 weeks |
 | **6** | `docker-compose.onprem.yml`, Helm chart, bootstrap scripts | 2 weeks |
 | **7** | Parity gate, load test, decommission NestJS + Node workers | 1 week |

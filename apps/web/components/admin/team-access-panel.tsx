@@ -1,30 +1,28 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useAdminUsers,
+  useAdminTeams,
+  useTeamAccessList,
+  useGrantTeamAccess,
+  useRevokeTeamAccess,
+} from '@/lib/api/hooks/useAdmin';
 import { Shield, Plus, Trash2, UserCheck } from 'lucide-react';
 
 export function TeamAccessPanel() {
   const [granteeUserId, setGranteeUserId] = useState('');
   const [targetTeamId, setTargetTeamId] = useState('');
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  const grantsQuery  = trpc['admin.teamAccess.list'].useQuery();
-  const usersQuery   = trpc['admin.users.list'].useQuery();
-  const teamsQuery   = trpc['admin.teams.list'].useQuery();
+  const grantsQuery = useTeamAccessList();
+  const usersQuery = useAdminUsers();
+  const teamsQuery = useAdminTeams();
 
-  const grantMutation = trpc['admin.teamAccess.grant'].useMutation({
-    onSuccess: () => {
-      void utils['admin.teamAccess.list'].invalidate();
-      setGranteeUserId('');
-      setTargetTeamId('');
-    },
-  });
-
-  const revokeMutation = trpc['admin.teamAccess.revoke'].useMutation({
-    onSuccess: () => void utils['admin.teamAccess.list'].invalidate(),
-  });
+  const grantMutation = useGrantTeamAccess();
+  const revokeMutation = useRevokeTeamAccess();
 
   // Only Team Leads can be grantees
   const teamLeads = (usersQuery.data ?? []).filter((u) => u.roleName === 'TEAM_LEAD' && u.isActive);
@@ -33,7 +31,16 @@ export function TeamAccessPanel() {
 
   function handleGrant() {
     if (!granteeUserId || !targetTeamId) return;
-    grantMutation.mutate({ granteeUserId, targetTeamId });
+    grantMutation.mutate(
+      { userId: granteeUserId, teamId: targetTeamId },
+      {
+        onSuccess: () => {
+          void queryClient.invalidateQueries({ queryKey: ['admin', 'team-access'] });
+          setGranteeUserId('');
+          setTargetTeamId('');
+        },
+      },
+    );
   }
 
   return (
@@ -152,7 +159,10 @@ export function TeamAccessPanel() {
                     <button
                       className="v2-btn v2-btn-ghost v2-btn-sm"
                       style={{ color: 'var(--red)', padding: '4px 8px' }}
-                      onClick={() => revokeMutation.mutate({ granteeUserId: g.granteeUserId, targetTeamId: g.targetTeamId })}
+                      onClick={() => revokeMutation.mutate(
+                        { grantId: g.id as string },
+                        { onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['admin', 'team-access'] }) },
+                      )}
                       disabled={revokeMutation.isPending}
                       title="Revoke access"
                     >

@@ -1,7 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc';
+import {
+  useCategoryRoutingList,
+  useTeamsList,
+  useUpsertCategoryRouting,
+  useDeleteCategoryRouting,
+} from '@/lib/api/hooks/useAdmin';
 
 const PRIORITY_LABEL: Record<number, string> = {
   1: 'Critical',
@@ -29,25 +34,11 @@ export function CategoryRoutingPanel() {
   const [formError, setFormError]       = useState('');
   const [isAdding, setIsAdding]         = useState(false);
 
-  const routingQuery = trpc['admin.categoryRouting.list'].useQuery(undefined, { staleTime: 30_000 });
-  const teamsQuery   = trpc['teams.list'].useQuery(undefined, { staleTime: 60_000 });
+  const routingQuery = useCategoryRoutingList({ staleTime: 30_000 });
+  const teamsQuery = useTeamsList({ staleTime: 60_000 });
 
-  const upsertMutation = trpc['admin.categoryRouting.upsert'].useMutation({
-    onSuccess: () => {
-      setIsAdding(false);
-      resetForm();
-      void routingQuery.refetch();
-    },
-    onError: (err) => {
-      setFormError(err.message);
-    },
-  });
-
-  const deleteMutation = trpc['admin.categoryRouting.delete'].useMutation({
-    onSuccess: () => {
-      void routingQuery.refetch();
-    },
-  });
+  const upsertMutation = useUpsertCategoryRouting();
+  const deleteMutation = useDeleteCategoryRouting();
 
   function resetForm() {
     setEditCategory('');
@@ -74,11 +65,21 @@ export function CategoryRoutingPanel() {
       setFormError('Please select a team.');
       return;
     }
-    upsertMutation.mutate({
-      category: editCategory.trim(),
-      teamId: editTeamId,
-      defaultPriority: editPriority,
-    });
+    upsertMutation.mutate(
+      {
+        category: editCategory.trim(),
+        teamId: editTeamId,
+        defaultPriority: editPriority,
+      },
+      {
+        onSuccess: () => {
+          setIsAdding(false);
+          resetForm();
+          void routingQuery.refetch();
+        },
+        onError: (err) => setFormError(err.message),
+      },
+    );
   }
 
   const rows = (routingQuery.data ?? []) as RoutingRow[];
@@ -296,7 +297,10 @@ export function CategoryRoutingPanel() {
                           disabled={deleteMutation.isPending}
                           onClick={() => {
                             if (confirm(`Delete routing rule for "${row.category}"?`)) {
-                              deleteMutation.mutate({ category: row.category });
+                              deleteMutation.mutate(
+                                { id: row.id },
+                                { onSuccess: () => void routingQuery.refetch() },
+                              );
                             }
                           }}
                           style={actionBtnStyle('delete')}

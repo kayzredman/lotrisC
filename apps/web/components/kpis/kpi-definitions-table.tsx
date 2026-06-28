@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useKpiDefinitions } from '@/lib/api/hooks/useKpi';
+import { useAuth } from '@/lib/auth/auth-context';
 import { Badge, Button } from '@lotris/ui';
 
 type MetricType = 'PERCENTAGE' | 'TIME_HOURS' | 'TIME_MINUTES' | 'COUNT' | 'SCORE';
@@ -55,12 +57,21 @@ export default function KpiDefinitionsTable() {
   const [form, setForm] = useState<DefinitionForm>(EMPTY_FORM);
   const [filterStatus, setFilterStatus] = useState<Status | 'ALL'>('ALL');
 
-  const utils = trpc.useUtils();
-  const { data, isLoading, isError } = trpc['kpi.definitions.list'].useQuery(undefined, {
-    refetchInterval: 60_000,
-  });
+  const queryClient = useQueryClient();
+  const { accessToken } = useAuth();
+  const { data, isLoading, isError } = useKpiDefinitions({ staleTime: 60_000, refetchInterval: 60_000 });
 
-  const definitions = (data?.definitions ?? []).filter(
+  const definitions = ((Array.isArray(data) ? data : (data as { definitions?: unknown[] } | undefined)?.definitions ?? []) as Array<{
+    id: string;
+    name: string;
+    description?: string;
+    metricType: MetricType;
+    direction: Direction;
+    scope: Scope;
+    defaultTarget: number;
+    weight: number;
+    status: Status;
+  }>).filter(
     (d: { status: Status }) => filterStatus === 'ALL' || d.status === filterStatus,
   );
 
@@ -70,7 +81,7 @@ export default function KpiDefinitionsTable() {
     setShowCreate(true);
   }
 
-  function openEdit(def: { id: string; name: string; description: string; metricType: string; direction: string; scope: string; defaultTarget: number; weight: number; status: Status }) {
+  function openEdit(def: { id: string; name: string; description?: string; metricType: string; direction: string; scope: string; defaultTarget: number; weight: number; status: Status }) {
     setForm({
       name: def.name,
       description: def.description ?? '',
@@ -107,22 +118,28 @@ export default function KpiDefinitionsTable() {
 
     const resp = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
       body: JSON.stringify(body),
     });
     if (resp.ok) {
       setShowCreate(false);
-      utils['kpi.definitions.list'].invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['kpi', 'definitions'] });
     }
   }
 
   async function handleArchive(id: string) {
     await fetch(`/api/v1/kpi/definitions/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
       body: JSON.stringify({ status: 'ARCHIVED' }),
     });
-    utils['kpi.definitions.list'].invalidate();
+    void queryClient.invalidateQueries({ queryKey: ['kpi', 'definitions'] });
   }
 
   return (
@@ -186,18 +203,18 @@ export default function KpiDefinitionsTable() {
                 </td>
               </tr>
             )}
-            {definitions.map((def: {
+            {(definitions as Array<{
               id: string;
               name: string;
-              description: string;
+              description?: string;
               metricType: MetricType;
               direction: Direction;
               scope: Scope;
               defaultTarget: number;
               weight: number;
               status: Status;
-            }) => (
-              <tr key={def.id} className="hover:bg-muted/30 transition-colors">
+            }>).map((def) => (
+              <tr key={String(def.id)} className="hover:bg-muted/30 transition-colors">
                 <td className="px-4 py-3">
                   <div className="font-medium">{def.name}</div>
                   {def.description && (

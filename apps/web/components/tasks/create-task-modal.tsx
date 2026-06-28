@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser, useUsersList } from '@/lib/api/hooks/useAuth';
+import { useCreateTask } from '@/lib/api/hooks/useTasks';
 import { UserCheck, User, X, Check } from 'lucide-react';
 
 interface CreateTaskModalProps {
@@ -93,9 +95,8 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
   const [showAssigneeError, setShowAssigneeError] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { data: users = [] } = trpc['users.list'].useQuery();
-  const meQuery = trpc['users.me'].useQuery();
-  const me = meQuery.data;
+  const { data: users = [] } = useUsersList();
+  const { data: me } = useCurrentUser();
   const isLead = me ? LEAD_ROLES.includes(me.roleName ?? '') : false;
 
   const filteredUsers = assigneeSearch.trim()
@@ -104,12 +105,7 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
       )
     : users;
 
-  const createMutation = trpc['tasks.create'].useMutation({
-    onSuccess: onCreated,
-    onError: (err: { message?: string }) => {
-      setSubmitError(err?.message ?? 'Failed to create task');
-    },
-  });
+  const createMutation = useCreateTask();
 
   const toggleAssignee = (id: string) => {
     setAssigneeIds(prev =>
@@ -133,13 +129,19 @@ export default function CreateTaskModal({ onClose, onCreated }: CreateTaskModalP
       return;
     }
     setSubmitError(null);
-    createMutation.mutate({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      taskType,
-      dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-      assigneeIds: mode === 'assign' && assigneeIds.length > 0 ? assigneeIds : undefined,
-    });
+    createMutation.mutate(
+      {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        taskType,
+        dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
+        assigneeIds: mode === 'assign' && assigneeIds.length > 0 ? assigneeIds : undefined,
+      },
+      {
+        onSuccess: onCreated,
+        onError: (err) => setSubmitError(err.message ?? 'Failed to create task'),
+      },
+    );
   };
 
   return (

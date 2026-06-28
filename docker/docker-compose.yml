@@ -63,6 +63,27 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # Optional — C# API (Phase 0 scaffold). Start with: docker compose -f docker/docker-compose.yml up api-csharp
+  api-csharp:
+    build:
+      context: ../src
+      dockerfile: Lotris.Api/Dockerfile
+    container_name: lotris_api_csharp
+    depends_on:
+      mssql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=mssql,1433;Database=lotris;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Lotris@Dev2024!};TrustServerCertificate=True;Encrypt=False"
+      Redis__ConnectionString: "redis:6379,password=${REDIS_PASSWORD:-lotris_dev},abortConnect=false"
+      JWT_SECRET: "${JWT_SECRET:-dev-only-change-me-use-at-least-32-characters-long-secret}"
+      Database__ApplyLegacyMigrations: "true"
+    ports:
+      - "5100:8080"
+    restart: unless-stopped
+
 volumes:
   mssql_data:
     name: lotris_mssql_data

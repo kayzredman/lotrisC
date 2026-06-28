@@ -2,7 +2,10 @@
 
 import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { trpc } from '@/lib/trpc';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser } from '@/lib/api/hooks/useAuth';
+import { useDashboardSummary, useDashboardQueueHealth } from '@/lib/api/hooks/useDashboard';
+import { useTicketsList } from '@/lib/api/hooks/useTickets';
 import { CreateTicketModal } from './create-ticket-modal';
 import { TicketDrawer } from './ticket-drawer';
 import { Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -104,10 +107,10 @@ export function TicketsTable() {
     searchTimeout[1](setTimeout(() => { setDebouncedSearch(val); setPage(1); }, 350));
   }
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // Role-awareness
-  const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
+  const { data: me } = useCurrentUser({ staleTime: 60_000 });
   const role = (me as { roleName?: string } | undefined)?.roleName ?? '';
   const isEngineer = role === 'ENGINEER';
   const isTeamLead = role === 'TEAM_LEAD';
@@ -119,37 +122,38 @@ export function TicketsTable() {
   const slaWarningParam = searchParams.get('slaWarning') as 'amber' | 'red' | null;
 
   // Live data from MSSQL
-  const { data: liveData } = trpc['tickets.list'].useQuery(
+  const { data: liveData } = useTicketsList(
     { status: statusFilter, priority, search: debouncedSearch || undefined, page, limit: 25, slaWarning: slaWarningParam ?? undefined },
     { staleTime: 15_000 },
   );
+  const ticketRows = ((liveData?.items ?? (liveData as { rows?: unknown[] } | undefined)?.rows ?? []) as Array<Record<string, unknown>>);
   const totalTickets = liveData?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalTickets / 25));
 
-  // Live summary counts (uses dashboard.summary for stat bar)
-  const { data: summaryData } = trpc['dashboard.summary'].useQuery(undefined, { staleTime: 30_000 });
-  const { data: queueData }   = trpc['dashboard.queueHealth'].useQuery(undefined, { staleTime: 30_000 });
+  const { data: summaryData } = useDashboardSummary({ staleTime: 30_000 });
+  const { data: queueData } = useDashboardQueueHealth({ staleTime: 30_000 });
 
   // Map live ticket rows → display format; fall back to DEMO_TICKETS
-  const liveRows = liveData?.rows?.map((t) => {
+  const liveRows = ticketRows.length > 0 ? ticketRows.map((t) => {
+    const id = String(t.id ?? '');
     const sla = (t.status === 'RESOLVED' || t.status === 'CLOSED')
       ? { text: 'SLA met', color: 'green' as const }
-      : formatSla(t.slaResolutionDeadline, t.slaResolutionBreached);
+      : formatSla(t.slaResolutionDeadline as string | null, t.slaResolutionBreached as number | null);
     return {
-      id: `TKT-${t.id.slice(-4).toUpperCase()}`,
-      rawId: t.id,
-      title: t.title,
+      id: `TKT-${id.slice(-4).toUpperCase()}`,
+      rawId: id,
+      title: String(t.title ?? ''),
       priority: PRIORITY_LABEL[t.priority as 1|2|3|4] ?? 'Medium',
-      status: STATUS_LABEL[t.status] ?? t.status,
-      assignee: t.assigneeId ? (USER_SHORT[t.assigneeId] ?? 'Engineer') : 'Team Queue',
-      team: t.teamName ?? '–',
-      source: t.source ?? 'INTERNAL',
+      status: STATUS_LABEL[String(t.status)] ?? String(t.status),
+      assignee: t.assigneeId ? (USER_SHORT[String(t.assigneeId)] ?? 'Engineer') : 'Team Queue',
+      team: String(t.teamName ?? '–'),
+      source: String(t.source ?? 'INTERNAL'),
       sla: sla.text,
       slaColor: sla.color,
       slaWarningLevel: (t as { slaWarningLevel?: string }).slaWarningLevel ?? 'NONE',
-      date: new Date(t.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''),
+      date: new Date(String(t.createdAt)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''),
     };
-  });
+  }) : undefined;
 
   const rows = (liveRows && liveRows.length > 0) ? liveRows : DEMO_TICKETS.map(t => ({ ...t, rawId: t.id, team: '–', source: 'INTERNAL' }));
 
@@ -174,9 +178,9 @@ export function TicketsTable() {
   ];
 
   function handleCreated() {
-    void utils['tickets.list'].invalidate();
-    void utils['dashboard.summary'].invalidate();
-    void utils['dashboard.queueHealth'].invalidate();
+    void queryClient.invalidateQueries({ queryKey: ['tickets', 'list'] });
+    void queryClient.invalidateQueries({ queryKey: ['dashboard', 'summary'] });
+    void queryClient.invalidateQueries({ queryKey: ['dashboard', 'queue-health'] });
     setCreateOpen(false);
     setPage(1);
   }

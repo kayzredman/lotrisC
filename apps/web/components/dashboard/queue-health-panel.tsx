@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc } from '@/lib/trpc/client';
+import { useQueueHealth } from '@/lib/api/hooks/useQueue';
 import { Badge } from '@lotris/ui';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -43,9 +43,7 @@ function StatusBar({
 }
 
 export default function QueueHealthPanel() {
-  const { data, isLoading, isError } = trpc['queue.health'].useQuery(undefined, {
-    refetchInterval: 60_000,
-  });
+  const { data, isLoading, isError } = useQueueHealth({ refetchInterval: 60_000 });
 
   if (isLoading) {
     return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '@/lib/auth/auth-context';
 
 const REPORT_TYPES = [
   { key: 'TICKET_SUMMARY', label: 'Ticket Summary' },
@@ -17,7 +17,7 @@ interface Props {
 type JobStatus = 'idle' | 'queued' | 'processing' | 'done' | 'failed';
 
 export function GenerateReportForm({ initialType = 'TICKET_SUMMARY' }: Props) {
-  const { getToken } = useAuth();
+  const { accessToken } = useAuth();
 
   const [reportType, setReportType] = useState(initialType);
   const [format, setFormat] = useState<'PDF' | 'EXCEL'>('PDF');
@@ -33,7 +33,7 @@ export function GenerateReportForm({ initialType = 'TICKET_SUMMARY' }: Props) {
     setJobId(null);
 
     try {
-      const token = await getToken();
+      const token = accessToken;
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/reports/generate`, {
         method: 'POST',
         headers: {
@@ -55,7 +55,7 @@ export function GenerateReportForm({ initialType = 'TICKET_SUMMARY' }: Props) {
 
       // Poll job status
       const pollInterval = setInterval(async () => {
-        const token2 = await getToken();
+        const token2 = accessToken;
         const statusRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/reports/${data.jobId}/status`, {
           headers: { Authorization: `Bearer ${token2}` },
         });
@@ -76,9 +76,8 @@ export function GenerateReportForm({ initialType = 'TICKET_SUMMARY' }: Props) {
     }
   }
 
-  async function handleDownload() {
+  function handleDownload() {
     if (!jobId) return;
-    const token = await getToken();
     window.open(
       `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/reports/${jobId}/download`,
       '_blank',

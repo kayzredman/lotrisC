@@ -1,6 +1,13 @@
 'use client';
 
-import { trpc } from '../../lib/trpc/client';
+import { useCurrentUser } from '@/lib/api/hooks/useAuth';
+import {
+  useDashboardSummary,
+  useDashboardQueueHealth,
+  useDashboardEngineerPerf,
+  useDashboardTeamWorkload,
+  useSlaWarnings,
+} from '@/lib/api/hooks/useDashboard';
 import { WorkloadPanel } from './workload-panel';
 import {
   Ticket, AlertTriangle, CheckCircle2, TrendingUp,
@@ -58,20 +65,21 @@ const ALERT_COLORS: Record<string, { dot: string; text: string; bg: string }> = 
 };
 
 export function DashboardPageClient() {
-  // Role awareness
-  const { data: me } = trpc['users.me'].useQuery();
+  const { data: me } = useCurrentUser();
   const role = me?.roleName ?? '';
   const isEngineer  = role === 'ENGINEER';
   const isTeamLead  = role === 'TEAM_LEAD';
 
-  // Live data from tRPC (all queries stale 25s, refetch every 30s)
-  const summaryQ      = trpc['dashboard.summary'].useQuery(undefined, { staleTime: 25_000, refetchInterval: 30_000 });
-  const queueQ        = trpc['dashboard.queueHealth'].useQuery(undefined, { staleTime: 25_000, refetchInterval: 30_000 });
-  const engPerfQ      = trpc['dashboard.engineerPerf'].useQuery(undefined, { staleTime: 60_000 });
-  const teamWorkloadQ = trpc['dashboard.teamWorkload'].useQuery(undefined, { staleTime: 30_000, refetchInterval: 60_000 });
-  // Sprint 18: SLA warnings (TEAM_LEAD+ only)
+  const summaryQ      = useDashboardSummary({ staleTime: 25_000, refetchInterval: 30_000 });
+  const queueQ        = useDashboardQueueHealth({ staleTime: 25_000, refetchInterval: 30_000 });
+  const engPerfQ      = useDashboardEngineerPerf({ staleTime: 60_000 });
+  const teamWorkloadQ = useDashboardTeamWorkload({ staleTime: 30_000, refetchInterval: 60_000 });
   const canSeeSlaWarnings = ['IT_MANAGER', 'ADMIN', 'SUPERADMIN', 'TEAM_LEAD'].includes(role);
-  const slaWarningsQ = trpc['analytics.slaWarnings'].useQuery(undefined, { staleTime: 60_000, refetchInterval: 120_000, enabled: canSeeSlaWarnings });
+  const slaWarningsQ = useSlaWarnings({
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+    enabled: canSeeSlaWarnings,
+  });
 
   // Live values with DEMO fallbacks
   const openTickets  = summaryQ.data?.openTickets  ?? DEMO.openTickets;

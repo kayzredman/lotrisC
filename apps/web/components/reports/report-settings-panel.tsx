@@ -2,19 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { Settings, Save, AlertCircle, CheckCircle } from 'lucide-react';
-import { trpc } from '@/lib/trpc';
+import { useReportConfig, useUpdateReportConfig } from '@/lib/api/hooks/useReports';
 
 export function ReportSettingsPanel() {
-  const { data: config, isLoading, refetch } = trpc['reports.config.get'].useQuery(undefined, { staleTime: 60_000 });
-  const updateMutation = trpc['reports.config.update'].useMutation({
-    onSuccess: () => {
-      setStatus({ ok: true, message: 'Settings saved successfully.' });
-      void refetch();
-    },
-    onError: (err) => {
-      setStatus({ ok: false, message: err.message ?? 'Failed to save settings.' });
-    },
-  });
+  const { data: configRaw, isLoading, refetch } = useReportConfig({ staleTime: 60_000 });
+  const config = configRaw as {
+    brandName?: string;
+    defaultTimezone?: string;
+    attachmentSizeLimitMb?: number;
+    retentionDays?: number;
+    defaultRecipients?: string[];
+  } | undefined;
+  const updateMutation = useUpdateReportConfig();
 
   const [brandName, setBrandName] = useState('');
   const [defaultTimezone, setDefaultTimezone] = useState('');
@@ -25,11 +24,11 @@ export function ReportSettingsPanel() {
 
   useEffect(() => {
     if (config) {
-      setBrandName(config.brandName);
-      setDefaultTimezone(config.defaultTimezone);
-      setAttachmentSizeLimitMb(String(config.attachmentSizeLimitMb));
-      setRetentionDays(String(config.retentionDays));
-      setDefaultRecipients(config.defaultRecipients.join(', '));
+      setBrandName(config.brandName ?? '');
+      setDefaultTimezone(config.defaultTimezone ?? '');
+      setAttachmentSizeLimitMb(String(config.attachmentSizeLimitMb ?? ''));
+      setRetentionDays(String(config.retentionDays ?? ''));
+      setDefaultRecipients((config.defaultRecipients ?? []).join(', '));
     }
   }, [config]);
 
@@ -40,13 +39,24 @@ export function ReportSettingsPanel() {
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean);
 
-    updateMutation.mutate({
-      brandName: brandName || undefined,
-      defaultTimezone: defaultTimezone || undefined,
-      attachmentSizeLimitMb: attachmentSizeLimitMb ? parseInt(attachmentSizeLimitMb, 10) : undefined,
-      retentionDays: retentionDays ? parseInt(retentionDays, 10) : undefined,
-      defaultRecipients: JSON.stringify(recipientList),
-    });
+    updateMutation.mutate(
+      {
+        brandName: brandName || undefined,
+        defaultTimezone: defaultTimezone || undefined,
+        attachmentSizeLimitMb: attachmentSizeLimitMb ? parseInt(attachmentSizeLimitMb, 10) : undefined,
+        retentionDays: retentionDays ? parseInt(retentionDays, 10) : undefined,
+        defaultRecipients: JSON.stringify(recipientList),
+      },
+      {
+        onSuccess: () => {
+          setStatus({ ok: true, message: 'Settings saved successfully.' });
+          void refetch();
+        },
+        onError: (err) => {
+          setStatus({ ok: false, message: err.message ?? 'Failed to save settings.' });
+        },
+      },
+    );
   };
 
   if (isLoading) {

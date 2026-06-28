@@ -1,7 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useUsersList } from '@/lib/api/hooks/useAuth';
+import {
+  useTask,
+  useToggleChecklistItem,
+  useAddChecklistItem,
+  useUpdateTask,
+  useCompleteTask,
+} from '@/lib/api/hooks/useTasks';
 import { X, CheckCircle2, Circle, Plus, CalendarDays, Tag, User2 } from 'lucide-react';
 
 interface TaskDrawerProps {
@@ -74,26 +82,20 @@ const S = {
 };
 
 export default function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [newItemLabel, setNewItemLabel] = useState('');
 
-  const { data: task, isLoading } = trpc['tasks.get'].useQuery({ id: taskId });
-  const { data: allUsers = [] } = trpc['users.list'].useQuery();
+  const { data: task, isLoading } = useTask(taskId);
+  const { data: allUsers = [] } = useUsersList();
 
   const userMap = Object.fromEntries(allUsers.map(u => [u.id, u]));
 
-  const toggleItem = trpc['tasks.toggleChecklistItem'].useMutation({
-    onSuccess: () => void utils['tasks.get'].invalidate({ id: taskId }),
-  });
-  const addItem = trpc['tasks.addChecklistItem'].useMutation({
-    onSuccess: () => { setNewItemLabel(''); void utils['tasks.get'].invalidate({ id: taskId }); },
-  });
-  const updateStatus = trpc['tasks.update'].useMutation({
-    onSuccess: () => void utils['tasks.get'].invalidate({ id: taskId }),
-  });
-  const markComplete = trpc['tasks.complete'].useMutation({
-    onSuccess: () => void utils['tasks.get'].invalidate({ id: taskId }),
-  });
+  const toggleItem = useToggleChecklistItem();
+  const addItem = useAddChecklistItem();
+  const updateStatus = useUpdateTask();
+  const markComplete = useCompleteTask();
+
+  const invalidateTask = () => void queryClient.invalidateQueries({ queryKey: ['tasks', taskId] });
 
   if (isLoading || !task) {
     return (
@@ -218,7 +220,7 @@ export default function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
                 <div key={item.id} style={S.checklistRow}>
                   <button
                     type="button"
-                    onClick={() => toggleItem.mutate({ taskId, itemId: item.id })}
+                    onClick={() => toggleItem.mutate({ taskId, itemId: item.id }, { onSuccess: invalidateTask })}
                     disabled={toggleItem.isPending}
                     style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: item.isCompleted ? 'var(--green)' : 'var(--border)', flexShrink: 0, display: 'flex' }}
                     aria-label={item.isCompleted ? 'Uncheck' : 'Check'}
@@ -239,7 +241,7 @@ export default function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
                   type="text"
                   value={newItemLabel}
                   onChange={(e) => setNewItemLabel(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && newItemLabel.trim()) addItem.mutate({ taskId, label: newItemLabel.trim() }); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && newItemLabel.trim()) addItem.mutate({ taskId, title: newItemLabel.trim() }, { onSuccess: () => { setNewItemLabel(''); invalidateTask(); } }); }}
                   placeholder="Add checklist item…"
                   style={{ flex: 1, fontSize: 12.5, padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)', background: 'white', fontFamily: 'inherit', outline: 'none' }}
                 />
@@ -247,7 +249,7 @@ export default function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
                   type="button"
                   className="v2-btn v2-btn-secondary v2-btn-sm"
                   disabled={!newItemLabel.trim() || addItem.isPending}
-                  onClick={() => addItem.mutate({ taskId, label: newItemLabel.trim() })}
+                  onClick={() => addItem.mutate({ taskId, title: newItemLabel.trim() }, { onSuccess: () => { setNewItemLabel(''); invalidateTask(); } })}
                   style={{ display: 'flex', alignItems: 'center', gap: 4 }}
                 >
                   <Plus size={11} /> Add
@@ -305,7 +307,7 @@ export default function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
               <button
                 type="button"
                 className="v2-btn v2-btn-secondary v2-btn-sm"
-                onClick={() => updateStatus.mutate({ id: taskId, status: 'IN_PROGRESS' })}
+                onClick={() => updateStatus.mutate({ id: taskId, status: 'IN_PROGRESS' }, { onSuccess: invalidateTask })}
                 disabled={updateStatus.isPending}
               >
                 Start
@@ -315,7 +317,7 @@ export default function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
               <button
                 type="button"
                 className="v2-btn v2-btn-secondary v2-btn-sm"
-                onClick={() => updateStatus.mutate({ id: taskId, status: 'REVIEW' })}
+                onClick={() => updateStatus.mutate({ id: taskId, status: 'REVIEW' }, { onSuccess: invalidateTask })}
                 disabled={updateStatus.isPending}
               >
                 Submit for Review
@@ -324,7 +326,7 @@ export default function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
             <button
               type="button"
               className="v2-btn v2-btn-primary v2-btn-sm"
-              onClick={() => markComplete.mutate({ taskId })}
+              onClick={() => markComplete.mutate({ id: taskId }, { onSuccess: invalidateTask })}
               disabled={markComplete.isPending}
             >
               {markComplete.isPending ? 'Completing…' : 'Mark Complete'}
@@ -333,7 +335,7 @@ export default function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
               type="button"
               className="v2-btn v2-btn-ghost v2-btn-sm"
               style={{ marginLeft: 'auto', color: 'var(--red)' }}
-              onClick={() => updateStatus.mutate({ id: taskId, status: 'CANCELLED' })}
+              onClick={() => updateStatus.mutate({ id: taskId, status: 'CANCELLED' }, { onSuccess: invalidateTask })}
               disabled={updateStatus.isPending}
             >
               Cancel Task

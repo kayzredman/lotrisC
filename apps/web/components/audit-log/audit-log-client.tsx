@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useAuditLogsList } from '@/lib/api/hooks/useAuditLogs';
 import { Search, Shield } from 'lucide-react';
 
 // ── Demo data matching the v2 design ────────────────────────────────────────
@@ -42,9 +42,10 @@ export default function AuditLogClient() {
   const [actionFilter, setActionFilter] = useState('All');
 
   // Live data — overlay on top of demo when available
-  const { data: liveData } = (trpc as any)['auditLogs.list'].useQuery({ limit: 50 }, {
-    staleTime: 30_000,
-  });
+  const { data: liveDataRaw } = useAuditLogsList({ limit: 50 }, { staleTime: 30_000 });
+  const liveData = Array.isArray(liveDataRaw)
+    ? liveDataRaw
+    : (liveDataRaw as { items?: unknown[] } | undefined)?.items;
 
   const rows = liveData && liveData.length > 0
     ? liveData.map((r: any, i: number) => ({

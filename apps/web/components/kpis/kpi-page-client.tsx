@@ -1,7 +1,10 @@
 'use client';
 
 import type { KpiTrendRow } from '@lotris/types';
-import { trpc } from '@/lib/trpc/client';
+import { useCurrentUser } from '@/lib/api/hooks/useAuth';
+import { useDashboardSummary } from '@/lib/api/hooks/useDashboard';
+import { useKpiTrends, useMyKpiTrends } from '@/lib/api/hooks/useAnalytics';
+import { useKpiActuals, useKpiDefinitions } from '@/lib/api/hooks/useKpi';
 import { CheckCircle, XCircle, BarChart2, Users } from 'lucide-react';
 
 // ── Marketing demo fallback data (match 04-kpis-v2.html exactly) ─────────────
@@ -98,46 +101,51 @@ function formatKpiTarget(target: number, metricType: string, direction: string):
 
 export default function KpiPageClient() {
   // Live data
-  const { data: definitions } = trpc['kpi.definitions.list'].useQuery(undefined, { staleTime: 60_000 });
-  const { data: actuals }     = trpc['kpi.actuals.list'].useQuery({}, { staleTime: 30_000 });
-  const { data: summary }     = trpc['dashboard.summary'].useQuery(undefined, { staleTime: 30_000 });
-  const { data: me }          = trpc['users.me'].useQuery(undefined, { staleTime: 300_000 });
+  const { data: definitionsRaw } = useKpiDefinitions({ staleTime: 60_000 });
+  const { data: actuals } = useKpiActuals({}, { staleTime: 30_000 });
+  const { data: summary } = useDashboardSummary({ staleTime: 30_000 });
+  const { data: me } = useCurrentUser({ staleTime: 300_000 });
 
-  // Sprint 18: KPI trend snapshots (personal for engineers, full for managers)
-  const isManager = me?.role === 'IT_MANAGER' || me?.role === 'ADMIN' || me?.role === 'SUPERADMIN' || me?.role === 'TEAM_LEAD';
-  const { data: myTrends }   = trpc['analytics.myKpiTrends'].useQuery({}, { staleTime: 120_000, enabled: !isManager });
-  const { data: allTrends }  = trpc['analytics.kpiTrends'].useQuery({}, { staleTime: 120_000, enabled: !!isManager });
-  const trends = (isManager ? (allTrends ?? []) : (myTrends ?? [])) as KpiTrendRow[];
+  const definitions = (Array.isArray(definitionsRaw)
+    ? definitionsRaw
+    : (definitionsRaw as { definitions?: unknown[] } | undefined)?.definitions ?? []) as Array<Record<string, unknown>>;
+
+  const isManager = me?.roleName === 'IT_MANAGER' || me?.roleName === 'ADMIN' || me?.roleName === 'SUPERADMIN' || me?.roleName === 'TEAM_LEAD';
+  const { data: myTrendsRaw } = useMyKpiTrends({ staleTime: 120_000, enabled: !isManager });
+  const { data: allTrendsRaw } = useKpiTrends({ staleTime: 120_000, enabled: !!isManager });
+  const trends = (isManager
+    ? (Array.isArray(allTrendsRaw) ? allTrendsRaw : (allTrendsRaw as { trends?: KpiTrendRow[] } | undefined)?.trends ?? [])
+    : (Array.isArray(myTrendsRaw) ? myTrendsRaw : (myTrendsRaw as { trends?: KpiTrendRow[] } | undefined)?.trends ?? [])) as KpiTrendRow[];
 
   // Map kpiDefId → trend row for quick lookup
   const trendByKpiId = new Map(trends.map((t) => [t.kpiDefId, t]));
 
   // Average actuals per kpiDefinitionId
   const avgByDefInit: Record<string, { sum: number; count: number }> = {};
-  const avgByDef = (actuals ?? []).reduce((acc, a) => {
+  const avgByDef = ((actuals ?? []) as Array<Record<string, unknown>>).reduce((acc, a) => {
     if (!a.kpiDefinitionId) return acc;
-    const k = a.kpiDefinitionId;
+    const k = a.kpiDefinitionId as string;
     if (!acc[k]) acc[k] = { sum: 0, count: 0 };
     (acc[k] as { sum: number; count: number }).sum += Number(a.value);
     (acc[k] as { sum: number; count: number }).count += 1;
     return acc;
-  }, avgByDefInit);
+  }, avgByDefInit) as Record<string, { sum: number; count: number }>;
 
   // Build KPI cards from live definitions + actuals; fall back to DEMO
   const kpiCards = (definitions && definitions.length > 0)
     ? definitions.map((def) => {
-        const agg = avgByDef[def.id];
+        const agg = avgByDef[def.id as string];
         const avg = agg ? agg.sum / agg.count : null;
         const target = Number(def.defaultTarget);
         const onTarget = avg !== null
           ? (def.direction === 'LOWER_BETTER' ? avg <= target : avg >= target)
           : true;
-        const trend = trendByKpiId.get(def.id);
+        const trend = trendByKpiId.get(def.id as string);
         return {
-          id: def.id,
-          name: def.name,
-          value: avg !== null ? formatKpiValue(avg, def.metricType, def.direction) : '–',
-          target: formatKpiTarget(target, def.metricType, def.direction),
+          id: def.id as string,
+          name: def.name as string,
+          value: avg !== null ? formatKpiValue(avg, def.metricType as string, def.direction as string) : '–',
+          target: formatKpiTarget(target, def.metricType as string, def.direction as string),
           status: onTarget ? 'on' : 'below',
           badge: onTarget ? 'v2-badge-green' : 'v2-badge-yellow',
           color: onTarget ? 'var(--green)' : 'var(--yellow)',
@@ -150,7 +158,7 @@ export default function KpiPageClient() {
       })
     : DEMO_KPI_CARDS.map((k) => ({ ...k, id: k.name, warningLevel: 'NONE' as const, sparkValues: null, sparkColor: '#6366f1' }));
 
-  const overallScore   = summary?.kpiScore ?? 94;
+  const overallScore   = (summary as { kpiScore?: number } | undefined)?.kpiScore ?? 94;
   const onTargetCount  = kpiCards.filter(k => k.status === 'on').length;
   const belowCount     = kpiCards.filter(k => k.status === 'below').length;
 
