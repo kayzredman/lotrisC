@@ -13,6 +13,8 @@ Related docs:
 | [CONTEXT.md](CONTEXT.md) | Full product spec (Sections 18–20 cover refactor context) |
 | [DATABASE-STRATEGY.md](DATABASE-STRATEGY.md) | **Decided** — MSSQL tiered analytics (Option B+); Postgres removed from on-prem stack |
 | [design-system.md](design-system.md) | UI tokens, UX standards, `ui-ux-pro-max` usage |
+| [API.md](API.md) | **Canonical REST API index** + links to Scalar UI and OpenAPI JSON |
+| [ONBOARDING-REFACTOR.md](ONBOARDING-REFACTOR.md) | Onboarding wizard API + on-prem bootstrap |
 | [STAGING.md](STAGING.md) | Current cloud staging (Vercel/Railway) — superseded for on-prem by `docker-compose.onprem.yml` (Phase 6) |
 | [SPRINTS.md](SPRINTS.md) | Sprint history (Sprints 1–23 complete on NestJS stack) |
 
@@ -59,7 +61,7 @@ Browser
 | **2** | Tasks, admin, notifications SSE, audit log | **Complete** — REST parity, MailKit/Hangfire notifications, SSE |
 | **3** | KPI engine, QuestPDF/ClosedXML reports | **Complete** — KPI REST parity, 3-layer scoring, import, Hangfire report jobs |
 | **4** | MSSQL analytics rollups, **sysadmin-configurable job timing**, dashboard trends, KPI trends, IMAP intake | **Complete** |
-| **5** | Frontend OpenAPI migration + **ui-ux-pro-max** UX pass | 4–5 weeks |
+| **5** | Frontend OpenAPI migration, **API documentation** (Scalar UI, committed spec, TS codegen), **ui-ux-pro-max** UX pass | In progress |
 | **6** | `docker-compose.onprem.yml`, Helm chart, bootstrap scripts | 2 weeks |
 | **7** | Parity gate, load test, decommission NestJS + Node workers | 1 week |
 
@@ -133,6 +135,19 @@ Phase 5 is not just a tRPC → REST swap. Every touched page gets a **ui-ux-pro-
 - System health, landing, request-access
 
 Decisions are recorded in [design-system.md](design-system.md). Brand mark and status colours (indigo/green/amber/red) are preserved — refinement, not rebrand.
+
+### Phase 5 — API documentation (complete)
+
+Previously identified gaps (June 2026) and their resolution:
+
+| Gap | Resolution |
+|-----|------------|
+| No single canonical API reference | [`docs/API.md`](API.md) — auth, SSE, config, full endpoint index |
+| No interactive docs UI | **Scalar** at `/openapi` (configurable via `OpenApi:UiEnabled`) |
+| OpenAPI dev-only | Enabled in all environments except `Testing`; JSON + UI toggles in `appsettings` |
+| No frontend codegen | `openapi-typescript` → `apps/web/lib/api/generated/schema.d.ts` via `pnpm api:codegen` |
+
+**Maintenance:** after API changes run `pnpm api:sync` (export spec → update `docs/API.md` index → regenerate TS types).
 
 ---
 

@@ -120,6 +120,7 @@ public sealed class SlaWarningTicketEntity
     public Guid Id { get; init; }
     public string Title { get; init; } = "";
     public Guid? AssigneeId { get; init; }
+    public string? AssigneeName { get; init; }
     public string SlaWarningLevel { get; init; } = "NONE";
     public DateTime? SlaResolutionDeadline { get; init; }
     public int? MinutesRemaining { get; init; }

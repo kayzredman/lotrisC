@@ -12,6 +12,7 @@ using Lotris.Workers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +27,10 @@ builder.Services.AddControllers(options =>
 builder.Services.AddOpenApi(options =>
 {
     options.AddSchemaTransformer<GuidSchemaTransformer>();
+    options.AddDocumentTransformer<LotrisOpenApiDocumentTransformer>();
 });
+
+builder.Services.Configure<OpenApiHostingOptions>(builder.Configuration.GetSection(OpenApiHostingOptions.SectionName));
 
 builder.Services.AddCors(options =>
 {
@@ -101,9 +105,28 @@ if (!app.Environment.IsEnvironment("Testing"))
     }
 }
 
-if (app.Environment.IsDevelopment())
+var openApiOptions = app.Configuration.GetSection(OpenApiHostingOptions.SectionName).Get<OpenApiHostingOptions>()
+    ?? new OpenApiHostingOptions();
+var exposeOpenApi = openApiOptions.Enabled && !app.Environment.IsEnvironment("Testing");
+var exposeOpenApiUi = exposeOpenApi && openApiOptions.UiEnabled;
+
+if (exposeOpenApi)
 {
     app.MapOpenApi();
+}
+
+if (exposeOpenApiUi)
+{
+    app.MapScalarApiReference("/openapi", options =>
+    {
+        options.WithTitle("Lotris API");
+        options.WithOpenApiRoutePattern("/openapi/{documentName}.json");
+        options.WithDefaultHttpClient(ScalarTarget.Shell, ScalarClient.Curl);
+    });
+}
+
+if (app.Environment.IsDevelopment())
+{
     app.UseHangfireDashboard("/hangfire");
 }
 

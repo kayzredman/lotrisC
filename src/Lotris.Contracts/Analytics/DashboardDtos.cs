@@ -42,6 +42,7 @@ public record SlaWarningTicket(
     Guid Id,
     string Title,
     string? AssigneeId,
+    string? AssigneeName,
     string SlaWarningLevel,
     DateTime? SlaResolutionDeadline,
     int? MinutesRemaining);

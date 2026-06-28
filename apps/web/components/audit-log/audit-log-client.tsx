@@ -42,10 +42,7 @@ export default function AuditLogClient() {
   const [actionFilter, setActionFilter] = useState('All');
 
   // Live data — overlay on top of demo when available
-  const { data: liveDataRaw } = useAuditLogsList({ limit: 50 }, { staleTime: 30_000 });
-  const liveData = Array.isArray(liveDataRaw)
-    ? liveDataRaw
-    : (liveDataRaw as { items?: unknown[] } | undefined)?.items;
+  const { data: liveData } = useAuditLogsList({ limit: 50 }, { staleTime: 30_000 });
 
   const rows = liveData && liveData.length > 0
     ? liveData.map((r: any, i: number) => ({

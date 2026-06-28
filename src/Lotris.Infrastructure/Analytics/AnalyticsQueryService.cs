@@ -30,6 +30,7 @@ public sealed class AnalyticsQueryService : IAnalyticsQueryService
             r.Id,
             r.Title,
             r.AssigneeId?.ToString(),
+            r.AssigneeName,
             r.SlaWarningLevel,
             r.SlaResolutionDeadline,
             r.MinutesRemaining)).ToList();

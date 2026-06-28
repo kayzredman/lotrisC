@@ -21,9 +21,15 @@ function buildQuery(params?: AuditLogListParams) {
 }
 
 export function useAuditLogsList(params?: AuditLogListParams, options?: QueryHookOptions) {
-  return useAuthenticatedQuery<ApiRecord[] | { items?: ApiRecord[] }>(
+  const result = useAuthenticatedQuery<ApiRecord[] | { items?: ApiRecord[] }>(
     ['audit-logs', 'list', params],
     `/api/v1/audit-logs${buildQuery(params)}`,
     options,
   );
+
+  const rows = result.data;
+  return {
+    ...result,
+    data: Array.isArray(rows) ? rows : rows?.items,
+  };
 }

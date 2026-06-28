@@ -13,7 +13,9 @@ import {
   useStoreHealth,
   useRepairStore,
   useRestartService,
+  mapToHealthSnapshot,
 } from '@/lib/api/hooks/useHealth';
+import type { ApiRecord } from '@/lib/api/hooks/query-utils';
 import type { HealthSnapshot, ServiceHealthEntry } from '@lotris/types';
 import { Pause, Play, Globe, Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw, Package, Wrench } from 'lucide-react';
 
@@ -34,7 +36,11 @@ export function SystemHealthClient() {
     staleTime: 1000,
   });
 
-  const snapshot: HealthSnapshot | null = (liveSnapshot ?? polledSnapshot ?? null) as HealthSnapshot | null;
+  const liveMapped = liveSnapshot ? mapToHealthSnapshot(liveSnapshot as ApiRecord) : null;
+  const snapshot: HealthSnapshot | null =
+    liveMapped && liveMapped.services.length > 0
+      ? liveMapped
+      : polledSnapshot ?? liveMapped;
 
   const { data: incidents } = useHealthIncidents(
     { limit: 20 },
@@ -42,9 +48,10 @@ export function SystemHealthClient() {
   );
 
   // ── Derived summary ──────────────────────────────────────────────────────
-  const upCount       = snapshot?.services.filter((s) => s.status === 'UP').length   ?? 0;
-  const degradedCount = snapshot?.services.filter((s) => s.status === 'DEGRADED').length ?? 0;
-  const downCount     = snapshot?.services.filter((s) => s.status === 'DOWN').length ?? 0;
+  const services = snapshot?.services ?? [];
+  const upCount       = services.filter((s) => s.status === 'UP').length;
+  const degradedCount = services.filter((s) => s.status === 'DEGRADED').length;
+  const downCount     = services.filter((s) => s.status === 'DOWN').length;
 
   // ── Store health ─────────────────────────────────────────────────────────
   const storeHealthQuery = useStoreHealth({
@@ -185,7 +192,7 @@ export function SystemHealthClient() {
               {storeHealth.repairState === 'running' && '⏳ Repairing…'}
               {storeHealth.repairState === 'done' && '✓ Repair Complete'}
               {storeHealth.repairState === 'error' && '✗ Repair Failed'}
-              {storeHealth.repairState === 'idle' && (storeHealth.healthy ? '✓ Healthy' : `✗ ${storeHealth.corruptedPackages.length} corrupted`)}
+              {storeHealth.repairState === 'idle' && (storeHealth.healthy ? '✓ Healthy' : `✗ ${(storeHealth.corruptedPackages ?? []).length} corrupted`)}
             </span>
           )}
         </div>
@@ -220,11 +227,11 @@ export function SystemHealthClient() {
                 The following packages have integrity issues in the pnpm store:
               </p>
               <ul style={{ margin: 0, padding: '0 0 0 18px', fontSize: 12, color: 'var(--text-muted)' }}>
-                {storeHealth.corruptedPackages.slice(0, 10).map((pkg) => (
+                {(storeHealth.corruptedPackages ?? []).slice(0, 10).map((pkg) => (
                   <li key={pkg} style={{ fontFamily: 'monospace', marginBottom: 2 }}>{pkg}</li>
                 ))}
-                {storeHealth.corruptedPackages.length > 10 && (
-                  <li style={{ color: 'var(--text-muted)' }}>…and {storeHealth.corruptedPackages.length - 10} more</li>
+                {(storeHealth.corruptedPackages ?? []).length > 10 && (
+                  <li style={{ color: 'var(--text-muted)' }}>…and {(storeHealth.corruptedPackages ?? []).length - 10} more</li>
                 )}
               </ul>
             </div>

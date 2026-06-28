@@ -84,7 +84,7 @@ export function DashboardPageClient() {
   // Live values with DEMO fallbacks
   const openTickets  = summaryQ.data?.openTickets  ?? DEMO.openTickets;
   const slaBreached  = summaryQ.data?.slaBreached  ?? DEMO.slaBreached;
-  const resolvedMTD  = summaryQ.data?.resolvedMTD  ?? DEMO.resolvedMTD;
+  const resolvedMTD  = summaryQ.data?.resolvedMtd ?? summaryQ.data?.resolvedMTD ?? DEMO.resolvedMTD;
   const kpiScore     = summaryQ.data?.kpiScore     ?? DEMO.kpiScore;
   const unassigned   = queueQ.data?.unassigned     ?? DEMO.queueStats.unassigned;
   const atRisk       = queueQ.data?.atRisk         ?? DEMO.queueStats.pickupRisk;

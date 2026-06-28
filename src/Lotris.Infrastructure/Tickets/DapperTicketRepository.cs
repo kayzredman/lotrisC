@@ -597,12 +597,15 @@ public sealed class DapperTicketRepository : ITicketRepository
         CancellationToken cancellationToken = default)
     {
         var sql = """
-            SELECT id, title, assignee_id AS AssigneeId, sla_warning_level AS SlaWarningLevel,
-                   sla_resolution_deadline AS SlaResolutionDeadline
-            FROM dbo.Tickets
-            WHERE tenant_id = @TenantId
-              AND sla_warning_level IN ('AMBER','RED')
-              AND status = 'IN_PROGRESS'
+            SELECT t.id AS Id, t.title AS Title, t.assignee_id AS AssigneeId,
+                   u.full_name AS AssigneeName,
+                   t.sla_warning_level AS SlaWarningLevel,
+                   t.sla_resolution_deadline AS SlaResolutionDeadline
+            FROM dbo.Tickets t
+            LEFT JOIN dbo.Users u ON u.id = t.assignee_id AND u.tenant_id = t.tenant_id
+            WHERE t.tenant_id = @TenantId
+              AND t.sla_warning_level IN ('AMBER','RED')
+              AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED')
             """;
 
         var parameters = new DynamicParameters();
@@ -625,6 +628,7 @@ public sealed class DapperTicketRepository : ITicketRepository
             Id = SqlGuid.FromSql(r.Id),
             Title = r.Title,
             AssigneeId = string.IsNullOrWhiteSpace(r.AssigneeId) ? null : SqlGuid.FromSql(r.AssigneeId),
+            AssigneeName = r.AssigneeName,
             SlaWarningLevel = r.SlaWarningLevel ?? "NONE",
             SlaResolutionDeadline = r.SlaResolutionDeadline,
             MinutesRemaining = r.SlaResolutionDeadline.HasValue
@@ -638,6 +642,7 @@ public sealed class DapperTicketRepository : ITicketRepository
         public string Id { get; init; } = "";
         public string Title { get; init; } = "";
         public string? AssigneeId { get; init; }
+        public string? AssigneeName { get; init; }
         public string? SlaWarningLevel { get; init; }
         public DateTime? SlaResolutionDeadline { get; init; }
     }

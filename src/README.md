@@ -40,10 +40,18 @@ cd src
 dotnet run --project Lotris.Api
 ```
 
-- OpenAPI JSON (Development): `/openapi/v1.json`
+- OpenAPI JSON: `/openapi/v1.json`
+- Scalar UI: `/openapi`
+- Human index: [`docs/API.md`](../docs/API.md)
 - Liveness: `GET /health`
 - Readiness: `GET /health/ready`
 - Auth: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`
+
+Refresh the committed spec after API changes:
+
+```bash
+pnpm api:sync   # from repo root — export spec, update docs/API.md, regenerate TS types
+```
 
 ## Configuration
 
@@ -53,6 +61,8 @@ dotnet run --project Lotris.Api
 | `Jwt:Secret` | `JWT_SECRET` | JWT signing key (min 32 chars recommended) |
 | `Database:ApplyLegacyMigrations` | — | When `true`, applies `packages/db/migrations/mssql/*.sql` |
 | `Redis:ConnectionString` | — | Used for health checks and future cache |
+| `OpenApi:Enabled` | — | Serve `/openapi/v1.json` (default `true`; off in Testing) |
+| `OpenApi:UiEnabled` | — | Serve Scalar UI at `/openapi` (default `true`) |
 
 ## Docker (optional API container)
 

@@ -12,8 +12,10 @@ interface ServiceTableProps {
 }
 
 const SERVICE_ICONS: Record<string, React.FC<{ className?: string }>> = {
+  'lotris-api':         ({ className }) => <Server className={className} />,
   'nestjs-api':         ({ className }) => <Server className={className} />,
   'nextjs-web':         ({ className }) => <Server className={className} />,
+  'hangfire-workers':   ({ className }) => <Server className={className} />,
   'bullmq-workers':     ({ className }) => <Server className={className} />,
   'mssql-db':           ({ className }) => <Server className={className} />,
   'redis':              ({ className }) => <Server className={className} />,

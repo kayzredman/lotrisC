@@ -1,6 +1,5 @@
 using Lotris.Api.Auth;
 using Lotris.Application.Analytics;
-using Lotris.Application.Queue;
 using Lotris.Contracts.Analytics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,12 +12,10 @@ namespace Lotris.Api.Controllers;
 public sealed class DashboardController : ControllerBase
 {
     private readonly DashboardService _dashboard;
-    private readonly QueueService _queue;
 
-    public DashboardController(DashboardService dashboard, QueueService queue)
+    public DashboardController(DashboardService dashboard)
     {
         _dashboard = dashboard;
-        _queue = queue;
     }
 
     [HttpGet("summary")]
@@ -48,10 +45,11 @@ public sealed class DashboardController : ControllerBase
     }
 
     [HttpGet("queue-health")]
+    [ProducesResponseType(typeof(DashboardQueueHealth), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetQueueHealth(CancellationToken cancellationToken)
     {
         var session = HttpContext.GetLotrisSession();
-        return Ok(await _queue.GetQueueHealthAsync(session, cancellationToken));
+        return Ok(await _dashboard.GetQueueHealthAsync(session, cancellationToken));
     }
 
     [HttpGet("team-workload")]

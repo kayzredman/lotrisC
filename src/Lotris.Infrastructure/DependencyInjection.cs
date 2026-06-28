@@ -1,5 +1,6 @@
 using Lotris.Application.Admin;
 using Lotris.Application.Analytics;
+using Lotris.Application.Health;
 using Lotris.Application.Intake;
 using Lotris.Application.Auth;
 using Lotris.Application.AuditLogs;
@@ -15,6 +16,7 @@ using Lotris.Infrastructure.Analytics;
 using Lotris.Infrastructure.AuditLogs;
 using Lotris.Infrastructure.Auth;
 using Lotris.Infrastructure.Data;
+using Lotris.Infrastructure.Health;
 using Lotris.Infrastructure.Identity;
 using Lotris.Infrastructure.Migrations;
 using Lotris.Infrastructure.Kpi;
@@ -93,6 +95,11 @@ public static class DependencyInjection
         services.AddScoped<IAdminRepository, DapperAdminRepository>();
         services.AddScoped<IOnboardingRepository, DapperOnboardingRepository>();
         services.AddScoped<IAuditLogRepository, DapperAuditLogRepository>();
+        services.AddScoped<ISystemHealthService, SystemHealthService>();
+        services.AddHttpClient("health-probes", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(2);
+        });
         services.AddSingleton<INotificationPublisher, RedisNotificationPublisher>();
         services.AddSingleton<INotificationEnqueuer, HangfireNotificationEnqueuer>();
         services.AddScoped<IEmailSender, MailKitEmailSender>();

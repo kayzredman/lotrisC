@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "clean": "rm -rf .next"
+    "clean": "rm -rf .next",
+    "api:codegen": "openapi-typescript ../../docs/openapi/v1.json -o lib/api/generated/schema.d.ts"
   },
   "dependencies": {
     "@lotris/config": "workspace:*",
@@ -30,6 +31,7 @@
     "autoprefixer": "^10.4.19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "openapi-typescript": "^7.8.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.8.3"
