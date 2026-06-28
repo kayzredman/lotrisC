@@ -1,6 +1,7 @@
 using Lotris.Api.Auth;
 using Lotris.Application.Reports;
 using Lotris.Contracts.Reports;
+using Lotris.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -51,6 +52,21 @@ public sealed class ReportsController : ControllerBase
     public async Task<IActionResult> DeleteSchedule(Guid id, CancellationToken cancellationToken)
     {
         await _reports.DeleteScheduleAsync(HttpContext.GetLotrisSession(), id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpGet("config")]
+    public async Task<IActionResult> GetConfig(CancellationToken cancellationToken) =>
+        Ok(await _reports.GetConfigAsync(HttpContext.GetLotrisSession(), cancellationToken));
+
+    [HttpPatch("config")]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UpdateConfig(
+        [FromBody] UpdateReportConfigRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _reports.UpdateConfigAsync(HttpContext.GetLotrisSession(), request, cancellationToken);
         return NoContent();
     }
 

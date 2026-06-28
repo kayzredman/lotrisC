@@ -116,6 +116,12 @@ internal sealed class InMemoryReportRepository : IReportRepository
 
         return Task.CompletedTask;
     }
+
+    public Task<ReportConfigEntity?> GetConfigAsync(Guid tenantId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<ReportConfigEntity?>(null);
+
+    public Task UpsertConfigAsync(Guid tenantId, ReportConfigUpdate update, CancellationToken cancellationToken = default) =>
+        Task.CompletedTask;
 }
 
 internal sealed class NoOpReportJobEnqueuer : IReportJobEnqueuer

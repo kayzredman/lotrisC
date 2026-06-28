@@ -185,6 +185,91 @@ public class AdminService
         await WriteAuditAsync(tenantId, actorId, "TEAM_UPDATED", "Team", teamId.ToString(), request, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<TeamAccessGrantDto>> ListTeamAccessGrantsAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await _admin.ListTeamAccessGrantsAsync(tenantId, cancellationToken);
+        return rows.Select(g => new TeamAccessGrantDto(
+            g.Id,
+            g.GranteeUserId,
+            g.GranteeName,
+            g.TargetTeamId,
+            g.TargetTeamName,
+            g.GrantedBy,
+            g.GrantedByName,
+            g.CreatedAt)).ToList();
+    }
+
+    public async Task<GrantTeamAccessResponse> GrantTeamAccessAsync(
+        Guid tenantId,
+        Guid actorId,
+        GrantTeamAccessRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await AssertUserExistsAsync(tenantId, request.GranteeUserId, cancellationToken);
+        await AssertTeamExistsAsync(tenantId, request.TargetTeamId, cancellationToken);
+
+        var id = await _admin.GrantTeamAccessAsync(
+            tenantId,
+            request.GranteeUserId,
+            request.TargetTeamId,
+            actorId,
+            cancellationToken);
+
+        await WriteAuditAsync(tenantId, actorId, "TEAM_ACCESS_GRANTED", "TeamAccessGrant", id.ToString(), request, cancellationToken);
+        return new GrantTeamAccessResponse(id);
+    }
+
+    public async Task RevokeTeamAccessAsync(
+        Guid tenantId,
+        Guid actorId,
+        Guid grantId,
+        CancellationToken cancellationToken = default)
+    {
+        await _admin.RevokeTeamAccessAsync(tenantId, grantId, cancellationToken);
+        await WriteAuditAsync(tenantId, actorId, "TEAM_ACCESS_REVOKED", "TeamAccessGrant", grantId.ToString(), null, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<CategoryRoutingDto>> ListCategoryRoutingAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await _admin.ListCategoryRoutingAsync(tenantId, cancellationToken);
+        return rows.Select(r => new CategoryRoutingDto(
+            r.Id,
+            r.Category,
+            r.TeamId,
+            r.TeamName,
+            r.DefaultPriority)).ToList();
+    }
+
+    public async Task UpsertCategoryRoutingAsync(
+        Guid tenantId,
+        Guid actorId,
+        UpsertCategoryRoutingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await AssertTeamExistsAsync(tenantId, request.TeamId, cancellationToken);
+        await _admin.UpsertCategoryRoutingAsync(
+            tenantId,
+            request.Category.Trim(),
+            request.TeamId,
+            request.DefaultPriority,
+            cancellationToken);
+        await WriteAuditAsync(tenantId, actorId, "CATEGORY_ROUTING_UPSERTED", "CategoryRouting", request.Category, request, cancellationToken);
+    }
+
+    public async Task DeleteCategoryRoutingAsync(
+        Guid tenantId,
+        Guid actorId,
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        await _admin.DeleteCategoryRoutingAsync(tenantId, id, cancellationToken);
+        await WriteAuditAsync(tenantId, actorId, "CATEGORY_ROUTING_DELETED", "CategoryRouting", id.ToString(), null, cancellationToken);
+    }
+
     private async Task AssertUserExistsAsync(Guid tenantId, Guid userId, CancellationToken cancellationToken)
     {
         if (await _admin.GetUserAsync(tenantId, userId, cancellationToken) is null)

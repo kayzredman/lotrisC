@@ -34,4 +34,30 @@ public interface IAdminRepository
         Guid teamId,
         AdminTeamUpdateModel update,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<TeamAccessGrantEntity>> ListTeamAccessGrantsAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken = default);
+
+    Task<Guid> GrantTeamAccessAsync(
+        Guid tenantId,
+        Guid granteeUserId,
+        Guid targetTeamId,
+        Guid grantedBy,
+        CancellationToken cancellationToken = default);
+
+    Task RevokeTeamAccessAsync(Guid tenantId, Guid grantId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<CategoryRoutingEntity>> ListCategoryRoutingAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken = default);
+
+    Task UpsertCategoryRoutingAsync(
+        Guid tenantId,
+        string category,
+        Guid teamId,
+        int defaultPriority,
+        CancellationToken cancellationToken = default);
+
+    Task DeleteCategoryRoutingAsync(Guid tenantId, Guid id, CancellationToken cancellationToken = default);
 }

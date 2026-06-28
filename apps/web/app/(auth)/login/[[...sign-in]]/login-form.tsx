@@ -142,6 +142,7 @@ export function LoginForm() {
           disabled={isSubmitting}
           className={styles.submitButton}
           style={{ minHeight: 44 }}
+          aria-busy={isSubmitting}
         >
           {isSubmitting ? 'Please wait…' : tab === 'login' ? 'Sign in' : 'Create account'}
         </button>

@@ -45,19 +45,31 @@ export function useGenerateReport() {
   );
 }
 
-/** Stub — report config endpoint not yet on C# API */
 export function useReportConfig(options?: QueryHookOptions) {
   return useAuthenticatedQuery<ApiRecord>(
     ['reports', 'config'],
     '/api/v1/reports/config',
-    { enabled: false, staleTime: options?.staleTime, initialData: {} },
+    options,
   );
 }
 
 export function useUpdateReportConfig() {
   const qc = useQueryClient();
   return useAuthenticatedMutation<void, ApiRecord>(
-    async () => undefined,
+    (token, body) => {
+      const recipients = body.defaultRecipients;
+      const parsedRecipients =
+        typeof recipients === 'string'
+          ? (JSON.parse(recipients) as string[])
+          : Array.isArray(recipients)
+            ? recipients
+            : undefined;
+      return apiFetch('/api/v1/reports/config', {
+        method: 'PATCH',
+        token,
+        body: { ...body, defaultRecipients: parsedRecipients },
+      });
+    },
     { onSuccess: () => void qc.invalidateQueries({ queryKey: ['reports', 'config'] }) },
   );
 }

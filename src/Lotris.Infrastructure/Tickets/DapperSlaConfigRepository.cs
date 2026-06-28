@@ -52,4 +52,61 @@ public sealed class DapperSlaConfigRepository : ISlaConfigRepository
 
         return tenantCfg ?? new SlaConfig();
     }
+
+    public async Task UpsertTenantDefaultAsync(
+        Guid tenantId,
+        int pickupSlaMinutes,
+        int resolutionSlaMinutes,
+        CancellationToken cancellationToken = default)
+    {
+        const string selectSql = """
+            SELECT id FROM dbo.SLA_Configs
+            WHERE tenant_id = @TenantId AND team_id IS NULL
+            """;
+
+        const string updateSql = """
+            UPDATE dbo.SLA_Configs
+            SET pickup_sla_minutes = @PickupSlaMinutes,
+                resolution_sla_minutes = @ResolutionSlaMinutes,
+                updated_at = @UpdatedAt
+            WHERE id = @Id
+            """;
+
+        const string insertSql = """
+            INSERT INTO dbo.SLA_Configs
+                (id, tenant_id, team_id, pickup_sla_minutes, resolution_sla_minutes, created_at, updated_at)
+            VALUES
+                (@Id, @TenantId, NULL, @PickupSlaMinutes, @ResolutionSlaMinutes, @CreatedAt, @UpdatedAt)
+            """;
+
+        await using var connection = await _connections.OpenConnectionAsync(cancellationToken);
+        var tenantParam = SqlGuid.ToSql(tenantId);
+        var existingId = await connection.ExecuteScalarAsync<string?>(new CommandDefinition(
+            selectSql,
+            new { TenantId = tenantParam },
+            cancellationToken: cancellationToken));
+
+        var now = DateTime.UtcNow;
+        if (existingId is not null)
+        {
+            await connection.ExecuteAsync(new CommandDefinition(updateSql, new
+            {
+                Id = existingId,
+                PickupSlaMinutes = pickupSlaMinutes,
+                ResolutionSlaMinutes = resolutionSlaMinutes,
+                UpdatedAt = now,
+            }, cancellationToken: cancellationToken));
+            return;
+        }
+
+        await connection.ExecuteAsync(new CommandDefinition(insertSql, new
+        {
+            Id = SqlGuid.ToSql(Guid.NewGuid()),
+            TenantId = tenantParam,
+            PickupSlaMinutes = pickupSlaMinutes,
+            ResolutionSlaMinutes = resolutionSlaMinutes,
+            CreatedAt = now,
+            UpdatedAt = now,
+        }, cancellationToken: cancellationToken));
+    }
 }

@@ -152,6 +152,63 @@ public sealed class EfReportRepository : IReportRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<ReportConfigEntity?> GetConfigAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _db.ReportConfigs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.TenantId == tenantId, cancellationToken);
+
+        return entity is null
+            ? null
+            : new ReportConfigEntity
+            {
+                BrandName = entity.BrandName ?? "Lotris",
+                DefaultTimezone = entity.DefaultTimezone ?? "UTC",
+                AttachmentSizeLimitMb = entity.AttachmentSizeLimitMb ?? 10,
+                RetentionDays = entity.RetentionDays ?? 30,
+                DefaultRecipients = entity.DefaultRecipients ?? "[]",
+            };
+    }
+
+    public async Task UpsertConfigAsync(
+        Guid tenantId,
+        ReportConfigUpdate update,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _db.ReportConfigs.FirstOrDefaultAsync(c => c.TenantId == tenantId, cancellationToken);
+        var recipientsJson = update.DefaultRecipients is null
+            ? null
+            : System.Text.Json.JsonSerializer.Serialize(update.DefaultRecipients);
+
+        if (entity is null)
+        {
+            _db.ReportConfigs.Add(new ReportConfig
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                BrandName = update.BrandName ?? "Lotris",
+                DefaultTimezone = update.DefaultTimezone ?? "UTC",
+                AttachmentSizeLimitMb = update.AttachmentSizeLimitMb ?? 10,
+                RetentionDays = update.RetentionDays ?? 30,
+                DefaultRecipients = recipientsJson ?? "[]",
+                UpdatedAt = DateTime.UtcNow,
+            });
+        }
+        else
+        {
+            if (update.BrandName is not null) entity.BrandName = update.BrandName;
+            if (update.DefaultTimezone is not null) entity.DefaultTimezone = update.DefaultTimezone;
+            if (update.AttachmentSizeLimitMb.HasValue) entity.AttachmentSizeLimitMb = update.AttachmentSizeLimitMb;
+            if (update.RetentionDays.HasValue) entity.RetentionDays = update.RetentionDays;
+            if (recipientsJson is not null) entity.DefaultRecipients = recipientsJson;
+            entity.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
     private static ReportJobEntity MapJob(ReportJob entity) => new()
     {
         Id = entity.Id,

@@ -96,4 +96,58 @@ public sealed class AdminController : ControllerBase
         await _admin.UpdateTeamAsync(session.TenantId, session.UserId, id, request, cancellationToken);
         return NoContent();
     }
+
+    [HttpGet("team-access")]
+    public async Task<IActionResult> ListTeamAccess(CancellationToken cancellationToken)
+    {
+        var session = HttpContext.GetLotrisSession();
+        return Ok(await _admin.ListTeamAccessGrantsAsync(session.TenantId, cancellationToken));
+    }
+
+    [HttpPost("team-access")]
+    [ProducesResponseType(typeof(GrantTeamAccessResponse), StatusCodes.Status201Created)]
+    public async Task<IActionResult> GrantTeamAccess(
+        [FromBody] GrantTeamAccessRequest request,
+        CancellationToken cancellationToken)
+    {
+        var session = HttpContext.GetLotrisSession();
+        var result = await _admin.GrantTeamAccessAsync(session.TenantId, session.UserId, request, cancellationToken);
+        return CreatedAtAction(nameof(ListTeamAccess), result);
+    }
+
+    [HttpDelete("team-access/{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RevokeTeamAccess(Guid id, CancellationToken cancellationToken)
+    {
+        var session = HttpContext.GetLotrisSession();
+        await _admin.RevokeTeamAccessAsync(session.TenantId, session.UserId, id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpGet("category-routing")]
+    public async Task<IActionResult> ListCategoryRouting(CancellationToken cancellationToken)
+    {
+        var session = HttpContext.GetLotrisSession();
+        return Ok(await _admin.ListCategoryRoutingAsync(session.TenantId, cancellationToken));
+    }
+
+    [HttpPut("category-routing")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UpsertCategoryRouting(
+        [FromBody] UpsertCategoryRoutingRequest request,
+        CancellationToken cancellationToken)
+    {
+        var session = HttpContext.GetLotrisSession();
+        await _admin.UpsertCategoryRoutingAsync(session.TenantId, session.UserId, request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpDelete("category-routing/{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteCategoryRouting(Guid id, CancellationToken cancellationToken)
+    {
+        var session = HttpContext.GetLotrisSession();
+        await _admin.DeleteCategoryRoutingAsync(session.TenantId, session.UserId, id, cancellationToken);
+        return NoContent();
+    }
 }

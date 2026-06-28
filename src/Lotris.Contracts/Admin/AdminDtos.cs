@@ -50,3 +50,29 @@ public sealed record TeamListItemDto(
     int MemberCount);
 
 public sealed record CreateTeamResponse(Guid Id);
+
+public sealed record TeamAccessGrantDto(
+    Guid Id,
+    Guid GranteeUserId,
+    string GranteeName,
+    Guid TargetTeamId,
+    string TargetTeamName,
+    Guid GrantedBy,
+    string GrantedByName,
+    DateTime CreatedAt);
+
+public sealed record GrantTeamAccessRequest(Guid GranteeUserId, Guid TargetTeamId);
+
+public sealed record GrantTeamAccessResponse(Guid Id);
+
+public sealed record CategoryRoutingDto(
+    Guid Id,
+    string Category,
+    Guid TeamId,
+    string TeamName,
+    int DefaultPriority);
+
+public sealed record UpsertCategoryRoutingRequest(
+    string Category,
+    Guid TeamId,
+    int DefaultPriority = 3);

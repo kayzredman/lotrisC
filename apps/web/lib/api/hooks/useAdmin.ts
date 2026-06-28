@@ -89,19 +89,24 @@ export function useUpdateAdminTeam() {
   );
 }
 
-// Stubs — no C# endpoints yet
-export function useTeamAccessList() {
+// Team access + category routing
+export function useTeamAccessList(options?: QueryHookOptions) {
   return useAuthenticatedQuery<ApiRecord[]>(
     ['admin', 'team-access'],
     '/api/v1/admin/team-access',
-    { enabled: false, initialData: [] },
+    options,
   );
 }
 
 export function useGrantTeamAccess() {
   const qc = useQueryClient();
-  return useAuthenticatedMutation<void, { userId: string; teamId: string }>(
-    async () => undefined,
+  return useAuthenticatedMutation<ApiRecord, { userId: string; teamId: string }>(
+    (token, { userId, teamId }) =>
+      apiFetch('/api/v1/admin/team-access', {
+        method: 'POST',
+        token,
+        body: { granteeUserId: userId, targetTeamId: teamId },
+      }),
     { onSuccess: () => void qc.invalidateQueries({ queryKey: ['admin', 'team-access'] }) },
   );
 }
@@ -109,7 +114,8 @@ export function useGrantTeamAccess() {
 export function useRevokeTeamAccess() {
   const qc = useQueryClient();
   return useAuthenticatedMutation<void, { grantId: string }>(
-    async () => undefined,
+    (token, { grantId }) =>
+      apiFetch(`/api/v1/admin/team-access/${grantId}`, { method: 'DELETE', token }),
     { onSuccess: () => void qc.invalidateQueries({ queryKey: ['admin', 'team-access'] }) },
   );
 }
@@ -118,14 +124,15 @@ export function useCategoryRoutingList(options?: QueryHookOptions) {
   return useAuthenticatedQuery<ApiRecord[]>(
     ['admin', 'category-routing'],
     '/api/v1/admin/category-routing',
-    { enabled: false, initialData: [], staleTime: options?.staleTime },
+    options,
   );
 }
 
 export function useUpsertCategoryRouting() {
   const qc = useQueryClient();
   return useAuthenticatedMutation<void, ApiRecord>(
-    async () => undefined,
+    (token, body) =>
+      apiFetch('/api/v1/admin/category-routing', { method: 'PUT', token, body }),
     { onSuccess: () => void qc.invalidateQueries({ queryKey: ['admin', 'category-routing'] }) },
   );
 }
@@ -133,7 +140,8 @@ export function useUpsertCategoryRouting() {
 export function useDeleteCategoryRouting() {
   const qc = useQueryClient();
   return useAuthenticatedMutation<void, { id: string }>(
-    async () => undefined,
+    (token, { id }) =>
+      apiFetch(`/api/v1/admin/category-routing/${id}`, { method: 'DELETE', token }),
     { onSuccess: () => void qc.invalidateQueries({ queryKey: ['admin', 'category-routing'] }) },
   );
 }

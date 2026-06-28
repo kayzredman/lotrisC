@@ -4,6 +4,7 @@ using Lotris.Application.Intake;
 using Lotris.Application.Auth;
 using Lotris.Application.AuditLogs;
 using Lotris.Application.Kpi;
+using Lotris.Application.Onboarding;
 using Lotris.Application.Notifications;
 using Lotris.Application.Reports;
 using Lotris.Application.Queue;
@@ -18,6 +19,7 @@ using Lotris.Infrastructure.Identity;
 using Lotris.Infrastructure.Migrations;
 using Lotris.Infrastructure.Kpi;
 using Lotris.Infrastructure.Notifications;
+using Lotris.Infrastructure.Onboarding;
 using Lotris.Infrastructure.Reports;
 using Lotris.Infrastructure.Queue;
 using Lotris.Infrastructure.Tasks;
@@ -38,6 +40,8 @@ public static class DependencyInjection
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required.");
+
+        DapperTypeHandlers.Register();
 
         services.AddDbContext<LotrisDbContext>(options =>
             options.UseSqlServer(connectionString, sql =>
@@ -87,6 +91,7 @@ public static class DependencyInjection
         services.AddScoped<ISlaJobScheduler, HangfireSlaJobScheduler>();
         services.AddScoped<ITaskRepository, DapperTaskRepository>();
         services.AddScoped<IAdminRepository, DapperAdminRepository>();
+        services.AddScoped<IOnboardingRepository, DapperOnboardingRepository>();
         services.AddScoped<IAuditLogRepository, DapperAuditLogRepository>();
         services.AddSingleton<INotificationPublisher, RedisNotificationPublisher>();
         services.AddSingleton<INotificationEnqueuer, HangfireNotificationEnqueuer>();

@@ -2,6 +2,7 @@ using Lotris.Application.Common;
 using Lotris.Contracts;
 using Lotris.Contracts.Reports;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace Lotris.Application.Reports;
 
@@ -125,6 +126,29 @@ public sealed class ReportService
         await _reports.DeleteScheduleAsync(session.TenantId, scheduleId, cancellationToken);
     }
 
+    public async Task<ReportConfigDto> GetConfigAsync(
+        LotrisSession session,
+        CancellationToken cancellationToken = default)
+    {
+        var row = await _reports.GetConfigAsync(session.TenantId, cancellationToken);
+        return MapConfig(row);
+    }
+
+    public async Task UpdateConfigAsync(
+        LotrisSession session,
+        UpdateReportConfigRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await _reports.UpsertConfigAsync(session.TenantId, new ReportConfigUpdate
+        {
+            BrandName = request.BrandName,
+            DefaultTimezone = request.DefaultTimezone,
+            AttachmentSizeLimitMb = request.AttachmentSizeLimitMb,
+            RetentionDays = request.RetentionDays,
+            DefaultRecipients = request.DefaultRecipients,
+        }, cancellationToken);
+    }
+
     public string GetTenantOutputDirectory(Guid tenantId) =>
         Path.Combine(_options.OutputPath, tenantId.ToString());
 
@@ -224,4 +248,26 @@ public sealed class ReportService
         row.CreatedAt,
         row.NextRunAt,
         row.LastRunAt);
+
+    private static ReportConfigDto MapConfig(ReportConfigEntity? row)
+    {
+        const string defaults = "[]";
+        var recipientsJson = row?.DefaultRecipients ?? defaults;
+        IReadOnlyList<string> recipients;
+        try
+        {
+            recipients = JsonSerializer.Deserialize<List<string>>(recipientsJson) ?? [];
+        }
+        catch
+        {
+            recipients = [];
+        }
+
+        return new ReportConfigDto(
+            row?.BrandName ?? "Lotris",
+            row?.DefaultTimezone ?? "UTC",
+            row?.AttachmentSizeLimitMb ?? 10,
+            row?.RetentionDays ?? 30,
+            recipients);
+    }
 }

@@ -24,6 +24,10 @@ public interface IReportRepository
     Task<IReadOnlyList<ReportScheduleEntity>> ListSchedulesAsync(Guid tenantId, CancellationToken cancellationToken = default);
 
     Task DeleteScheduleAsync(Guid tenantId, Guid scheduleId, CancellationToken cancellationToken = default);
+
+    Task<ReportConfigEntity?> GetConfigAsync(Guid tenantId, CancellationToken cancellationToken = default);
+
+    Task UpsertConfigAsync(Guid tenantId, ReportConfigUpdate update, CancellationToken cancellationToken = default);
 }
 
 public interface IReportJobEnqueuer
@@ -75,4 +79,22 @@ public sealed class ReportScheduleEntity
     public DateTime CreatedAt { get; init; }
     public DateTime? NextRunAt { get; init; }
     public DateTime? LastRunAt { get; init; }
+}
+
+public sealed class ReportConfigEntity
+{
+    public string BrandName { get; init; } = "Lotris";
+    public string DefaultTimezone { get; init; } = "UTC";
+    public int AttachmentSizeLimitMb { get; init; } = 10;
+    public int RetentionDays { get; init; } = 30;
+    public string DefaultRecipients { get; init; } = "[]";
+}
+
+public sealed class ReportConfigUpdate
+{
+    public string? BrandName { get; init; }
+    public string? DefaultTimezone { get; init; }
+    public int? AttachmentSizeLimitMb { get; init; }
+    public int? RetentionDays { get; init; }
+    public IReadOnlyList<string>? DefaultRecipients { get; init; }
 }
