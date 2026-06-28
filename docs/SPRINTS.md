@@ -1,7 +1,22 @@
 # Lotris — Sprint Tracker
 
 > Maintained by the QA Agent after every sprint. Updated after each phase gate.
-> Last updated: May 2026 — Sprint 23 COMPLETE (`dev`, Milestone M15). Staging infra wired.
+> Last updated: June 2026 — Sprint 23 COMPLETE (`dev`, Milestone M15). **Next: C# refactor — see [REFACTOR.md](REFACTOR.md).**
+
+---
+
+## Upcoming — Refactor Phases (not yet started)
+
+| Phase | Title | Status | Doc |
+| ----- | ----- | ------ | --- |
+| 0 | C# scaffold + Identity auth + OpenAPI | Planned | [REFACTOR.md](REFACTOR.md) |
+| 1 | Tickets + queue + Hangfire SLA | Planned | |
+| 2 | Tasks + admin + notifications SSE | Planned | |
+| 3 | KPI + reports | Planned | |
+| 4 | Analytics/ETL — MSSQL rollups + **sysadmin-configurable job timing** | Planned | [DATABASE-STRATEGY.md §11](DATABASE-STRATEGY.md) |
+| 5 | Frontend OpenAPI + ui-ux-pro-max pass | Planned | [design-system.md](design-system.md) |
+| 6 | On-prem Docker + Helm | Planned | |
+| 7 | Parity gate + NestJS decommission | Planned | |
 
 ---
 

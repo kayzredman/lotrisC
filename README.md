@@ -520,27 +520,67 @@ lotris/                          ← monorepo root
 
 ## Documentation
 
-| Doc                                | Description                                        |
-| ---------------------------------- | -------------------------------------------------- |
+| Doc | Description |
+| --- | ----------- |
 | [docs/CONTEXT.md](docs/CONTEXT.md) | Full product brief, goals, users, KPIs, tech stack |
-| `docs/architecture/`               | System design and data flow diagrams               |
-| `docs/api/`                        | API endpoint documentation                         |
+| [docs/REFACTOR.md](docs/REFACTOR.md) | **C# backend refactor, on-prem roadmap, parity checklist** |
+| [docs/DATABASE-STRATEGY.md](docs/DATABASE-STRATEGY.md) | Analytics DB decision framework (Postgres vs MSSQL — open) |
+| Doc | Description |
+| --- | ----------- |
+| [docs/GIT-WORKFLOW.md](docs/GIT-WORKFLOW.md) | **Branch policy — `dev` → QA → `main` on [lotrisC](https://github.com/kayzredman/lotrisC.git)** |
+| [docs/ONBOARDING-REFACTOR.md](docs/ONBOARDING-REFACTOR.md) | Onboarding wizard decisions (accepted) |
+| [docs/STAGING.md](docs/STAGING.md) | Cloud staging setup (Vercel/Railway) |
+| [docs/SPRINTS.md](docs/SPRINTS.md) | Sprint tracker |
+| `docs/architecture/` | System design diagrams |
+| `docs/api/` | API endpoint documentation |
+
+---
+
+## Next Phase — C# Backend & On-Prem (Planning)
+
+Sprints 1–23 delivered the NestJS stack on `dev`. The next major phase:
+
+- **Backend:** ASP.NET Core 9, Hangfire, OpenAPI REST, hybrid auth (Entra / Identity / LDAP)
+- **Frontend:** Keep Next.js; migrate tRPC → OpenAPI client; UX pass with **ui-ux-pro-max**
+- **Deploy:** Docker Compose on-prem + optional Kubernetes/Rancher Helm chart
+
+Full roadmap: **[docs/REFACTOR.md](docs/REFACTOR.md)**
 
 ---
 
 ## Development Workflow
 
-### 3-Agent Model
+### 4-Agent Model
 
-All build work runs through three coordinated AI agents defined in `.github/agents/`:
+All build work runs through four coordinated AI agents in `.github/agents/`:
 
 | Agent | Instructions | Domain |
-|-------|-------------|--------|
-| **QA Agent** | `.github/agents/qa-agent.instructions.md` | Job assignment, validation, quality gates, git push, doc updates |
-| **Frontend Dev** | `.github/agents/frontend-agent.instructions.md` | Next.js 15, UI, tRPC client, Tailwind, ShadCN, PWA |
-| **Backend Dev** | `.github/agents/backend-agent.instructions.md` | NestJS, Drizzle, tRPC server, BullMQ, MSSQL, PostgreSQL |
+| ----- | ------------ | ------ |
+| **QA / Tech Lead** | `qa-agent.instructions.md` | Job assignment, OpenAPI approval, **CI gate**, merge to `dev`, docs |
+| **Frontend Dev** | `frontend-agent.instructions.md` | Next.js, UI, OpenAPI client, ShadCN — **ui-ux-pro-max required** |
+| **Backend Dev** | `backend-agent.instructions.md` | NestJS (legacy) / ASP.NET Core (refactor), DB, jobs |
+| **Platform** | `platform-agent.instructions.md` | Docker, Helm, CI/CD, on-prem bootstrap |
 
-**QA Agent leads every sprint.** It assigns scoped jobs to Frontend and Backend agents, validates all output against the quality checklist, then pushes to `dev`. Frontend and Backend work in parallel where dependencies allow.
+**QA Agent leads every sprint.** Merge to `dev` is blocked until **GitHub Actions pass** — not agent self-check alone. Frontend and Backend coordinate through the **OpenAPI spec** during the C# refactor.
+
+### UI/UX Standards
+
+- Cursor skill: **ui-ux-pro-max** (mandatory for visual/interaction changes)
+- Design doc: [docs/design-system.md](docs/design-system.md)
+- Brand preserved: indigo/green/amber/red status semantics, `LotrisMark` / `LotrisLogo` components
+- Mockups in `mockups/` remain read-only reference
+
+### Database Strategy — DECIDED
+
+**Option B+ — MSSQL tiered analytics.** PostgreSQL removed from on-prem/C# target stack.
+
+- **Live dashboards:** MSSQL operational queries + Redis (already how stat cards work today)
+- **Trend charts:** MSSQL `analytics` schema, incremental Hangfire rollup (**default 5 min, sysadmin-configurable**)
+- **Reports:** 2× daily batch (**times configurable**) + on-demand from `analytics` tables
+- **Job control:** `/system-health` → Analytics & ETL Jobs panel (`ADMIN` / `SUPERADMIN` only)
+- **Scale:** ~60 concurrent IT users year 1
+
+Full analysis: **[docs/DATABASE-STRATEGY.md](docs/DATABASE-STRATEGY.md)**
 
 ### Git Workflow
 

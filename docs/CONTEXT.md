@@ -1,6 +1,6 @@
 # Lotris — Project Context
 
-> Last updated: May 2026 — Sprint 19 COMPLETE (merged to `dev` 2026-05-13, commit `ca32cff`, tag `v0.19.0`, Milestone M12). Automated Reports + Workload Rebalancing complete.
+> Last updated: June 2026 — Sprint 23 complete on `dev`. **C# refactor & on-prem phase planning** — see [REFACTOR.md](REFACTOR.md).
 
 ---
 
@@ -828,3 +828,79 @@ trpc['kpi.agreements.list'].useQuery({ engineerId: me.id })
 - Real-time chat / live support
 - Billing / subscription management
 - Prometheus / Grafana / Datadog integrations (Phase 3)
+
+---
+
+## 18. C# Backend Refactor & On-Prem (Next Phase)
+
+> Full detail: [REFACTOR.md](REFACTOR.md)
+
+After Sprint 23 (NestJS stack complete on `dev`), the next major phase migrates the backend to **ASP.NET Core 9** and packages Lotris for **on-prem deployment**.
+
+| Area | Current (Sprint 23) | Target |
+| ---- | ------------------- | ------ |
+| API | NestJS/Fastify, tRPC + REST | ASP.NET Core, OpenAPI REST |
+| Workers | Node BullMQ (8 queues) | Hangfire (MSSQL storage) |
+| Auth | Clerk (cloud) | Hybrid: Entra ID, ASP.NET Identity, LDAP/AD |
+| Frontend | Next.js 15, tRPC client | Next.js 15, OpenAPI client (unchanged UI shell) |
+| Deploy | Vercel + Railway + Neon | Docker Compose + optional Helm/K8s/Rancher |
+
+**Migration strategy:** Strangler fig — parallel NestJS + C# API until parity checklist passes (Phase 7).
+
+**New code location:** `src/Lotris.*` (.NET solution) alongside existing `apps/` until cutover.
+
+---
+
+## 19. Agent Workflow (4-Agent Model)
+
+Evolved from the original 3-agent model (QA + Frontend + Backend). Instructions: `.github/agents/`.
+
+| Agent | Domain | Key responsibility |
+| ----- | ------ | ------------------ |
+| **QA / Tech Lead** | Cross-cutting | Job assignment, OpenAPI contract approval, **CI must pass before merge** |
+| **Backend** | `apps/api/` → `src/Lotris.*` | Business logic, EF/Dapper, Hangfire, xUnit |
+| **Frontend** | `apps/web/`, `packages/ui/` | Next.js, OpenAPI client — **ui-ux-pro-max skill mandatory** for UI |
+| **Platform** | `docker/`, `deploy/`, CI | Compose, Helm, bootstrap scripts, GitHub Actions |
+
+**Lessons from Sprints 1–23:**
+
+- Domain boundaries worked — keep Frontend/Backend separation
+- QA checklist was aspirational without CI — **merge blocked on green Actions** going forward
+- No dedicated UX review — addressed via **ui-ux-pro-max** and [design-system.md](design-system.md)
+- On-prem packaging had no owner — **Platform Agent** owns Docker/Helm
+
+Small teams may use 3 agents (Platform folded into Backend). The orchestrator role and CI gates are non-negotiable.
+
+---
+
+## 20. UI/UX Standards
+
+> Full detail: [design-system.md](design-system.md)
+
+- **Cursor skill:** `ui-ux-pro-max` — required for any visual, interaction, or accessibility change
+- **Brand:** Preserve status-panel mark, indigo CTAs, green/amber/red ticket semantics (README Brand section)
+- **Styling:** v2 CSS classes (`globals.css`) + ShadCN — consolidate during Phase 5 frontend migration
+- **Mockups:** `mockups/` read-only; do not edit during builds
+- **Phase 5 UX pass pages:** auth hub, onboarding, dashboard, queue, tickets, KPI agreements, system health, landing, request-access
+
+**Responsive breakpoints:** 375px (mobile), 768px (tablet), 1280px (desktop) — same as frontend agent rules.
+
+---
+
+## 21. Database Strategy — DECIDED
+
+> Full detail: [DATABASE-STRATEGY.md](DATABASE-STRATEGY.md)
+
+**Decision (June 2026): Option B+ — MSSQL tiered analytics.** PostgreSQL eliminated from on-prem/C# target stack.
+
+| Tier | Engine | Freshness |
+| ---- | ------ | --------- |
+| Live stat cards, queue | MSSQL `dbo` + Redis | Near real-time (already implemented) |
+| Trend charts, engineer perf | MSSQL `analytics` schema | Incremental rollup (default 5 min, **sysadmin-configurable**) |
+| Scheduled reports | MSSQL `analytics` schema | 2× daily batch (**times configurable**) |
+
+**Sysadmin control:** `/system-health` → Analytics & ETL Jobs panel (`ADMIN` / `SUPERADMIN`). Env vars set min/max bounds.
+
+**Scale target:** ~60 concurrent IT users (year 1). Read replica deferred until 500k+ tickets.
+
+**C# abstraction:** `IAnalyticsStore` + `IAnalyticsJobScheduler` — see [DATABASE-STRATEGY.md §11](DATABASE-STRATEGY.md).
