@@ -145,4 +145,4 @@ pnpm api:sync
 
 ---
 
-_Next: FSM/load/tenant test matrix, clean VM on-prem smoke, NestJS decommission._
+_Next: clean VM on-prem smoke, NestJS decommission. See [HANDOFF.md](HANDOFF.md) for machine migration._

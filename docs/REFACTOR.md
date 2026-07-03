@@ -15,6 +15,7 @@ Related docs:
 | [design-system.md](design-system.md) | UI tokens, UX standards, `ui-ux-pro-max` usage |
 | [API.md](API.md) | **Canonical REST API index** + links to Scalar UI and OpenAPI JSON |
 | [PARITY-AUDIT.md](PARITY-AUDIT.md) | tRPC → REST parity audit and Phase 7 gap tracker |
+| [HANDOFF.md](HANDOFF.md) | **Machine migration** — clone, gate status, deferred items, Cursor context |
 | [ONBOARDING-REFACTOR.md](ONBOARDING-REFACTOR.md) | Onboarding wizard API + on-prem bootstrap |
 | [STAGING.md](STAGING.md) | Current cloud staging (Vercel/Railway) — superseded for on-prem by `docker-compose.onprem.yml` (Phase 6) |
 | [SPRINTS.md](SPRINTS.md) | Sprint history (Sprints 1–23 complete on NestJS stack) |
