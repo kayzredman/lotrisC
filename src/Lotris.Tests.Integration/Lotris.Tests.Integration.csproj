@@ -22,6 +22,8 @@
     <ProjectReference Include="..\Lotris.Api\Lotris.Api.csproj" />
     <ProjectReference Include="..\Lotris.Application\Lotris.Application.csproj" />
     <ProjectReference Include="..\Lotris.Domain\Lotris.Domain.csproj" />
+    <ProjectReference Include="..\Lotris.Workers\Lotris.Workers.csproj" />
+    <ProjectReference Include="..\Lotris.Infrastructure\Lotris.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

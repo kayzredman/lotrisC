@@ -122,18 +122,17 @@ export function useBatchReassignTickets() {
     { reassigned: number },
     { reassignments: { ticketId: string; toEngineerId: string }[] }
   >(
-    async (token, { reassignments }) => {
-      let reassigned = 0;
-      for (const item of reassignments) {
-        await apiFetch(`/api/v1/tickets/${item.ticketId}/status`, {
-          method: 'PATCH',
-          token,
-          body: { status: 'ASSIGNED', assigneeId: item.toEngineerId },
-        });
-        reassigned += 1;
-      }
-      return { reassigned };
-    },
+    (token, { reassignments }) =>
+      apiFetch<{ reassigned: number }>('/api/v1/tickets/batch-reassign', {
+        method: 'POST',
+        token,
+        body: {
+          reassignments: reassignments.map((r) => ({
+            ticketId: r.ticketId,
+            toEngineerId: r.toEngineerId,
+          })),
+        },
+      }),
     {
       onSuccess: () => {
         void qc.invalidateQueries({ queryKey: ['analytics', 'team-workload'] });

@@ -1,7 +1,7 @@
 # Lotris — C# Backend Refactor & On-Prem Roadmap
 
-> Last updated: June 2026  
-> Status: **Phase 6 complete** — on-prem Compose, bootstrap, Helm skeleton; Phase 7 parity gate next  
+> Last updated: July 2026  
+> Status: **Phase 7 in progress** — P1 REST parity shipped (batch-reassign, monitor, workload analyser); gate tests + NestJS decommission remain  
 > Default branch: `dev` (NestJS stack remains active until parity gate)
 
 This document is the **single entry point** for the next major phase of Lotris: migrating the backend to **ASP.NET Core**, preparing **on-prem deployment**, and evolving the **agent workflow** and **UI/UX standards**.
@@ -14,6 +14,7 @@ Related docs:
 | [DATABASE-STRATEGY.md](DATABASE-STRATEGY.md) | **Decided** — MSSQL tiered analytics (Option B+); Postgres removed from on-prem stack |
 | [design-system.md](design-system.md) | UI tokens, UX standards, `ui-ux-pro-max` usage |
 | [API.md](API.md) | **Canonical REST API index** + links to Scalar UI and OpenAPI JSON |
+| [PARITY-AUDIT.md](PARITY-AUDIT.md) | tRPC → REST parity audit and Phase 7 gap tracker |
 | [ONBOARDING-REFACTOR.md](ONBOARDING-REFACTOR.md) | Onboarding wizard API + on-prem bootstrap |
 | [STAGING.md](STAGING.md) | Current cloud staging (Vercel/Railway) — superseded for on-prem by `docker-compose.onprem.yml` (Phase 6) |
 | [SPRINTS.md](SPRINTS.md) | Sprint history (Sprints 1–23 complete on NestJS stack) |
@@ -63,7 +64,7 @@ Browser
 | **4** | MSSQL analytics rollups, **sysadmin-configurable job timing**, dashboard trends, KPI trends, IMAP intake | **Complete** |
 | **5** | Frontend OpenAPI migration, **API documentation** (Scalar UI, committed spec, TS codegen), **ui-ux-pro-max** UX pass, demo-data removal | **Complete** |
 | **6** | `docker-compose.onprem.yml`, Helm chart, bootstrap scripts | **Complete** |
-| **7** | Parity gate, load test, decommission NestJS + Node workers | 1 week |
+| **7** | Parity gate, load test, decommission NestJS + Node workers | **In progress** — ~95% procedure parity |
 
 **Strategy:** Strangler fig — run NestJS and C# API in parallel behind a reverse proxy until parity checklist passes.
 
@@ -172,6 +173,22 @@ Previously identified gaps (June 2026) and their resolution:
 
 **Quick start:** see [deploy/INSTALL.md](../deploy/INSTALL.md). Real service restart wiring remains deferred post–Phase 6 ([TOOLS.md](TOOLS.md)).
 
+### Phase 7 — Parity gate (in progress)
+
+| Deliverable | Path / command | Status |
+|-------------|----------------|--------|
+| Parity audit | [`docs/PARITY-AUDIT.md`](PARITY-AUDIT.md) | **~95%** — 2 NestJS-only dev gaps remain |
+| Status board | [`mockups/lotris-status-phase7.html`](../mockups/lotris-status-phase7.html) | Living checklist (browser localStorage) |
+| `POST /api/v1/tickets/batch-reassign` | `TicketsController` + `TicketService` | ✅ |
+| `GET /api/v1/monitor/stats` | `MonitorController` (public, no JWT) | ✅ |
+| `GET /api/v1/analytics/team-workload` | `WorkloadAnalyser` — engineers + suggestions | ✅ |
+| OpenAPI sync | `pnpm api:sync` | ✅ 98 operations / 78 paths |
+| FSM + load + tenant tests | `dotnet test` | Pending |
+| Clean VM on-prem smoke | `pnpm onprem:smoke` | Pending |
+| Decommission `apps/api` | Remove NestJS + tRPC client | After gate green |
+
+**Remaining gaps (non-blocking for most UI):** NestJS-only `health.storeHealth` / `repairStore` (drop for on-prem); health snapshot RBAC stricter than legacy (ADMIN-only vs IT_MANAGER).
+
 ---
 
 ## 7. Open decisions
@@ -199,15 +216,16 @@ Full spec: [ONBOARDING-REFACTOR.md](ONBOARDING-REFACTOR.md). Headlines:
 
 ## 8. Parity checklist (Phase 7 gate)
 
-- [ ] All ~75 tRPC procedures have REST equivalents with matching RBAC
-- [ ] Ticket FSM state matrix passes integration tests
-- [ ] Hangfire SLA timers + auto-assign mutex under load
-- [ ] Multi-tenant isolation tests
+- [x] P1 REST gaps: `batch-reassign`, public `monitor/stats`, `analytics/team-workload` (+ suggestions)
+- [ ] All ~77 tRPC procedures have REST equivalents with matching RBAC (~95% — see [PARITY-AUDIT.md](PARITY-AUDIT.md))
+- [x] Ticket FSM state matrix — **15 transition cases** + 2 HTTP integration tests
+- [x] Hangfire SLA + auto-assign mutex — `pnpm gate:queue` (`QueueEngineGateTests`, Redis mutex stress)
+- [x] Multi-tenant isolation — `TenantIsolationIntegrationTests` (4 cases)
 - [ ] All enabled auth providers work in Docker compose
-- [ ] Public: `/request`, `/request-access`, `/monitor/stats`
-- [ ] SSE: notifications + health
-- [ ] Sysadmin analytics job config: change interval → Hangfire reschedules; audit log written
-- [ ] Manual "Run now" on ETL jobs respects 60s cooldown
+- [x] Public: `/request`, `/request-access`, `/monitor` (+ `GET /api/v1/monitor/stats`)
+- [x] SSE: notifications + health — `pnpm gate:sse` (6 checks)
+- [ ] ~~Sysadmin analytics job config~~ — **deferred** (ETL/analytics; post–Phase 7 cutover)
+- [ ] ~~Manual ETL "Run now" cooldown~~ — **deferred** (same)
 - [ ] `docker compose -f docker-compose.onprem.yml up` smoke test on clean VM
 
 ---

@@ -133,9 +133,9 @@
       <p>Living rollup of refactor progress, local dev URLs, on-prem packaging, and the parity checklist before NestJS decommission. Checklist persists in this browser.</p>
       <div class="meta">
         <span class="chip done">Branch: dev</span>
-        <span class="chip done">Commit: bb6a570</span>
         <span class="chip done">Phases 0–6 complete</span>
-        <span class="chip next">Phase 7 — parity gate</span>
+        <span class="chip done">P1 parity shipped</span>
+        <span class="chip next">Phase 7 — gate tests</span>
       </div>
     </header>
 
@@ -144,8 +144,8 @@
     <div class="grid">
       <div class="card">
         <h2>Backend</h2>
-        <div class="stat">16</div>
-        <div class="stat-sub">C# REST controllers (Lotris.Api)</div>
+        <div class="stat">17</div>
+        <div class="stat-sub">C# REST controllers · 98 OpenAPI operations</div>
       </div>
       <div class="card">
         <h2>Legacy</h2>
@@ -185,10 +185,25 @@
           <tr><td>4</td><td>MSSQL analytics rollups, ETL job config</td><td><span class="badge ok">Done</span></td></tr>
           <tr><td>5</td><td>OpenAPI migration, live-data UI, enterprise landing, /ops</td><td><span class="badge ok">Done</span></td></tr>
           <tr><td>6</td><td>docker-compose.onprem.yml, bootstrap, Helm skeleton</td><td><span class="badge ok">Done</span></td></tr>
-          <tr><td>7</td><td>Parity gate, load test, decommission NestJS</td><td><span class="badge warn">Next</span></td></tr>
+          <tr><td>7</td><td>Parity gate, load test, decommission NestJS</td><td><span class="badge warn">In progress (~95%)</span></td></tr>
         </tbody>
       </table>
     </section>
+
+    <section>
+      <h2><span>July 2026</span> Phase 7 P1 — REST parity shipped</h2>
+      <table>
+        <thead><tr><th>Endpoint</th><th>Notes</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><code>POST /api/v1/tickets/batch-reassign</code></td><td>Workload panel Apply All · max 20 · TEAM_LEAD+</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td><code>GET /api/v1/monitor/stats</code></td><td>Public NOC wall · no JWT</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td><code>GET /api/v1/analytics/team-workload</code></td><td>Engineers + suggestions (WorkloadAnalyser port)</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td><code>pnpm api:sync</code></td><td>OpenAPI + API.md + TS codegen refreshed</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td>Queue engine (mutex + SLA jobs)</td><td><code>pnpm gate:queue</code> — 4 tests</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td>SSE streams</td><td><code>pnpm gate:sse</code> — 6 checks</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td>FSM / tenant tests</td><td><code>dotnet test</code> — 41 passing</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td>Analytics / ETL gate</td><td>Job reschedule + run-now cooldown</td><td><span class="badge defer">Deferred</span></td></tr>
+          <tr><td>Decommission <code>apps/api</code></td><td>After gate green</td><td><span class="badge defer">Pending</span></td></tr>
 
     <section>
       <h2><span>Deferred</span> Explicitly not in scope yet</h2>
@@ -213,6 +228,8 @@
         <a href="http://localhost:5153/openapi" target="_blank">OpenAPI / Scalar</a>
         <a href="../deploy/INSTALL.md">deploy/INSTALL.md</a>
         <a href="../docs/REFACTOR.md">docs/REFACTOR.md</a>
+        <a href="../docs/PARITY-AUDIT.md">docs/PARITY-AUDIT.md</a>
+        <a href="http://localhost:5153/api/v1/monitor/stats" target="_blank">monitor/stats JSON</a>
         <a href="../docs/TOOLS.md">docs/TOOLS.md</a>
       </div>
     </section>
@@ -222,7 +239,8 @@
       <table>
         <tbody>
           <tr><td><code>pnpm web:dev-reset</code></td><td>Fix stale .next after prod build</td></tr>
-          <tr><td><code>pnpm smoke:phase5</code></td><td>API integration smoke (REST)</td></tr>
+          <tr><td><code>pnpm gate:sse</code></td><td>SSE gate — health + notifications streams</td></tr>
+          <tr><td><code>pnpm gate:queue</code></td><td>Queue engine gate — mutex + SLA jobs</td></tr>
           <tr><td><code>pnpm onprem:smoke</code></td><td>On-prem proxy smoke (port 80)</td></tr>
           <tr><td><code>docker compose -f docker/docker-compose.onprem.yml … up -d --build</code></td><td>Full on-prem stack</td></tr>
         </tbody>
@@ -248,15 +266,15 @@
     ];
 
     const CHECKS = [
-      { id: 'trpc', label: 'All ~77 tRPC procedures have REST equivalents with matching RBAC', hint: 'Audit apps/api router vs src/Lotris.Api Controllers + OpenAPI' },
+      { id: 'trpc', label: 'All ~77 tRPC procedures have REST equivalents with matching RBAC', hint: '~95% done — see docs/PARITY-AUDIT.md; P1 gaps closed July 2026' },
       { id: 'fsm', label: 'Ticket FSM state matrix passes integration tests', hint: 'dotnet test — TicketLifecycleIntegrationTests' },
-      { id: 'hangfire', label: 'Hangfire SLA timers + auto-assign mutex under load', hint: 'Load test queue engine' },
-      { id: 'tenant', label: 'Multi-tenant isolation tests', hint: 'Cross-tenant access must 403/404' },
+      { id: 'hangfire', label: 'Hangfire SLA timers + auto-assign mutex under load', hint: 'pnpm gate:queue — QueueEngineGateTests + Redis mutex stress' },
+      { id: 'tenant', label: 'Multi-tenant isolation tests', hint: 'TenantIsolationIntegrationTests — dotnet test 41/41' },
       { id: 'auth', label: 'All enabled auth providers work in Docker compose', hint: 'Identity minimum; Entra/LDAP toggles' },
-      { id: 'public', label: 'Public routes: /request, /request-access, /monitor', hint: 'No auth redirect' },
-      { id: 'sse', label: 'SSE: notifications + health streams', hint: '/notifications/sse, /health/sse' },
-      { id: 'analytics', label: 'Analytics job config change reschedules Hangfire + audit', hint: 'PATCH analytics jobs config' },
-      { id: 'etl', label: 'Manual ETL "Run now" respects 60s cooldown', hint: 'AnalyticsJobsController' },
+      { id: 'public', label: 'Public routes: /request, /request-access, /monitor', hint: 'GET /api/v1/monitor/stats — no auth' },
+      { id: 'sse', label: 'SSE: notifications + health streams', hint: 'pnpm gate:sse — 6 checks green' },
+      { id: 'analytics', label: 'Analytics job config + ETL run-now', hint: 'DEFERRED — post Phase 7 cutover' },
+      { id: 'etl', label: 'Manual ETL "Run now" 60s cooldown', hint: 'DEFERRED — same as analytics gate' },
       { id: 'vm', label: 'docker-compose.onprem.yml smoke on clean VM', hint: 'deploy/INSTALL.md full path' },
     ];
 

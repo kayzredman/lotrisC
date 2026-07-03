@@ -563,6 +563,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analytics/team-workload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    teamId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TeamWorkloadResultDto"];
+                        "application/json": components["schemas"]["TeamWorkloadResultDto"];
+                        "text/json": components["schemas"]["TeamWorkloadResultDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/analytics-jobs/config": {
         parameters: {
             query?: never;
@@ -1995,6 +2034,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/monitor/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MonitorStatsResponse"];
+                        "application/json": components["schemas"]["MonitorStatsResponse"];
+                        "text/json": components["schemas"]["MonitorStatsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/sse": {
         parameters: {
             query?: never;
@@ -3388,6 +3464,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tickets/batch-reassign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BatchReassignRequest"];
+                    "text/json": components["schemas"]["BatchReassignRequest"];
+                    "application/*+json": components["schemas"]["BatchReassignRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BatchReassignResponse"];
+                        "application/json": components["schemas"]["BatchReassignResponse"];
+                        "text/json": components["schemas"]["BatchReassignResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me": {
         parameters: {
             query?: never;
@@ -3499,6 +3640,25 @@ export interface components {
             /** Format: date-time */
             expiresAt: string;
             session: components["schemas"]["LotrisSession"];
+        };
+        BatchReassignItem: {
+            /** Format: uuid */
+            ticketId: string;
+            /** Format: uuid */
+            toEngineerId: string;
+        };
+        BatchReassignRequest: {
+            reassignments: components["schemas"]["BatchReassignItem"][];
+        };
+        BatchReassignResponse: {
+            results: components["schemas"]["BatchReassignResultItem"][];
+            /** Format: int32 */
+            reassigned: number | string;
+        };
+        BatchReassignResultItem: {
+            /** Format: uuid */
+            ticketId: string;
+            ok: boolean;
         };
         CreateActualRequest: {
             /** Format: uuid */
@@ -3692,6 +3852,18 @@ export interface components {
             /** Format: double */
             durationMs: null | number | string;
         };
+        EngineerLoadDto: {
+            /** Format: uuid */
+            engineerId: string;
+            fullName: string;
+            /** Format: int32 */
+            openTickets: number | string;
+            /** Format: int32 */
+            maxCapacity: number | string;
+            /** Format: int32 */
+            loadPct: number | string;
+            isUnavailable: boolean;
+        };
         EngineerWorkload: {
             /** Format: uuid */
             assigneeId: string;
@@ -3802,6 +3974,38 @@ export interface components {
             role: components["schemas"]["UserRole"];
             email: string;
             fullName: string;
+        };
+        MonitorStatsResponse: {
+            /** Format: int32 */
+            totalOpen: number | string;
+            /** Format: int32 */
+            slaBreach: number | string;
+            /** Format: int32 */
+            resolved24h: number | string;
+            /** Format: int32 */
+            totalActive: number | string;
+            teams: components["schemas"]["MonitorTeamStats"][];
+            topTickets: components["schemas"]["MonitorTopTicket"][];
+        };
+        MonitorTeamStats: {
+            teamName: string;
+            /** Format: int32 */
+            open: number | string;
+            /** Format: int32 */
+            inProgress: number | string;
+            /** Format: int32 */
+            escalated: number | string;
+        };
+        MonitorTopTicket: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            status: string;
+            /** Format: int32 */
+            priority: number | string;
+            teamName: string;
+            /** Format: date-time */
+            createdAt: string;
         };
         PagedResultOfTicketDto: {
             /** Format: int32 */
@@ -4036,6 +4240,12 @@ export interface components {
             /** Format: int32 */
             pct: number | string;
         };
+        TeamWorkloadResultDto: {
+            /** Format: uuid */
+            teamId: string;
+            engineers: components["schemas"]["EngineerLoadDto"][];
+            suggestions: components["schemas"]["WorkloadSuggestionDto"][];
+        };
         TicketAnalyticsResponse: {
             ticketTrend: components["schemas"]["TicketDailyDto"][];
             slaTrend: components["schemas"]["SlaDailyDto"][];
@@ -4194,6 +4404,17 @@ export interface components {
             defaultPriority: number | string;
         };
         UserRole: number;
+        WorkloadSuggestionDto: {
+            /** Format: uuid */
+            ticketId: string;
+            ticketTitle: string;
+            /** Format: uuid */
+            fromEngineerId: string;
+            fromEngineerName: string;
+            /** Format: uuid */
+            toEngineerId: string;
+            toEngineerName: string;
+        };
     };
     responses: never;
     parameters: never;

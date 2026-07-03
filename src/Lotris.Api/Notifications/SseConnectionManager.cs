@@ -22,6 +22,8 @@ public sealed class SseConnectionManager : IAsyncDisposable
         response.Headers["X-Accel-Buffering"] = "no";
         response.ContentType = "text/event-stream";
         await response.StartAsync(cancellationToken);
+        await response.WriteAsync(": connected\n\n", cancellationToken);
+        await response.Body.FlushAsync(cancellationToken);
 
         var stream = new SseStream(response);
         var isNew = false;

@@ -1,28 +1,22 @@
-import { useDashboardQueueHealth, useDashboardSummary } from './useDashboard';
+import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api/client';
 import type { QueryHookOptions } from './query-utils';
 
-/** Public monitor wall — aggregates dashboard endpoints (no auth required on /monitor page uses MonitorProviders) */
+export interface MonitorStats {
+  totalOpen: number;
+  slaBreach: number;
+  resolved24h: number;
+  totalActive?: number;
+  teams: Array<{ teamName: string; open: number; inProgress: number; escalated: number }>;
+  topTickets: Array<{ id: string; title: string; priority: number; teamName: string; status: string }>;
+}
+
+/** Public monitor wall — no auth required */
 export function useMonitorStats(options?: QueryHookOptions) {
-  const summary = useDashboardSummary({ refetchInterval: options?.refetchInterval ?? 30_000 });
-  const queue = useDashboardQueueHealth({ refetchInterval: options?.refetchInterval ?? 30_000 });
-
-  const isLoading = summary.isLoading || queue.isLoading;
-  const data = summary.data || queue.data
-    ? {
-        totalOpen: (summary.data as { openTickets?: number } | undefined)?.openTickets ?? 0,
-        slaBreach: (summary.data as { slaBreached?: number } | undefined)?.slaBreached ?? 0,
-        resolved24h: (summary.data as { resolved24h?: number } | undefined)?.resolved24h ?? 0,
-        teams: (queue.data as { teams?: unknown[] } | undefined)?.teams ?? [],
-        topTickets: (queue.data as { topTickets?: unknown[] } | undefined)?.topTickets ?? [],
-      }
-    : undefined;
-
-  return {
-    data,
-    isLoading,
-    refetch: () => {
-      void summary.refetch();
-      void queue.refetch();
-    },
-  };
+  return useQuery<MonitorStats>({
+    queryKey: ['monitor', 'stats'],
+    queryFn: () => apiFetch<MonitorStats>('/api/v1/monitor/stats'),
+    refetchInterval: options?.refetchInterval ?? 30_000,
+    ...options,
+  } as Omit<UseQueryOptions<MonitorStats>, 'queryKey' | 'queryFn'>);
 }

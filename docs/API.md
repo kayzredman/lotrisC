@@ -2,7 +2,7 @@
 
 > **Status:** Active — C# backend (`src/Lotris.Api`)  
 > **Contract:** OpenAPI 3.1 at [`docs/openapi/v1.json`](openapi/v1.json)  
-> **Last indexed:** June 2026
+> **Last indexed:** July 2026 (98 operations — P1 parity endpoints)
 
 This is the **canonical human index** for the Lotris REST API. The machine-readable spec is the source of truth for request/response schemas.
 
@@ -42,6 +42,7 @@ Response includes `accessToken` (JWT). Claims: `sub` (userId), `tenant_id`, role
 ### Public routes (no JWT)
 
 - `POST /api/v1/request` — public ticket intake
+- `GET /api/v1/monitor/stats` — public NOC wall aggregate (all tenants in DB)
 - `GET /health`, `GET /health/ready` — probes
 - `GET /openapi/v1.json`, `/openapi` — API docs (when enabled)
 
@@ -55,6 +56,8 @@ Response includes `accessToken` (JWT). Claims: `sub` (userId), `tenant_id`, role
 | KPI definitions | `IT_MANAGER`, `ADMIN`, `SUPERADMIN` |
 | Audit logs | `ADMIN`, `SUPERADMIN` |
 | Dashboard / tickets / queue | All authenticated roles (scoped by role) |
+| Workload rebalancing | `TEAM_LEAD`, `IT_MANAGER`, `ADMIN`, `SUPERADMIN` |
+| Batch ticket reassignment | `TEAM_LEAD`, `IT_MANAGER`, `ADMIN`, `SUPERADMIN` |
 
 Exact enforcement is in controller `[AuthorizeRoles(...)]` attributes and application services.
 
@@ -120,7 +123,7 @@ Or one shot from repo root: `pnpm api:sync`
 
 <!-- API_ENDPOINTS:START -->
 
-_Auto-generated from `docs/openapi/v1.json` — **95 operations** across **75 paths**._
+_Auto-generated from `docs/openapi/v1.json` — **98 operations** across **78 paths**._
 
 ### Admin (14)
 
@@ -139,11 +142,12 @@ _Auto-generated from `docs/openapi/v1.json` — **95 operations** across **75 pa
 - `DELETE /api/v1/admin/users/{id}`
 - `PATCH /api/v1/admin/users/{id}/role`
 
-### Analytics (3)
+### Analytics (4)
 
 - `GET /api/v1/analytics/kpi-trends`
 - `GET /api/v1/analytics/my-kpi-trends`
 - `GET /api/v1/analytics/sla-warnings`
+- `GET /api/v1/analytics/team-workload`
 
 ### AnalyticsJobs (4)
 
@@ -206,6 +210,10 @@ _Auto-generated from `docs/openapi/v1.json` — **95 operations** across **75 pa
 - `GET /api/v1/kpi/definitions/{id}/team-targets`
 - `PATCH /api/v1/kpi/definitions/{id}/team-targets`
 
+### Monitor (1)
+
+- `GET /api/v1/monitor/stats`
+
 ### Notifications (1)
 
 - `GET /api/v1/notifications/sse`
@@ -250,10 +258,11 @@ _Auto-generated from `docs/openapi/v1.json` — **95 operations** across **75 pa
 - `PATCH /api/v1/tasks/{id}/checklist/{itemId}/toggle`
 - `POST /api/v1/tasks/{id}/complete`
 
-### Tickets (8)
+### Tickets (9)
 
 - `POST /api/v1/tickets`
 - `GET /api/v1/tickets`
+- `POST /api/v1/tickets/batch-reassign`
 - `GET /api/v1/tickets/{id}`
 - `POST /api/v1/tickets/{id}/attachments`
 - `POST /api/v1/tickets/{id}/comments`

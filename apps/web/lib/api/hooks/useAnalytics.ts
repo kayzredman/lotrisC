@@ -16,14 +16,15 @@ export function useMyKpiTrends(options?: QueryHookOptions) {
   );
 }
 
-/** Workload rebalancing — uses dashboard team workload until dedicated endpoint exists */
+/** Workload rebalancing with engineer loads and suggestions */
 export function useAnalyticsTeamWorkload(
   params?: { teamId?: string },
   options?: QueryHookOptions,
 ) {
+  const teamId = params?.teamId;
   return useAuthenticatedQuery<ApiRecord>(
-    ['analytics', 'team-workload', params?.teamId],
-    '/api/v1/dashboard/team-workload',
-    options,
+    ['analytics', 'team-workload', teamId],
+    teamId ? `/api/v1/analytics/team-workload?teamId=${teamId}` : '',
+    { enabled: !!teamId && (options?.enabled ?? true), ...options },
   );
 }

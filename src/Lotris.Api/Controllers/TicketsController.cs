@@ -1,6 +1,7 @@
 using Lotris.Api.Auth;
 using Lotris.Application.Tickets;
 using Lotris.Contracts.Tickets;
+using Lotris.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -86,5 +87,17 @@ public sealed class TicketsController : ControllerBase
     public async Task<IActionResult> GetHistory(Guid id, CancellationToken cancellationToken)
     {
         return Ok(await _tickets.GetHistoryAsync(HttpContext.GetLotrisSession(), id, cancellationToken));
+    }
+
+    [HttpPost("batch-reassign")]
+    [AuthorizeRoles(UserRole.SuperAdmin, UserRole.Admin, UserRole.ItManager, UserRole.TeamLead)]
+    [ProducesResponseType(typeof(BatchReassignResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> BatchReassign(
+        [FromBody] BatchReassignRequest request,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await _tickets.BatchReassignAsync(HttpContext.GetLotrisSession(), request, cancellationToken));
     }
 }

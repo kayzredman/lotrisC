@@ -104,4 +104,11 @@ public interface ITicketRepository
         Guid tenantId,
         Guid? engineerId,
         CancellationToken cancellationToken = default);
+
+    Task<bool> ReassignAssigneeAsync(
+        Guid tenantId,
+        Guid ticketId,
+        Guid toEngineerId,
+        DateTime now,
+        CancellationToken cancellationToken = default);
 }

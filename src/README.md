@@ -1,17 +1,17 @@
 # Lotris C# Backend
 
-ASP.NET Core 10 solution for the Lotris backend refactor (Phase 0 scaffold).
+ASP.NET Core 10 solution for the Lotris backend refactor (Phases 0–6 complete; Phase 7 parity gate in progress).
 
 ## Projects
 
 | Project | Purpose |
 |---------|---------|
-| `Lotris.Api` | REST API, OpenAPI, health checks, Hangfire dashboard (dev) |
-| `Lotris.Application` | Interfaces and options (analytics, auth) |
+| `Lotris.Api` | REST API (17 controllers), OpenAPI, health checks, Hangfire dashboard (dev) |
+| `Lotris.Application` | Services, interfaces (tickets, analytics, admin, …) |
 | `Lotris.Domain` | Domain enums and primitives |
 | `Lotris.Contracts` | DTOs shared with clients |
-| `Lotris.Infrastructure` | EF Core, Identity, JWT, analytics stubs |
-| `Lotris.Workers` | Hangfire registration (jobs in Phase 4+) |
+| `Lotris.Infrastructure` | EF Core, Dapper repos, Identity, JWT, analytics ETL |
+| `Lotris.Workers` | Hangfire job registration |
 
 ## Prerequisites
 
@@ -46,12 +46,23 @@ dotnet run --project Lotris.Api
 - Liveness: `GET /health`
 - Readiness: `GET /health/ready`
 - Auth: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`
+- Public monitor: `GET /api/v1/monitor/stats`
 
 Refresh the committed spec after API changes:
 
 ```bash
 pnpm api:sync   # from repo root — export spec, update docs/API.md, regenerate TS types
 ```
+
+## Phase 7 parity
+
+See [`docs/PARITY-AUDIT.md`](../docs/PARITY-AUDIT.md) and [`docs/REFACTOR.md`](../docs/REFACTOR.md). Key July 2026 endpoints:
+
+| Endpoint | Auth | Purpose |
+|----------|------|---------|
+| `GET /api/v1/monitor/stats` | Public | NOC monitor wall |
+| `GET /api/v1/analytics/team-workload?teamId=` | TEAM_LEAD+ | Workload + suggestions |
+| `POST /api/v1/tickets/batch-reassign` | TEAM_LEAD+ | Apply rebalancing (max 20) |
 
 ## Configuration
 

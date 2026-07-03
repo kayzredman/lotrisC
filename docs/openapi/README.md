@@ -2,7 +2,7 @@
 
 | File | Purpose |
 |------|---------|
-| [`v1.json`](v1.json) | Committed snapshot of the Lotris API contract |
+| [`v1.json`](v1.json) | Committed snapshot — **98 operations / 78 paths** (July 2026, incl. P1 parity) |
 
 **Refresh:**
 

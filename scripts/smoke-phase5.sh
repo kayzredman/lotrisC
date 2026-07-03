@@ -26,7 +26,7 @@ echo "=== Lotris Phase 5 API Smoke ==="
 echo "Base: $BASE"
 echo ""
 
-for path in /health /health/live /health/ready /openapi/v1.json; do
+for path in /health /health/live /health/ready /openapi/v1.json /api/v1/monitor/stats; do
   code=$($CURL -s -o /tmp/smoke-body.json -w '%{http_code}' "$BASE$path")
   check "GET $path" 200 "$code" "$(cat /tmp/smoke-body.json)"
 done
@@ -72,6 +72,28 @@ done
 
 code=$($CURL -s -o /tmp/smoke-body.json -w '%{http_code}' -H "$AUTH" "$BASE/api/v1/analytics/sla-warnings")
 check "GET /api/v1/analytics/sla-warnings" 200 "$code" "$(cat /tmp/smoke-body.json)"
+
+# Team workload needs a teamId — fetch first team from admin
+TEAM_ID=$($PY -c "
+import json, sys
+try:
+  d = json.load(open('/tmp/smoke-body.json'))
+  teams = d if isinstance(d, list) else d.get('items', d.get('teams', []))
+  print(teams[0]['id'] if teams else '')
+except Exception:
+  print('')
+" 2>/dev/null || true)
+if [ -z "$TEAM_ID" ]; then
+  code=$($CURL -s -o /tmp/smoke-body.json -w '%{http_code}' -H "$AUTH" "$BASE/api/v1/admin/teams")
+  check "GET /api/v1/admin/teams" 200 "$code" "$(cat /tmp/smoke-body.json)"
+  TEAM_ID=$($PY -c "import json; d=json.load(open('/tmp/smoke-body.json')); t=d if isinstance(d,list) else d.get('items',[]); print(t[0]['id'] if t else '')" 2>/dev/null || true)
+fi
+if [ -n "$TEAM_ID" ]; then
+  code=$($CURL -s -o /tmp/smoke-body.json -w '%{http_code}' -H "$AUTH" "$BASE/api/v1/analytics/team-workload?teamId=$TEAM_ID")
+  check "GET /api/v1/analytics/team-workload" 200 "$code" "$(cat /tmp/smoke-body.json)"
+else
+  echo "SKIP  GET /api/v1/analytics/team-workload (no team id)"
+fi
 
 for path in '/api/v1/tickets?page=1&limit=5' /api/v1/queue '/api/v1/tasks?page=1&limit=5'; do
   code=$($CURL -s -o /tmp/smoke-body.json -w '%{http_code}' -H "$AUTH" "$BASE$path")

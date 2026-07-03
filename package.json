@@ -15,6 +15,8 @@
     "api:sync": "pnpm api:export && pnpm api:docs && pnpm api:codegen",
     "web:dev-reset": "bash scripts/web-dev-reset.sh",
     "smoke:phase5": "bash scripts/smoke-phase5.sh",
+    "gate:sse": "bash scripts/gate-sse.sh",
+    "gate:queue": "dotnet test src/Lotris.Tests.Integration/Lotris.Tests.Integration.csproj --filter QueueEngineGateTests -m:1",
     "onprem:smoke": "bash scripts/onprem-smoke.sh"
   },
   "devDependencies": {

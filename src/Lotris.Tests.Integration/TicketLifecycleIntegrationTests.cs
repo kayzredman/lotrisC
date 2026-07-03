@@ -92,6 +92,8 @@ public sealed class LotrisWebApplicationFactory : WebApplicationFactory<Program>
 {
     public static readonly Guid TestTenantId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     public static readonly Guid TestUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    public static readonly Guid OtherTenantId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+    public static readonly Guid OtherUserId = Guid.Parse("44444444-4444-4444-4444-444444444444");
     private readonly InMemoryTicketRepository _tickets = new();
     private readonly InMemoryTaskRepository _tasks = new();
     private readonly InMemoryAuditLogRepository _auditLogs = new();
@@ -127,15 +129,21 @@ public sealed class LotrisWebApplicationFactory : WebApplicationFactory<Program>
 
     public void SeedTicket(TicketEntity ticket) => _tickets.Seed(ticket);
 
-    public HttpClient CreateAuthenticatedClient(UserRole role = UserRole.Admin)
+    public HttpClient CreateAuthenticatedClient(UserRole role = UserRole.Admin, Guid? tenantId = null, Guid? userId = null)
     {
         var client = CreateClient();
         client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", CreateTestToken(role));
+            new AuthenticationHeaderValue("Bearer", CreateTestToken(role, tenantId, userId));
         return client;
     }
 
-    private static string CreateTestToken(UserRole role = UserRole.Admin)
+    public HttpClient CreateOtherTenantClient(UserRole role = UserRole.Admin) =>
+        CreateAuthenticatedClient(role, OtherTenantId, OtherUserId);
+
+    private static string CreateTestToken(
+        UserRole role = UserRole.Admin,
+        Guid? tenantId = null,
+        Guid? userId = null)
     {
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes("dev-only-change-me-use-at-least-32-characters-long-secret"));
@@ -143,9 +151,9 @@ public sealed class LotrisWebApplicationFactory : WebApplicationFactory<Program>
 
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, TestUserId.ToString()),
+            new Claim(JwtRegisteredClaimNames.Sub, (userId ?? TestUserId).ToString()),
             new Claim(JwtRegisteredClaimNames.Email, "engineer@test.local"),
-            new Claim("tenant_id", TestTenantId.ToString()),
+            new Claim("tenant_id", (tenantId ?? TestTenantId).ToString()),
             new Claim(ClaimTypes.Role, role.ToRoleName()),
             new Claim("full_name", "Test Admin"),
         };
@@ -352,6 +360,14 @@ internal sealed class InMemoryTicketRepository : ITicketRepository
         Guid? engineerId,
         CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<SlaWarningTicketEntity>>([]);
+
+    public Task<bool> ReassignAssigneeAsync(
+        Guid tenantId,
+        Guid ticketId,
+        Guid toEngineerId,
+        DateTime now,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(false);
 }
 
 internal sealed class NoOpSlaJobScheduler : ISlaJobScheduler

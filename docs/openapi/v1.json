@@ -513,6 +513,45 @@
         }
       }
     },
+    "/api/v1/analytics/team-workload": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamWorkloadResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamWorkloadResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamWorkloadResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/analytics-jobs/config": {
       "get": {
         "tags": [
@@ -1912,6 +1951,35 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/monitor/stats": {
+      "get": {
+        "tags": [
+          "Monitor"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitorStatsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitorStatsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonitorStatsResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -3491,6 +3559,95 @@
         }
       }
     },
+    "/api/v1/tickets/batch-reassign": {
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchReassignRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchReassignRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchReassignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchReassignResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchReassignResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchReassignResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/me": {
       "get": {
         "tags": [
@@ -3811,6 +3968,76 @@
           },
           "session": {
             "$ref": "#/components/schemas/LotrisSession"
+          }
+        }
+      },
+      "BatchReassignItem": {
+        "required": [
+          "ticketId",
+          "toEngineerId"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "toEngineerId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "BatchReassignRequest": {
+        "required": [
+          "reassignments"
+        ],
+        "type": "object",
+        "properties": {
+          "reassignments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchReassignItem"
+            }
+          }
+        }
+      },
+      "BatchReassignResponse": {
+        "required": [
+          "results",
+          "reassigned"
+        ],
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchReassignResultItem"
+            }
+          },
+          "reassigned": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "BatchReassignResultItem": {
+        "required": [
+          "ticketId",
+          "ok"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ok": {
+            "type": "boolean"
           }
         }
       },
@@ -4526,6 +4753,53 @@
           }
         }
       },
+      "EngineerLoadDto": {
+        "required": [
+          "engineerId",
+          "fullName",
+          "openTickets",
+          "maxCapacity",
+          "loadPct",
+          "isUnavailable"
+        ],
+        "type": "object",
+        "properties": {
+          "engineerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "openTickets": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxCapacity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "loadPct": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "isUnavailable": {
+            "type": "boolean"
+          }
+        }
+      },
       "EngineerWorkload": {
         "required": [
           "assigneeId",
@@ -4945,6 +5219,139 @@
           },
           "fullName": {
             "type": "string"
+          }
+        }
+      },
+      "MonitorStatsResponse": {
+        "required": [
+          "totalOpen",
+          "slaBreach",
+          "resolved24h",
+          "totalActive",
+          "teams",
+          "topTickets"
+        ],
+        "type": "object",
+        "properties": {
+          "totalOpen": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "slaBreach": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "resolved24h": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalActive": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonitorTeamStats"
+            }
+          },
+          "topTickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonitorTopTicket"
+            }
+          }
+        }
+      },
+      "MonitorTeamStats": {
+        "required": [
+          "teamName",
+          "open",
+          "inProgress",
+          "escalated"
+        ],
+        "type": "object",
+        "properties": {
+          "teamName": {
+            "type": "string"
+          },
+          "open": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "inProgress": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "escalated": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MonitorTopTicket": {
+        "required": [
+          "id",
+          "title",
+          "status",
+          "priority",
+          "teamName",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "priority": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "teamName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -5891,6 +6298,32 @@
           }
         }
       },
+      "TeamWorkloadResultDto": {
+        "required": [
+          "teamId",
+          "engineers",
+          "suggestions"
+        ],
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "engineers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EngineerLoadDto"
+            }
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkloadSuggestionDto"
+            }
+          }
+        }
+      },
       "TicketAnalyticsResponse": {
         "required": [
           "ticketTrend",
@@ -6514,6 +6947,40 @@
       },
       "UserRole": {
         "type": "integer"
+      },
+      "WorkloadSuggestionDto": {
+        "required": [
+          "ticketId",
+          "ticketTitle",
+          "fromEngineerId",
+          "fromEngineerName",
+          "toEngineerId",
+          "toEngineerName"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ticketTitle": {
+            "type": "string"
+          },
+          "fromEngineerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fromEngineerName": {
+            "type": "string"
+          },
+          "toEngineerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "toEngineerName": {
+            "type": "string"
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -6552,6 +7019,9 @@
     },
     {
       "name": "Kpi"
+    },
+    {
+      "name": "Monitor"
     },
     {
       "name": "Notifications"

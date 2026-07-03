@@ -75,6 +75,8 @@ public static class DependencyInjection
         services.AddScoped<IAnalyticsJobConfigRepository, EfAnalyticsJobConfigRepository>();
         services.AddScoped<IAnalyticsJobScheduler, AnalyticsJobScheduler>();
         services.AddScoped<IAnalyticsQueryService, AnalyticsQueryService>();
+        services.AddScoped<IMonitorStatsService, MonitorStatsService>();
+        services.AddScoped<IWorkloadAnalyser, WorkloadAnalyser>();
         services.AddScoped<IKpiTrendAnalyser, KpiTrendAnalyser>();
         services.AddScoped<ISlaPredictorService, SlaPredictorService>();
         services.AddScoped<IDashboardCacheService, RedisDashboardCacheService>();

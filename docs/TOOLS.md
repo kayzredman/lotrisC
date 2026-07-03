@@ -59,7 +59,9 @@ Living catalog of operational surfaces, scripts, and API probes in this repo. Up
 - Light / dark theme (persisted in `localStorage`)
 - Auto-refresh every 30s
 
-**Data source:** Dashboard REST endpoints via `useMonitorStats` (requires API up).
+**Data source:** `GET /api/v1/monitor/stats` via `useMonitorStats` (public REST — no JWT).
+
+**C# implementation:** `MonitorController` → `MonitorStatsService` (tenant-wide SQL aggregate, mirrors legacy tRPC `monitor.stats`).
 
 ---
 
@@ -86,6 +88,7 @@ Base: `http://localhost:5153` (or `LOTRIS_API_URL`)
 | `GET /health/sse` | ADMIN JWT | SSE stream, ~1 snapshot/sec |
 | `GET /health/incidents?limit=20` | ADMIN JWT | Recent service incidents from audit log |
 | `POST /health/restart/{serviceName}` | ADMIN JWT | Request restart (cooldown, audit) |
+| `GET /api/v1/monitor/stats` | Public | NOC wall — open tickets, SLA breaches, team queue depth |
 
 **Probe when web is down:**
 
@@ -125,7 +128,7 @@ pnpm smoke:phase5
 # LOTRIS_API_URL=http://localhost:5153 bash scripts/smoke-phase5.sh
 ```
 
-**What it checks (24 checks):** public health/openapi, login, dashboard, tickets, tasks, KPIs, reports, admin, onboarding, audit, etc.
+**What it checks (27 checks):** public health/openapi/monitor, login, dashboard, analytics team-workload, tickets, tasks, KPIs, reports, admin, onboarding, audit, etc.
 
 ---
 
@@ -172,6 +175,8 @@ Idempotent; creates/updates Clerk users and DB rows.
 | Dev (all packages) | `pnpm dev` |
 | Web dev reset | `pnpm web:dev-reset` |
 | Phase 5 smoke | `pnpm smoke:phase5` |
+| SSE gate | `pnpm gate:sse` |
+| Queue engine gate | `pnpm gate:queue` |
 | OpenAPI export + docs + codegen | `pnpm api:sync` |
 | DB migrate | `pnpm db:migrate` |
 

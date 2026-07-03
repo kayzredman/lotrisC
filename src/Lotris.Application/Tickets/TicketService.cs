@@ -1,3 +1,4 @@
+using Lotris.Application.Admin;
 using Lotris.Application.Analytics;
 using Lotris.Application.Common;
 using Lotris.Application.Notifications;
@@ -25,6 +26,7 @@ public class TicketService
     private readonly ISlaJobScheduler _slaJobs;
     private readonly INotificationEnqueuer _notifications;
     private readonly IDashboardCacheService _dashboardCache;
+    private readonly IAdminRepository _admin;
 
     public TicketService(
         ITicketRepository tickets,
@@ -32,7 +34,8 @@ public class TicketService
         ITicketHistoryWriter history,
         ISlaJobScheduler slaJobs,
         INotificationEnqueuer notifications,
-        IDashboardCacheService dashboardCache)
+        IDashboardCacheService dashboardCache,
+        IAdminRepository admin)
     {
         _tickets = tickets;
         _slaConfigs = slaConfigs;
@@ -40,6 +43,7 @@ public class TicketService
         _slaJobs = slaJobs;
         _notifications = notifications;
         _dashboardCache = dashboardCache;
+        _admin = admin;
     }
 
     public async Task<TicketDto> CreateAsync(
@@ -424,6 +428,64 @@ public class TicketService
             h.ToValue,
             h.Metadata,
             h.CreatedAt)).ToList();
+    }
+
+    private static readonly string[] BatchReassignBlockedStatuses =
+    [
+        TicketStatus.Escalated,
+        TicketStatus.Resolved,
+        TicketStatus.Closed,
+    ];
+
+    public async Task<BatchReassignResponse> BatchReassignAsync(
+        LotrisSession session,
+        BatchReassignRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!LeadRoles.Contains(session.Role))
+        {
+            throw new ForbiddenException("Insufficient role for ticket reassignment");
+        }
+
+        if (request.Reassignments.Count is < 1 or > 20)
+        {
+            throw new BadRequestException("Reassignments must contain between 1 and 20 items");
+        }
+
+        var now = DateTime.UtcNow;
+        var results = new List<BatchReassignResultItem>();
+
+        foreach (var item in request.Reassignments)
+        {
+            var ticket = await _tickets.GetByIdAsync(session.TenantId, item.TicketId, cancellationToken);
+            if (ticket is null || BatchReassignBlockedStatuses.Contains(ticket.Status, StringComparer.Ordinal))
+            {
+                results.Add(new BatchReassignResultItem(item.TicketId, false));
+                continue;
+            }
+
+            var engineer = await _admin.GetUserAsync(session.TenantId, item.ToEngineerId, cancellationToken);
+            if (engineer is null || !engineer.IsActive)
+            {
+                results.Add(new BatchReassignResultItem(item.TicketId, false));
+                continue;
+            }
+
+            var ok = await _tickets.ReassignAssigneeAsync(
+                session.TenantId,
+                item.TicketId,
+                item.ToEngineerId,
+                now,
+                cancellationToken);
+
+            results.Add(new BatchReassignResultItem(item.TicketId, ok));
+        }
+
+        await _dashboardCache.InvalidateAsync(session.TenantId, cancellationToken);
+
+        return new BatchReassignResponse(
+            results,
+            results.Count(r => r.Ok));
     }
 
     private async Task<TicketEntity> GetEntityOrThrowAsync(

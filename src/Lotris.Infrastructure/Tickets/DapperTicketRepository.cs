@@ -637,6 +637,36 @@ public sealed class DapperTicketRepository : ITicketRepository
         }).ToList();
     }
 
+    public async Task<bool> ReassignAssigneeAsync(
+        Guid tenantId,
+        Guid ticketId,
+        Guid toEngineerId,
+        DateTime now,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            UPDATE dbo.Tickets
+            SET assignee_id = @AssigneeId,
+                status = @Status,
+                assigned_at = @AssignedAt,
+                updated_at = @UpdatedAt
+            WHERE id = @TicketId AND tenant_id = @TenantId
+            """;
+
+        await using var connection = await _connections.OpenConnectionAsync(cancellationToken);
+        var affected = await connection.ExecuteAsync(new CommandDefinition(sql, new
+        {
+            TicketId = SqlGuid.ToSql(ticketId),
+            TenantId = SqlGuid.ToSql(tenantId),
+            AssigneeId = SqlGuid.ToSql(toEngineerId),
+            Status = TicketStatus.Assigned,
+            AssignedAt = now,
+            UpdatedAt = now,
+        }, cancellationToken: cancellationToken));
+
+        return affected > 0;
+    }
+
     private sealed class SlaWarningRow
     {
         public string Id { get; init; } = "";
