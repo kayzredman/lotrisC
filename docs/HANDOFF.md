@@ -55,7 +55,7 @@ If Next.js is stale after switching machines: `pnpm web:dev-reset`.
 
 ## 3. Where we left off (Phase 7)
 
-**Status:** Phase 7 parity gate **in progress** — ~95% tRPC → REST parity; NestJS decommission not started.
+**Status:** Phase 7 parity gate **complete** — REST parity shipped; NestJS/tRPC decommissioned July 2026.
 
 ### Shipped in `5deebc0`
 
@@ -75,8 +75,8 @@ If Next.js is stale after switching machines: `pnpm web:dev-reset`.
 | 2 | P1 REST gaps | ✅ batch-reassign, monitor, team-workload |
 | 3 | Queue / SLA / mutex | ✅ `pnpm gate:queue` |
 | 4 | SSE (notifications + health) | ✅ `pnpm gate:sse` |
-| 5 | On-prem compose smoke | ⏸ **Not run yet** — defaults use **9090/9091/9092** to avoid dev port clashes; try on new machine |
-| 6 | NestJS decommission | ❌ **Not started** — staged after on-prem smoke green |
+| 5 | On-prem compose smoke | ✅ `pnpm onprem:smoke` on this machine |
+| 6 | NestJS decommission | ✅ `apps/api`, `workers/`, tRPC client removed |
 
 ### Explicitly deferred (post–Phase 7 cutover)
 
@@ -172,9 +172,7 @@ pnpm onprem:smoke   # defaults to http://localhost:9090
 
 1. **Green dev stack** — Docker infra, API `:5153`, web `:3000`, run `pnpm smoke:phase5`
 2. **On-prem smoke** on clean Docker or VM — `pnpm onprem:smoke`
-3. **NestJS decommission (#6)** — disable `apps/api` in dev compose → remove NestJS + tRPC client → migrate scripts
-4. **Optional:** align health snapshot RBAC for IT_MANAGER
-5. **When ready for release:** merge `dev` → `main` per [GIT-WORKFLOW.md](GIT-WORKFLOW.md)
+3. **Post–Phase 7** — merge `dev` → `main` per [GIT-WORKFLOW.md](GIT-WORKFLOW.md); tag release
 
 ---
 

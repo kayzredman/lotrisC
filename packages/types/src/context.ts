@@ -1,20 +1,6 @@
 /**
- * TrpcContext — the object available to every tRPC procedure.
- * Created per-request in apps/api/src/trpc/context.ts.
+ * Shared domain types for the Lotris web client (REST / OpenAPI era).
  */
-export interface TrpcAuth {
-  clerkUserId: string;
-  userId: string;       // MSSQL Users.id
-  tenantId: string;     // MSSQL Tenants.id
-  role: UserRole;
-}
-
-export interface TrpcContext {
-  auth: TrpcAuth | null;
-}
-
-// ─── Shared enums ─────────────────────────────────────────────────────────────
-
 export type UserRole =
   | 'SUPERADMIN'
   | 'ADMIN'

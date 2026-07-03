@@ -120,7 +120,7 @@ The frontend **Phase 5 migration** calls REST for all main app surfaces. P1 gaps
 3. ~~**`GET /api/v1/analytics/team-workload`**~~ ✅ (includes suggestions)  
 4. ~~**`GET /api/v1/reports`**~~ ✅ (already existed)  
 5. **Drop** `health.storeHealth` / `repairStore` from product surface (keep ops script docs only)  
-6. **Decommission** `apps/api` + tRPC client after smoke + integration tests green  
+6. **Decommission** ~~`apps/api` + tRPC client~~ — **done** (July 2026)  
 
 ---
 

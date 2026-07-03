@@ -28,6 +28,22 @@ services:
       start_period: 40s
     restart: unless-stopped
 
+  mssql-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: lotris_onprem_mssql_init
+    depends_on:
+      mssql:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in deploy/.env.onprem}"
+      MSSQL_DATABASE: "${MSSQL_DATABASE:-lotris}"
+    entrypoint: >
+      /bin/bash -c "
+      /opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q
+      \"IF DB_ID('$$MSSQL_DATABASE') IS NULL CREATE DATABASE [$$MSSQL_DATABASE];\"
+      "
+    restart: "no"
+
   redis:
     image: redis:7-alpine
     container_name: lotris_onprem_redis
@@ -47,12 +63,14 @@ services:
 
   api:
     build:
-      context: ../src
-      dockerfile: Lotris.Api/Dockerfile
+      context: ..
+      dockerfile: src/Lotris.Api/Dockerfile
     container_name: lotris_onprem_api
     depends_on:
       mssql:
         condition: service_healthy
+      mssql-init:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     environment:
@@ -124,7 +142,7 @@ services:
     volumes:
       - ./nginx/onprem.conf:/etc/nginx/conf.d/default.conf:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 6

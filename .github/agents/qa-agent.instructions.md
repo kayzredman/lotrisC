@@ -20,7 +20,7 @@ When starting a sprint or task:
 3. Assign frontend jobs to the Frontend Agent with a clear spec:
    - Route/page, component contract, API it consumes, acceptance criteria
 4. Assign backend jobs to the Backend Agent with a clear spec:
-   - Endpoint, OpenAPI route (or tRPC procedure during legacy stack), DB schema change, business logic, test cases
+   - Endpoint, OpenAPI route, DB schema change, business logic, test cases
 5. Explicitly state **inter-agent dependencies** (e.g. "Backend must publish OpenAPI before Frontend can wire login page")
 
 ## Quality Checklist (run before every merge to `dev`)

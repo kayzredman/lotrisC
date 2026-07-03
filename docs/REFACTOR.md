@@ -1,7 +1,7 @@
 # Lotris — C# Backend Refactor & On-Prem Roadmap
 
 > Last updated: July 2026  
-> Status: **Phase 7 in progress** — P1 REST parity shipped (batch-reassign, monitor, workload analyser); gate tests + NestJS decommission remain  
+> Status: **Phase 7 complete** — C# REST parity + on-prem smoke green; NestJS/tRPC removed  
 > Default branch: `dev` (NestJS stack remains active until parity gate)
 
 This document is the **single entry point** for the next major phase of Lotris: migrating the backend to **ASP.NET Core**, preparing **on-prem deployment**, and evolving the **agent workflow** and **UI/UX standards**.
@@ -65,7 +65,7 @@ Browser
 | **4** | MSSQL analytics rollups, **sysadmin-configurable job timing**, dashboard trends, KPI trends, IMAP intake | **Complete** |
 | **5** | Frontend OpenAPI migration, **API documentation** (Scalar UI, committed spec, TS codegen), **ui-ux-pro-max** UX pass, demo-data removal | **Complete** |
 | **6** | `docker-compose.onprem.yml`, Helm chart, bootstrap scripts | **Complete** |
-| **7** | Parity gate, load test, decommission NestJS + Node workers | **In progress** — ~95% procedure parity |
+| **7** | Parity gate, load test, decommission NestJS + Node workers | **Complete** — on-prem smoke + NestJS removal |
 
 **Strategy:** Strangler fig — run NestJS and C# API in parallel behind a reverse proxy until parity checklist passes.
 
@@ -185,8 +185,8 @@ Previously identified gaps (June 2026) and their resolution:
 | `GET /api/v1/analytics/team-workload` | `WorkloadAnalyser` — engineers + suggestions | ✅ |
 | OpenAPI sync | `pnpm api:sync` | ✅ 98 operations / 78 paths |
 | FSM + load + tenant tests | `dotnet test`, `pnpm gate:queue` | ✅ integration + mutex; formal load test optional |
-| Clean VM on-prem smoke | `pnpm onprem:smoke` (default `:9090`) | Pending |
-| Decommission `apps/api` | Remove NestJS + tRPC client | After gate green |
+| Clean VM on-prem smoke | `pnpm onprem:smoke` (default `:9090`) | ✅ |
+| Decommission `apps/api` | Remove NestJS + tRPC client | ✅ |
 
 **Remaining gaps (non-blocking for most UI):** NestJS-only `health.storeHealth` / `repairStore` (drop for on-prem); health snapshot RBAC stricter than legacy (ADMIN-only vs IT_MANAGER).
 

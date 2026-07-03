@@ -66,8 +66,8 @@ services:
   # Optional — C# API (Phase 0 scaffold). Start with: docker compose -f docker/docker-compose.yml up api-csharp
   api-csharp:
     build:
-      context: ../src
-      dockerfile: Lotris.Api/Dockerfile
+      context: ..
+      dockerfile: src/Lotris.Api/Dockerfile
     container_name: lotris_api_csharp
     depends_on:
       mssql:
