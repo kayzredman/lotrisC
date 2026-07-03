@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lotris — Project Status & Phase 7 Gate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --indigo: #4F46E5;
+      --indigo-dim: rgba(79, 70, 229, 0.12);
+      --shell: #0C0E1A;
+      --panel: #111425;
+      --panel-2: #161b2e;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --muted-dim: #64748B;
+      --green: #10B981;
+      --green-dim: rgba(16, 185, 129, 0.12);
+      --red: #EF4444;
+      --amber: #F59E0B;
+      --amber-dim: rgba(245, 158, 11, 0.12);
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: #070a14;
+      color: var(--text);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+
+    header { margin-bottom: 32px; }
+    header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+    header p { font-size: 14px; color: var(--muted); max-width: 680px; }
+
+    .meta {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px;
+    }
+    .chip {
+      font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+    }
+    .chip.done { border-color: rgba(16,185,129,0.35); background: var(--green-dim); color: #6ee7b7; }
+    .chip.next { border-color: rgba(99,102,241,0.4); background: var(--indigo-dim); color: #a5b4fc; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px; }
+
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+    }
+    .card h2 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-dim); margin-bottom: 14px; }
+    .stat { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+    .stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    .phase-track { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 28px; }
+    .phase {
+      flex: 1 1 100px; min-width: 90px; padding: 12px 10px; border-radius: 8px; text-align: center;
+      border: 1px solid var(--border); background: var(--panel-2); font-size: 11px;
+    }
+    .phase strong { display: block; font-size: 13px; margin-bottom: 4px; }
+    .phase.complete { border-color: rgba(16,185,129,0.35); background: var(--green-dim); }
+    .phase.complete strong { color: #6ee7b7; }
+    .phase.current { border-color: rgba(99,102,241,0.5); background: var(--indigo-dim); box-shadow: 0 0 0 1px rgba(99,102,241,0.2); }
+    .phase.current strong { color: #a5b4fc; }
+    .phase.pending { opacity: 0.55; }
+
+    section { margin-bottom: 32px; }
+    section > h2 {
+      font-size: 16px; font-weight: 700; margin-bottom: 14px; letter-spacing: -0.01em;
+      display: flex; align-items: center; gap: 10px;
+    }
+    section > h2 span { font-size: 11px; font-weight: 600; color: var(--muted-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .checklist { list-style: none; }
+    .checklist li {
+      display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px;
+      background: var(--panel); cursor: pointer; transition: background 0.15s;
+    }
+    .checklist li:hover { background: var(--panel-2); }
+    .checklist li.checked { border-color: rgba(16,185,129,0.25); background: rgba(16,185,129,0.06); }
+    .checklist input { margin-top: 3px; accent-color: var(--green); width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; }
+    .checklist label { flex: 1; cursor: pointer; font-size: 14px; }
+    .checklist .hint { display: block; font-size: 12px; color: var(--muted-dim); margin-top: 4px; font-weight: 400; }
+
+    .progress-bar {
+      height: 6px; background: var(--panel-2); border-radius: 999px; overflow: hidden; margin-bottom: 16px;
+    }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--indigo), var(--green)); border-radius: 999px; transition: width 0.3s; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-dim); font-weight: 700; }
+    td a { color: #818cf8; text-decoration: none; }
+    td a:hover { text-decoration: underline; }
+
+    .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge.ok { background: var(--green-dim); color: #6ee7b7; }
+    .badge.warn { background: var(--amber-dim); color: #fcd34d; }
+    .badge.defer { background: rgba(100,116,139,0.2); color: var(--muted); }
+
+    .links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .links a {
+      font-size: 12px; font-weight: 600; padding: 8px 14px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--panel); color: var(--text); text-decoration: none;
+    }
+    .links a:hover { border-color: rgba(99,102,241,0.4); background: var(--indigo-dim); }
+
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .toolbar button {
+      font-family: inherit; font-size: 12px; font-weight: 600; padding: 6px 12px;
+      border-radius: 6px; border: 1px solid var(--border); background: var(--panel-2);
+      color: var(--muted); cursor: pointer;
+    }
+    .toolbar button:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+    footer { font-size: 11px; color: var(--muted-dim); margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Lotris — Status & Phase 7 Gate</h1>
+      <p>Living rollup of refactor progress, local dev URLs, on-prem packaging, and the parity checklist before NestJS decommission. Checklist persists in this browser.</p>
+      <div class="meta">
+        <span class="chip done">Branch: dev</span>
+        <span class="chip done">Commit: bb6a570</span>
+        <span class="chip done">Phases 0–6 complete</span>
+        <span class="chip next">Phase 7 — parity gate</span>
+      </div>
+    </header>
+
+    <div class="phase-track" id="phases"></div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Backend</h2>
+        <div class="stat">16</div>
+        <div class="stat-sub">C# REST controllers (Lotris.Api)</div>
+      </div>
+      <div class="card">
+        <h2>Legacy</h2>
+        <div class="stat">~77</div>
+        <div class="stat-sub">NestJS tRPC procedures to audit / retire</div>
+      </div>
+      <div class="card">
+        <h2>On-prem</h2>
+        <div class="stat">5</div>
+        <div class="stat-sub">Compose services: MSSQL, Redis, API, web, nginx</div>
+      </div>
+      <div class="card">
+        <h2>Local dev</h2>
+        <div class="stat" id="liveStat">—</div>
+        <div class="stat-sub" id="liveSub">Probing localhost…</div>
+      </div>
+    </div>
+
+    <section>
+      <h2><span>Gate</span> Phase 7 parity checklist</h2>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="toolbar">
+        <button type="button" id="resetChecks">Reset checklist</button>
+        <span style="font-size:12px;color:var(--muted);align-self:center" id="progressLabel">0 / 10 complete</span>
+      </div>
+      <ul class="checklist" id="checklist"></ul>
+    </section>
+
+    <section>
+      <h2><span>Shipped</span> Phases 0–6 highlights</h2>
+      <table>
+        <thead><tr><th>Phase</th><th>Focus</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>0–1</td><td>C# scaffold, tickets, queue, Hangfire SLA</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td>2</td><td>Tasks, admin, SSE notifications, audit log</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td>3</td><td>KPI engine, QuestPDF/ClosedXML reports</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td>4</td><td>MSSQL analytics rollups, ETL job config</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td>5</td><td>OpenAPI migration, live-data UI, enterprise landing, /ops</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td>6</td><td>docker-compose.onprem.yml, bootstrap, Helm skeleton</td><td><span class="badge ok">Done</span></td></tr>
+          <tr><td>7</td><td>Parity gate, load test, decommission NestJS</td><td><span class="badge warn">Next</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2><span>Deferred</span> Explicitly not in scope yet</h2>
+      <table>
+        <thead><tr><th>Item</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td>Real service restart from /ops</td><td><span class="badge defer">Post Phase 6</span></td></tr>
+          <tr><td>API break-glass console (/health/console)</td><td><span class="badge defer">Post Phase 6</span></td></tr>
+          <tr><td>Analytics & ETL panel on ops</td><td><span class="badge defer">TBD</span></td></tr>
+          <tr><td>On-prem license model</td><td><span class="badge defer">TBD</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2><span>Links</span> Local & docs</h2>
+      <div class="links">
+        <a href="http://localhost:3000/" target="_blank">Web :3000</a>
+        <a href="http://localhost:3000/ops" target="_blank">Ops /ops</a>
+        <a href="http://localhost:3000/monitor" target="_blank">Monitor</a>
+        <a href="http://localhost:5153/health" target="_blank">API health</a>
+        <a href="http://localhost:5153/openapi" target="_blank">OpenAPI / Scalar</a>
+        <a href="../deploy/INSTALL.md">deploy/INSTALL.md</a>
+        <a href="../docs/REFACTOR.md">docs/REFACTOR.md</a>
+        <a href="../docs/TOOLS.md">docs/TOOLS.md</a>
+      </div>
+    </section>
+
+    <section>
+      <h2><span>Commands</span> Quick reference</h2>
+      <table>
+        <tbody>
+          <tr><td><code>pnpm web:dev-reset</code></td><td>Fix stale .next after prod build</td></tr>
+          <tr><td><code>pnpm smoke:phase5</code></td><td>API integration smoke (REST)</td></tr>
+          <tr><td><code>pnpm onprem:smoke</code></td><td>On-prem proxy smoke (port 80)</td></tr>
+          <tr><td><code>docker compose -f docker/docker-compose.onprem.yml … up -d --build</code></td><td>Full on-prem stack</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      Generated for Lotris refactor tracking · Open this file in a browser: <code>mockups/lotris-status-phase7.html</code>
+      · Checklist key: <code>lotris-phase7-checklist</code>
+    </footer>
+  </div>
+
+  <script>
+    const PHASES = [
+      { n: 0, label: 'Scaffold', status: 'complete' },
+      { n: 1, label: 'Tickets', status: 'complete' },
+      { n: 2, label: 'Tasks/Admin', status: 'complete' },
+      { n: 3, label: 'KPI/Reports', status: 'complete' },
+      { n: 4, label: 'Analytics', status: 'complete' },
+      { n: 5, label: 'Frontend', status: 'complete' },
+      { n: 6, label: 'On-prem', status: 'complete' },
+      { n: 7, label: 'Parity', status: 'current' },
+    ];
+
+    const CHECKS = [
+      { id: 'trpc', label: 'All ~77 tRPC procedures have REST equivalents with matching RBAC', hint: 'Audit apps/api router vs src/Lotris.Api Controllers + OpenAPI' },
+      { id: 'fsm', label: 'Ticket FSM state matrix passes integration tests', hint: 'dotnet test — TicketLifecycleIntegrationTests' },
+      { id: 'hangfire', label: 'Hangfire SLA timers + auto-assign mutex under load', hint: 'Load test queue engine' },
+      { id: 'tenant', label: 'Multi-tenant isolation tests', hint: 'Cross-tenant access must 403/404' },
+      { id: 'auth', label: 'All enabled auth providers work in Docker compose', hint: 'Identity minimum; Entra/LDAP toggles' },
+      { id: 'public', label: 'Public routes: /request, /request-access, /monitor', hint: 'No auth redirect' },
+      { id: 'sse', label: 'SSE: notifications + health streams', hint: '/notifications/sse, /health/sse' },
+      { id: 'analytics', label: 'Analytics job config change reschedules Hangfire + audit', hint: 'PATCH analytics jobs config' },
+      { id: 'etl', label: 'Manual ETL "Run now" respects 60s cooldown', hint: 'AnalyticsJobsController' },
+      { id: 'vm', label: 'docker-compose.onprem.yml smoke on clean VM', hint: 'deploy/INSTALL.md full path' },
+    ];
+
+    const STORAGE_KEY = 'lotris-phase7-checklist';
+
+    function loadState() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
+    }
+    function saveState(state) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function renderPhases() {
+      document.getElementById('phases').innerHTML = PHASES.map(p => `
+        <div class="phase ${p.status}">
+          <strong>P${p.n}</strong>${p.label}
+        </div>
+      `).join('');
+    }
+
+    function updateProgress(state) {
+      const done = CHECKS.filter(c => state[c.id]).length;
+      const pct = Math.round((done / CHECKS.length) * 100);
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressLabel').textContent = `${done} / ${CHECKS.length} complete (${pct}%)`;
+    }
+
+    function renderChecklist() {
+      const state = loadState();
+      const ul = document.getElementById('checklist');
+      ul.innerHTML = CHECKS.map(c => `
+        <li class="${state[c.id] ? 'checked' : ''}" data-id="${c.id}">
+          <input type="checkbox" id="chk-${c.id}" ${state[c.id] ? 'checked' : ''} />
+          <label for="chk-${c.id}">
+            ${c.label}
+            <span class="hint">${c.hint}</span>
+          </label>
+        </li>
+      `).join('');
+
+      ul.querySelectorAll('li').forEach(li => {
+        const id = li.dataset.id;
+        const toggle = () => {
+          const s = loadState();
+          s[id] = !s[id];
+          saveState(s);
+          li.classList.toggle('checked', s[id]);
+          li.querySelector('input').checked = s[id];
+          updateProgress(s);
+        };
+        li.addEventListener('click', e => {
+          if (e.target.tagName === 'INPUT') return;
+          toggle();
+        });
+        li.querySelector('input').addEventListener('change', toggle);
+      });
+
+      updateProgress(state);
+    }
+
+    document.getElementById('resetChecks').addEventListener('click', () => {
+      if (confirm('Reset all checklist items?')) {
+        localStorage.removeItem(STORAGE_KEY);
+        renderChecklist();
+      }
+    });
+
+    async function probeLocal() {
+      const el = document.getElementById('liveStat');
+      const sub = document.getElementById('liveSub');
+      try {
+        const [web, api] = await Promise.all([
+          fetch('http://localhost:3000/', { mode: 'no-cors' }).then(() => true).catch(() => false),
+          fetch('http://localhost:5153/health').then(r => r.ok).catch(() => false),
+        ]);
+        if (web && api) {
+          el.textContent = 'Up';
+          el.style.color = '#6ee7b7';
+          sub.textContent = 'Web :3000 + API :5153 responding';
+        } else if (api) {
+          el.textContent = 'Partial';
+          el.style.color = '#fcd34d';
+          sub.textContent = 'API up · web down? → pnpm web:dev-reset';
+        } else {
+          el.textContent = 'Down';
+          el.style.color = '#fca5a5';
+          sub.textContent = 'Start docker (MSSQL/Redis), API, and web dev';
+        }
+      } catch {
+        el.textContent = '?';
+        sub.textContent = 'Could not probe (file:// CORS) — open via local server or check manually';
+      }
+    }
+
+    renderPhases();
+    renderChecklist();
+    probeLocal();
+  </script>
+</body>
+</html>
