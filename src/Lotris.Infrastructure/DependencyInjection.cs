@@ -7,6 +7,8 @@ using Lotris.Application.AuditLogs;
 using Lotris.Application.Kpi;
 using Lotris.Application.Onboarding;
 using Lotris.Application.Notifications;
+using Lotris.Application.Intelligence;
+using Lotris.Application.ProblemManagement;
 using Lotris.Application.Reports;
 using Lotris.Application.Queue;
 using Lotris.Application.Tasks;
@@ -22,6 +24,8 @@ using Lotris.Infrastructure.Migrations;
 using Lotris.Infrastructure.Kpi;
 using Lotris.Infrastructure.Notifications;
 using Lotris.Infrastructure.Onboarding;
+using Lotris.Infrastructure.Intelligence;
+using Lotris.Infrastructure.ProblemManagement;
 using Lotris.Infrastructure.Reports;
 using Lotris.Infrastructure.Queue;
 using Lotris.Infrastructure.Tasks;
@@ -111,6 +115,14 @@ public static class DependencyInjection
         services.AddScoped<IReportRepository, EfReportRepository>();
         services.AddScoped<IReportGenerator, ReportGenerator>();
         services.AddScoped<IReportJobEnqueuer, HangfireReportJobEnqueuer>();
+        services.AddScoped<IRcaRepository, DapperRcaRepository>();
+        services.AddScoped<IIntelligenceRepository, DapperIntelligenceRepository>();
+        services.AddScoped<IApiKeyProtector, SimpleApiKeyProtector>();
+        services.AddScoped<IEmbeddingProvider, AzureOpenAIProviders>();
+        services.AddScoped<IChatProvider, AzureOpenAIProviders>();
+        services.AddScoped<ITeamsNotifier, TeamsWebhookNotifier>();
+        services.AddHttpClient("azure-openai", c => c.Timeout = TimeSpan.FromSeconds(60));
+        services.AddHttpClient("teams-webhook", c => c.Timeout = TimeSpan.FromSeconds(15));
 
         if (!services.Any(d => d.ServiceType == typeof(IConnectionMultiplexer)))
         {

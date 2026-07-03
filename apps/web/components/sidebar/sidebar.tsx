@@ -6,6 +6,7 @@ import { LotrisMark } from '@/components/brand/lotris-mark';
 import { useState, useRef, useEffect } from 'react';
 import { useCurrentUser } from '@/lib/api/hooks/useAuth';
 import { useDashboardSummary, useDashboardQueueHealth } from '@/lib/api/hooks/useDashboard';
+import { useProblemStats } from '@/lib/api/hooks/useProblems';
 import { useAuth } from '@/lib/auth/auth-context';
 import {
   LayoutDashboard,
@@ -14,6 +15,8 @@ import {
   BarChart3,
   FileText,
   CheckSquare,
+  Search,
+  BookOpen,
   Activity,
   Users,
   ShieldCheck,
@@ -38,6 +41,8 @@ const MAIN_NAV: NavItem[] = [
   { label: 'Tickets',   href: '/tickets',    icon: Ticket   },
   { label: 'Queue',     href: '/queue',      icon: Layers   },
   { label: 'Tasks',     href: '/tasks',      icon: CheckSquare },
+  { label: 'Problems',  href: '/problems',   icon: Search },
+  { label: 'Knowledge', href: '/knowledge',  icon: BookOpen },
   { label: 'KPIs',      href: '/kpis',       icon: BarChart3 },
   { label: 'Reports',   href: '/reports',    icon: FileText  },
   { label: 'Monitor',   href: '/monitor',    icon: MonitorPlay, newTab: true },
@@ -46,6 +51,8 @@ const MAIN_NAV: NavItem[] = [
 const ADMIN_NAV: NavItem[] = [
   { label: 'Teams',           href: '/admin',               icon: Users,       newTab: true },
   { label: 'KPI Setup',       href: '/admin/kpi-setup',     icon: Settings2,   newTab: true },
+  { label: 'RCA Settings',    href: '/admin/rca-settings',  icon: Search,      newTab: true },
+  { label: 'Intelligence',    href: '/admin/intelligence',  icon: BookOpen,    newTab: true },
   { label: 'KPI Agreement',   href: '/kpis/agreements',     icon: FilePenLine, newTab: true },
   { label: 'System Health',   href: '/ops',                 icon: Activity,    newTab: true },
   { label: 'Audit Log',       href: '/audit-log',           icon: ShieldCheck, newTab: true },
@@ -77,10 +84,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const profile = me;
   const { data: summary } = useDashboardSummary({ staleTime: 60_000 });
   const { data: queueHealth } = useDashboardQueueHealth({ staleTime: 60_000 });
+  const { data: problemStats } = useProblemStats({ staleTime: 60_000 });
 
   const liveBadges: Record<string, number | undefined> = {
     '/tickets': (summary as { openTickets?: number } | undefined)?.openTickets,
     '/queue':   (queueHealth as { unassigned?: number } | undefined)?.unassigned,
+    '/problems': (problemStats as { overdueCapa?: number } | undefined)?.overdueCapa,
   };
 
   const initials = profile?.fullName

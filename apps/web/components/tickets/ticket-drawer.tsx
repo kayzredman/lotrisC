@@ -10,6 +10,8 @@ import {
   useTicketComments,
   useTicketHistory,
 } from '@/lib/api/hooks/useTickets';
+import Link from 'next/link';
+import { useTicketRcaSummary } from '@/lib/api/hooks/useRca';
 import { SlaBadge } from './sla-badge';
 import { TicketStatusBar } from './ticket-status-bar';
 
@@ -41,6 +43,7 @@ export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
   const queryClient = useQueryClient();
 
   const ticketQuery = useTicket(ticketId);
+  const rcaSummaryQuery = useTicketRcaSummary(ticketId);
   const commentsQuery = useTicketComments(ticketId);
   const historyQuery = useTicketHistory(ticketId);
   const meQuery = useCurrentUser();
@@ -53,6 +56,7 @@ export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
   const addCommentMutation = useAddTicketComment();
 
   const ticket = ticketQuery.data;
+  const rcaSummary = rcaSummaryQuery.data as Record<string, unknown> | undefined;
 
   function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
@@ -226,6 +230,40 @@ export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
                   {assignMutation.isSuccess && (
                     <p className="mt-2 text-xs text-green-400">Ticket assigned successfully.</p>
                   )}
+                </section>
+              )}
+
+              {/* Problem / RCA */}
+              {(rcaSummary?.rcaId || rcaSummary?.rcaRequired || rcaSummary?.canCreateOrLink) && (
+                <section className="rounded-lg border border-gray-700 bg-[#131c2e] p-4">
+                  <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-3">Problem / RCA</h3>
+                  {rcaSummary.rcaId ? (
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-gray-300 font-mono text-xs">{String(rcaSummary.rcaRef)}</span>
+                        <span className="v2-badge v2-badge-indigo text-xs">{String(rcaSummary.rcaStatus ?? 'DRAFT')}</span>
+                        {Number(rcaSummary.overdueCapaCount ?? 0) > 0 && (
+                          <span className="v2-badge v2-badge-red text-xs">
+                            {Number(rcaSummary.overdueCapaCount)} overdue CAPA
+                          </span>
+                        )}
+                      </div>
+                      <Link
+                        href={`/rca/${String(rcaSummary.rcaId)}`}
+                        className="inline-flex text-indigo-400 hover:text-indigo-300 text-xs font-medium"
+                      >
+                        Open RCA wizard →
+                      </Link>
+                    </div>
+                  ) : rcaSummary.rcaRequired ? (
+                    <p className="text-sm text-amber-400">
+                      P1 closure requires RCA — {rcaSummary.canCreateOrLink ? 'create or link from Problems.' : 'awaiting lead action.'}
+                    </p>
+                  ) : rcaSummary.canCreateOrLink ? (
+                    <Link href="/problems" className="text-indigo-400 hover:text-indigo-300 text-sm">
+                      Link to problem / create RCA →
+                    </Link>
+                  ) : null}
                 </section>
               )}
 

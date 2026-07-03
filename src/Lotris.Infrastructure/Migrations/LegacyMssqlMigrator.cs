@@ -57,6 +57,7 @@ public class LegacyMssqlMigrator
         await connection.OpenAsync(cancellationToken);
 
         await EnsureTrackingTableAsync(connection, cancellationToken);
+        await BackfillTrackingIfSchemaExistsAsync(connection, files, cancellationToken);
 
         foreach (var file in files)
         {
@@ -137,6 +138,46 @@ public class LegacyMssqlMigrator
 
         await using var cmd = new SqlCommand(sql, connection);
         await cmd.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task BackfillTrackingIfSchemaExistsAsync(
+        SqlConnection connection,
+        string[] files,
+        CancellationToken cancellationToken)
+    {
+        await using var existsCmd = new SqlCommand(
+            "SELECT CASE WHEN OBJECT_ID(N'dbo.Tenants', N'U') IS NOT NULL THEN 1 ELSE 0 END",
+            connection);
+        var tenantsExists = Convert.ToInt32(await existsCmd.ExecuteScalarAsync(cancellationToken)) == 1;
+        if (!tenantsExists)
+        {
+            return;
+        }
+
+        foreach (var file in files)
+        {
+            var migrationId = Path.GetFileName(file);
+            if (await IsAppliedAsync(connection, migrationId, cancellationToken))
+            {
+                continue;
+            }
+
+            // Database was provisioned before tracking existed — mark older scripts as applied.
+            if (migrationId.StartsWith("0010_", StringComparison.Ordinal) ||
+                migrationId.StartsWith("0011_", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            await using var trackCmd = new SqlCommand(
+                """
+                INSERT INTO dbo._LotrisLegacyMigrations (migration_id, applied_at)
+                VALUES (@migrationId, SYSUTCDATETIME())
+                """,
+                connection);
+            trackCmd.Parameters.AddWithValue("@migrationId", migrationId);
+            await trackCmd.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 
     private static async Task<bool> IsAppliedAsync(SqlConnection connection, string migrationId, CancellationToken cancellationToken)

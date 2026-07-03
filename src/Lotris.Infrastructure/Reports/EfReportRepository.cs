@@ -29,6 +29,7 @@ public sealed class EfReportRepository : IReportRepository
             DateTo = job.DateTo,
             TeamId = job.TeamId,
             ErrorMsg = job.ErrorMsg,
+            InsightsJson = job.InsightsJson,
             CreatedAt = job.CreatedAt,
             CompletedAt = job.CompletedAt,
         };
@@ -92,6 +93,9 @@ public sealed class EfReportRepository : IReportRepository
                     break;
                 case "completed_at":
                     entity.CompletedAt = (DateTime?)value;
+                    break;
+                case "insights_json":
+                    entity.InsightsJson = (string?)value;
                     break;
             }
         }
@@ -222,6 +226,7 @@ public sealed class EfReportRepository : IReportRepository
         DateTo = entity.DateTo,
         TeamId = entity.TeamId,
         ErrorMsg = entity.ErrorMsg,
+        InsightsJson = entity.InsightsJson,
         CreatedAt = entity.CreatedAt,
         CompletedAt = entity.CompletedAt,
     };

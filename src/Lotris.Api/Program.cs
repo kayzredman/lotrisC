@@ -1,5 +1,6 @@
 using System.Text;
 using Hangfire;
+using Lotris.Api.Auth;
 using Lotris.Api.OpenApi;
 using Lotris.Api.Filters;
 using Lotris.Api.Intake;
@@ -52,22 +53,7 @@ builder.Services.AddLotrisWorkers(builder.Configuration);
 builder.Services.AddSingleton<Lotris.Api.Notifications.SseConnectionManager>();
 builder.Services.AddHostedService<EmailIntakeHostedService>();
 
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "lotris",
-            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "lotris-api",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-            ClockSkew = TimeSpan.FromMinutes(1),
-        };
-    });
+builder.Services.AddLotrisAuthentication(builder.Configuration);
 
 builder.Services.AddAuthorization();
 

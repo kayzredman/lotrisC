@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotris v2 — Phase 8 RCA &amp; Problem Management (UX Mock)</title>
+  <link rel="stylesheet" href="style-v2.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* ── Flow navigator ── */
+    .flow-nav {
+      position: sticky; top: 0; z-index: 300;
+      background: #12162a; border-bottom: 1px solid #2d3555;
+      padding: 10px 18px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .flow-nav-label {
+      font-size: 11px; font-weight: 600; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-right: 4px;
+    }
+    .flow-btn {
+      padding: 6px 12px; border-radius: 6px; border: 1px solid #334155;
+      background: transparent; color: #cbd5e1; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .flow-btn:hover { border-color: var(--indigo); color: #fff; }
+    .flow-btn.active { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+    .role-toggle {
+      margin-left: auto; display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: #94a3b8;
+    }
+    .role-toggle button {
+      padding: 5px 10px; border-radius: 6px; border: 1px solid #334155;
+      background: transparent; color: #cbd5e1; font-size: 11px; cursor: pointer;
+    }
+    .role-toggle button.active { background: #334155; color: #fff; }
+
+    .mock-screen { display: none; }
+    .mock-screen.active { display: block; }
+
+    .mock-note {
+      background: #fef3c7; border: 1px solid #fcd34d; border-radius: var(--radius-sm);
+      padding: 10px 14px; font-size: 12px; color: #92400e; margin-bottom: 16px; line-height: 1.5;
+    }
+    .mock-note strong { color: #78350f; }
+
+    /* Sidebar RCA nav */
+    .nav-badge-rca {
+      margin-left: auto; background: #ea580c; color: white;
+      font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px;
+    }
+
+    /* Problems list */
+    .prob-ref {
+      font-family: 'SF Mono', 'Fira Mono', monospace;
+      font-size: 11px; font-weight: 700; color: var(--indigo);
+    }
+    .recurrence-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10.5px; font-weight: 600; padding: 2px 7px; margin-top: 4px;
+      border-radius: 99px; background: var(--orange-bg); color: var(--orange);
+      border: 1px solid var(--orange-border);
+    }
+
+    /* Filter chips */
+    .filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .filter-chip {
+      padding: 6px 12px; border-radius: 99px; border: 1px solid var(--border);
+      background: white; font-size: 12px; font-weight: 500; color: var(--text-muted);
+      cursor: pointer; transition: all 0.13s;
+    }
+    .filter-chip span { opacity: 0.7; margin-left: 4px; }
+    .filter-chip:hover { border-color: var(--indigo-border); }
+    .filter-chip.active { background: var(--indigo-dim); border-color: var(--indigo-border); color: var(--indigo); font-weight: 600; }
+
+    /* Wizard */
+    .wizard-layout {
+      display: grid; grid-template-columns: 260px 1fr 300px;
+      gap: 16px; align-items: start;
+    }
+    @media (max-width: 1100px) { .wizard-layout { grid-template-columns: 1fr; } }
+
+    .wizard-steps {
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-xs);
+    }
+    .wizard-step {
+      display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+      border-left: 3px solid transparent; cursor: pointer; transition: all 0.13s;
+    }
+    .wizard-step:hover { background: var(--bg-subtle); }
+    .wizard-step.active { background: var(--indigo-dim); border-left-color: var(--indigo); }
+    .wizard-step.done .step-num { background: var(--green); color: white; border-color: var(--green); }
+    .wizard-step.active .step-num { background: var(--indigo); color: white; border-color: var(--indigo); }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; flex-shrink: 0; color: var(--text-muted);
+    }
+    .step-label { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+    .step-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+    .wizard-main {
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-md); box-shadow: var(--shadow-xs); overflow: hidden;
+    }
+    .wizard-main-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    }
+    .wizard-main-body { padding: 20px; }
+    .wizard-footer {
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-subtle);
+    }
+
+    .form-section-title {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 12px;
+    }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+    .form-grid.full { grid-template-columns: 1fr; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 5px; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; color: var(--text-primary);
+    }
+    .field textarea { min-height: 72px; resize: vertical; line-height: 1.5; }
+    .field-hint { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+    .ctx-card {
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 14px; box-shadow: var(--shadow-xs); margin-bottom: 12px;
+    }
+    .ctx-card-title {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 10px;
+    }
+    .owner-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+    .owner-row:last-child { margin-bottom: 0; }
+    .owner-role { font-size: 10px; color: var(--text-light); width: 56px; flex-shrink: 0; }
+    .linked-ticket {
+      display: flex; align-items: center; gap: 8px; padding: 8px 0;
+      border-bottom: 1px solid var(--border); font-size: 12px;
+    }
+    .linked-ticket:last-child { border-bottom: none; }
+
+    .status-pipeline { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
+    .pipe-step {
+      font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 99px;
+      background: var(--bg-subtle); color: var(--text-muted);
+    }
+    .pipe-step.done { background: var(--green-bg); color: var(--green); }
+    .pipe-step.current { background: var(--indigo-dim); color: var(--indigo); border: 1px solid var(--indigo-border); }
+
+    .ai-suggest-box {
+      background: linear-gradient(135deg, #f5f3ff 0%, #eff6ff 100%);
+      border: 1px solid var(--purple-border); border-radius: var(--radius-sm);
+      padding: 12px 14px; margin-top: 14px;
+    }
+    .ai-suggest-box .ai-label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 600; color: var(--purple); margin-bottom: 8px;
+    }
+    .ai-suggest-box p { font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+    .ai-cite { font-size: 11px; color: var(--indigo); margin-top: 6px; }
+
+    /* Drawer RCA */
+    .drawer-tabs {
+      display: flex; border-bottom: 1px solid var(--border); padding: 0 20px; gap: 4px;
+    }
+    .drawer-tab {
+      padding: 10px 14px; font-size: 12.5px; font-weight: 500; color: var(--text-muted);
+      border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; display: flex; align-items: center; gap: 6px;
+    }
+    .drawer-tab.active { color: var(--indigo); border-bottom-color: var(--indigo); font-weight: 600; }
+    .drawer-tab .tab-alert {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--orange);
+    }
+
+    .rca-banner {
+      background: var(--orange-bg); border: 1px solid var(--orange-border);
+      border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 16px;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .rca-banner.calm {
+      background: var(--bg-subtle); border-color: var(--border);
+    }
+    .rca-banner-icon { flex-shrink: 0; margin-top: 2px; }
+    .rca-banner-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .rca-banner-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.5; }
+
+    .similar-item {
+      padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); margin-bottom: 8px; cursor: pointer;
+      transition: border-color 0.13s;
+    }
+    .similar-item:hover { border-color: var(--indigo); }
+    .similar-score { font-size: 10px; font-weight: 600; color: var(--green); }
+
+    .capa-alert {
+      background: var(--yellow-bg); border: 1px solid var(--yellow-border);
+      border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 14px;
+      font-size: 12px; color: #92400e; display: flex; align-items: center; gap: 8px;
+    }
+
+    .lead-only { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .engineer-only { display: none; }
+    body.role-engineer .lead-only { display: none !important; }
+    body.role-engineer .engineer-only { display: block; }
+
+    /* KEDB */
+    .ke-card {
+      background: white; border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 10px;
+      transition: all 0.13s;
+    }
+    .ke-card:hover { border-color: var(--indigo); box-shadow: var(--shadow-sm); }
+    .ke-workaround {
+      background: var(--yellow-bg); border: 1px solid var(--yellow-border);
+      border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 10px; font-size: 12.5px; line-height: 1.5;
+    }
+
+    /* Dashboard RCA stat */
+    .stat-card.rca-alert-stat { border-left: 3px solid var(--orange); }
+    .stat-card.rca-alert-stat .stat-value { color: var(--orange); }
+
+    /* Flow map */
+    .flow-map-wrap {
+      padding: 36px 40px; max-width: 920px; margin: 0 auto;
+      background: var(--bg); min-height: calc(100vh - 52px);
+    }
+    .flow-map-wrap pre {
+      background: white; border: 1px solid var(--border); border-radius: 8px;
+      padding: 20px; font-size: 12px; line-height: 1.75; overflow: auto;
+    }
+
+    .sla-ok   { color: var(--green); font-weight: 600; font-size: 12px; }
+    .sla-warn { color: var(--yellow); font-weight: 600; font-size: 12px; }
+
+    .provider-card.selected { border-color: var(--indigo); background: var(--indigo-dim); }
+    .ms-connect-box {
+      display: flex; align-items: center; gap: 14px; padding: 16px 18px;
+      border: 1px solid var(--border); border-radius: var(--radius-md);
+      background: white; margin-top: 12px;
+    }
+    .admin-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .admin-tab {
+      padding: 10px 16px; font-size: 13px; font-weight: 500; color: var(--text-muted);
+      border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .admin-tab.active { color: var(--indigo); border-bottom-color: var(--indigo); font-weight: 600; }
+
+    .delegate-chip {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+      background: var(--blue-bg); border: 1px solid var(--blue-border);
+      border-radius: 99px; font-size: 11.5px; font-weight: 600; color: var(--blue);
+    }
+  </style>
+</head>
+<body class="role-lead">
+
+<!-- ═══ FLOW NAV ═══ -->
+<div class="flow-nav">
+  <span class="flow-nav-label">Phase 8 RCA Mock</span>
+  <button class="flow-btn active" data-screen="s1">① Dashboard + nav</button>
+  <button class="flow-btn" data-screen="s2">② Problems list</button>
+  <button class="flow-btn" data-screen="s3">③ RCA wizard</button>
+  <button class="flow-btn" data-screen="s4">④ Ticket P1 drawer</button>
+  <button class="flow-btn" data-screen="s5">⑤ Ticket P3 drawer</button>
+  <button class="flow-btn" data-screen="s6">⑥ Knowledge</button>
+  <button class="flow-btn" data-screen="s8">⑧ Admin config</button>
+  <button class="flow-btn" data-screen="s7">⑦ Flow map</button>
+  <div class="role-toggle">
+    View as:
+    <button id="btnLead" class="active" type="button">Lead+ (IT Manager)</button>
+    <button id="btnEng" type="button">Engineer</button>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 1: Dashboard + nav ═══ -->
+<div class="mock-screen active" id="s1">
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">L</div>
+        <div><div class="logo-text">Lotris</div><div class="logo-sub">Performance Platform</div></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="02-dashboard-v2.html" class="nav-item active">
+        <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> Dashboard
+      </a>
+      <a href="03-tickets-v2.html" class="nav-item">
+        <span class="nav-icon"><i data-lucide="ticket"></i></span> Tickets <span class="nav-badge">362</span>
+      </a>
+      <a href="#" class="nav-item"><span class="nav-icon"><i data-lucide="layers"></i></span> Queue</a>
+      <a href="09-tasks-v2.html" class="nav-item"><span class="nav-icon"><i data-lucide="clipboard-list"></i></span> Tasks</a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon"><i data-lucide="search-check"></i></span> Problems <span class="nav-badge-rca">4</span>
+      </a>
+      <a href="#" class="nav-item"><span class="nav-icon"><i data-lucide="book-open"></i></span> Knowledge</a>
+      <a href="04-kpis-v2.html" class="nav-item"><span class="nav-icon"><i data-lucide="bar-chart-2"></i></span> KPIs</a>
+      <a href="05-reports-v2.html" class="nav-item"><span class="nav-icon"><i data-lucide="file-bar-chart"></i></span> Reports</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar">AO</div>
+        <div class="user-info"><div class="user-name">A. Okafor</div><div class="user-role">IT Manager</div></div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left"><h1 class="page-title">Dashboard</h1></div>
+    </div>
+    <div class="page-content">
+      <div class="mock-note"><strong>Locked UX:</strong> Problems + Knowledge sit between Tasks and KPIs. Orange badge = open RCAs. Dashboard shows overdue CAPA stat (links to Problems filter).</div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Open Tickets</div><div class="stat-value">47</div></div>
+        <div class="stat-card"><div class="stat-label">Queue Unassigned</div><div class="stat-value">9</div></div>
+        <div class="stat-card rca-alert-stat" style="cursor:pointer;" title="→ Problems / Overdue CAPA">
+          <div class="stat-label">Overdue RCA Actions</div>
+          <div class="stat-value">2</div>
+          <div class="stat-sub" style="font-size:11px;color:var(--text-muted);margin-top:4px;">CAPA past due · click to review</div>
+        </div>
+        <div class="stat-card"><div class="stat-label">Open RCAs (P1)</div><div class="stat-value">4</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ SCREEN 2: Problems list ═══ -->
+<div class="mock-screen" id="s2">
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-mark"><div class="logo-icon">L</div><div><div class="logo-text">Lotris</div></div></div></div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active"><span class="nav-icon"><i data-lucide="search-check"></i></span> Problems <span class="nav-badge-rca">4</span></a>
+    </nav>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left"><h1 class="page-title">Problems &amp; RCA</h1></div>
+      <div class="topbar-right lead-only">
+        <button class="btn btn-primary btn-sm"><i data-lucide="plus"></i> New Problem</button>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="filter-bar">
+        <button class="filter-chip active">All <span>18</span></button>
+        <button class="filter-chip">My ownership <span>3</span></button>
+        <button class="filter-chip">Awaiting review <span>2</span></button>
+        <button class="filter-chip">Overdue CAPA <span>2</span></button>
+        <button class="filter-chip">Published KEDB <span>11</span></button>
+      </div>
+      <div class="card">
+        <div class="card-body" style="padding:0;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Problem / RCA</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Tickets</th>
+                <th>Owners</th>
+                <th>Due</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="prob-ref">PRB-2026-0018</div>
+                  <div style="font-size:13px;font-weight:600;margin-top:2px;">Oracle listener failure after reboot</div>
+                  <div class="recurrence-pill"><i data-lucide="repeat" style="width:10px;height:10px;"></i> 8 in 90d · link suggested</div>
+                </td>
+                <td><span class="badge badge-gray">Database</span></td>
+                <td><span class="badge badge-indigo">In Review</span></td>
+                <td style="font-size:12px;">3</td>
+                <td style="font-size:11px;color:var(--text-muted);">Tech: D. Mensah<br>Process: A. Okafor</td>
+                <td><span class="sla-warn">2d left</span></td>
+                <td><button class="btn btn-secondary btn-sm">Open RCA</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="prob-ref">PRB-2026-0021</div>
+                  <div style="font-size:13px;font-weight:600;margin-top:2px;">Core switch failover — Finance floor</div>
+                  <div style="font-size:10px;color:var(--red);margin-top:4px;font-weight:600;">P1 auto-created</div>
+                </td>
+                <td><span class="badge badge-gray">Infrastructure</span></td>
+                <td><span class="badge badge-yellow">Draft</span></td>
+                <td>1</td>
+                <td>Tech: D. Mensah</td>
+                <td><span class="sla-ok">4d left</span></td>
+                <td><button class="btn btn-secondary btn-sm">Continue</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="prob-ref">PRB-2026-0012</div>
+                  <div style="font-size:13px;font-weight:600;margin-top:2px;">VPN auth timeout — remote users</div>
+                </td>
+                <td><span class="badge badge-gray">Network</span></td>
+                <td><span class="badge badge-green">Published</span></td>
+                <td>4</td>
+                <td>—</td>
+                <td>—</td>
+                <td><button class="btn btn-secondary btn-sm">View KEDB</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <p class="engineer-only mock-note" style="margin-top:14px;">Engineer view: read-only list for own team. No "New Problem" button.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ SCREEN 3: RCA Wizard ═══ -->
+<div class="mock-screen" id="s3">
+<div class="app">
+  <aside class="sidebar"><div class="sidebar-logo"><div class="logo-icon" style="width:32px;height:32px;background:var(--indigo);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;">L</div></div></aside>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px;"><a href="#" style="color:var(--indigo);">Problems</a> / PRB-2026-0018 / RCA-0042</div>
+        <h1 class="page-title" style="font-size:16px;">Oracle listener failure after reboot</h1>
+        <div class="status-pipeline" style="margin-top:8px;">
+          <span class="pipe-step done">Draft</span>
+          <span class="pipe-step current">In Review</span>
+          <span class="pipe-step">Approved</span>
+          <span class="pipe-step">Published → KEDB</span>
+        </div>
+      </div>
+      <div class="topbar-right lead-only">
+        <button class="btn btn-secondary btn-sm"><i data-lucide="save"></i> Save</button>
+        <button class="btn btn-primary btn-sm"><i data-lucide="send"></i> Submit for review</button>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="wizard-layout">
+        <div class="wizard-steps">
+          <div class="wizard-step done"><div class="step-num">✓</div><div><div class="step-label">Summary &amp; Impact</div><div class="step-sub">What happened</div></div></div>
+          <div class="wizard-step done"><div class="step-num">✓</div><div><div class="step-label">Timeline</div><div class="step-sub">Event sequence</div></div></div>
+          <div class="wizard-step active"><div class="step-num">3</div><div><div class="step-label">Root Cause</div><div class="step-sub">Brief form · ~3 fields</div></div></div>
+          <div class="wizard-step"><div class="step-num">4</div><div><div class="step-label">CAPA Actions</div><div class="step-sub">Corrective + Preventive</div></div></div>
+          <div class="wizard-step"><div class="step-num">5</div><div><div class="step-label">Lessons &amp; Risk</div></div></div>
+          <div class="wizard-step"><div class="step-num">6</div><div><div class="step-label">Review &amp; Publish</div></div></div>
+        </div>
+
+        <div class="wizard-main">
+          <div class="wizard-main-header">
+            <div>
+              <div style="font-size:15px;font-weight:700;">Root Cause</div>
+              <div style="font-size:12px;color:var(--text-muted);">Brief structured form · Category: Process → Change failure</div>
+            </div>
+            <select style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;">
+              <option>Process → Change failure</option>
+              <option>Database → Log growth</option>
+              <option>Infrastructure → Network</option>
+            </select>
+          </div>
+          <div class="wizard-main-body">
+            <div class="form-grid full">
+              <div class="field">
+                <label>Immediate cause</label>
+                <textarea rows="2">Oracle listener was not running after server reboot; applications could not connect to PROD DB.</textarea>
+                <div class="field-hint">What failed or was observed — keep it short.</div>
+              </div>
+              <div class="field">
+                <label>Root cause statement (required)</label>
+                <textarea rows="2" style="border-color:var(--indigo);">DB patching SOP missing listener auto-start verification after OS reboot.</textarea>
+                <div class="field-hint">The actual root cause — one clear sentence auditors can follow.</div>
+              </div>
+              <div class="field">
+                <label>Contributing factors (optional)</label>
+                <textarea rows="2">Post-patch reboot script did not restart listener; no alert on listener down state.</textarea>
+                <div class="field-hint">Optional bullets — not a 5 Whys chain.</div>
+              </div>
+            </div>
+            <div class="ai-suggest-box">
+              <div class="ai-label"><i data-lucide="sparkles" style="width:14px;height:14px;"></i> AI suggestion (Phase 8b) — human review required</div>
+              <p>Similar to <strong>RCA-0031 (Apr 2026)</strong>. Consider log saturation as contributing factor in CAPA step.</p>
+              <div class="ai-cite">Sources: RCA-0031 · TKT-0412 · TKT-0444</div>
+              <button class="btn btn-secondary btn-sm lead-only" style="margin-top:10px;">Apply to draft</button>
+            </div>
+          </div>
+          <div class="wizard-footer lead-only">
+            <button class="btn btn-secondary btn-sm"><i data-lucide="chevron-left"></i> Timeline</button>
+            <button class="btn btn-primary btn-sm">CAPA Actions <i data-lucide="chevron-right"></i></button>
+          </div>
+        </div>
+
+        <div>
+          <div class="ctx-card">
+            <div class="ctx-card-title">Ownership</div>
+            <div class="owner-row"><span class="owner-role">Process</span><div class="avatar-sm">AO</div> A. Okafor</div>
+            <div class="owner-row"><span class="owner-role">Technical</span><div class="avatar-sm">DM</div> D. Mensah</div>
+            <div class="owner-row" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+              <span class="owner-role">Delegate</span>
+              <span class="delegate-chip"><div class="avatar-sm" style="width:20px;height:20px;font-size:9px;">FM</div> F. Mohammed</span>
+            </div>
+            <button class="btn btn-secondary btn-sm lead-only" style="width:100%;margin-top:8px;font-size:11px;"><i data-lucide="user-plus"></i> Assign delegate engineer</button>
+            <div style="font-size:10.5px;color:var(--text-light);margin-top:6px;line-height:1.4;">Delegate can edit this RCA only — not create or publish.</div>
+          </div>
+          <div class="ctx-card">
+            <div class="ctx-card-title">Linked tickets (3)</div>
+            <div class="linked-ticket"><span class="prob-ref">TKT-0491</span><span style="flex:1;">Listener down</span><span class="badge badge-red">P1</span></div>
+            <div class="linked-ticket"><span class="prob-ref">TKT-0467</span><span style="flex:1;">DB unreachable</span><span class="badge badge-orange">P2</span></div>
+            <button class="btn btn-secondary btn-sm lead-only" style="width:100%;margin-top:8px;"><i data-lucide="link"></i> Link ticket</button>
+          </div>
+          <div class="ctx-card">
+            <div class="ctx-card-title">RCA SLA</div>
+            <div style="font-size:12px;">Due: <strong>8 Jul 2026</strong> (5 business days)</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Triggered by P1 close · TKT-0491</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ SCREEN 4: P1 Ticket drawer ═══ -->
+<div class="mock-screen drawer-demo" id="s4">
+<div class="app" style="min-height:100vh;filter:blur(1px);opacity:0.6;">
+  <div class="main" style="margin-left:var(--sidebar-w);"><div class="page-content"><p style="padding:20px;color:var(--text-muted);">Tickets list (background)</p></div></div>
+</div>
+<div class="drawer-overlay open"></div>
+<div class="drawer open">
+  <div class="drawer-header">
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--indigo);">TKT-0491 · P1 Critical · Resolved</div>
+      <div style="font-size:15px;font-weight:700;letter-spacing:-0.2px;">Oracle listener failure — PROD DB</div>
+    </div>
+    <button class="drawer-close" type="button"><i data-lucide="x"></i></button>
+  </div>
+  <div class="drawer-tabs">
+    <button class="drawer-tab" type="button">Activity</button>
+    <button class="drawer-tab" type="button">Comments</button>
+    <button class="drawer-tab active" type="button">Problem / RCA <span class="tab-alert" title="CAPA overdue"></span></button>
+  </div>
+  <div class="drawer-body">
+    <div class="mock-note" style="margin-bottom:14px;">P1 (Critical) close → auto RCA. Toggle <strong>View as</strong> top-right to compare Lead+ vs Engineer.</div>
+
+    <div class="capa-alert"><i data-lucide="alert-triangle" style="width:16px;height:16px;flex-shrink:0;"></i> 1 CAPA action overdue on linked problem PRB-2026-0018</div>
+
+    <div class="rca-banner">
+      <div class="rca-banner-icon" style="color:var(--orange);"><i data-lucide="alert-circle" style="width:18px;height:18px;"></i></div>
+      <div>
+        <div class="rca-banner-title">RCA required — P1 Critical incident</div>
+        <div class="rca-banner-sub">Draft auto-created and linked to <strong>PRB-2026-0018</strong>. Technical owner: D. Mensah · Process: A. Okafor</div>
+        <div class="lead-only">
+          <button class="btn btn-primary btn-sm" style="margin-top:10px;"><i data-lucide="external-link"></i> Open RCA wizard</button>
+          <button class="btn btn-secondary btn-sm" style="margin-top:10px;">Link to existing problem</button>
+        </div>
+        <div class="engineer-only" style="margin-top:10px;font-size:12px;color:var(--text-muted);">
+          You can add evidence via comments tagged <code>#rca-evidence</code>. RCA editing is assigned to your team lead.
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:10px;">Similar incidents (Phase 8b)</div>
+    <div class="similar-item">
+      <div style="display:flex;justify-content:space-between;"><span class="prob-ref">RCA-0031</span><span class="similar-score">94% match</span></div>
+      <div style="font-size:12.5px;font-weight:600;margin-top:4px;">Listener failure after patch cycle</div>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">Workaround: <code>lsnrctl start</code></div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <div class="comment-box">
+        <textarea placeholder="Add #rca-evidence comment for the investigation team…" rows="3"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ SCREEN 5: P3 Ticket drawer (no RCA) ═══ -->
+<div class="mock-screen drawer-demo" id="s5">
+<div class="app" style="min-height:100vh;filter:blur(1px);opacity:0.6;">
+  <div class="main" style="margin-left:var(--sidebar-w);"><div class="page-content"><p style="padding:20px;color:var(--text-muted);">Tickets list (background)</p></div></div>
+</div>
+<div class="drawer-overlay open"></div>
+<div class="drawer open">
+  <div class="drawer-header">
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);">TKT-0512 · P3 Medium · Resolved</div>
+      <div style="font-size:15px;font-weight:700;">Printer driver install — Accounting</div>
+    </div>
+    <button class="drawer-close" type="button"><i data-lucide="x"></i></button>
+  </div>
+  <div class="drawer-tabs">
+    <button class="drawer-tab" type="button">Activity</button>
+    <button class="drawer-tab" type="button">Comments</button>
+    <button class="drawer-tab active" type="button">Problem / RCA</button>
+  </div>
+  <div class="drawer-body">
+    <div class="mock-note">P3/P4 close → <strong>no auto RCA</strong> (locked: P1 only). Knowledge search + similar incidents still available.</div>
+
+    <div class="rca-banner calm">
+      <div class="rca-banner-icon" style="color:var(--text-muted);"><i data-lucide="check-circle" style="width:18px;height:18px;"></i></div>
+      <div>
+        <div class="rca-banner-title">No RCA required</div>
+        <div class="rca-banner-sub">Routine resolution. Priority Medium does not match P1 auto-trigger rule.</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-muted);margin:16px 0 10px;">Similar past incidents</div>
+    <div class="similar-item">
+      <div style="display:flex;justify-content:space-between;"><span class="prob-ref">KE-0044</span><span class="similar-score">81% match</span></div>
+      <div style="font-size:12.5px;font-weight:600;margin-top:4px;">Printer spooler stuck — workaround documented</div>
+    </div>
+
+    <button class="btn btn-secondary btn-sm" style="margin-top:12px;width:100%;justify-content:center;"><i data-lucide="book-open"></i> Search knowledge base</button>
+
+    <div class="lead-only" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Lead+ can still open a manual problem if needed:</div>
+      <button class="btn btn-secondary btn-sm"><i data-lucide="plus"></i> Create manual RCA</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ SCREEN 6: Knowledge / KEDB ═══ -->
+<div class="mock-screen" id="s6">
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon" style="width:32px;height:32px;background:var(--indigo);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;">L</div></div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active"><span class="nav-icon"><i data-lucide="book-open"></i></span> Knowledge</a>
+    </nav>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left"><h1 class="page-title">Knowledge Base</h1></div>
+      <div class="topbar-right">
+        <div class="search-bar" style="width:280px;">
+          <i data-lucide="search"></i>
+          <input type="text" placeholder="Search known errors, RCAs, runbooks…">
+        </div>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="filter-bar">
+        <button class="filter-chip active">Known Errors</button>
+        <button class="filter-chip">Published RCAs</button>
+        <button class="filter-chip">Runbooks</button>
+      </div>
+      <div class="ke-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+          <div>
+            <span class="badge badge-green">Known Error</span>
+            <span class="badge badge-gray" style="margin-left:6px;">Database</span>
+            <h3 style="font-size:15px;font-weight:700;margin-top:8px;">Oracle listener failure after server reboot</h3>
+            <p style="font-size:12.5px;color:var(--text-muted);margin-top:6px;line-height:1.6;">Root cause: Missing SOP step for listener auto-start after OS patch/reboot.</p>
+          </div>
+          <span style="font-size:11px;color:var(--text-light);white-space:nowrap;">12 Jun 2026</span>
+        </div>
+        <div class="ke-workaround"><strong>Workaround:</strong> Run <code>lsnrctl start</code> on affected host. Verify with <code>lsnrctl status</code>.</div>
+        <p style="margin-top:10px;font-size:12.5px;"><strong>Permanent fix:</strong> Updated startup script + patch SOP (CAPA verified).</p>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-sm">View full RCA</button>
+          <button class="btn btn-secondary btn-sm"><i data-lucide="sparkles"></i> Ask about this (8b)</button>
+        </div>
+      </div>
+      <div class="ke-card">
+        <span class="badge badge-green">Known Error</span>
+        <h3 style="font-size:15px;font-weight:700;margin-top:8px;">Core switch failover — Finance floor</h3>
+        <p style="font-size:12.5px;color:var(--text-muted);margin-top:6px;">5 linked incidents · Infrastructure / Network</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ SCREEN 8: Admin — RCA settings + Intelligence / Copilot ═══ -->
+<div class="mock-screen" id="s8">
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon" style="width:32px;height:32px;background:var(--indigo);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;">L</div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Admin</div>
+      <a href="#" class="nav-item"><span class="nav-icon"><i data-lucide="search-check"></i></span> RCA Settings</a>
+      <a href="#" class="nav-item active"><span class="nav-icon"><i data-lucide="sparkles"></i></span> Intelligence</a>
+      <a href="10-sysadmin-ops-v2.html" class="nav-item"><span class="nav-icon"><i data-lucide="activity"></i></span> System Health</a>
+    </nav>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left"><h1 class="page-title">Admin — Intelligence &amp; Copilot</h1></div>
+    </div>
+    <div class="page-content">
+      <div class="mock-note"><strong>Locked:</strong> <em>Sign in with Microsoft</em> appears <strong>only</strong> on Enterprise (internal). External AI routes to the provider's own sign-in — never Microsoft.</div>
+
+      <div class="admin-tabs">
+        <button class="admin-tab" type="button">RCA trigger rules</button>
+        <button class="admin-tab active" type="button">Intelligence &amp; Copilot</button>
+        <button class="admin-tab" type="button">Teams notifications</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+        <div class="card provider-card selected" id="cardEnterprise" style="padding:16px;cursor:pointer;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <i data-lucide="building-2" style="width:18px;height:18px;color:var(--indigo);"></i>
+            <strong style="font-size:14px;">Enterprise (internal)</strong>
+            <span class="badge badge-green" style="margin-left:auto;">Selected</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-muted);line-height:1.5;">Microsoft Entra + Azure OpenAI / M365 Copilot. Sign in with Microsoft only.</p>
+        </div>
+        <div class="card provider-card" id="cardExternal" style="padding:16px;cursor:pointer;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <i data-lucide="cloud" style="width:18px;height:18px;color:var(--text-muted);"></i>
+            <strong style="font-size:14px;">External AI</strong>
+            <span class="badge badge-gray" style="margin-left:auto;">Payment gate</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-muted);line-height:1.5;">OpenAI, Anthropic, etc. Connect via provider sign-in page — not Microsoft.</p>
+        </div>
+      </div>
+
+      <!-- ENTERPRISE PANEL — Microsoft only -->
+      <div class="card" id="panelEnterprise" style="padding:20px;margin-bottom:14px;">
+        <div class="form-section-title">Internal — Microsoft enterprise connection</div>
+        <div class="ms-connect-box">
+          <svg width="32" height="32" viewBox="0 0 23 23"><rect width="11" height="11" fill="#f25022"/><rect x="12" width="11" height="11" fill="#7fba00"/><rect y="12" width="11" height="11" fill="#00a4ef"/><rect x="12" y="12" width="11" height="11" fill="#ffb900"/></svg>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:600;">Connected as Contoso IT</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Entra tenant · a1b2c3d4-e5f6-7890 · <strong>it-automation@contoso.com</strong></div>
+          </div>
+          <span class="badge badge-green"><i data-lucide="check" style="width:10px;height:10px;"></i> Connected</span>
+          <button class="btn btn-secondary btn-sm">Reconnect</button>
+        </div>
+        <div class="form-grid" style="margin-top:16px;margin-bottom:0;">
+          <div class="field">
+            <label>Azure OpenAI endpoint</label>
+            <input type="text" value="https://contoso-openai.openai.azure.com/">
+          </div>
+          <div class="field">
+            <label>Deployment (chat)</label>
+            <input type="text" value="gpt-4o-lotris">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" style="margin-top:14px;background:#2f2f2f;border-color:#2f2f2f;">
+          <svg width="16" height="16" viewBox="0 0 23 23" style="vertical-align:middle;margin-right:6px;"><rect width="11" height="11" fill="#f25022"/><rect x="12" width="11" height="11" fill="#7fba00"/><rect y="12" width="11" height="11" fill="#00a4ef"/><rect x="12" y="12" width="11" height="11" fill="#ffb900"/></svg>
+          Sign in with Microsoft
+        </button>
+        <p style="font-size:11px;color:var(--text-light);margin-top:8px;">Internal path only. Admin connects org Entra account to Azure OpenAI in your tenant.</p>
+      </div>
+
+      <!-- EXTERNAL PANEL — provider sign-in (hidden by default) -->
+      <div class="card" id="panelExternal" style="padding:20px;margin-bottom:14px;display:none;">
+        <div class="form-section-title">External — provider account connection</div>
+        <div class="field" style="margin-bottom:14px;">
+          <label>AI provider</label>
+          <select style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+            <option>OpenAI</option>
+            <option>Anthropic</option>
+            <option>Google Gemini</option>
+          </select>
+        </div>
+        <div class="ms-connect-box" style="border-style:dashed;">
+          <i data-lucide="link" style="width:28px;height:28px;color:var(--text-muted);"></i>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:600;">Not connected</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">You will be redirected to the provider's sign-in page to authorize Lotris.</div>
+          </div>
+          <button class="btn btn-primary btn-sm" style="background:#10a37f;border-color:#10a37f;">Connect OpenAI account</button>
+        </div>
+        <p style="font-size:11px;color:var(--text-light);margin-top:12px;">External path only — <strong>no Microsoft sign-in</strong>. Requires PRO entitlement; usage metered.</p>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+          <div class="field">
+            <label>Or API key (fallback)</label>
+            <input type="password" placeholder="sk-…" value="">
+            <div class="field-hint">Encrypted at rest. Prefer OAuth connect when provider supports it.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:20px;">
+        <div class="form-section-title">Feature toggles</div>
+        <table class="data-table">
+          <thead><tr><th>Feature</th><th>Enabled</th><th>Provider</th></tr></thead>
+          <tbody>
+            <tr><td>RCA AI suggestions</td><td><span class="badge badge-green">On</span></td><td>Enterprise</td></tr>
+            <tr><td>Knowledge copilot (RAG Q&amp;A)</td><td><span class="badge badge-green">On</span></td><td>Enterprise</td></tr>
+            <tr><td>Report narrative summaries</td><td><span class="badge badge-gray">Off</span></td><td>—</td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:14px;padding:12px;background:var(--bg-subtle);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted);">
+          Usage this month: <strong>12,400</strong> tokens · <strong>86</strong> queries · Audit log in System Health
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ SCREEN 7: Flow map ═══ -->
+<div class="mock-screen" id="s7">
+<div class="flow-map-wrap">
+  <h1 style="font-size:22px;margin-bottom:6px;">Phase 8 RCA — User flow map</h1>
+  <p style="color:var(--text-muted);margin-bottom:20px;font-size:14px;">Locked decisions reflected in this mock. Use top nav to switch screens; toggle Lead+ / Engineer on drawer views.</p>
+  <pre>
+P1 (CRITICAL) TICKET CLOSED
+        │
+        ▼
+┌───────────────────┐
+│ Trigger: P1 only  │     P2/P3/P4 → no auto RCA (admin toggles optional)
+└─────────┬─────────┘
+          │ creates Problem + draft RCA
+          ▼
+┌───────────────────┐     Lead+ only: New Problem, Create, Link, Edit wizard
+│ /problems         │     Engineer: read, #rca-evidence comments, knowledge search
+│ Sidebar + badge   │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ /rca/[id] wizard  │     6-step · 3-column · full page
+│ Lead+ edit        │
+└─────────┬─────────┘
+          │ approve
+          ▼
+┌───────────────────┐
+│ /knowledge KEDB   │     Workaround + permanent fix
+└───────────────────┘
+
+CAPA overdue → Dashboard stat card + drawer tab alert dot
+  </pre>
+  <h2 style="font-size:16px;margin:24px 0 12px;">Routes</h2>
+  <table class="data-table" style="background:white;">
+    <thead><tr><th>Route</th><th>Who edits</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>/problems</code></td><td>Lead+ creates</td><td>All roles read (team scoped)</td></tr>
+      <tr><td><code>/rca/[id]</code></td><td>Lead+</td><td>Full-page 6-step wizard</td></tr>
+      <tr><td><code>/knowledge</code></td><td>Read all</td><td>Published from approved RCA</td></tr>
+      <tr><td>Ticket drawer tab</td><td>Lead+ actions</td><td>Engineer: evidence + search</td></tr>
+      <tr><td><code>/admin/rca-settings</code></td><td>IT Manager+</td><td>P1-only trigger default</td></tr>
+      <tr><td><code>/admin/intelligence</code></td><td>IT Manager+</td><td>Microsoft sign-in, copilot provider, feature toggles</td></tr>
+      <tr><td>RCA delegate</td><td>Assigned engineer</td><td>Edit one RCA — assigned by Lead+</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:20px;font-size:13px;color:var(--text-muted);">
+    Open: <code>mockups/11-rca-phase8-flow.html</code> · Spec: <code>docs/PHASE-8-RESEARCH.md</code> §13
+  </p>
+</div>
+</div>
+
+<script>
+  document.querySelectorAll('.flow-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.flow-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.mock-screen').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.screen).classList.add('active');
+      lucide.createIcons();
+    });
+  });
+
+  document.getElementById('btnLead').addEventListener('click', () => {
+    document.body.className = 'role-lead';
+    document.getElementById('btnLead').classList.add('active');
+    document.getElementById('btnEng').classList.remove('active');
+  });
+  document.getElementById('btnEng').addEventListener('click', () => {
+    document.body.className = 'role-engineer';
+    document.getElementById('btnEng').classList.add('active');
+    document.getElementById('btnLead').classList.remove('active');
+  });
+
+  function selectProvider(which) {
+    const ent = document.getElementById('cardEnterprise');
+    const ext = document.getElementById('cardExternal');
+    const panelEnt = document.getElementById('panelEnterprise');
+    const panelExt = document.getElementById('panelExternal');
+    if (which === 'enterprise') {
+      ent.classList.add('selected');
+      ext.classList.remove('selected');
+      panelEnt.style.display = 'block';
+      panelExt.style.display = 'none';
+    } else {
+      ext.classList.add('selected');
+      ent.classList.remove('selected');
+      panelEnt.style.display = 'none';
+      panelExt.style.display = 'block';
+    }
+    lucide.createIcons();
+  }
+  document.getElementById('cardEnterprise')?.addEventListener('click', () => selectProvider('enterprise'));
+  document.getElementById('cardExternal')?.addEventListener('click', () => selectProvider('external'));
+
+  lucide.createIcons();
+</script>
+</body>
+</html>

@@ -9,11 +9,12 @@ import {
   useDashboardTicketAnalytics,
   useSlaWarnings,
 } from '@/lib/api/hooks/useDashboard';
+import { useProblemStats } from '@/lib/api/hooks/useProblems';
 import { EmptyState } from '@/components/ui/empty-state';
 import { WorkloadPanel } from './workload-panel';
 import {
-  Ticket, AlertTriangle, CheckCircle2, TrendingUp,
-  Clock, Activity, ArrowUpRight, RefreshCw,
+  Ticket,   AlertTriangle, CheckCircle2, TrendingUp,
+  Clock, Activity, ArrowUpRight, RefreshCw, ClipboardList,
 } from 'lucide-react';
 
 type TrendPoint = { label: string; opened: number; resolved: number };
@@ -49,10 +50,16 @@ export function DashboardPageClient() {
   const engPerfQ      = useDashboardEngineerPerf({ staleTime: 60_000 });
   const teamWorkloadQ = useDashboardTeamWorkload({ staleTime: 30_000, refetchInterval: 60_000 });
   const canSeeSlaWarnings = ['IT_MANAGER', 'ADMIN', 'SUPERADMIN', 'TEAM_LEAD'].includes(role);
+  const canSeeRcaStats = canSeeSlaWarnings;
   const slaWarningsQ = useSlaWarnings({
     staleTime: 60_000,
     refetchInterval: 120_000,
     enabled: canSeeSlaWarnings,
+  });
+  const problemStatsQ = useProblemStats({
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+    enabled: canSeeRcaStats,
   });
 
   const summaryLoading = summaryQ.isLoading && !summaryQ.isFetched;
@@ -89,6 +96,11 @@ export function DashboardPageClient() {
 
   const trend = parseTicketTrend(analyticsQ.data as Record<string, unknown> | undefined);
   const trendMax = trend.length > 0 ? Math.max(...trend.map(t => Math.max(t.opened, t.resolved)), 1) : 1;
+
+  const overdueCapa = statVal(
+    (problemStatsQ.data?.overdueCapa ?? problemStatsQ.data?.OverdueCapa) as number | undefined,
+    problemStatsQ.isLoading && !problemStatsQ.isFetched,
+  );
 
   const slaWarnings = slaWarningsQ.data ?? [];
   const redCount = slaWarnings.filter(w => w.warningLevel === 'RED').length;
@@ -143,10 +155,13 @@ export function DashboardPageClient() {
         </div>
       </div>
 
-      <div className="v2-stats-grid">
+      <div className="v2-stats-grid" style={canSeeRcaStats ? { gridTemplateColumns: 'repeat(5, 1fr)' } : undefined}>
         <StatCard color="indigo" icon={<Ticket size={15} />}       value={openTickets} label={isEngineer ? 'My Open Tickets' : isTeamLead ? 'Team Open Tickets' : 'Open Tickets'} />
         <StatCard color="red"    icon={<AlertTriangle size={15} />} value={slaBreached} label={isEngineer ? 'My SLA Breached' : 'SLA Breached'} />
         <StatCard color="green"  icon={<CheckCircle2 size={15} />} value={resolvedMTD} label={isEngineer ? 'I Resolved MTD' : isTeamLead ? 'Team Resolved MTD' : 'Resolved MTD'} />
+        {canSeeRcaStats && (
+          <StatCard color="orange" icon={<ClipboardList size={15} />} value={overdueCapa} label="Overdue CAPA" />
+        )}
         <StatCard color="blue"   icon={<TrendingUp size={15} />}   value={kpiScore} label={isEngineer ? 'My KPI Score' : isTeamLead ? 'Team KPI Score' : 'KPI Score'} />
       </div>
 

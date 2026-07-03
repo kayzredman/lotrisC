@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ShieldCheck, Ticket, BarChart2 } from 'lucide-react';
 import { LotrisLogo } from '@/components/brand/lotris-mark';
 import { useLogin, useRegister } from '@/lib/api/hooks/useAuth';
+import { apiFetch } from '@/lib/api/client';
 import styles from './login.module.css';
 
 type Tab = 'login' | 'register';
@@ -21,10 +22,24 @@ export function LoginForm() {
   const [fullName, setFullName] = useState('');
   const [tenantName, setTenantName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [microsoftEnabled, setMicrosoftEnabled] = useState(false);
 
   const loginMutation = useLogin();
   const registerMutation = useRegister();
   const isSubmitting = loginMutation.isPending || registerMutation.isPending;
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5100';
+
+  useEffect(() => {
+    void apiFetch<{ identity?: boolean; microsoft?: boolean }>('/api/v1/auth/providers')
+      .then((p) => setMicrosoftEnabled(Boolean(p.microsoft)))
+      .catch(() => setMicrosoftEnabled(false));
+  }, []);
+
+  function handleMicrosoftLogin() {
+    const url = `${apiBase}/api/v1/auth/microsoft/login?returnUrl=${encodeURIComponent(redirect)}`;
+    window.location.href = url;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -147,6 +162,30 @@ export function LoginForm() {
           {isSubmitting ? 'Please wait…' : tab === 'login' ? 'Sign in' : 'Create account'}
         </button>
       </form>
+
+      {tab === 'login' && microsoftEnabled && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: 'var(--text-muted)', fontSize: 12 }}>
+            <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            or
+            <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
+          <button
+            type="button"
+            onClick={handleMicrosoftLogin}
+            className="v2-btn v2-btn-secondary"
+            style={{ width: '100%', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          >
+            <svg width="16" height="16" viewBox="0 0 21 21" aria-hidden="true">
+              <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+              <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+              <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+              <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+            </svg>
+            Sign in with Microsoft
+          </button>
+        </>
+      )}
 
       <div className={styles.securityNote}>
         <ShieldCheck size={12} strokeWidth={2.5} />

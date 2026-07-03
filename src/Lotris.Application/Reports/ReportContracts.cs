@@ -37,7 +37,7 @@ public interface IReportJobEnqueuer
 
 public interface IReportGenerator
 {
-    Task<string> GenerateAsync(
+    Task<ReportGenerationResult> GenerateAsync(
         Guid tenantId,
         string reportType,
         string format,
@@ -47,6 +47,8 @@ public interface IReportGenerator
         string outputDirectory,
         CancellationToken cancellationToken = default);
 }
+
+public sealed record ReportGenerationResult(string FilePath, string? InsightsJson);
 
 public sealed class ReportJobEntity
 {
@@ -61,6 +63,7 @@ public sealed class ReportJobEntity
     public string? DateTo { get; init; }
     public Guid? TeamId { get; init; }
     public string? ErrorMsg { get; init; }
+    public string? InsightsJson { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? CompletedAt { get; init; }
 }

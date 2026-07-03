@@ -232,6 +232,7 @@ public sealed class ReportService
         row.DateTo,
         row.TeamId,
         row.ErrorMsg,
+        row.InsightsJson,
         row.CreatedAt,
         row.CompletedAt);
 

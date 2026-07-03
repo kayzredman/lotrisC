@@ -21,6 +21,7 @@ public record ReportJobDto(
     string? DateTo,
     Guid? TeamId,
     string? ErrorMsg,
+    string? InsightsJson,
     DateTime CreatedAt,
     DateTime? CompletedAt);
 

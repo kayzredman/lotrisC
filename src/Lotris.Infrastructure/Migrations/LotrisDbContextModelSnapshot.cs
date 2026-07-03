@@ -267,6 +267,9 @@ namespace Lotris.Infrastructure.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
+                    b.Property<string>("InsightsJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ReportType")
                         .IsRequired()
                         .HasMaxLength(40)

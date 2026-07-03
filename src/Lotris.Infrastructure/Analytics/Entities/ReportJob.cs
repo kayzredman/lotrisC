@@ -24,6 +24,8 @@ public class ReportJob
 
     public string? ErrorMsg { get; set; }
 
+    public string? InsightsJson { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? CompletedAt { get; set; }

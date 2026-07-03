@@ -1,5 +1,7 @@
 using Lotris.Api.Auth;
+using Lotris.Application.ProblemManagement;
 using Lotris.Application.Tickets;
+using Lotris.Contracts.ProblemManagement;
 using Lotris.Contracts.Tickets;
 using Lotris.Domain;
 using Microsoft.AspNetCore.Authorization;
@@ -13,10 +15,12 @@ namespace Lotris.Api.Controllers;
 public sealed class TicketsController : ControllerBase
 {
     private readonly TicketService _tickets;
+    private readonly RcaService _rca;
 
-    public TicketsController(TicketService tickets)
+    public TicketsController(TicketService tickets, RcaService rca)
     {
         _tickets = tickets;
+        _rca = rca;
     }
 
     [HttpPost]
@@ -100,4 +104,9 @@ public sealed class TicketsController : ControllerBase
     {
         return Ok(await _tickets.BatchReassignAsync(HttpContext.GetLotrisSession(), request, cancellationToken));
     }
+
+    [HttpGet("{id:guid}/rca-summary")]
+    [ProducesResponseType(typeof(TicketRcaSummaryDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetRcaSummary(Guid id, CancellationToken cancellationToken)
+        => Ok(await _rca.GetTicketSummaryAsync(HttpContext.GetLotrisSession(), id, cancellationToken));
 }

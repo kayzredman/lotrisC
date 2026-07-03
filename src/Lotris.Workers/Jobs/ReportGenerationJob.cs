@@ -35,7 +35,7 @@ public sealed class ReportGenerationJob : IReportGenerationJob
         try
         {
             var outputDir = Path.Combine(_options.OutputPath, job.TenantId.ToString());
-            var filePath = await _generator.GenerateAsync(
+            var result = await _generator.GenerateAsync(
                 job.TenantId,
                 job.ReportType,
                 job.Format,
@@ -48,7 +48,8 @@ public sealed class ReportGenerationJob : IReportGenerationJob
             await _reports.UpdateJobAsync(jobId, new Dictionary<string, object?>
             {
                 ["status"] = "DONE",
-                ["file_path"] = filePath,
+                ["file_path"] = result.FilePath,
+                ["insights_json"] = result.InsightsJson,
                 ["completed_at"] = DateTime.UtcNow,
             }, cancellationToken);
         }
