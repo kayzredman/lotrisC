@@ -32,7 +32,9 @@ Living catalog of operational surfaces, scripts, and API probes in this repo. Up
 **Restart reality (today):**
 
 - `lotris-api` — triggers graceful API shutdown (process manager / docker must bring it back)
-- Other services — audit logged + cooldown; **no automatic process restart yet**
+- Other services — audit logged + cooldown only; **no automatic process restart**
+
+> **Decision (July 2026):** Real restart wiring (docker compose / k8s / supervisor) is a **future feature**, deferred until after Phase 6 on-prem packaging. The `/ops` UI and restart API remain for monitoring and audit; do not expect one-click recovery until that work lands.
 
 **Legacy redirect:** `/system-health` → `/ops`
 
@@ -190,11 +192,11 @@ Run via the API package's documented npm/pnpm scripts (see `apps/api/package.jso
 
 ## Future (not built)
 
-| Item | Notes |
-|------|-------|
-| API-hosted break-glass console | `GET /health/console` — static HTML, no Next.js dependency |
-| Real docker/k8s restart | Wire `nextjs-web`, workers to compose/supervisor |
-| Analytics & ETL panel on ops | Planned on system-health (DATABASE-STRATEGY.md §11) |
+| Item | Target | Notes |
+|------|--------|-------|
+| **Real service restart** | Post–Phase 6 | Wire `nextjs-web`, workers, API to docker compose / k8s / supervisor from `POST /health/restart/{name}`. UI + audit + cooldown already exist. |
+| API-hosted break-glass console | Post–Phase 6 | `GET /health/console` — static HTML, no Next.js dependency |
+| Analytics & ETL panel on ops | TBD | Planned on ops console (DATABASE-STRATEGY.md §11) |
 
 ---
 

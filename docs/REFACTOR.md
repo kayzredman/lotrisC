@@ -168,6 +168,7 @@ Previously identified gaps (June 2026) and their resolution:
 | License model for on-prem distribution | README | TBD |
 | Onboarding refactor (7 topics) | [ONBOARDING-REFACTOR.md](ONBOARDING-REFACTOR.md) | **Decided — accepted June 2026** |
 | Git remote & branch policy | [GIT-WORKFLOW.md](GIT-WORKFLOW.md) | **Decided — `dev` → QA → `main` on [lotrisC](https://github.com/kayzredman/lotrisC.git)** |
+| Ops service restart (docker/k8s) | [TOOLS.md](TOOLS.md) | **Decided — deferred post Phase 6**; `/ops` restart UI is audit-only until then |
 
 ---
 
