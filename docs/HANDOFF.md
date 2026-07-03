@@ -147,7 +147,7 @@ pnpm onprem:smoke   # defaults to http://localhost:9090
 | `origin` | `https://github.com/kayzredman/lotrisC.git` | **Canonical** — clone this |
 | `legacy` | `https://github.com/kayzredman/lotris.git` | Old NestJS-era repo (reference only) |
 
-**Workflow:** feature work on `dev` → QA gate → merge to `main` for releases. See [GIT-WORKFLOW.md](GIT-WORKFLOW.md).
+**Workflow:** feature work on **local `dev`** → **QA Agent certifies** → push `origin dev` and `origin main` (merge local `dev` → local `main` first). See [GIT-WORKFLOW.md](GIT-WORKFLOW.md).
 
 ---
 
