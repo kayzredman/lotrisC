@@ -1,43 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/lib/auth/auth-context';
 import { useCurrentUser } from '@/lib/api/hooks/useAuth';
 import {
   useReportsList,
   useReportSchedules,
   useCreateReportSchedule,
   useDeleteReportSchedule,
+  useGenerateReport,
 } from '@/lib/api/hooks/useReports';
 import { FileText, Download, Clock, Calendar, Plus, Search, BarChart2, CheckCircle, AlertCircle, Settings, Trash2, Lock } from 'lucide-react';
 import { ReportSettingsPanel } from './report-settings-panel';
 
-// ── Marketing demo data (match 05-reports-v2.html exactly) ──────────────────
-const REPORT_TYPE_TABS = [
-  { label: 'All',               count: 24 },
-  { label: 'Ticket Summary',    count: 8  },
-  { label: 'SLA Compliance',    count: 5  },
-  { label: 'KPI Performance',   count: 4  },
-  { label: 'Agent Performance', count: 4  },
-  { label: 'CSAT Analysis',     count: 3  },
-  { label: 'Queue Reports',     count: 4  },
-];
+const REPORT_TYPE_LABELS = [
+  'All',
+  'Ticket Summary',
+  'SLA Compliance',
+  'KPI Performance',
+  'Agent Performance',
+  'CSAT Analysis',
+  'Queue Reports',
+] as const;
 
-const DEMO_REPORTS = [
-  { name: 'SLA Compliance Report – April 2026',      type: 'SLA Compliance',    formats: ['PDF'],        freq: 'Monthly',   date: '1 May 2026, 06:00', size: '2.4 MB', downloads: 18 },
-  { name: 'KPI Performance Report – Q1 2026',        type: 'KPI Performance',   formats: ['XLSX','PDF'], freq: 'Quarterly', date: '2 Apr 2026, 08:15', size: '5.1 MB', downloads: 42 },
-  { name: 'Agent Performance Report – Week 17',      type: 'Agent Performance', formats: ['PDF'],        freq: 'Weekly',    date: '28 Apr 2026, 07:00', size: '1.8 MB', downloads: 9  },
-  { name: 'CSAT Monthly Report – April 2026',        type: 'CSAT Analysis',     formats: ['XLSX'],       freq: 'Monthly',   date: '1 May 2026, 06:00', size: '890 KB', downloads: 7  },
-  { name: 'Ticket Volume by Category – May 2026',    type: 'Ticket Summary',    formats: ['CSV'],        freq: 'Daily',     date: '5 May 2026, 00:00', size: '340 KB', downloads: 3  },
-  { name: 'SLA Compliance Detail – Network Ops',     type: 'SLA Compliance',    formats: ['PDF','XLSX'], freq: 'Ad-hoc',    date: '4 May 2026, 14:22', size: '1.2 MB', downloads: 5  },
-];
-
-const FORMAT_COLORS: Record<string, string> = {
-  PDF:  'v2-badge-red',
-  XLSX: 'v2-badge-green',
-  CSV:  'v2-badge-blue',
+const REPORT_TYPE_API: Record<string, string> = {
+  'Ticket Summary': 'TICKET_SUMMARY',
+  'SLA Compliance': 'SLA_COMPLIANCE',
+  'KPI Performance': 'KPI_REPORT',
+  'Agent Performance': 'ENGINEER_PERF',
+  'CSAT Analysis': 'CSAT_ANALYSIS',
+  'Queue Reports': 'QUEUE_REPORT',
 };
+
+function reportTypeLabel(apiType: string): string {
+  const entry = Object.entries(REPORT_TYPE_API).find(([, v]) => v === apiType);
+  if (entry) return entry[0];
+  return apiType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
 
 export function ReportsLayout() {
   const [activeType, setActiveType] = useState('All');
@@ -48,11 +47,11 @@ export function ReportsLayout() {
   const [dateRange, setDateRange] = useState('last_30');
   const [generating, setGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState<{ ok: boolean; message: string } | null>(null);
-  const { accessToken } = useAuth();
 
   const { data: me } = useCurrentUser({ staleTime: 60_000 });
   const { data: liveReportsRaw, isLoading: reportsLoading } = useReportsList({ staleTime: 15_000 });
   const { data: schedulesRaw } = useReportSchedules({ staleTime: 15_000 });
+  const generateReport = useGenerateReport();
 
   const liveReports = (Array.isArray(liveReportsRaw) ? liveReportsRaw : []) as Array<Record<string, unknown>>;
   const schedules = (Array.isArray(schedulesRaw) ? schedulesRaw : []) as Array<Record<string, unknown>>;
@@ -83,30 +82,35 @@ export function ReportsLayout() {
     setGenerating(true);
     setGenStatus(null);
     try {
-      const token = accessToken;
       const { dateFrom, dateTo } = dateRangeParams(dateRange);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/reports/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ reportType, format: format === 'XLSX' ? 'EXCEL' : format, dateFrom, dateTo }),
+      await generateReport.mutateAsync({
+        reportType,
+        format: format === 'XLSX' ? 'EXCEL' : format,
+        dateFrom,
+        dateTo,
       });
-      if (res.ok || res.status === 202) {
-        setGenStatus({ ok: true, message: 'Report generation queued. It will appear in your list shortly.' });
-      } else {
-        const body = await res.json().catch(() => ({}));
-        setGenStatus({ ok: false, message: (body as { message?: string }).message ?? 'Generation failed. Please try again.' });
-      }
-    } catch {
-      setGenStatus({ ok: false, message: 'Network error — could not reach the API.' });
+      setGenStatus({ ok: true, message: 'Report generation queued. It will appear in your list shortly.' });
+      void queryClient.invalidateQueries({ queryKey: ['reports', 'list'] });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Generation failed. Please try again.';
+      setGenStatus({ ok: false, message });
     } finally {
       setGenerating(false);
     }
   };
 
-  const filtered = activeType === 'All' ? DEMO_REPORTS : DEMO_REPORTS.filter(r => r.type === activeType);
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = { All: liveReports.length };
+    for (const r of liveReports) {
+      const label = reportTypeLabel(String(r.reportType));
+      counts[label] = (counts[label] ?? 0) + 1;
+    }
+    return counts;
+  }, [liveReports]);
+
+  const filteredReports = activeType === 'All'
+    ? liveReports
+    : liveReports.filter(r => reportTypeLabel(String(r.reportType)) === activeType);
 
   // Role gate — ENGINEER sees Not Authorised
   if (me && !canAccessReports) {
@@ -248,15 +252,15 @@ export function ReportsLayout() {
         <>
           <div className="v2-filter-bar">
             <div className="v2-filter-tabs">
-              {REPORT_TYPE_TABS.map(tab => (
+              {REPORT_TYPE_LABELS.map(label => (
                 <button
-                  key={tab.label}
+                  key={label}
                   type="button"
-                  className={`v2-filter-tab${activeType === tab.label ? ' active' : ''}`}
-                  onClick={() => setActiveType(tab.label)}
+                  className={`v2-filter-tab${activeType === label ? ' active' : ''}`}
+                  onClick={() => setActiveType(label)}
                 >
-                  {tab.label}
-                  <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-light)' }}>{tab.count}</span>
+                  {label}
+                  <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-light)' }}>{typeCounts[label] ?? 0}</span>
                 </button>
               ))}
             </div>
@@ -283,10 +287,10 @@ export function ReportsLayout() {
                   {reportsLoading && (
                     <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>Loading…</td></tr>
                   )}
-                  {!reportsLoading && (!liveReports || liveReports.length === 0) && (
+                  {!reportsLoading && filteredReports.length === 0 && (
                     <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>No reports generated yet.</td></tr>
                   )}
-                  {liveReports.map(r => (
+                  {filteredReports.map(r => (
                     <tr key={r.id as string}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -30,7 +30,7 @@ export function SystemHealthClient() {
     { enabled: !paused },
   );
 
-  // ── Polling fallback via tRPC (also seeds initial data) ──────────────────
+  // ── Polling fallback (also seeds initial data) ──────────────────────────
   const { data: polledSnapshot } = useHealthSnapshot({
     refetchInterval: paused ? false : 5000,
     staleTime: 1000,

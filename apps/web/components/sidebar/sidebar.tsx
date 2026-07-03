@@ -47,7 +47,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Teams',           href: '/admin',               icon: Users,       newTab: true },
   { label: 'KPI Setup',       href: '/admin/kpi-setup',     icon: Settings2,   newTab: true },
   { label: 'KPI Agreement',   href: '/kpis/agreements',     icon: FilePenLine, newTab: true },
-  { label: 'System Health',   href: '/system-health',       icon: Activity,    newTab: true },
+  { label: 'System Health',   href: '/ops',                 icon: Activity,    newTab: true },
   { label: 'Audit Log',       href: '/audit-log',           icon: ShieldCheck, newTab: true },
 ];
 

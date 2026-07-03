@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lotris — Landing Hero Proposal</title>
+  <style>
+    :root {
+      --indigo: #4F46E5;
+      --indigo-hover: #4338CA;
+      --indigo-dim: rgba(79, 70, 229, 0.15);
+      --shell: #0C0E1A;
+      --panel: #111425;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --muted-dim: #64748B;
+      --green: #10B981;
+      --red: #EF4444;
+      --amber: #F59E0B;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: #070a14;
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Doc chrome (not part of landing page) ── */
+    .doc-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px 80px;
+    }
+
+    .doc-header {
+      margin-bottom: 24px;
+    }
+
+    .doc-header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+
+    .doc-header p {
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 640px;
+    }
+
+    .doc-note {
+      background: rgba(79, 70, 229, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 13px;
+      color: #c7d2fe;
+      margin-bottom: 20px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .controls button {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .controls button.active {
+      background: var(--indigo);
+      border-color: var(--indigo);
+      color: #fff;
+    }
+
+    .controls .tag {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--muted-dim);
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+    }
+
+    .mock-frame {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--shell);
+    }
+
+    .mock-frame.mobile {
+      max-width: 390px;
+      margin: 0 auto;
+    }
+
+    /* ── Landing page mock ── */
+    .landing { background: var(--shell); }
+
+    .nav {
+      height: 64px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(12, 14, 26, 0.95);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-logo-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--indigo);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .nav-logo span {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 28px;
+    }
+
+    .nav-links a {
+      font-size: 14px;
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .nav-ctas {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-ctas .sign-in {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 6px 14px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--indigo);
+      color: #fff;
+      text-decoration: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-primary:hover { background: var(--indigo-hover); }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #e2e8f0;
+      text-decoration: none;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .nav-ctas .btn-primary { padding: 7px 18px; }
+
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      color: #e2e8f0;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 48px 40px 40px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.05fr;
+      gap: 40px;
+      align-items: center;
+      max-width: 1100px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(40px);
+    }
+
+    .orb-1 { width: 400px; height: 400px; top: 5%; left: 0; background: rgba(79,70,229,0.14); }
+    .orb-2 { width: 320px; height: 320px; top: 40%; right: 0; background: rgba(139,92,246,0.1); }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--indigo-dim);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: #a5b4fc;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--indigo);
+    }
+
+    .hero h2 {
+      font-size: clamp(32px, 4vw, 42px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+
+    .hero-sub {
+      font-size: 17px;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 480px;
+      margin-bottom: 28px;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .hero-ctas .btn-primary { padding: 14px 28px; font-size: 15px; font-weight: 700; }
+
+    .trust-row, .cap-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .trust-chip {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .cap-pill {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+
+    .sample-caption {
+      font-size: 11px;
+      color: var(--muted-dim);
+      margin-top: 4px;
+    }
+
+    /* Product preview */
+    .product {
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0a0d18;
+    }
+
+    .product-chrome {
+      padding: 10px 14px;
+      background: #161b2e;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dots { display: flex; gap: 6px; }
+    .dots i { width: 8px; height: 8px; border-radius: 50%; display: block; opacity: 0.75; }
+    .dots i:nth-child(1) { background: var(--red); }
+    .dots i:nth-child(2) { background: var(--amber); }
+    .dots i:nth-child(3) { background: var(--green); }
+
+    .url-bar {
+      flex: 1;
+      max-width: 260px;
+      margin: 0 auto;
+      padding: 4px 12px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      font-size: 11px;
+      color: var(--muted-dim);
+      text-align: center;
+    }
+
+    .product-body { padding: 14px; }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .stat-card {
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .stat-card label {
+      display: block;
+      font-size: 10px;
+      color: var(--muted-dim);
+      margin-bottom: 4px;
+    }
+
+    .stat-card strong {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-card.warn strong { color: var(--amber); }
+    .stat-card.ok strong { color: var(--green); }
+
+    .queue-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .queue-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .queue-row:first-of-type { border-top: 1px solid var(--border); background: rgba(239,68,68,0.06); }
+
+    .priority-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .priority-dot.critical { background: var(--red); }
+    .priority-dot.high { background: var(--amber); }
+    .priority-dot.medium { background: #eab308; }
+
+    .queue-title { flex: 1; font-weight: 600; }
+    .queue-id { font-size: 10px; color: var(--muted-dim); }
+    .queue-sla { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    /* Comparison section below mock */
+    .compare {
+      margin-top: 32px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .compare-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    .compare-card h3 {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    .compare-card.bad h3 { color: #fca5a5; }
+    .compare-card.good h3 { color: #86efac; }
+
+    .compare-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .compare-card li {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .compare-card li span { flex-shrink: 0; font-weight: 700; }
+    .compare-card.bad li span { color: var(--red); }
+    .compare-card.good li span { color: var(--green); }
+
+    table.compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 24px;
+      font-size: 13px;
+    }
+
+    table.compare-table th,
+    table.compare-table td {
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    table.compare-table th {
+      background: var(--panel);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    table.compare-table td:first-child { font-weight: 600; color: #e2e8f0; white-space: nowrap; }
+    table.compare-table td:nth-child(2) { color: #fca5a5; }
+    table.compare-table td:nth-child(3) { color: #86efac; }
+
+    .questions {
+      margin-top: 24px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+    }
+
+    .questions h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .q-item { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .q-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .q-item h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; color: #e2e8f0; }
+    .q-item p { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+    /* Mobile layout */
+    .mock-frame.mobile .nav-links,
+    .mock-frame.mobile .nav-ctas .sign-in { display: none; }
+    .mock-frame.mobile .hamburger { display: block; }
+
+    .mock-frame.mobile .hero { padding: 32px 18px 28px; }
+    .mock-frame.mobile .hero-grid {
+      grid-template-columns: 1fr;
+      gap: 28px;
+      text-align: center;
+    }
+    .mock-frame.mobile .hero-sub { margin-left: auto; margin-right: auto; }
+    .mock-frame.mobile .hero-ctas,
+    .mock-frame.mobile .trust-row,
+    .mock-frame.mobile .cap-row { justify-content: center; }
+    .mock-frame.mobile .stat-grid { grid-template-columns: repeat(2, 1fr); }
+
+    @media (max-width: 768px) {
+      .compare { grid-template-columns: 1fr; }
+      .nav-links, .nav-ctas .sign-in { display: none; }
+      .hamburger { display: block; }
+      .hero { padding: 32px 18px; }
+      .hero-grid { grid-template-columns: 1fr; gap: 28px; text-align: center; }
+      .hero-sub { margin-left: auto; margin-right: auto; }
+      .hero-ctas, .trust-row, .cap-row { justify-content: center; }
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .orb { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc-wrap">
+    <div class="doc-header">
+      <h1>Landing hero — enterprise proposal</h1>
+      <p>Browser mock for review before implementing in <code>apps/web/components/landing/landing-page.tsx</code>. Toggle desktop vs mobile width below.</p>
+    </div>
+
+    <div class="doc-note">
+      <strong>Design intent:</strong> Lead with on-prem ITSM + KPI agreements, show a Lotris-style product preview (not stock photos), and replace invented live metrics with capability and trust statements.
+    </div>
+
+    <div class="controls">
+      <button type="button" id="btn-desktop" class="active" onclick="setViewport('desktop')">Desktop mock</button>
+      <button type="button" id="btn-mobile" onclick="setViewport('mobile')">Mobile mock (390px)</button>
+      <span class="tag">Brand: #4F46E5 · shell #0C0E1A</span>
+    </div>
+
+    <div class="mock-frame" id="mock-frame">
+      <div class="landing">
+        <!-- Nav -->
+        <nav class="nav">
+          <div class="nav-logo">
+            <div class="nav-logo-mark">L</div>
+            <span>Lotris</span>
+          </div>
+          <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#security">Security</a>
+          </div>
+          <div class="nav-ctas">
+            <a class="sign-in" href="/login">Sign in</a>
+            <a class="btn-primary" href="/request-access">Request access</a>
+          </div>
+          <button class="hamburger" type="button" aria-label="Menu">☰</button>
+        </nav>
+
+        <!-- Hero -->
+        <section class="hero">
+          <div class="hero-grid-bg"></div>
+          <div class="orb orb-1"></div>
+          <div class="orb orb-2"></div>
+
+          <div class="hero-grid">
+            <div class="hero-copy">
+              <div class="eyebrow"><span class="eyebrow-dot"></span> On-prem ITSM · Private beta</div>
+
+              <h2>IT helpdesk operations you can prove — on your infrastructure.</h2>
+
+              <p class="hero-sub">
+                Lotris structures tickets, SLAs, KPI agreements, and workload balancing for regulated IT teams.
+                Deploy on MSSQL with Entra ID, LDAP, or local identity — no cloud lock-in.
+              </p>
+
+              <div class="hero-ctas">
+                <a class="btn-primary" href="/request-access">Request access →</a>
+                <a class="btn-secondary" href="#features">View product tour</a>
+              </div>
+
+              <div class="trust-row">
+                <span class="trust-chip">MSSQL + Redis</span>
+                <span class="trust-chip">Entra ID / LDAP</span>
+                <span class="trust-chip">Docker on-prem</span>
+                <span class="trust-chip">OpenAPI contract</span>
+              </div>
+
+              <div class="cap-row">
+                <span class="cap-pill">SLA queue engine</span>
+                <span class="cap-pill">KPI agreements</span>
+                <span class="cap-pill">Automated reports</span>
+                <span class="cap-pill">System health</span>
+              </div>
+
+              <p class="sample-caption">Sample workspace shown · metrics reflect demo data, not live claims</p>
+            </div>
+
+            <div class="hero-visual">
+              <div class="product">
+                <div class="product-chrome">
+                  <div class="dots"><i></i><i></i><i></i></div>
+                  <div class="url-bar">app.yourcompany.local/dashboard</div>
+                </div>
+                <div class="product-body">
+                  <div class="stat-grid">
+                    <div class="stat-card"><label>Open</label><strong>12</strong></div>
+                    <div class="stat-card warn"><label>SLA at risk</label><strong>2</strong></div>
+                    <div class="stat-card ok"><label>Resolved MTD</label><strong>48</strong></div>
+                    <div class="stat-card"><label>KPI score</label><strong>91%</strong></div>
+                  </div>
+                  <div class="queue-label">Queue — sample workspace</div>
+                  <div class="queue-row">
+                    <span class="priority-dot critical"></span>
+                    <div>
+                      <div class="queue-title">VPN unreachable — HQ</div>
+                      <div class="queue-id">TKT-0491</div>
+                    </div>
+                    <span class="queue-sla">47m</span>
+                  </div>
+                  <div class="queue-row">
+                    <span class="priority-dot high"></span>
+                    <div>
+                      <div class="queue-title">Outlook sign-in failure</div>
+                      <div class="queue-id">TKT-0488</div>
+                    </div>
+                    <span class="queue-sla">2h 14m</span>
+                  </div>
+                  <div class="queue-row">
+                    <span class="priority-dot medium"></span>
+                    <div>
+                      <div class="queue-title">Printer offline — Floor 3</div>
+                      <div class="queue-id">TKT-0486</div>
+                    </div>
+                    <span class="queue-sla">6h 30m</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Comparison docs -->
+    <div class="compare">
+      <div class="compare-card bad">
+        <h3>Current hero — QA blockers</h3>
+        <ul>
+          <li><span>×</span> Eyebrow claims Enterprise Edition v2.4 without a shipped release</li>
+          <li><span>×</span> Stat pills show fabricated live metrics (247 resolved, 94% SLA)</li>
+          <li><span>×</span> Hero image is Unsplash stock, not Lotris UI</li>
+          <li><span>×</span> Floating cards duplicate fake numbers and ticket IDs</li>
+          <li><span>×</span> Marquee says “trusted by industries” but shows random photos</li>
+          <li><span>×</span> Footer claims SOC 2 Type II with no substantiation</li>
+        </ul>
+      </div>
+      <div class="compare-card good">
+        <h3>Proposed hero — what changes</h3>
+        <ul>
+          <li><span>✓</span> Honest beta positioning — no fake version numbers</li>
+          <li><span>✓</span> Buyer-specific copy for IT managers and regulated orgs</li>
+          <li><span>✓</span> Trust row maps to real stack (MSSQL, Entra, LDAP, Docker)</li>
+          <li><span>✓</span> Product preview uses Lotris UI patterns, not stock photography</li>
+          <li><span>✓</span> Caption discloses sample/demo data explicitly</li>
+          <li><span>✓</span> Secondary CTA drives exploration without competing with primary</li>
+        </ul>
+      </div>
+    </div>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Area</th>
+          <th>Current (live)</th>
+          <th>Proposed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Eyebrow</td>
+          <td>Now in Enterprise Edition — v2.4</td>
+          <td>On-prem ITSM · Private beta</td>
+        </tr>
+        <tr>
+          <td>Headline</td>
+          <td>Your helpdesk, fully in command.</td>
+          <td>IT helpdesk operations you can prove — on your infrastructure.</td>
+        </tr>
+        <tr>
+          <td>Proof strip</td>
+          <td>Fake live stats (247 / 94% / 4.7 CSAT)</td>
+          <td>Capability + trust chips (MSSQL, Entra, Docker, OpenAPI)</td>
+        </tr>
+        <tr>
+          <td>Hero visual</td>
+          <td>Unsplash photo + floating fake metrics</td>
+          <td>Lotris dashboard mock labeled Sample workspace</td>
+        </tr>
+        <tr>
+          <td>Secondary CTA</td>
+          <td>Sign in to your account (in hero)</td>
+          <td>View product tour + Sign in in nav</td>
+        </tr>
+        <tr>
+          <td>Below fold</td>
+          <td>“Trusted by…” stock photo marquee</td>
+          <td>Remove or use design-partner logos when ready</td>
+        </tr>
+        <tr>
+          <td>Footer legal</td>
+          <td>SOC 2 Type II certified</td>
+          <td>Security page · SOC 2 in progress until certified</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="questions">
+      <h3>Open questions for discussion</h3>
+      <div class="q-item">
+        <h4>1. Product visual source</h4>
+        <p>Option A: capture a real dashboard screenshot from dev tenant. Option B: reuse CSS mockups from the features section for consistency.</p>
+      </div>
+      <div class="q-item">
+        <h4>2. Social proof row</h4>
+        <p>Hide marquee until design-partner logos exist, or use text-only verticals (banking, telecom, public sector).</p>
+      </div>
+      <div class="q-item">
+        <h4>3. Primary CTA</h4>
+        <p>Keep Request access, or split Book demo vs Request access once sales motion is defined.</p>
+      </div>
+      <div class="q-item">
+        <h4>4. Hero layout</h4>
+        <p>This mock uses split copy left / product right. Alternative: centered copy with product below — better for short headlines, weaker above-fold proof.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setViewport(mode) {
+      const frame = document.getElementById('mock-frame');
+      const btnDesktop = document.getElementById('btn-desktop');
+      const btnMobile = document.getElementById('btn-mobile');
+      if (mode === 'mobile') {
+        frame.classList.add('mobile');
+        btnMobile.classList.add('active');
+        btnDesktop.classList.remove('active');
+      } else {
+        frame.classList.remove('mobile');
+        btnDesktop.classList.add('active');
+        btnMobile.classList.remove('active');
+      }
+    }
+  </script>
+</body>
+</html>

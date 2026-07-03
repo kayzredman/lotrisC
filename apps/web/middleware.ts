@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   '/sign-up',
   '/api/dev-login',
   '/monitor',
+  '/ops',
   '/request',
   '/request-access',
 ];

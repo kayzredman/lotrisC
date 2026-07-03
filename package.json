@@ -12,7 +12,9 @@
     "api:export": "bash scripts/export-openapi.sh",
     "api:docs": "python3 scripts/generate-api-docs.py",
     "api:codegen": "pnpm --filter @lotris/web api:codegen",
-    "api:sync": "pnpm api:export && pnpm api:docs && pnpm api:codegen"
+    "api:sync": "pnpm api:export && pnpm api:docs && pnpm api:codegen",
+    "web:dev-reset": "bash scripts/web-dev-reset.sh",
+    "smoke:phase5": "bash scripts/smoke-phase5.sh"
   },
   "devDependencies": {
     "turbo": "^2.3.0",

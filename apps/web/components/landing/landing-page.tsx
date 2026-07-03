@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, useInView, useMotionValue, useSpring, AnimatePresence, type Variants } from 'framer-motion';
+import { motion, useInView, AnimatePresence, type Variants } from 'framer-motion';
 import Link from 'next/link';
 import { LotrisMark } from '@/components/brand/lotris-mark';
 
@@ -36,26 +36,6 @@ const staggerFast = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.08 } },
 };
-
-// ─── Animated Counter ─────────────────────────────────────────────────────────
-
-function AnimatedNumber({ target, suffix = '', prefix = '' }: { target: number; suffix?: string; prefix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-80px' });
-  const mv = useMotionValue(0);
-  const spring = useSpring(mv, { stiffness: 50, damping: 20 });
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    if (inView) mv.set(target);
-  }, [inView, target, mv]);
-
-  useEffect(() => {
-    return spring.on('change', (v) => setDisplay(Math.round(v)));
-  }, [spring]);
-
-  return <span ref={ref}>{prefix}{display}{suffix}</span>;
-}
 
 // ─── CSS Mockup: Ticket Queue ─────────────────────────────────────────────────
 
@@ -278,7 +258,11 @@ function ReportsMockup() {
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
-const NAV_LINKS = ['Features', 'How it works', 'Pricing'] as const;
+const NAV_LINKS = [
+  { label: 'Features', href: '#features' },
+  { label: 'How it works', href: '#how-it-works' },
+  { label: 'Security', href: '#security' },
+] as const;
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -323,12 +307,12 @@ function Navbar() {
 
         {/* Desktop links — hidden on mobile */}
         <div className="hidden md:flex" style={{ alignItems: 'center', gap: 32, marginRight: 32 }}>
-          {NAV_LINKS.map((label) => (
-            <a key={label} href={`#${label.toLowerCase().replace(/ /g, '-')}`}
+          {NAV_LINKS.map((link) => (
+            <a key={link.label} href={link.href}
               style={{ fontSize: 14, color: '#94a3b8', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}
               onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
               onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
-            >{label}</a>
+            >{link.label}</a>
           ))}
         </div>
 
@@ -390,10 +374,10 @@ function Navbar() {
           >
             {/* Nav links */}
             <nav aria-label="Mobile navigation">
-              {NAV_LINKS.map((label, i) => (
+              {NAV_LINKS.map((link, i) => (
                 <motion.a
-                  key={label}
-                  href={`#${label.toLowerCase().replace(/ /g, '-')}`}
+                  key={link.label}
+                  href={link.href}
                   onClick={() => setMenuOpen(false)}
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -403,7 +387,7 @@ function Navbar() {
                     fontWeight: 500, padding: '14px 0',
                     borderBottom: '1px solid rgba(255,255,255,0.06)',
                   }}
-                >{label}</motion.a>
+                >{link.label}</motion.a>
               ))}
             </nav>
 
@@ -428,176 +412,110 @@ function Navbar() {
   );
 }
 
-// ─── Hero Visual ─────────────────────────────────────────────────────────────
+// ─── Hero product preview (sample workspace — not live metrics) ───────────────
 
-function HeroVisual() {
-  const cards = [
-    {
-      pos: { top: '14%', left: '-3%' } as React.CSSProperties,
-      delay: 1.0,
-      floatDur: 3.2,
-      accent: '#818cf8',
-      borderColor: 'rgba(79,70,229,0.35)',
-      child: (
-        <>
-          <div style={{ fontSize: 10, color: '#818cf8', fontWeight: 700, marginBottom: 6, letterSpacing: '0.05em' }}>⚡ SLA COMPLIANCE</div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', lineHeight: 1 }}>94<span style={{ fontSize: 14, fontWeight: 600 }}>%</span></div>
-          <div style={{ fontSize: 10, color: '#22c55e', marginTop: 4, fontWeight: 600 }}>↑ +2.1% this week</div>
-        </>
-      ),
-    },
-    {
-      pos: { top: '38%', right: '-2%' } as React.CSSProperties,
-      delay: 1.2,
-      floatDur: 2.8,
-      accent: '#22c55e',
-      borderColor: 'rgba(34,197,94,0.3)',
-      child: (
-        <>
-          <div style={{ fontSize: 10, color: '#86efac', fontWeight: 700, marginBottom: 6, letterSpacing: '0.05em' }}>✓ RESOLVED TODAY</div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', lineHeight: 1 }}>247</div>
-          <div style={{ fontSize: 10, color: '#64748b', marginTop: 4 }}>12 still active</div>
-        </>
-      ),
-    },
-    {
-      pos: { bottom: '22%', left: '-4%' } as React.CSSProperties,
-      delay: 1.4,
-      floatDur: 3.6,
-      accent: '#f59e0b',
-      borderColor: 'rgba(245,158,11,0.3)',
-      child: (
-        <>
-          <div style={{ fontSize: 10, color: '#fbbf24', fontWeight: 700, marginBottom: 6, letterSpacing: '0.05em' }}>🔔 SLA ALERT</div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', lineHeight: 1.35 }}>TK-4821 approaching breach</div>
-          <div style={{ fontSize: 10, color: '#ef4444', marginTop: 4, fontWeight: 700 }}>0:47 remaining</div>
-        </>
-      ),
-    },
+const HERO_QUEUE_ROWS = [
+  { id: 'TKT-0491', title: 'VPN unreachable — HQ', priority: 'critical' as const, sla: '47m', highlight: true },
+  { id: 'TKT-0488', title: 'Outlook sign-in failure', priority: 'high' as const, sla: '2h 14m', highlight: false },
+  { id: 'TKT-0486', title: 'Printer offline — Floor 3', priority: 'medium' as const, sla: '6h 30m', highlight: false },
+];
+
+const PRIORITY_COLOR = { critical: '#ef4444', high: '#f59e0b', medium: '#eab308' };
+
+function HeroProductPreview() {
+  const stats = [
+    { label: 'Open', value: '12', color: '#fff' },
+    { label: 'SLA at risk', value: '2', color: '#f59e0b' },
+    { label: 'Resolved MTD', value: '48', color: '#22c55e' },
+    { label: 'KPI score', value: '91%', color: '#fff' },
   ];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 80, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 1.0, delay: 0.65, ease: EASE }}
-      style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1040, padding: '0 20px', marginTop: 64 }}
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.75, delay: 0.4, ease: EASE }}
+      style={{ width: '100%' }}
     >
-      {/* Browser frame */}
-      <div style={{
-        borderRadius: '16px 16px 0 0',
-        overflow: 'hidden',
-        border: '1px solid rgba(255,255,255,0.10)',
-        borderBottom: 'none',
-        boxShadow: '0 -4px 40px rgba(79,70,229,0.18), 0 40px 80px rgba(0,0,0,0.55)',
-      }}>
-        {/* Chrome bar */}
-        <div style={{ background: '#161b2e', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+      <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, overflow: 'hidden', background: '#0a0d18' }}>
+        <div style={{ padding: '10px 14px', background: '#161b2e', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
             {(['#ef4444', '#f59e0b', '#22c55e'] as const).map((c) => (
-              <div key={c} style={{ width: 10, height: 10, borderRadius: '50%', background: c, opacity: 0.7 }} />
+              <div key={c} style={{ width: 8, height: 8, borderRadius: '50%', background: c, opacity: 0.75 }} />
             ))}
           </div>
-          <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: '4px 12px', fontSize: 11, color: '#475569', display: 'flex', alignItems: 'center', gap: 6, maxWidth: 300, margin: '0 auto' }}>
-            <span style={{ fontSize: 9 }}>🔒</span>
-            <span>app.lotris.io/dashboard</span>
+          <div style={{ flex: 1, maxWidth: 280, margin: '0 auto', padding: '4px 12px', borderRadius: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)', fontSize: 11, color: '#64748b', textAlign: 'center' }}>
+            app.yourcompany.local/dashboard
           </div>
-          <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-            {['#334155', '#334155', '#334155'].map((c, i) => (
-              <div key={i} style={{ width: 14, height: 14, borderRadius: 3, background: c }} />
+        </div>
+        <div style={{ padding: 14 }}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+            {stats.map((s) => (
+              <div key={s.label} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}>
+                <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4 }}>{s.label}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: s.color, letterSpacing: '-0.02em' }}>{s.value}</div>
+              </div>
             ))}
           </div>
-        </div>
-        {/* Screenshot image */}
-        <div style={{ position: 'relative' }}>
-          <img
-            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=80"
-            alt="Lotris KPI dashboard view"
-            style={{ width: '100%', display: 'block', height: 460, objectFit: 'cover', objectPosition: 'top center' }}
-          />
-          {/* Bottom fade into page bg */}
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 180, background: 'linear-gradient(transparent, #0c0e1a 92%)' }} />
-        </div>
-      </div>
-
-      {/* Floating stat cards */}
-      {cards.map(({ pos, delay, floatDur, borderColor, child }, i) => (
-        <div key={i} style={{ position: 'absolute', width: 170, ...pos, zIndex: 10 }}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.75, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay, duration: 0.55, ease: EASE }}
-          >
-            <motion.div
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: floatDur, repeat: Infinity, ease: 'easeInOut', delay: i * 0.6 }}
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+            Queue — sample workspace
+          </div>
+          {HERO_QUEUE_ROWS.map((row) => (
+            <div
+              key={row.id}
               style={{
-                background: 'rgba(10,13,28,0.88)',
-                border: `1px solid ${borderColor}`,
-                borderRadius: 14,
-                padding: '14px 16px',
-                backdropFilter: 'blur(12px)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                borderTop: row.highlight ? '1px solid rgba(255,255,255,0.06)' : undefined,
+                background: row.highlight ? 'rgba(239,68,68,0.06)' : 'transparent',
+                fontSize: 12,
               }}
             >
-              {child}
-            </motion.div>
-          </motion.div>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIORITY_COLOR[row.priority], flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, color: '#f8fafc' }}>{row.title}</div>
+                <div style={{ fontSize: 10, color: '#64748b' }}>{row.id}</div>
+              </div>
+              <span style={{ fontSize: 11, color: '#94a3b8', fontVariantNumeric: 'tabular-nums' }}>{row.sla}</span>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
     </motion.div>
   );
 }
 
-// ─── Screenshot Marquee ───────────────────────────────────────────────────────
-
-const MARQUEE_IMAGES = [
-  { src: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=640&q=70', alt: 'Analytics overview' },
-  { src: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=640&q=70', alt: 'Data visualization' },
-  { src: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=640&q=70', alt: 'IT team collaboration' },
-  { src: 'https://images.unsplash.com/photo-1531973576160-7125cd663d86?auto=format&fit=crop&w=640&q=70', alt: 'Enterprise operations' },
-  { src: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=640&q=70', alt: 'Support engineering' },
-  { src: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=640&q=70', alt: 'KPI reporting' },
-];
-
-function ScreenshotMarquee() {
-  const track = [...MARQUEE_IMAGES, ...MARQUEE_IMAGES]; // doubled for seamless loop
-  const itemW = 280;
-  const gap = 16;
-  const totalW = MARQUEE_IMAGES.length * (itemW + gap);
-
+function TrustChip({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: '#070a14', padding: '48px 0', overflow: 'hidden', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-      {/* Label */}
-      <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#334155', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-          Trusted by IT teams across industries
-        </span>
-      </div>
-      {/* Scrolling track */}
-      <div style={{ overflow: 'hidden', maskImage: 'linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)', WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)' }}>
-        <motion.div
-          style={{ display: 'flex', gap: gap }}
-          animate={{ x: [0, -totalW] }}
-          transition={{ duration: 28, repeat: Infinity, ease: 'linear', repeatType: 'loop' }}
-        >
-          {track.map((img, i) => (
-            <div
-              key={i}
-              style={{
-                flexShrink: 0,
-                width: itemW,
-                height: 160,
-                borderRadius: 12,
-                overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.07)',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-              }}
-            >
-              <img src={img.src} alt={img.alt} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.8 }} />
-            </div>
+    <span style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>
+      {children}
+    </span>
+  );
+}
+
+function CapabilityPill({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{ padding: '8px 14px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', fontSize: 12, color: '#cbd5e1' }}>
+      {children}
+    </span>
+  );
+}
+
+// ─── Trust strip (replaces stock-photo marquee) ───────────────────────────────
+
+function TrustStrip() {
+  const verticals = ['Banking & finance', 'Telecom', 'Public sector', 'Enterprise IT', 'Managed services'];
+  return (
+    <div style={{ background: '#070a14', padding: '32px 20px', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 16 }}>
+          Built for regulated IT operations
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+          {verticals.map((v) => (
+            <TrustChip key={v}>{v}</TrustChip>
           ))}
-        </motion.div>
+        </div>
       </div>
     </div>
   );
@@ -607,12 +525,10 @@ function ScreenshotMarquee() {
 
 function HeroSection() {
   return (
-    <section style={{ position: 'relative', background: '#0c0e1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', overflow: 'hidden', padding: '110px 20px 0' }}>
-      {/* Animated gradient orbs */}
+    <section style={{ position: 'relative', background: '#0c0e1a', overflow: 'hidden', padding: '110px 20px 56px' }}>
       {[
         { top: '8%', left: '3%', size: 480, color: 'rgba(79,70,229,0.16)', dur: 12 },
         { top: '50%', right: '3%', size: 380, color: 'rgba(139,92,246,0.12)', dur: 16 },
-        { top: '20%', left: '52%', size: 300, color: 'rgba(14,165,233,0.09)', dur: 10 },
       ].map((orb, i) => (
         <motion.div
           key={i}
@@ -627,112 +543,94 @@ function HeroSection() {
         />
       ))}
 
-      {/* Grid overlay */}
       <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)', backgroundSize: '60px 60px', pointerEvents: 'none' }} />
 
-      {/* Text block */}
-      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 760 }}>
-        {/* Pill badge */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(79,70,229,0.15)', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 100, padding: '5px 14px', fontSize: 12, color: '#a5b4fc', fontWeight: 600, marginBottom: 28, letterSpacing: '0.02em' }}
-        >
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4f46e5', display: 'inline-block' }} />
-          Now in Enterprise Edition — v2.4
-        </motion.div>
-
-        {/* Headline */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, delay: 0.1, ease: EASE }}
-          style={{ fontSize: 'clamp(40px, 6vw, 72px)', fontWeight: 800, color: '#fff', lineHeight: 1.08, letterSpacing: '-0.03em', margin: '0 0 20px' }}
-        >
-          Your helpdesk,{' '}
-          <span style={{ background: 'linear-gradient(135deg, #818cf8, #4f46e5, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            fully in command.
-          </span>
-        </motion.h1>
-
-        {/* Sub-headline */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.22 }}
-          style={{ fontSize: 'clamp(16px, 2vw, 20px)', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 36px', maxWidth: 580, marginLeft: 'auto', marginRight: 'auto' }}
-        >
-          Stop firefighting. Start performing. Lotris gives IT teams the structure, visibility, and automation to hit every SLA — and <em style={{ color: '#c7d2fe', fontStyle: 'normal' }}>prove it</em>.
-        </motion.p>
-
-        {/* CTA Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.34 }}
-          style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 36 }}
-        >
-          <Link href="/request-access"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#4f46e5', color: '#fff', textDecoration: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, boxShadow: '0 0 0 0 rgba(79,70,229,0.5)', transition: 'all 0.2s' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#4338ca'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(79,70,229,0.4)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#4f46e5'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 0 0 0 rgba(79,70,229,0.5)'; }}
+      <div className="relative z-[1] max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
+        <div className="text-center md:text-left">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(79,70,229,0.15)', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 100, padding: '5px 14px', fontSize: 12, color: '#a5b4fc', fontWeight: 600, marginBottom: 20 }}
           >
-            Request Access →
-          </Link>
-          <Link href="/login"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', textDecoration: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600, border: '1px solid rgba(255,255,255,0.12)', transition: 'all 0.2s' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'none'; }}
-          >
-            Sign in to your account
-          </Link>
-        </motion.div>
-
-        {/* Live stats pills */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
-          style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}
-        >
-          {[
-            { icon: '⚡', text: '247 tickets resolved today' },
-            { icon: '🎯', text: '94% avg SLA compliance' },
-            { icon: '⭐', text: '4.7 / 5 avg CSAT' },
-          ].map((pill) => (
-            <div key={pill.text} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 100, padding: '6px 14px', fontSize: 12, color: '#94a3b8' }}>
-              <span>{pill.icon}</span>
-              <span>{pill.text}</span>
-            </div>
-          ))}
-        </motion.div>
-
-        {/* Scroll-down CTA — inline, prominent */}
-        <motion.a
-          href="#features"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.75, duration: 0.5 }}
-          style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 8, textDecoration: 'none', cursor: 'pointer' }}
-        >
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#475569', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Explore the platform</span>
-          <motion.div
-            animate={{ y: [0, 7, 0] }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-            style={{
-              width: 44, height: 44, borderRadius: '50%',
-              border: '2px solid rgba(99,102,241,0.45)',
-              background: 'rgba(79,70,229,0.12)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#818cf8', fontSize: 20, lineHeight: 1,
-              boxShadow: '0 0 20px rgba(79,70,229,0.2)',
-            }}
-          >
-            ↓
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4f46e5', display: 'inline-block' }} />
+            On-prem ITSM · Private beta
           </motion.div>
-        </motion.a>
-      </div>
 
-      {/* Hero visual: browser frame + floating cards */}
-      <HeroVisual />
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, delay: 0.1, ease: EASE }}
+            style={{ fontSize: 'clamp(32px, 4vw, 42px)', fontWeight: 800, color: '#fff', lineHeight: 1.1, letterSpacing: '-0.03em', margin: '0 0 16px' }}
+          >
+            IT helpdesk operations you can prove — on your infrastructure.
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.22 }}
+            style={{ fontSize: 'clamp(16px, 2vw, 17px)', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 28px', maxWidth: 480 }}
+          >
+            Lotris structures tickets, SLAs, KPI agreements, and workload balancing for regulated IT teams.
+            Deploy on MSSQL with Entra ID, LDAP, or local identity — no cloud lock-in.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.34 }}
+            className="flex flex-wrap gap-3 justify-center md:justify-start mb-6"
+          >
+            <Link href="/request-access"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#4f46e5', color: '#fff', textDecoration: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, transition: 'all 0.2s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#4338ca'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#4f46e5'; e.currentTarget.style.transform = 'none'; }}
+            >
+              Request access →
+            </Link>
+            <a href="#features"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', textDecoration: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600, border: '1px solid rgba(255,255,255,0.12)', transition: 'all 0.2s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+            >
+              View product tour
+            </a>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.45, duration: 0.6 }}
+            className="flex flex-wrap gap-2 justify-center md:justify-start mb-4"
+          >
+            {['MSSQL + Redis', 'Entra ID / LDAP', 'Docker on-prem', 'OpenAPI contract'].map((c) => (
+              <TrustChip key={c}>{c}</TrustChip>
+            ))}
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.52, duration: 0.6 }}
+            className="flex flex-wrap gap-2 justify-center md:justify-start mb-3"
+          >
+            {['SLA queue engine', 'KPI agreements', 'Automated reports', 'System health'].map((c) => (
+              <CapabilityPill key={c}>{c}</CapabilityPill>
+            ))}
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.58, duration: 0.5 }}
+            style={{ fontSize: 11, color: '#64748b' }}
+          >
+            Sample workspace shown · metrics reflect demo data, not live claims
+          </motion.p>
+        </div>
+
+        <div className="w-full">
+          <HeroProductPreview />
+        </div>
+      </div>
     </section>
   );
 }
@@ -1223,36 +1121,50 @@ function HowItWorksSection() {
   );
 }
 
-// ─── Numbers Section ──────────────────────────────────────────────────────────
+// ─── Platform pillars (capability outcomes — no fabricated metrics) ─────────
 
-function NumbersSection() {
-  const stats = [
-    { value: 94, suffix: '%', label: 'Average SLA compliance', sub: 'across all active tenants' },
-    { value: 247, suffix: '', label: 'Tickets resolved today', sub: 'on a typical working day' },
-    { value: 4, suffix: 'h', label: 'Average resolution time', sub: 'down from 11h without Lotris' },
-    { value: 47, suffix: '%', label: 'Reduction in SLA breaches', sub: 'in the first 30 days' },
+function PlatformPillarsSection() {
+  const pillars = [
+    {
+      title: 'Structured ticketing',
+      body: 'Every ticket is categorised, routed, and tracked from intake to resolution — with SLA timers and a full audit trail.',
+    },
+    {
+      title: 'Provable KPI performance',
+      body: 'Formal KPI agreements, live scorecards, and automated reports give you evidence for reviews — not guesswork.',
+    },
+    {
+      title: 'Balanced workloads',
+      body: 'Capacity limits and auto-reassignment keep queues fair so no engineer is overloaded while others sit idle.',
+    },
+    {
+      title: 'On your infrastructure',
+      body: 'Deploy with Docker on MSSQL and Redis. Integrate Entra ID, LDAP, or local identity — data stays in your environment.',
+    },
   ];
 
   return (
     <section style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: 'linear-gradient(135deg, #1e1b4b 0%, #0c0e1a 60%, #0f172a 100%)' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 64 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>By The Numbers</div>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, color: '#fff', lineHeight: 1.15, letterSpacing: '-0.02em', margin: 0 }}>Results that speak for themselves.</h2>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>What you get</div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, color: '#fff', lineHeight: 1.15, letterSpacing: '-0.02em', margin: '0 0 12px' }}>
+            Outcomes your IT leadership can stand behind.
+          </h2>
+          <p style={{ fontSize: 15, color: '#64748b', margin: 0, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+            Capability-focused — not vanity metrics. Measure real performance once Lotris is deployed in your environment.
+          </p>
         </motion.div>
 
         <motion.div variants={staggerFast} initial="hidden" whileInView="visible" viewport={{ once: true }}
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24 }}
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}
         >
-          {stats.map((s) => (
-            <motion.div key={s.label} variants={fadeUp}
-              style={{ textAlign: 'center', padding: '28px 20px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }}
+          {pillars.map((p) => (
+            <motion.div key={p.title} variants={fadeUp}
+              style={{ padding: '28px 24px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }}
             >
-              <div style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 800, color: '#a5b4fc', letterSpacing: '-0.03em', lineHeight: 1 }}>
-                <AnimatedNumber target={s.value} suffix={s.suffix} />
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', margin: '10px 0 4px' }}>{s.label}</div>
-              <div style={{ fontSize: 12, color: '#475569' }}>{s.sub}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 10 }}>{p.title}</div>
+              <div style={{ fontSize: 13.5, color: '#64748b', lineHeight: 1.65 }}>{p.body}</div>
             </motion.div>
           ))}
         </motion.div>
@@ -1261,61 +1173,84 @@ function NumbersSection() {
   );
 }
 
-// ─── Testimonials ─────────────────────────────────────────────────────────────
+// ─── Use cases (verticals — no fabricated testimonials) ─────────────────────────
 
-const testimonials = [
+const useCases = [
   {
-    quote: "We used to discover SLA breaches in our weekly review meeting. Now we're preventing them in real time. Lotris completely changed how we operate.",
-    name: 'Jane Cooper',
-    role: 'IT Director',
-    company: 'TechVault Corp',
-    avatar: 'JC',
-    color: '#4f46e5',
+    vertical: 'Banking & finance',
+    body: 'Regulated environments where SLA evidence, audit trails, and on-prem data residency are non-negotiable.',
   },
   {
-    quote: "The workload balancing alone saved us. We had two engineers at 120% capacity while two others had almost nothing. It's now automated and fair.",
-    name: 'Marcus Reid',
-    role: 'Head of Support',
-    company: 'GlobalBank IT',
-    avatar: 'MR',
-    color: '#0ea5e9',
+    vertical: 'Telecom & MSPs',
+    body: 'High-volume queues with tiered SLAs, workload balancing across shifts, and automated stakeholder reporting.',
   },
   {
-    quote: "Monthly KPI reports used to take two days. Now they're in my inbox automatically every Monday. The data is accurate and stakeholders love it.",
-    name: 'Priya Nair',
-    role: 'VP Operations',
-    company: 'FinanceHub',
-    avatar: 'PN',
-    color: '#8b5cf6',
+    vertical: 'Public sector',
+    body: 'Structured ticketing and KPI agreements that stand up to internal review — deployed inside your network boundary.',
   },
 ];
 
-function TestimonialsSection() {
+function UseCasesSection() {
   return (
     <section style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: '#fff' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 64 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#4f46e5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>What teams are saying</div>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, color: '#0f172a', lineHeight: 1.15, letterSpacing: '-0.02em', margin: 0 }}>Trusted by IT teams that perform.</h2>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#4f46e5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Where Lotris fits</div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, color: '#0f172a', lineHeight: 1.15, letterSpacing: '-0.02em', margin: 0 }}>
+            Built for teams under operational scrutiny.
+          </h2>
         </motion.div>
 
         <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: 24 }}
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: 24 }}
         >
-          {testimonials.map((t) => (
-            <motion.div key={t.name} variants={fadeUp}
-              whileHover={{ y: -6, boxShadow: '0 20px 48px rgba(0,0,0,0.10)' }}
-              style={{ padding: '32px 28px', border: '1px solid #f1f5f9', borderRadius: 16, background: '#fafafa', transition: 'box-shadow 0.25s, transform 0.25s' }}
+          {useCases.map((u) => (
+            <motion.div key={u.vertical} variants={fadeUp}
+              whileHover={{ y: -6, boxShadow: '0 20px 48px rgba(0,0,0,0.08)' }}
+              style={{ padding: '32px 28px', border: '1px solid #f1f5f9', borderRadius: 16, background: '#fafafa' }}
             >
-              <div style={{ fontSize: 28, color: t.color, marginBottom: 16, lineHeight: 1 }}>"</div>
-              <p style={{ fontSize: 14.5, color: '#334155', lineHeight: 1.7, margin: '0 0 24px', fontStyle: 'italic' }}>{t.quote}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: t.color + '22', border: `2px solid ${t.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: t.color, flexShrink: 0 }}>{t.avatar}</div>
-                <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a' }}>{t.name}</div>
-                  <div style={{ fontSize: 12, color: '#94a3b8' }}>{t.role} · {t.company}</div>
-                </div>
-              </div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#4f46e5', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>{u.vertical}</div>
+              <p style={{ fontSize: 14.5, color: '#334155', lineHeight: 1.7, margin: 0 }}>{u.body}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Security ─────────────────────────────────────────────────────────────────
+
+function SecuritySection() {
+  const items = [
+    { title: 'Self-hosted deployment', body: 'Run Lotris on your servers or private cloud — MSSQL, Redis, Docker.' },
+    { title: 'Enterprise identity', body: 'Entra ID, LDAP, or ASP.NET Identity with role-based access control.' },
+    { title: 'Audit & compliance', body: 'Full audit log, TLS in transit, and structured access policies.' },
+    { title: 'SOC 2 Type II', body: 'Certification in progress — we publish status updates as the program advances.' },
+  ];
+
+  return (
+    <section id="security" style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 56 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#4f46e5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Security</div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, color: '#0f172a', lineHeight: 1.15, letterSpacing: '-0.02em', margin: '0 0 12px' }}>
+            Designed for teams that cannot outsource trust.
+          </h2>
+          <p style={{ fontSize: 15, color: '#64748b', margin: 0, maxWidth: 540, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+            Your data stays on your infrastructure. Identity, access, and audit controls are built in from day one.
+          </p>
+        </motion.div>
+
+        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}
+        >
+          {items.map((item) => (
+            <motion.div key={item.title} variants={fadeUp}
+              style={{ padding: '24px 22px', borderRadius: 14, background: '#fff', border: '1px solid #e2e8f0' }}
+            >
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>{item.title}</div>
+              <p style={{ fontSize: 13.5, color: '#64748b', margin: 0, lineHeight: 1.65 }}>{item.body}</p>
             </motion.div>
           ))}
         </motion.div>
@@ -1331,7 +1266,7 @@ function CtaSection() {
   const [submitted, setSubmitted] = useState(false);
 
   return (
-    <section id="pricing" style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #0c0e1a 100%)', position: 'relative', overflow: 'hidden' }}>
+    <section id="request-access" style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #0c0e1a 100%)', position: 'relative', overflow: 'hidden' }}>
       {/* Orb */}
       <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 6, repeat: Infinity }}
         style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%)', pointerEvents: 'none' }}
@@ -1347,7 +1282,7 @@ function CtaSection() {
             Ready to surface your performance?
           </h2>
           <p style={{ fontSize: 17, color: '#a5b4fc', margin: '0 0 40px', lineHeight: 1.6 }}>
-            Join IT teams already using Lotris to hit their SLAs, balance their workloads, and report with confidence.
+            Request access to the private beta. We&apos;ll walk you through deployment on your infrastructure and a product tour tailored to your team.
           </p>
 
           {/* Email + CTA */}
@@ -1422,26 +1357,26 @@ function Footer() {
           </div>
           {/* Links */}
           {[
-            { label: 'Product', links: ['Features', 'How it works', 'Pricing', 'Security'] },
-            { label: 'Company', links: ['About', 'Blog', 'Careers', 'Contact'] },
-            { label: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'GDPR', 'SOC 2'] },
+            { label: 'Product', links: [{ text: 'Features', href: '#features' }, { text: 'How it works', href: '#how-it-works' }, { text: 'Security', href: '#security' }] },
+            { label: 'Company', links: [{ text: 'About', href: '#' }, { text: 'Contact', href: '/request-access' }] },
+            { label: 'Legal', links: [{ text: 'Privacy Policy', href: '#' }, { text: 'Terms of Service', href: '#' }] },
           ].map((col) => (
             <div key={col.label}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>{col.label}</div>
               {col.links.map((l) => (
-                <div key={l} style={{ marginBottom: 8 }}>
-                  <a href="#" style={{ fontSize: 13, color: '#475569', textDecoration: 'none', transition: 'color 0.2s' }}
+                <div key={l.text} style={{ marginBottom: 8 }}>
+                  <a href={l.href} style={{ fontSize: 13, color: '#475569', textDecoration: 'none', transition: 'color 0.2s' }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = '#94a3b8')}
                     onMouseLeave={(e) => (e.currentTarget.style.color = '#475569')}
-                  >{l}</a>
+                  >{l.text}</a>
                 </div>
               ))}
             </div>
           ))}
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 20, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontSize: 12, color: '#334155' }}>© 2026 Lotris · Enterprise Edition · v2.4.1</span>
-          <span style={{ fontSize: 12, color: '#334155' }}>🔒 TLS 1.3 · SOC 2 Type II certified</span>
+          <span style={{ fontSize: 12, color: '#334155' }}>© 2026 Lotris · Private beta</span>
+          <span style={{ fontSize: 12, color: '#334155' }}>TLS in transit · SOC 2 Type II in progress</span>
         </div>
       </div>
     </footer>
@@ -1455,13 +1390,14 @@ export function LandingPage() {
     <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitFontSmoothing: 'antialiased' }}>
       <Navbar />
       <HeroSection />
-      <ScreenshotMarquee />
+      <TrustStrip />
       <PainPointsSection />
       <FeaturesSection />
       <KpiAgreementSection />
       <HowItWorksSection />
-      <NumbersSection />
-      <TestimonialsSection />
+      <SecuritySection />
+      <PlatformPillarsSection />
+      <UseCasesSection />
       <CtaSection />
       <Footer />
     </div>

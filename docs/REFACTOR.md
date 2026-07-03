@@ -1,7 +1,7 @@
 # Lotris — C# Backend Refactor & On-Prem Roadmap
 
 > Last updated: June 2026  
-> Status: **Phase 4 complete** — MSSQL analytics rollups, sysadmin job config, dashboard/analytics REST, IMAP intake; Phase 3 KPI/reports; Phase 2 tasks/admin/SSE  
+> Status: **Phase 5 complete** — frontend OpenAPI migration, API docs stack, live-data UI polish; Phase 4 analytics/on-prem prep done  
 > Default branch: `dev` (NestJS stack remains active until parity gate)
 
 This document is the **single entry point** for the next major phase of Lotris: migrating the backend to **ASP.NET Core**, preparing **on-prem deployment**, and evolving the **agent workflow** and **UI/UX standards**.
@@ -61,7 +61,7 @@ Browser
 | **2** | Tasks, admin, notifications SSE, audit log | **Complete** — REST parity, MailKit/Hangfire notifications, SSE |
 | **3** | KPI engine, QuestPDF/ClosedXML reports | **Complete** — KPI REST parity, 3-layer scoring, import, Hangfire report jobs |
 | **4** | MSSQL analytics rollups, **sysadmin-configurable job timing**, dashboard trends, KPI trends, IMAP intake | **Complete** |
-| **5** | Frontend OpenAPI migration, **API documentation** (Scalar UI, committed spec, TS codegen), **ui-ux-pro-max** UX pass | In progress |
+| **5** | Frontend OpenAPI migration, **API documentation** (Scalar UI, committed spec, TS codegen), **ui-ux-pro-max** UX pass, demo-data removal | **Complete** |
 | **6** | `docker-compose.onprem.yml`, Helm chart, bootstrap scripts | 2 weeks |
 | **7** | Parity gate, load test, decommission NestJS + Node workers | 1 week |
 
@@ -148,6 +148,14 @@ Previously identified gaps (June 2026) and their resolution:
 | No frontend codegen | `openapi-typescript` → `apps/web/lib/api/generated/schema.d.ts` via `pnpm api:codegen` |
 
 **Maintenance:** after API changes run `pnpm api:sync` (export spec → update `docs/API.md` index → regenerate TS types).
+
+### Phase 5 — Frontend polish (complete)
+
+- Removed marketing **DEMO** fallbacks from dashboard, tickets, tasks, KPI, reports, and audit log — pages show live API data, loading, or empty states
+- Dashboard ticket volume chart wired to `GET /api/v1/dashboard/ticket-analytics`
+- Reports generate flow uses `useGenerateReport` (correct API client, not legacy port 4000)
+- Shared `EmptyState` component for consistent zero-data UX
+- SLA warnings and queue health remain live-only (no fabricated alerts)
 
 ---
 
