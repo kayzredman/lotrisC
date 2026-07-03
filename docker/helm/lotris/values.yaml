@@ -1,0 +1,30 @@
+# Default values for Lotris Helm chart.
+# MSSQL and Redis are expected as external services — not bundled in this chart.
+
+global:
+  imagePullPolicy: IfNotPresent
+
+ingress:
+  enabled: true
+  className: nginx
+  host: lotris.local
+  tls: false
+
+api:
+  replicaCount: 1
+  image:
+    repository: lotris/api
+    tag: latest
+  resources: {}
+  connectionString: ""   # required — Server=...;Database=lotris;...
+  redisConnectionString: ""  # required
+  jwtSecret: ""          # required, min 32 chars
+  reportsVolumeSize: 5Gi
+
+web:
+  replicaCount: 1
+  image:
+    repository: lotris/web
+    tag: latest
+  publicApiUrl: "http://lotris.local"
+  authProviders: "identity"

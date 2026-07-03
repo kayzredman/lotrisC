@@ -1,0 +1,6 @@
+apiVersion: v2
+name: lotris
+description: Lotris on-prem ITSM — API + web (external MSSQL/Redis required)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

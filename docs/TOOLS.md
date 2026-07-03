@@ -200,6 +200,24 @@ Run via the API package's documented npm/pnpm scripts (see `apps/api/package.jso
 
 ---
 
+## On-prem stack (Phase 6)
+
+| Resource | Path / command |
+|----------|----------------|
+| Install guide | [`deploy/INSTALL.md`](../deploy/INSTALL.md) |
+| Compose file | `docker/docker-compose.onprem.yml` |
+| Env template | `deploy/.env.onprem.example` → `deploy/.env.onprem` |
+| Bootstrap | `docker compose … --profile bootstrap run --rm bootstrap` |
+| Smoke | `pnpm onprem:smoke` |
+
+```bash
+cp deploy/.env.onprem.example deploy/.env.onprem
+docker compose -f docker/docker-compose.onprem.yml --env-file deploy/.env.onprem up -d --build
+docker compose -f docker/docker-compose.onprem.yml --env-file deploy/.env.onprem --profile bootstrap run --rm bootstrap
+```
+
+---
+
 ## Maintenance
 
 When you add a new tool (page, script, or ops endpoint):

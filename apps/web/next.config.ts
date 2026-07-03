@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   transpilePackages: ['@lotris/ui', '@lotris/types'],
   serverExternalPackages: ['@lotris/db'],
   async redirects() {

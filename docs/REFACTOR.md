@@ -1,7 +1,7 @@
 # Lotris — C# Backend Refactor & On-Prem Roadmap
 
 > Last updated: June 2026  
-> Status: **Phase 5 complete** — frontend OpenAPI migration, API docs stack, live-data UI polish; Phase 4 analytics/on-prem prep done  
+> Status: **Phase 6 complete** — on-prem Compose, bootstrap, Helm skeleton; Phase 7 parity gate next  
 > Default branch: `dev` (NestJS stack remains active until parity gate)
 
 This document is the **single entry point** for the next major phase of Lotris: migrating the backend to **ASP.NET Core**, preparing **on-prem deployment**, and evolving the **agent workflow** and **UI/UX standards**.
@@ -62,7 +62,7 @@ Browser
 | **3** | KPI engine, QuestPDF/ClosedXML reports | **Complete** — KPI REST parity, 3-layer scoring, import, Hangfire report jobs |
 | **4** | MSSQL analytics rollups, **sysadmin-configurable job timing**, dashboard trends, KPI trends, IMAP intake | **Complete** |
 | **5** | Frontend OpenAPI migration, **API documentation** (Scalar UI, committed spec, TS codegen), **ui-ux-pro-max** UX pass, demo-data removal | **Complete** |
-| **6** | `docker-compose.onprem.yml`, Helm chart, bootstrap scripts | 2 weeks |
+| **6** | `docker-compose.onprem.yml`, Helm chart, bootstrap scripts | **Complete** |
 | **7** | Parity gate, load test, decommission NestJS + Node workers | 1 week |
 
 **Strategy:** Strangler fig — run NestJS and C# API in parallel behind a reverse proxy until parity checklist passes.
@@ -156,6 +156,21 @@ Previously identified gaps (June 2026) and their resolution:
 - Reports generate flow uses `useGenerateReport` (correct API client, not legacy port 4000)
 - Shared `EmptyState` component for consistent zero-data UX
 - SLA warnings and queue health remain live-only (no fabricated alerts)
+
+### Phase 6 — On-prem packaging (complete)
+
+| Deliverable | Path |
+|-------------|------|
+| Full-stack Compose | [`docker/docker-compose.onprem.yml`](../docker/docker-compose.onprem.yml) — MSSQL, Redis, API, web, nginx |
+| Reverse proxy | [`docker/nginx/onprem.conf`](../docker/nginx/onprem.conf) |
+| Web container | [`apps/web/Dockerfile`](../apps/web/Dockerfile) (Next.js standalone) |
+| Env template | [`deploy/.env.onprem.example`](../deploy/.env.onprem.example) |
+| Bootstrap | [`deploy/scripts/bootstrap.sh`](../deploy/scripts/bootstrap.sh) |
+| Install guide | [`deploy/INSTALL.md`](../deploy/INSTALL.md) |
+| Helm chart (API + web) | [`docker/helm/lotris/`](../docker/helm/lotris/) |
+| Smoke test | `pnpm onprem:smoke` → [`scripts/onprem-smoke.sh`](../scripts/onprem-smoke.sh) |
+
+**Quick start:** see [deploy/INSTALL.md](../deploy/INSTALL.md). Real service restart wiring remains deferred post–Phase 6 ([TOOLS.md](TOOLS.md)).
 
 ---
 
