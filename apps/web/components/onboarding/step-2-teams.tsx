@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useAdminUsers, useCreateAdminTeam } from '@/lib/api/hooks/useAdmin';
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
 
 interface User { id: string; fullName: string; roleName: string; }
@@ -23,12 +23,10 @@ export function Step2Teams({ onSuccess }: Props) {
   const [continueError, setContinueError] = useState('');
   const [saving, setSaving]             = useState(false);
 
-  const { data: usersData } = trpc['admin.users.list'].useQuery();
-  const usersRaw: User[] = (usersData?.users ?? []) as User[];
+  const { data: usersData } = useAdminUsers();
+  const usersRaw: User[] = (Array.isArray(usersData) ? usersData : (usersData as { users?: User[] } | undefined)?.users ?? []) as User[];
 
-  const createTeam = trpc['admin.teams.create'].useMutation({
-    onError: (e) => setFormError(e.message),
-  });
+  const createTeam = useCreateAdminTeam();
 
   async function handleAddTeam() {
     setFormError('');
@@ -48,7 +46,9 @@ export function Step2Teams({ onSuccess }: Props) {
       setLeadId('');
       setDescription('');
       setShowForm(false);
-    } catch { /* handled by onError */ }
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : 'Failed to create team');
+    }
     setSaving(false);
   }
 

@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useUser, useClerk } from '@clerk/nextjs';
 import { LotrisMark } from '@/components/brand/lotris-mark';
 import { useState, useRef, useEffect } from 'react';
-import { trpc } from '@/lib/trpc';
+import { useCurrentUser } from '@/lib/api/hooks/useAuth';
+import { useDashboardSummary, useDashboardQueueHealth } from '@/lib/api/hooks/useDashboard';
+import { useAuth } from '@/lib/auth/auth-context';
 import {
   LayoutDashboard,
   Ticket,
@@ -46,7 +47,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Teams',           href: '/admin',               icon: Users,       newTab: true },
   { label: 'KPI Setup',       href: '/admin/kpi-setup',     icon: Settings2,   newTab: true },
   { label: 'KPI Agreement',   href: '/kpis/agreements',     icon: FilePenLine, newTab: true },
-  { label: 'System Health',   href: '/system-health',       icon: Activity,    newTab: true },
+  { label: 'System Health',   href: '/ops',                 icon: Activity,    newTab: true },
   { label: 'Audit Log',       href: '/audit-log',           icon: ShieldCheck, newTab: true },
 ];
 
@@ -67,27 +68,27 @@ type SidebarProps = {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { logout } = useAuth();
+  const { data: me } = useCurrentUser();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
-  const { data: me } = trpc['users.me'].useQuery();
-  const { data: summary } = trpc['dashboard.summary'].useQuery(undefined, { staleTime: 60_000 });
-  const { data: queueHealth } = trpc['dashboard.queueHealth'].useQuery(undefined, { staleTime: 60_000 });
+  const profile = me;
+  const { data: summary } = useDashboardSummary({ staleTime: 60_000 });
+  const { data: queueHealth } = useDashboardQueueHealth({ staleTime: 60_000 });
 
   const liveBadges: Record<string, number | undefined> = {
     '/tickets': (summary as { openTickets?: number } | undefined)?.openTickets,
     '/queue':   (queueHealth as { unassigned?: number } | undefined)?.unassigned,
   };
 
-  const initials = user
-    ? ((user.firstName?.[0] ?? '') + (user.lastName?.[0] ?? '')).toUpperCase() || 'U'
-    : 'RK';
-  const fullName = user ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() : 'Rowland K.';
-  const roleLabel = me?.roleName ? (ROLE_LABELS[me.roleName] ?? me.roleName) : '—';
-  const role = me?.roleName ?? '';
+  const initials = profile?.fullName
+    ? profile.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'U';
+  const fullName = profile?.fullName ?? 'User';
+  const roleLabel = profile?.roleName ? (ROLE_LABELS[profile.roleName] ?? profile.roleName) : '—';
+  const role = profile?.roleName ?? '';
 
   // Build admin nav based on role
   // SUPERADMIN/ADMIN: all admin items
@@ -115,8 +116,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  async function handleSignOut() {
-    await signOut();
+  function handleSignOut() {
+    logout();
     router.push('/login');
   }
 

@@ -1,14 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '@/lib/auth/auth-context';
 
 type SseStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
 interface UseEventSourceOptions {
-  /** Set to false to pause the connection */
   enabled?: boolean;
-  /** Auto-reconnect delay in ms (default 3000) */
   reconnectDelay?: number;
 }
 
@@ -19,35 +17,24 @@ interface UseEventSourceResult<T> {
   reconnect: () => void;
 }
 
-/**
- * useEventSource — subscribes to an SSE endpoint using fetch (to support
- * Authorization headers, which native EventSource doesn't allow).
- *
- * Sends the Clerk JWT as a Bearer token and parses each `data:` event line
- * as JSON of type T.
- *
- * Usage:
- *   const { data, status } = useEventSource<HealthSnapshot>('/health/sse');
- */
 export function useEventSource<T>(
   url: string,
   options: UseEventSourceOptions = {},
 ): UseEventSourceResult<T> {
   const { enabled = true, reconnectDelay = 3000 } = options;
-  const { getToken } = useAuth();
+  const { accessToken } = useAuth();
 
-  const [data, setData]     = useState<T | null>(null);
+  const [data, setData] = useState<T | null>(null);
   const [status, setStatus] = useState<SseStatus>('connecting');
-  const [error, setError]   = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const abortRef        = useRef<AbortController | null>(null);
-  const reconnectTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mountedRef      = useRef(true);
+  const abortRef = useRef<AbortController | null>(null);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
 
   const connect = useCallback(async () => {
     if (!enabled || !mountedRef.current) return;
 
-    // Cancel previous connection
     abortRef.current?.abort();
     abortRef.current = new AbortController();
 
@@ -55,14 +42,14 @@ export function useEventSource<T>(
     setError(null);
 
     try {
-      const token = await getToken();
+      const token = accessToken;
       if (!token) {
         setStatus('error');
         setError('Not authenticated');
         return;
       }
 
-      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5153';
       const response = await fetch(`${apiBase}/${url.replace(/^\//, '')}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -81,9 +68,9 @@ export function useEventSource<T>(
 
       setStatus('connected');
 
-      const reader  = response.body.getReader();
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let buffer    = '';
+      let buffer = '';
 
       while (mountedRef.current) {
         const { done, value } = await reader.read();
@@ -99,7 +86,7 @@ export function useEventSource<T>(
               const parsed = JSON.parse(line.slice(6)) as T;
               if (mountedRef.current) setData(parsed);
             } catch {
-              // malformed JSON — skip
+              // skip malformed JSON
             }
           }
         }
@@ -107,7 +94,6 @@ export function useEventSource<T>(
 
       if (mountedRef.current) {
         setStatus('disconnected');
-        // Auto-reconnect
         reconnectTimer.current = setTimeout(connect, reconnectDelay);
       }
     } catch (err) {
@@ -121,7 +107,7 @@ export function useEventSource<T>(
         reconnectTimer.current = setTimeout(connect, reconnectDelay);
       }
     }
-  }, [url, enabled, reconnectDelay, getToken]);
+  }, [url, enabled, reconnectDelay, accessToken]);
 
   useEffect(() => {
     mountedRef.current = true;

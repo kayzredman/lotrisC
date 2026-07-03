@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useSetOnboardingKpiTemplate } from '@/lib/api/hooks/useOnboarding';
 import { Clock, Star, BarChart2, Settings, Check } from 'lucide-react';
 
 const KPI_CARDS = [
@@ -41,15 +41,12 @@ export function Step5Kpi({ onSuccess }: Props) {
   const [reportEmail, setReportEmail] = useState('');
   const [error, setError]             = useState('');
 
-  const setTemplate = trpc['onboarding.setKpiTemplate'].useMutation({
-    onSuccess,
-    onError: (e) => setError(e.message),
-  });
+  const setTemplate = useSetOnboardingKpiTemplate();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    setTemplate.mutate({ template: selected });
+    setTemplate.mutate(selected, { onSuccess, onError: (e) => setError(e.message) });
   }
 
   return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc';
+import { useCreateAdminTeam } from '@/lib/api/hooks/useAdmin';
 
 interface Props {
   onClose: () => void;
@@ -29,15 +29,15 @@ export function CreateTeamModal({ onClose, onSuccess }: Props) {
   });
   const [error, setError] = useState<string | null>(null);
 
-  const createMutation = trpc['admin.teams.create'].useMutation({
-    onSuccess,
-    onError: (e) => setError(e.message),
-  });
+  const createMutation = useCreateAdminTeam();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    createMutation.mutate(form);
+    createMutation.mutate(form, {
+      onSuccess,
+      onError: (e) => setError(e.message),
+    });
   };
 
   return (

@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser } from '@/lib/api/hooks/useAuth';
+import { useDashboardQueueHealth, useDashboardTeamWorkload } from '@/lib/api/hooks/useDashboard';
+import { useClaimTicket, useQueueList } from '@/lib/api/hooks/useQueue';
 import { Clock, Users, ArrowRight, CheckCircle, AlertTriangle, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const PRIORITY_LABEL: Record<number, string> = { 1: 'Critical', 2: 'High', 3: 'Medium', 4: 'Low' };
@@ -35,50 +38,40 @@ export default function QueueTable() {
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<{ id: string; msg: string } | null>(null);
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  // Current user (for role-scoped workload)
-  const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
+  const { data: me } = useCurrentUser({ staleTime: 60_000 });
   const role = (me as { roleName?: string } | undefined)?.roleName ?? '';
   const myTeamId = (me as { teamId?: string | null } | undefined)?.teamId ?? null;
   const isElevated = ELEVATED_ROLES.has(role);
 
   // Live queue data
-  const { data: liveQueue } = trpc['queue.list'].useQuery({ page, limit: 25 }, { staleTime: 20_000 });
-  // Queue health stats
-  const { data: health } = trpc['dashboard.queueHealth'].useQuery(undefined, { staleTime: 20_000 });
-  // Team workload from backend (all teams)
-  const { data: teamWorkload } = trpc['dashboard.teamWorkload'].useQuery(undefined, { staleTime: 30_000 });
+  const { data: liveQueueRaw } = useQueueList({ page, limit: 25 }, { staleTime: 20_000 });
+  const { data: health } = useDashboardQueueHealth({ staleTime: 20_000 });
+  const { data: teamWorkloadRaw } = useDashboardTeamWorkload({ staleTime: 30_000 });
 
-  const claimMutation = trpc['queue.claim'].useMutation({
-    onMutate: (vars) => {
-      setClaimingId(vars.ticketId);
-      setClaimError(null);
-    },
-    onSuccess: () => {
-      void utils['queue.list'].invalidate();
-      void utils['dashboard.queueHealth'].invalidate();
-    },
-    onError: (err: { message?: string }, vars) => {
-      setClaimError({ id: vars.ticketId, msg: err?.message ?? 'Failed to claim ticket' });
-    },
-    onSettled: () => {
-      setClaimingId(null);
-    },
-  });
+  const liveQueue = (Array.isArray(liveQueueRaw)
+    ? liveQueueRaw
+    : (liveQueueRaw as { items?: unknown[] } | undefined)?.items) as Array<Record<string, unknown>> | undefined;
+
+  const teamWorkload = (Array.isArray(teamWorkloadRaw)
+    ? teamWorkloadRaw
+    : (teamWorkloadRaw as { teams?: unknown[] } | undefined)?.teams ?? []) as Array<{ id: string; name: string; tag: string; queued: number; pct: number }>;
+
+  const claimMutation = useClaimTicket();
 
   // Map live rows → display format
   const liveRows = liveQueue?.map((t) => {
-    const sla = formatPickupSla(t.slaPickupDeadline, t.slaPickupBreached);
+    const sla = formatPickupSla(t.slaPickupDeadline as string | null, t.slaPickupBreached as number | boolean | null);
     return {
-      rawId: t.id,
-      id: `TKT-${t.id.slice(-4).toUpperCase()}`,
-      title: t.title,
+      rawId: t.id as string,
+      id: `TKT-${String(t.id).slice(-4).toUpperCase()}`,
+      title: t.title as string,
       priority: PRIORITY_LABEL[t.priority as 1|2|3|4] ?? 'Medium',
-      team: t.teamName ?? t.teamId ?? '',
+      team: (t.teamName ?? t.teamId ?? '') as string,
       sla: sla.text,
       slaColor: sla.color,
-      created: new Date(t.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''),
+      created: new Date(t.createdAt as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''),
     };
   });
 
@@ -87,7 +80,7 @@ export default function QueueTable() {
   const rows = liveRows ?? [];
 
   // Build role-scoped team workload sidebar
-  const allTeamStats = (teamWorkload ?? []).map((t: { id: string; name: string; tag: string; queued: number; pct: number }, i: number) => ({
+  const allTeamStats = teamWorkload.map((t, i) => ({
     ...t,
     color: WORKLOAD_COLORS[i % WORKLOAD_COLORS.length],
   }));
@@ -115,10 +108,10 @@ export default function QueueTable() {
       {/* Stats bar */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
         {[
-          { icon: <Clock size={13} />,        value: health?.unassigned ?? rows.length,        label: 'Unassigned',        color: 'var(--red)'    },
-          { icon: <AlertTriangle size={13} />, value: health?.atRisk ?? 4,                      label: 'Pickup SLA at risk',color: 'var(--yellow)' },
+          { icon: <Clock size={13} />,        value: (health as { unassigned?: number } | undefined)?.unassigned ?? rows.length,        label: 'Unassigned',        color: 'var(--red)'    },
+          { icon: <AlertTriangle size={13} />, value: (health as { atRisk?: number } | undefined)?.atRisk ?? 4,                      label: 'Pickup SLA at risk',color: 'var(--yellow)' },
           { icon: <Clock size={13} />,         value: '1.8m',                                   label: 'Avg pickup time',   color: 'var(--blue)'   },
-          { icon: <CheckCircle size={13} />,   value: health?.autoAssignedToday ?? 3,           label: 'Auto-assigned today',color: 'var(--green)' },
+          { icon: <CheckCircle size={13} />,   value: (health as { autoAssignedToday?: number } | undefined)?.autoAssignedToday ?? 3,           label: 'Auto-assigned today',color: 'var(--green)' },
         ].map(s => (
           <div key={s.label} className="v2-card" style={{ flex: '1 1 100px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ color: s.color }}>{s.icon}</div>
@@ -195,7 +188,20 @@ export default function QueueTable() {
                           disabled={claimingId === t.rawId}
                           onClick={() => {
                             setClaimError(null);
-                            claimMutation.mutate({ ticketId: t.rawId });
+                            setClaimingId(t.rawId);
+                            claimMutation.mutate(
+                              { ticketId: t.rawId },
+                              {
+                                onSuccess: () => {
+                                  void queryClient.invalidateQueries({ queryKey: ['queue'] });
+                                  void queryClient.invalidateQueries({ queryKey: ['dashboard', 'queue-health'] });
+                                },
+                                onError: (err) => {
+                                  setClaimError({ id: t.rawId, msg: err?.message ?? 'Failed to claim ticket' });
+                                },
+                                onSettled: () => setClaimingId(null),
+                              },
+                            );
                           }}
                         >
                           {claimingId === t.rawId ? 'Claiming…' : <><ArrowRight size={11} /> Claim</>}
@@ -214,7 +220,7 @@ export default function QueueTable() {
             )}
           </div>
           <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Showing 1–{rows.length} of {health?.unassigned ?? rows.length} unassigned</span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Showing 1–{rows.length} of {(health as { unassigned?: number } | undefined)?.unassigned ?? rows.length} unassigned</span>
             <div className="v2-pagination">
               <button type="button" className="v2-pg-btn" onClick={() => setPage(p => Math.max(1, p - 1))}><ChevronLeft size={12} /></button>
               <button type="button" className="v2-pg-btn active">{page}</button>

@@ -2,20 +2,14 @@
 
 import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { trpc } from '@/lib/trpc';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser } from '@/lib/api/hooks/useAuth';
+import { useDashboardSummary, useDashboardQueueHealth } from '@/lib/api/hooks/useDashboard';
+import { useTicketsList } from '@/lib/api/hooks/useTickets';
 import { CreateTicketModal } from './create-ticket-modal';
 import { TicketDrawer } from './ticket-drawer';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
-
-// ── Marketing demo rows (match 03-tickets-v2.html exactly — shown as fallback) ──
-const DEMO_TICKETS = [
-  { id: 'TKT-0491', title: 'Network outage – Finance floor',    priority: 'Critical', status: 'SLA Breach',     assignee: 'D. Mensah',  sla: '−2h 40m', slaColor: 'red',    date: '2 May 09:12' },
-  { id: 'TKT-0488', title: 'VPN access refused – 5 users',     priority: 'High',     status: 'In Progress',    assignee: 'A. Okonkwo', sla: '1h 20m left', slaColor: 'yellow', date: '3 May 14:05' },
-  { id: 'TKT-0486', title: 'Printer driver – Accounting dept',  priority: 'Medium',   status: 'Open',           assignee: 'C. Boateng', sla: '6h 10m left', slaColor: 'green',  date: '4 May 11:30' },
-  { id: 'TKT-0484', title: 'SAP login error – 2 users',        priority: 'High',     status: 'In Progress',    assignee: 'F. Mohammed',sla: '3h 45m left', slaColor: 'green',  date: '4 May 15:22' },
-  { id: 'TKT-0482', title: 'Email sync issue – Outlook',       priority: 'Medium',   status: 'Pending Review', assignee: 'Team Queue', sla: '45m left',    slaColor: 'yellow', date: '5 May 07:48' },
-  { id: 'TKT-0479', title: 'CCTV footage retrieval request',   priority: 'Low',      status: 'Resolved',       assignee: 'N. Kamara',  sla: 'SLA met',     slaColor: 'green',  date: '1 May 16:00' },
-];
 
 // ── Demo user ID → short name map (matches seed.ts fixed UUIDs) ──────────────
 const USER_SHORT: Record<string, string> = {
@@ -104,10 +98,10 @@ export function TicketsTable() {
     searchTimeout[1](setTimeout(() => { setDebouncedSearch(val); setPage(1); }, 350));
   }
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // Role-awareness
-  const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
+  const { data: me } = useCurrentUser({ staleTime: 60_000 });
   const role = (me as { roleName?: string } | undefined)?.roleName ?? '';
   const isEngineer = role === 'ENGINEER';
   const isTeamLead = role === 'TEAM_LEAD';
@@ -119,64 +113,67 @@ export function TicketsTable() {
   const slaWarningParam = searchParams.get('slaWarning') as 'amber' | 'red' | null;
 
   // Live data from MSSQL
-  const { data: liveData } = trpc['tickets.list'].useQuery(
+  const { data: liveData, isLoading } = useTicketsList(
     { status: statusFilter, priority, search: debouncedSearch || undefined, page, limit: 25, slaWarning: slaWarningParam ?? undefined },
     { staleTime: 15_000 },
   );
+  const ticketRows = ((liveData?.items ?? (liveData as { rows?: unknown[] } | undefined)?.rows ?? []) as Array<Record<string, unknown>>);
   const totalTickets = liveData?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalTickets / 25));
 
-  // Live summary counts (uses dashboard.summary for stat bar)
-  const { data: summaryData } = trpc['dashboard.summary'].useQuery(undefined, { staleTime: 30_000 });
-  const { data: queueData }   = trpc['dashboard.queueHealth'].useQuery(undefined, { staleTime: 30_000 });
+  const { data: summaryData } = useDashboardSummary({ staleTime: 30_000 });
+  const { data: queueData } = useDashboardQueueHealth({ staleTime: 30_000 });
 
-  // Map live ticket rows → display format; fall back to DEMO_TICKETS
-  const liveRows = liveData?.rows?.map((t) => {
+  const liveRows = ticketRows.map((t) => {
+    const id = String(t.id ?? '');
     const sla = (t.status === 'RESOLVED' || t.status === 'CLOSED')
       ? { text: 'SLA met', color: 'green' as const }
-      : formatSla(t.slaResolutionDeadline, t.slaResolutionBreached);
+      : formatSla(t.slaResolutionDeadline as string | null, t.slaResolutionBreached as number | null);
     return {
-      id: `TKT-${t.id.slice(-4).toUpperCase()}`,
-      rawId: t.id,
-      title: t.title,
+      id: `TKT-${id.slice(-4).toUpperCase()}`,
+      rawId: id,
+      title: String(t.title ?? ''),
       priority: PRIORITY_LABEL[t.priority as 1|2|3|4] ?? 'Medium',
-      status: STATUS_LABEL[t.status] ?? t.status,
-      assignee: t.assigneeId ? (USER_SHORT[t.assigneeId] ?? 'Engineer') : 'Team Queue',
-      team: t.teamName ?? '–',
-      source: t.source ?? 'INTERNAL',
+      status: STATUS_LABEL[String(t.status)] ?? String(t.status),
+      assignee: t.assigneeId ? (USER_SHORT[String(t.assigneeId)] ?? 'Engineer') : 'Team Queue',
+      team: String(t.teamName ?? '–'),
+      source: String(t.source ?? 'INTERNAL'),
       sla: sla.text,
       slaColor: sla.color,
       slaWarningLevel: (t as { slaWarningLevel?: string }).slaWarningLevel ?? 'NONE',
-      date: new Date(t.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''),
+      date: new Date(String(t.createdAt)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ''),
     };
   });
 
-  const rows = (liveRows && liveRows.length > 0) ? liveRows : DEMO_TICKETS.map(t => ({ ...t, rawId: t.id, team: '–', source: 'INTERNAL' }));
+  const rows = liveRows;
 
-  // Mini stats — live from dashboard.summary or DEMO values
+  const dash = (v: unknown): string | number => {
+    if (v == null) return '—';
+    if (typeof v === 'number' || typeof v === 'string') return v;
+    return String(v);
+  };
+
   const miniStats = [
-    { label: 'Open',         value: summaryData?.openTickets ?? 247, color: 'indigo' },
-    { label: 'Unassigned',   value: queueData?.unassigned ?? 9,      color: 'red'    },
-    { label: 'In Progress',  value: 130,                              color: 'blue'   },
-    { label: 'Escalated',    value: 8,                                color: 'orange' },
-    { label: 'Resolved MTD', value: summaryData?.resolvedMTD ?? 184, color: 'green'  },
-    { label: 'SLA Breach',   value: summaryData?.slaBreached ?? 12,  color: 'yellow' },
+    { label: 'Open',         value: dash(summaryData?.openTickets), color: 'indigo' },
+    { label: 'Unassigned',   value: dash(queueData?.unassigned),    color: 'red'    },
+    { label: 'Resolved MTD', value: dash(summaryData?.resolvedMtd ?? summaryData?.resolvedMTD), color: 'green' },
+    { label: 'SLA Breach',   value: dash(summaryData?.slaBreached), color: 'yellow' },
   ];
 
   const FILTER_TABS = [
-    { label: 'All',          count: (summaryData?.openTickets ?? 247) + (summaryData?.resolvedMTD ?? 184) },
-    { label: 'New',          count: 20  },
-    { label: 'Unassigned',   count: queueData?.unassigned ?? 9   },
-    { label: 'Assigned',     count: 80  },
-    { label: 'In Progress',  count: 130 },
-    { label: 'Escalated',    count: 8   },
-    { label: 'Resolved',     count: summaryData?.resolvedMTD ?? 184 },
+    { label: 'All',          count: totalTickets || rows.length },
+    { label: 'New',          count: rows.filter(r => r.status === 'New').length },
+    { label: 'Unassigned',   count: rows.filter(r => r.status === 'Unassigned').length || (queueData?.unassigned ?? 0) },
+    { label: 'Assigned',     count: rows.filter(r => r.status === 'Assigned').length },
+    { label: 'In Progress',  count: rows.filter(r => r.status === 'In Progress').length },
+    { label: 'Escalated',    count: rows.filter(r => r.status === 'Escalated').length },
+    { label: 'Resolved',     count: rows.filter(r => r.status === 'Resolved' || r.status === 'Closed').length },
   ];
 
   function handleCreated() {
-    void utils['tickets.list'].invalidate();
-    void utils['dashboard.summary'].invalidate();
-    void utils['dashboard.queueHealth'].invalidate();
+    void queryClient.invalidateQueries({ queryKey: ['tickets', 'list'] });
+    void queryClient.invalidateQueries({ queryKey: ['dashboard', 'summary'] });
+    void queryClient.invalidateQueries({ queryKey: ['dashboard', 'queue-health'] });
     setCreateOpen(false);
     setPage(1);
   }
@@ -272,6 +269,12 @@ export function TicketsTable() {
               </tr>
             </thead>
             <tbody>
+              {isLoading && rows.length === 0 && (
+                <tr><td colSpan={10}><EmptyState title="Loading tickets…" /></td></tr>
+              )}
+              {!isLoading && rows.length === 0 && (
+                <tr><td colSpan={10}><EmptyState title="No tickets found" message="Create a ticket or adjust your filters." /></td></tr>
+              )}
               {rows.map(t => (
                 <tr key={t.rawId ?? t.id} onClick={() => setSelectedTicketId(t.rawId ?? t.id)} style={{
                   cursor: 'pointer',

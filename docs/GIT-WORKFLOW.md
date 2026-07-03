@@ -9,20 +9,20 @@
 ## Branch model
 
 ```
-main          ← production-ready only. QA gate + tests green + tagged releases.
-  ↑ merge (QA only)
-dev           ← DEFAULT. All day-to-day work lands here first.
-  ↑ merge (QA after review)
-feature/*     ← optional short-lived branches off dev for large slices
+local dev     ← DEFAULT. All day-to-day work happens here (Backend + Frontend agents).
+  ↓ QA certifies job/phase complete
+origin dev    ← push local dev
+origin main   ← merge local dev → local main, then push local main
 ```
 
-| Branch | Purpose | Who merges | Direct commits? |
-|--------|---------|------------|-----------------|
-| **`dev`** | Integration — NestJS today; C# refactor phases 0–7 | QA Agent after CI green | Yes (via PR or QA push) |
-| **`main`** | Production / on-prem release tags | QA Agent at milestone only | **Never** — merge from `dev` only |
-| **`feature/phase-X-*`** | Large isolated work (optional) | QA → `dev` | Developers/agents |
+| Branch | Purpose | Who updates | Direct commits? |
+|--------|---------|-------------|-------------------|
+| **`dev`** (local) | Integration — all agent work lands here first | Backend / Frontend agents; QA merges `feature/*` if used | Yes (on local `dev` only) |
+| **`dev`** (remote) | Canonical integration on GitHub | QA Agent after certification | Push from local `dev` |
+| **`main`** (local + remote) | Production mirror — kept in sync with certified `dev` | QA Agent after certification | **Never** direct commits — merge from `dev` only |
+| **`feature/phase-X-*`** | Large isolated work (optional) | QA → local `dev` | Developers/agents |
 
-**Rule:** If in doubt, target **`dev`**. Nothing reaches **`main`** without QA sign-off and a green pipeline.
+**Rule:** Work on **local `dev`**. Nothing is pushed until the **QA Agent certifies** the job or phase. After certification, push **both** `dev` and `main` to `origin` so the remote stays current.
 
 ---
 
@@ -64,16 +64,16 @@ Set **default branch** to `dev` in GitHub repo Settings → Branches.
 
 ## Daily workflow
 
-### 1. Always start from `dev`
+### 1. Always start from local `dev`
 
 ```bash
 git checkout dev
 git pull origin dev
 ```
 
-### 2. Work (agent or human)
+### 2. Work (Backend Agent, Frontend Agent, or human)
 
-- Small changes: commit directly on `dev` (or `feature/*` → PR to `dev`)
+- All day-to-day commits go on **local `dev`** (or `feature/*` → merge to local `dev`)
 - Commit format: `[Phase X] type(scope): description` or `[Sprint X] …` for legacy NestJS fixes
 
 Types: `feat` · `fix` · `refactor` · `test` · `chore` · `docs`
@@ -86,52 +86,49 @@ Examples:
 docs(qa): update DATABASE-STRATEGY decision log
 ```
 
-### 3. QA gate before `dev` is considered done
+### 3. QA Agent certifies before anything moves forward
+
+The **QA Agent** reviews Backend and Frontend output, runs the quality checklist, and **certifies the job or phase complete** before the team starts the next job or phase.
 
 From [`.github/agents/qa-agent.instructions.md`](../.github/agents/qa-agent.instructions.md):
 
-- [ ] GitHub Actions **green** (when wired — required before merge/push policy hardens)
+- [ ] GitHub Actions **green** (when wired)
 - [ ] Quality checklist (security, tenant isolation, tests on critical paths)
 - [ ] OpenAPI contract updated if API changed
 - [ ] `docs/SPRINTS.md` / phase tracker updated
 
-**Push to `origin dev`:** after QA sign-off on the commit(s) for that slice.
+**Do not push** until QA certifies. **Do not start the next job or phase** until QA certifies the current one.
+
+### 4. After QA certification — push both branches
+
+Remote `origin` is maintained by pushing **local `dev`** and **local `main`**:
 
 ```bash
+# 1. Push certified work on dev
 git push origin dev
-```
 
----
-
-## Promoting `dev` → `main`
-
-**When:** QA confirms milestone complete — tested locally or on staging/on-prem compose smoke.
-
-**Not when:** Mid-phase WIP, failing CI, or docs-only planning commits (unless releasing docs snapshot intentionally).
-
-### Promotion checklist
-
-- [ ] All phase/milestone acceptance criteria met (see [REFACTOR.md](REFACTOR.md) parity checklist for Phase 7)
-- [ ] `dotnet test` + `pnpm lint` + docker compose smoke **pass**
-- [ ] No known P0/P1 open issues for this release
-- [ ] `docs/SPRINTS.md` or phase log updated
-- [ ] Version tag decided (`v0.24.0`, `v1.0.0-onprem`, etc.)
-
-### Promotion commands
-
-```bash
+# 2. Fast-forward or merge dev into main, then push main
 git checkout main
 git pull origin main
-git merge dev --no-ff -m "release: merge dev into main — Milestone Mx / Phase X"
-git tag -a vX.Y.Z -m "Release vX.Y.Z — short description"
+git merge dev --no-ff -m "release: QA certified — <short description>"
 git push origin main
-git push origin vX.Y.Z
 git checkout dev
 ```
 
-Use **`--no-ff`** merge to preserve release boundary in history.
+Use **`--no-ff`** on `main` merges to preserve certification boundaries in history.
 
 **Never** force-push `main`.
+
+### 5. Version tags (milestones)
+
+Tag on `main` when a milestone or release warrants it (e.g. Phase 7 cutover, on-prem release):
+
+```bash
+git checkout main
+git tag -a vX.Y.Z -m "Release vX.Y.Z — short description"
+git push origin vX.Y.Z
+git checkout dev
+```
 
 ---
 
@@ -139,9 +136,11 @@ Use **`--no-ff`** merge to preserve release boundary in history.
 
 | Action | Branch | Remote | When |
 |--------|--------|--------|------|
-| Day-to-day integration | `dev` | `origin` (lotrisC) | After QA sign-off on each slice |
-| Production release | `main` | `origin` (lotrisC) | Milestone complete + tested |
-| Tags | `vX.Y.Z` on `main` | `origin` (lotrisC) | Same time as main push |
+| Day-to-day work | local `dev` | — | Backend / Frontend agents commit here |
+| QA certification | — | — | QA Agent signs off; blocks next job/phase until green |
+| Sync integration | `dev` | `origin` (lotrisC) | After QA certification |
+| Sync production mirror | `main` | `origin` (lotrisC) | Merge local `dev` → local `main`, push after QA certification |
+| Release tags | `vX.Y.Z` on `main` | `origin` (lotrisC) | Milestones / named releases (optional per slice) |
 | Historical reference | any | `legacy` (lotris) | Fetch only — no push |
 
 ---
@@ -175,10 +174,13 @@ Deploy:
 
 ## Agent responsibilities
 
+Three agents coordinate all work:
+
 | Agent | Git duty |
 |-------|----------|
-| **QA** | Owns merge to `dev`; owns `dev` → `main` at milestones; blocks push if CI red |
-| **Backend / Frontend / Platform** | Commit to `feature/*` or `dev` per QA assignment; never push to `main` |
+| **QA Agent** | Assigns jobs; reviews and **certifies** work before next job/phase; pushes `dev` and `main` to `origin` after certification; blocks push if CI red |
+| **Backend Agent** | Commits to local `dev` (or `feature/*` → `dev`) per QA assignment; never pushes or commits to `main` |
+| **Frontend Agent** | Commits to local `dev` (or `feature/*` → `dev`) per QA assignment; never pushes or commits to `main` |
 | **All** | Commit message format; no secrets in repo |
 
 ---

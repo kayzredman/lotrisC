@@ -549,7 +549,7 @@ Auth & Tenancy
 - **Sprint 18 ✅:** SLA breach prediction (linear projection, amber/red warnings in ticket list + dashboard, email + SSE notifications to assignee + lead, BullMQ `sla-predictor` cron every 5 min)
 - **Sprint 18 ✅:** KPI performance trend analysis (linear regression on actuals, sparkline charts, amber/red flag pills in KPI dashboard, daily digest email to team leads, BullMQ `kpi-trend` cron every 30 min)
 - **Sprint 19 ✅:** Automated quarterly/monthly/weekly report scheduling — `report-gen` BullMQ worker executes due schedules, generates PDF/Excel, emails recipients; tRPC report procedures; Reports UI page
-- **Sprint 19 ✅:** Engineer workload rebalancing — `WorkloadAnalyser` computes per-engineer open-ticket load vs. `Queue_Config.max_capacity_per_engineer`, generates reassignment suggestions, `tickets.batchReassign` mutation, workload panel on dashboard with one-click Apply
+- **Sprint 19 ✅:** Engineer workload rebalancing — `WorkloadAnalyser` computes per-engineer open-ticket load vs. `Queue_Config.max_capacity_per_engineer`, generates reassignment suggestions, batch reassign API, workload panel on dashboard with one-click Apply. **C# parity (July 2026):** `GET /api/v1/analytics/team-workload`, `POST /api/v1/tickets/batch-reassign`.
 
 ### Phase 3 — AI & Automation
 
@@ -813,10 +813,10 @@ trpc['kpi.agreements.list'].useQuery({ engineerId: me.id })
 
 ### Monitor Page
 
-- URL: `/monitor` — **public route** (no Clerk auth required)
-- `middleware.ts` includes `/monitor(.*)` in `publicRoutes`
-- Uses `MonitorProviders` (lightweight tRPC + QueryClient, no auth token)
-- Queries `monitor.stats` tRPC procedure (also public/unauthenticated)
+- URL: `/monitor` — **public route** (no auth required)
+- `middleware.ts` includes `/monitor(.*)` in public routes
+- Uses `MonitorProviders` (QueryClient only, no auth token)
+- Queries `GET /api/v1/monitor/stats` (public REST — replaced legacy `monitor.stats` tRPC)
 - Features: real-time stat cards, animated priority ticker (20 tickets), light/dark theme toggle (persisted via `localStorage`)
 
 ---
@@ -845,7 +845,7 @@ After Sprint 23 (NestJS stack complete on `dev`), the next major phase migrates 
 | Frontend | Next.js 15, tRPC client | Next.js 15, OpenAPI client (unchanged UI shell) |
 | Deploy | Vercel + Railway + Neon | Docker Compose + optional Helm/K8s/Rancher |
 
-**Migration strategy:** Strangler fig — parallel NestJS + C# API until parity checklist passes (Phase 7).
+**Migration strategy:** Strangler fig — parallel NestJS + C# API until parity checklist passes (Phase 7). **~95% REST parity** as of July 2026 — see [PARITY-AUDIT.md](PARITY-AUDIT.md).
 
 **New code location:** `src/Lotris.*` (.NET solution) alongside existing `apps/` until cutover.
 

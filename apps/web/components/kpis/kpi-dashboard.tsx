@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useKpiAgreements, useKpiResult } from '@/lib/api/hooks/useKpi';
+import { useAuth } from '@/lib/auth/auth-context';
 import { Badge, Button } from '@lotris/ui';
 
 interface AreaScore {
@@ -77,27 +78,27 @@ export default function KpiDashboard() {
   const [selectedAgreementId, setSelectedAgreementId] = useState<string | null>(null);
   const [computing, setComputing] = useState(false);
 
-  const { data: agData } = trpc['kpi.agreements.list'].useQuery({}, { refetchInterval: 60_000 });
-  const activeAgreements: Agreement[] = (agData?.agreements ?? []).filter(
-    (a: Agreement) => a.status === 'ACTIVE',
-  );
+  const { accessToken } = useAuth();
+  const { data: agDataRaw } = useKpiAgreements({}, { refetchInterval: 60_000 });
+  const agList = (Array.isArray(agDataRaw) ? agDataRaw : (agDataRaw as { agreements?: Agreement[] } | undefined)?.agreements ?? []) as Agreement[];
+  const activeAgreements = agList.filter((a) => a.status === 'ACTIVE');
 
   const agreementId = selectedAgreementId ?? activeAgreements[0]?.id ?? null;
 
-  const { data: resultData, isLoading, refetch } = trpc['kpi.results.get'].useQuery(
-    { agreementId: agreementId! },
-    {
-      enabled: !!agreementId,
-      refetchInterval: 60_000,
-    },
+  const { data: resultData, isLoading, refetch } = useKpiResult(
+    agreementId ?? '',
+    { enabled: !!agreementId, refetchInterval: 60_000 },
   );
 
-  const result: KpiResult | null = resultData?.result ?? null;
+  const result: KpiResult | null = ((resultData as { result?: KpiResult } | undefined)?.result ?? resultData ?? null) as KpiResult | null;
 
   async function handleCompute() {
     if (!agreementId) return;
     setComputing(true);
-    await fetch(`/api/v1/kpi/agreements/${agreementId}/score`, { method: 'POST' });
+    await fetch(`/api/v1/kpi/agreements/${agreementId}/score`, {
+      method: 'POST',
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    });
     await refetch();
     setComputing(false);
   }

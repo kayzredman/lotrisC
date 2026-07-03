@@ -1,6 +1,8 @@
 'use client';
 
-import { trpc } from '@/lib/trpc';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser } from '@/lib/api/hooks/useAuth';
+import { useUpdateTicketStatus } from '@/lib/api/hooks/useTickets';
 
 interface TicketStatusBarProps {
   ticketId: string;
@@ -30,17 +32,11 @@ const TRANSITIONS: Record<string, { label: string; to: string }[]> = {
 const ELEVATED_ROLES = new Set(['ADMIN', 'SUPERADMIN', 'IT_MANAGER', 'TEAM_LEAD']);
 
 export function TicketStatusBar({ ticketId, currentStatus, onUpdated }: TicketStatusBarProps) {
-  const { data: me } = trpc['users.me'].useQuery();
+  const { data: me } = useCurrentUser();
   const role = me?.roleName ?? 'ENGINEER';
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  const updateMutation = trpc['tickets.updateStatus'].useMutation({
-    onSuccess: () => {
-      void utils['tickets.get'].invalidate({ id: ticketId });
-      void utils['tickets.list'].invalidate();
-      onUpdated();
-    },
-  });
+  const updateMutation = useUpdateTicketStatus();
 
   let actions = TRANSITIONS[currentStatus] ?? [];
 
@@ -60,7 +56,16 @@ export function TicketStatusBar({ ticketId, currentStatus, onUpdated }: TicketSt
           <button
             key={action.to}
             onClick={() =>
-              updateMutation.mutate({ id: ticketId, status: action.to as 'TEAM_ASSIGNED' | 'UNASSIGNED' | 'ASSIGNED' | 'IN_PROGRESS' | 'ESCALATED' | 'RESOLVED' | 'CLOSED' })
+              updateMutation.mutate(
+                { id: ticketId, status: action.to },
+                {
+                  onSuccess: () => {
+                    void queryClient.invalidateQueries({ queryKey: ['tickets', ticketId] });
+                    void queryClient.invalidateQueries({ queryKey: ['tickets', 'list'] });
+                    onUpdated();
+                  },
+                },
+              )
             }
             disabled={updateMutation.isPending}
             className={`v2-btn v2-btn-sm${isDanger ? ' v2-btn-danger' : isSuccess ? ' v2-btn-success' : ' v2-btn-secondary'}`}

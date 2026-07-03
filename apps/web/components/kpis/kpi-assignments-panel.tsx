@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useKpiAssignments, useKpiDefinitions } from '@/lib/api/hooks/useKpi';
+import { useAuth } from '@/lib/auth/auth-context';
 import { Badge, Button } from '@lotris/ui';
 
 interface Assignment {
@@ -50,20 +52,25 @@ export default function KpiAssignmentsPanel() {
   const [filterEngineerId, setFilterEngineerId] = useState('');
   const [filterPeriod, setFilterPeriod] = useState('');
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
+  const { accessToken } = useAuth();
 
-  const { data: assignData, isLoading } = trpc['kpi.assignments.list'].useQuery(
+  const { data: assignDataRaw, isLoading } = useKpiAssignments(
     {
       engineerId: filterEngineerId || undefined,
       periodKey: filterPeriod || undefined,
     },
-    { refetchInterval: 60_000 },
+    { staleTime: 60_000, refetchInterval: 60_000 },
   );
 
-  const { data: defData } = trpc['kpi.definitions.list'].useQuery(undefined);
+  const { data: defDataRaw } = useKpiDefinitions();
 
-  const assignments: Assignment[] = assignData?.assignments ?? [];
-  const definitions: Definition[] = defData?.definitions ?? [];
+  const assignments: Assignment[] = (Array.isArray(assignDataRaw)
+    ? assignDataRaw
+    : (assignDataRaw as { assignments?: Assignment[] } | undefined)?.assignments ?? []) as Assignment[];
+  const definitions: Definition[] = (Array.isArray(defDataRaw)
+    ? defDataRaw
+    : (defDataRaw as { definitions?: Definition[] } | undefined)?.definitions ?? []) as Definition[];
 
   function handleChange(field: keyof AssignForm, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -81,13 +88,16 @@ export default function KpiAssignmentsPanel() {
 
     const resp = await fetch('/api/v1/kpi/assignments', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
       body: JSON.stringify(body),
     });
     if (resp.ok) {
       setShowCreate(false);
       setForm(EMPTY_FORM);
-      utils['kpi.assignments.list'].invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['kpi', 'assignments'] });
     }
   }
 

@@ -1,36 +1,42 @@
 'use client';
 
-import { useState } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser } from '@/lib/api/hooks/useAuth';
+import {
+  useReportsList,
+  useReportSchedules,
+  useCreateReportSchedule,
+  useDeleteReportSchedule,
+  useGenerateReport,
+} from '@/lib/api/hooks/useReports';
 import { FileText, Download, Clock, Calendar, Plus, Search, BarChart2, CheckCircle, AlertCircle, Settings, Trash2, Lock } from 'lucide-react';
-import { trpc } from '@/lib/trpc';
 import { ReportSettingsPanel } from './report-settings-panel';
 
-// ── Marketing demo data (match 05-reports-v2.html exactly) ──────────────────
-const REPORT_TYPE_TABS = [
-  { label: 'All',               count: 24 },
-  { label: 'Ticket Summary',    count: 8  },
-  { label: 'SLA Compliance',    count: 5  },
-  { label: 'KPI Performance',   count: 4  },
-  { label: 'Agent Performance', count: 4  },
-  { label: 'CSAT Analysis',     count: 3  },
-  { label: 'Queue Reports',     count: 4  },
-];
+const REPORT_TYPE_LABELS = [
+  'All',
+  'Ticket Summary',
+  'SLA Compliance',
+  'KPI Performance',
+  'Agent Performance',
+  'CSAT Analysis',
+  'Queue Reports',
+] as const;
 
-const DEMO_REPORTS = [
-  { name: 'SLA Compliance Report – April 2026',      type: 'SLA Compliance',    formats: ['PDF'],        freq: 'Monthly',   date: '1 May 2026, 06:00', size: '2.4 MB', downloads: 18 },
-  { name: 'KPI Performance Report – Q1 2026',        type: 'KPI Performance',   formats: ['XLSX','PDF'], freq: 'Quarterly', date: '2 Apr 2026, 08:15', size: '5.1 MB', downloads: 42 },
-  { name: 'Agent Performance Report – Week 17',      type: 'Agent Performance', formats: ['PDF'],        freq: 'Weekly',    date: '28 Apr 2026, 07:00', size: '1.8 MB', downloads: 9  },
-  { name: 'CSAT Monthly Report – April 2026',        type: 'CSAT Analysis',     formats: ['XLSX'],       freq: 'Monthly',   date: '1 May 2026, 06:00', size: '890 KB', downloads: 7  },
-  { name: 'Ticket Volume by Category – May 2026',    type: 'Ticket Summary',    formats: ['CSV'],        freq: 'Daily',     date: '5 May 2026, 00:00', size: '340 KB', downloads: 3  },
-  { name: 'SLA Compliance Detail – Network Ops',     type: 'SLA Compliance',    formats: ['PDF','XLSX'], freq: 'Ad-hoc',    date: '4 May 2026, 14:22', size: '1.2 MB', downloads: 5  },
-];
-
-const FORMAT_COLORS: Record<string, string> = {
-  PDF:  'v2-badge-red',
-  XLSX: 'v2-badge-green',
-  CSV:  'v2-badge-blue',
+const REPORT_TYPE_API: Record<string, string> = {
+  'Ticket Summary': 'TICKET_SUMMARY',
+  'SLA Compliance': 'SLA_COMPLIANCE',
+  'KPI Performance': 'KPI_REPORT',
+  'Agent Performance': 'ENGINEER_PERF',
+  'CSAT Analysis': 'CSAT_ANALYSIS',
+  'Queue Reports': 'QUEUE_REPORT',
 };
+
+function reportTypeLabel(apiType: string): string {
+  const entry = Object.entries(REPORT_TYPE_API).find(([, v]) => v === apiType);
+  if (entry) return entry[0];
+  return apiType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
 
 export function ReportsLayout() {
   const [activeType, setActiveType] = useState('All');
@@ -41,25 +47,24 @@ export function ReportsLayout() {
   const [dateRange, setDateRange] = useState('last_30');
   const [generating, setGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState<{ ok: boolean; message: string } | null>(null);
-  const { getToken } = useAuth();
 
-  const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
-  const { data: liveReports, isLoading: reportsLoading } = trpc['reports.list'].useQuery(undefined, { staleTime: 15_000 });
-  const { data: schedules } = trpc['reports.schedules.list'].useQuery(undefined, { staleTime: 15_000 });
+  const { data: me } = useCurrentUser({ staleTime: 60_000 });
+  const { data: liveReportsRaw, isLoading: reportsLoading } = useReportsList({ staleTime: 15_000 });
+  const { data: schedulesRaw } = useReportSchedules({ staleTime: 15_000 });
+  const generateReport = useGenerateReport();
+
+  const liveReports = (Array.isArray(liveReportsRaw) ? liveReportsRaw : []) as Array<Record<string, unknown>>;
+  const schedules = (Array.isArray(schedulesRaw) ? schedulesRaw : []) as Array<Record<string, unknown>>;
 
   const isAdmin     = me?.roleName === 'ADMIN' || me?.roleName === 'SUPERADMIN';
   const canAccessReports = ['TEAM_LEAD', 'IT_MANAGER', 'ADMIN', 'SUPERADMIN'].includes(me?.roleName ?? '');
 
   // Schedule mutations
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [showAddSchedule, setShowAddSchedule] = useState(false);
   const [schedForm, setSchedForm] = useState({ reportType: 'TICKET_SUMMARY', format: 'PDF', frequency: 'WEEKLY', recipients: '' });
-  const createScheduleMutation = trpc['reports.schedules.create'].useMutation({
-    onSuccess: () => { setShowAddSchedule(false); setSchedForm({ reportType: 'TICKET_SUMMARY', format: 'PDF', frequency: 'WEEKLY', recipients: '' }); void utils['reports.schedules.list'].invalidate(); },
-  });
-  const deleteScheduleMutation = trpc['reports.schedules.delete'].useMutation({
-    onSuccess: () => void utils['reports.schedules.list'].invalidate(),
-  });
+  const createScheduleMutation = useCreateReportSchedule();
+  const deleteScheduleMutation = useDeleteReportSchedule();
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const dateRangeParams = (range: string): { dateFrom: string; dateTo: string } => {
@@ -77,30 +82,35 @@ export function ReportsLayout() {
     setGenerating(true);
     setGenStatus(null);
     try {
-      const token = await getToken();
       const { dateFrom, dateTo } = dateRangeParams(dateRange);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/reports/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ reportType, format: format === 'XLSX' ? 'EXCEL' : format, dateFrom, dateTo }),
+      await generateReport.mutateAsync({
+        reportType,
+        format: format === 'XLSX' ? 'EXCEL' : format,
+        dateFrom,
+        dateTo,
       });
-      if (res.ok || res.status === 202) {
-        setGenStatus({ ok: true, message: 'Report generation queued. It will appear in your list shortly.' });
-      } else {
-        const body = await res.json().catch(() => ({}));
-        setGenStatus({ ok: false, message: (body as { message?: string }).message ?? 'Generation failed. Please try again.' });
-      }
-    } catch {
-      setGenStatus({ ok: false, message: 'Network error — could not reach the API.' });
+      setGenStatus({ ok: true, message: 'Report generation queued. It will appear in your list shortly.' });
+      void queryClient.invalidateQueries({ queryKey: ['reports', 'list'] });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Generation failed. Please try again.';
+      setGenStatus({ ok: false, message });
     } finally {
       setGenerating(false);
     }
   };
 
-  const filtered = activeType === 'All' ? DEMO_REPORTS : DEMO_REPORTS.filter(r => r.type === activeType);
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = { All: liveReports.length };
+    for (const r of liveReports) {
+      const label = reportTypeLabel(String(r.reportType));
+      counts[label] = (counts[label] ?? 0) + 1;
+    }
+    return counts;
+  }, [liveReports]);
+
+  const filteredReports = activeType === 'All'
+    ? liveReports
+    : liveReports.filter(r => reportTypeLabel(String(r.reportType)) === activeType);
 
   // Role gate — ENGINEER sees Not Authorised
   if (me && !canAccessReports) {
@@ -136,8 +146,8 @@ export function ReportsLayout() {
         {[
           { value: String(liveReports?.length ?? '—'), label: 'Saved Reports', icon: <FileText size={13} />, color: 'var(--indigo)' },
           { value: String(schedules?.length ?? '—'),   label: 'Scheduled',     icon: <Calendar size={13} />, color: 'var(--blue)'   },
-          { value: String(liveReports?.filter(r => r.status === 'DONE').length ?? '—'), label: 'Completed', icon: <Download size={13} />, color: 'var(--green)' },
-          { value: liveReports?.filter(r => r.status === 'PROCESSING').length ? 'Running' : 'Idle', label: 'Queue Status', icon: <Clock size={13} />, color: 'var(--text-muted)' },
+          { value: String(liveReports.filter(r => r.status === 'DONE').length), label: 'Completed', icon: <Download size={13} />, color: 'var(--green)' },
+          { value: liveReports.filter(r => r.status === 'PROCESSING').length ? 'Running' : 'Idle', label: 'Queue Status', icon: <Clock size={13} />, color: 'var(--text-muted)' },
         ].map(s => (
           <div key={s.label} className="v2-card" style={{ flex: '1 1 120px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ color: s.color }}>{s.icon}</div>
@@ -242,15 +252,15 @@ export function ReportsLayout() {
         <>
           <div className="v2-filter-bar">
             <div className="v2-filter-tabs">
-              {REPORT_TYPE_TABS.map(tab => (
+              {REPORT_TYPE_LABELS.map(label => (
                 <button
-                  key={tab.label}
+                  key={label}
                   type="button"
-                  className={`v2-filter-tab${activeType === tab.label ? ' active' : ''}`}
-                  onClick={() => setActiveType(tab.label)}
+                  className={`v2-filter-tab${activeType === label ? ' active' : ''}`}
+                  onClick={() => setActiveType(label)}
                 >
-                  {tab.label}
-                  <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-light)' }}>{tab.count}</span>
+                  {label}
+                  <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-light)' }}>{typeCounts[label] ?? 0}</span>
                 </button>
               ))}
             </div>
@@ -277,29 +287,29 @@ export function ReportsLayout() {
                   {reportsLoading && (
                     <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>Loading…</td></tr>
                   )}
-                  {!reportsLoading && (!liveReports || liveReports.length === 0) && (
+                  {!reportsLoading && filteredReports.length === 0 && (
                     <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>No reports generated yet.</td></tr>
                   )}
-                  {liveReports?.map(r => (
-                    <tr key={r.id}>
+                  {filteredReports.map(r => (
+                    <tr key={r.id as string}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <FileText size={14} style={{ color: 'var(--indigo)', flexShrink: 0 }} />
                           <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
-                            {r.reportType.replace(/_/g, ' ')} — {r.dateFrom ?? ''}{r.dateTo ? ` to ${r.dateTo}` : ''}
+                            {String(r.reportType).replace(/_/g, ' ')} — {String(r.dateFrom ?? '')}{r.dateTo ? ` to ${String(r.dateTo)}` : ''}
                           </span>
                         </div>
                       </td>
-                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.reportType}</span></td>
-                      <td><span className={`v2-badge ${r.format === 'EXCEL' ? 'v2-badge-green' : 'v2-badge-red'}`}>{r.format}</span></td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{String(r.reportType)}</span></td>
+                      <td><span className={`v2-badge ${r.format === 'EXCEL' ? 'v2-badge-green' : 'v2-badge-red'}`}>{String(r.format)}</span></td>
                       <td>
                         <span className={`v2-badge ${r.status === 'DONE' ? 'v2-badge-green' : r.status === 'FAILED' ? 'v2-badge-red' : 'v2-badge-amber'}`}>
-                          {r.status}
+                          {String(r.status)}
                         </span>
                       </td>
-                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.createdAt ? new Date(r.createdAt).toLocaleString() : '—'}</span></td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.createdAt ? new Date(String(r.createdAt)).toLocaleString() : '—'}</span></td>
                       <td>
-                        {r.status === 'DONE' && r.filePath && (
+                        {r.status === 'DONE' && Boolean(r.filePath) && (
                           <div className="v2-row-actions">
                             <button type="button" className="v2-row-action-btn" title="Download">
                               <Download size={11} />
@@ -372,7 +382,16 @@ export function ReportsLayout() {
                     disabled={createScheduleMutation.isPending || !schedForm.recipients.trim()}
                     onClick={() => {
                       const emails = schedForm.recipients.split(',').map(e => e.trim()).filter(Boolean);
-                      createScheduleMutation.mutate({ reportType: schedForm.reportType as 'TICKET_SUMMARY' | 'SLA_COMPLIANCE' | 'KPI_REPORT' | 'ENGINEER_PERF', format: schedForm.format as 'PDF' | 'EXCEL', frequency: schedForm.frequency as 'WEEKLY' | 'MONTHLY' | 'QUARTERLY', recipients: JSON.stringify(emails) });
+                      createScheduleMutation.mutate(
+                        { reportType: schedForm.reportType, format: schedForm.format, frequency: schedForm.frequency, recipients: JSON.stringify(emails) },
+                        {
+                          onSuccess: () => {
+                            setShowAddSchedule(false);
+                            setSchedForm({ reportType: 'TICKET_SUMMARY', format: 'PDF', frequency: 'WEEKLY', recipients: '' });
+                            void queryClient.invalidateQueries({ queryKey: ['reports', 'schedules'] });
+                          },
+                        },
+                      );
                     }}
                   >
                     {createScheduleMutation.isPending ? 'Saving…' : 'Save Schedule'}
@@ -399,23 +418,29 @@ export function ReportsLayout() {
                   {(!schedules || schedules.length === 0) && (
                     <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>No scheduled reports. Click &quot;Add Schedule&quot; to create one.</td></tr>
                   )}
-                  {schedules?.map(s => (
-                    <tr key={s.id}>
-                      <td><span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{s.reportType.replace(/_/g, ' ')}</span></td>
-                      <td><span className={`v2-badge ${s.format === 'EXCEL' ? 'v2-badge-green' : 'v2-badge-red'}`}>{s.format}</span></td>
-                      <td><span className="v2-badge v2-badge-indigo">{s.frequency}</span></td>
+                  {schedules.map(s => (
+                    <tr key={s.id as string}>
+                      <td><span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{String(s.reportType).replace(/_/g, ' ')}</span></td>
+                      <td><span className={`v2-badge ${s.format === 'EXCEL' ? 'v2-badge-green' : 'v2-badge-red'}`}>{String(s.format)}</span></td>
+                      <td><span className="v2-badge v2-badge-indigo">{String(s.frequency)}</span></td>
                       <td>
                         <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                          {(() => { try { const arr = JSON.parse(s.recipients) as string[]; return arr.slice(0,2).join(', ') + (arr.length > 2 ? ` +${arr.length - 2}` : ''); } catch { return s.recipients; } })()}
+                          {(() => { try { const arr = JSON.parse(String(s.recipients)) as string[]; return arr.slice(0,2).join(', ') + (arr.length > 2 ? ` +${arr.length - 2}` : ''); } catch { return String(s.recipients); } })()}
                         </span>
                       </td>
-                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{s.nextRunAt ? new Date(s.nextRunAt).toLocaleString() : '—'}</span></td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{s.nextRunAt ? new Date(String(s.nextRunAt)).toLocaleString() : '—'}</span></td>
                       <td><span className={`v2-badge ${s.isActive === 'true' ? 'v2-badge-green' : 'v2-badge-gray'}`}>{s.isActive === 'true' ? 'Active' : 'Paused'}</span></td>
                       <td>
                         {deleteConfirmId === s.id ? (
                           <div style={{ display: 'flex', gap: 4 }}>
                             <button type="button" className="v2-btn v2-btn-danger v2-btn-sm" style={{ fontSize: 10, padding: '2px 8px' }}
-                              onClick={() => { deleteScheduleMutation.mutate({ id: s.id }); setDeleteConfirmId(null); }}>
+                              onClick={() => {
+                                deleteScheduleMutation.mutate(
+                                  { id: s.id as string },
+                                  { onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['reports', 'schedules'] }) },
+                                );
+                                setDeleteConfirmId(null);
+                              }}>
                               Confirm
                             </button>
                             <button type="button" className="v2-btn v2-btn-ghost v2-btn-sm" style={{ fontSize: 10, padding: '2px 8px' }} onClick={() => setDeleteConfirmId(null)}>
@@ -424,7 +449,7 @@ export function ReportsLayout() {
                           </div>
                         ) : (
                           <div className="v2-row-actions">
-                            <button type="button" className="v2-row-action-btn" title="Delete" onClick={() => setDeleteConfirmId(s.id)}>
+                            <button type="button" className="v2-row-action-btn" title="Delete" onClick={() => setDeleteConfirmId(s.id as string)}>
                               <Trash2 size={11} />
                             </button>
                           </div>

@@ -1,16 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc';
+import { useAdminTeams, useUpdateAdminTeam } from '@/lib/api/hooks/useAdmin';
 import { CreateTeamModal } from './create-team-modal';
 
 export function TeamsTable() {
   const [showCreate, setShowCreate] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const { data: teams = [], isLoading, error, refetch } = trpc['admin.teams.list'].useQuery();
+  const { data: teams = [], isLoading, error, refetch } = useAdminTeams();
 
-  const updateTeamMutation = trpc['admin.teams.update'].useMutation();
+  const updateTeamMutation = useUpdateAdminTeam();
 
   const handleToggleActive = async (teamId: string, isActive: boolean) => {
     setUpdatingId(teamId);

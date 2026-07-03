@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { trpc } from '@/lib/trpc';
+import { useMonitorStats } from '@/lib/api/hooks/useMonitor';
 import { MonitorProviders } from '@/components/monitor/monitor-providers';
 import {
   AlertTriangle, CheckCircle2, Activity,
@@ -74,10 +74,11 @@ function MonitorDashboard() {
 
   const t = isDark ? DARK : LIGHT;
 
-  const { data, isLoading, refetch } = trpc['monitor.stats'].useQuery(undefined, {
-    refetchInterval: REFRESH_MS,
-    onSuccess: () => setLastRefresh(new Date()),
-  } as Parameters<typeof trpc['monitor.stats']['useQuery']>[1]);
+  const { data, isLoading, refetch } = useMonitorStats({ refetchInterval: REFRESH_MS });
+
+  useEffect(() => {
+    if (data) setLastRefresh(new Date());
+  }, [data]);
 
   // Countdown
   useEffect(() => {
@@ -95,8 +96,8 @@ function MonitorDashboard() {
   const totalOpen   = data?.totalOpen   ?? 0;
   const slaBreach   = data?.slaBreach   ?? 0;
   const resolved24h = data?.resolved24h ?? 0;
-  const teams       = data?.teams       ?? [];
-  const topTickets  = data?.topTickets  ?? [];
+  const teams = (data?.teams ?? []) as Array<{ teamName: string; open: number; inProgress: number; escalated: number }>;
+  const topTickets = (data?.topTickets ?? []) as Array<{ id: string; title: string; priority: number; teamName: string; status: string }>;
 
   const maxTeamLoad = Math.max(...teams.map((tm) => tm.open + tm.inProgress + tm.escalated), 1);
   // Duration: 5 s per ticket so all cards are readable at a slow scroll

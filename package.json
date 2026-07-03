@@ -8,7 +8,16 @@
     "test": "turbo run test",
     "db:generate": "turbo run db:generate --filter=@lotris/db",
     "db:migrate": "turbo run db:migrate --filter=@lotris/db",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "api:export": "bash scripts/export-openapi.sh",
+    "api:docs": "python3 scripts/generate-api-docs.py",
+    "api:codegen": "pnpm --filter @lotris/web api:codegen",
+    "api:sync": "pnpm api:export && pnpm api:docs && pnpm api:codegen",
+    "web:dev-reset": "bash scripts/web-dev-reset.sh",
+    "smoke:phase5": "bash scripts/smoke-phase5.sh",
+    "gate:sse": "bash scripts/gate-sse.sh",
+    "gate:queue": "dotnet test src/Lotris.Tests.Integration/Lotris.Tests.Integration.csproj --filter QueueEngineGateTests -m:1",
+    "onprem:smoke": "bash scripts/onprem-smoke.sh"
   },
   "devDependencies": {
     "turbo": "^2.3.0",

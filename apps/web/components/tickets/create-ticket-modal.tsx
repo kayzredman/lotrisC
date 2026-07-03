@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc';
+import { useTeamsList } from '@/lib/api/hooks/useAdmin';
+import { useCreateTicket } from '@/lib/api/hooks/useTickets';
 
 interface CreateTicketModalProps {
   open: boolean;
@@ -23,21 +24,9 @@ export function CreateTicketModal({ open, onClose, onCreated }: CreateTicketModa
   const [teamId, setTeamId] = useState('');
   const [error, setError] = useState('');
 
-  const { data: teams } = trpc['teams.list'].useQuery();
+  const { data: teams } = useTeamsList();
 
-  const createMutation = trpc['tickets.create'].useMutation({
-    onSuccess: () => {
-      setTitle('');
-      setDescription('');
-      setPriority(2);
-      setTeamId('');
-      setError('');
-      onCreated();
-    },
-    onError: (err) => {
-      setError(err.message ?? 'Failed to create ticket');
-    },
-  });
+  const createMutation = useCreateTicket();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,12 +34,27 @@ export function CreateTicketModal({ open, onClose, onCreated }: CreateTicketModa
       setError('Title and description are required.');
       return;
     }
-    createMutation.mutate({
-      title: title.trim(),
-      description: description.trim(),
-      priority,
-      teamId: teamId || undefined,
-    });
+    createMutation.mutate(
+      {
+        title: title.trim(),
+        description: description.trim(),
+        priority,
+        teamId: teamId || undefined,
+      },
+      {
+        onSuccess: () => {
+          setTitle('');
+          setDescription('');
+          setPriority(2);
+          setTeamId('');
+          setError('');
+          onCreated();
+        },
+        onError: (err) => {
+          setError(err.message ?? 'Failed to create ticket');
+        },
+      },
+    );
   }
 
   if (!open) return null;
@@ -122,7 +126,7 @@ export function CreateTicketModal({ open, onClose, onCreated }: CreateTicketModa
                 className="w-full h-9 rounded-md border border-gray-700 bg-surface px-3 text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-brand"
               >
                 <option value="">Unassigned</option>
-                {teams?.map((t) => (
+                {(teams ?? []).map((t) => (
                   <option key={t.id as string} value={t.id as string}>
                     {t.name as string}
                   </option>

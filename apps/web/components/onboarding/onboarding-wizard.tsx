@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { trpc } from '@/lib/trpc/client';
+import { useCompleteOnboarding } from '@/lib/api/hooks/useOnboarding';
 import {
   Cloud, LogOut, RotateCcw, ArrowLeft, ArrowRight,
   Check, BookmarkCheck, X, RotateCcw as ResetIcon,
@@ -55,12 +55,7 @@ export function OnboardingWizard() {
   const [savedFlash, setSavedFlash] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  const completeMutation = trpc['onboarding.complete'].useMutation({
-    onSuccess: () => {
-      clearProgress();
-      router.replace('/dashboard');
-    },
-  });
+  const completeMutation = useCompleteOnboarding();
 
   useEffect(() => {
     const saved = loadSavedStep();
@@ -108,7 +103,12 @@ export function OnboardingWizard() {
   }
 
   function handleFinish() {
-    completeMutation.mutate();
+    completeMutation.mutate(undefined, {
+      onSuccess: () => {
+        clearProgress();
+        router.replace('/dashboard');
+      },
+    });
   }
 
   function handleSaveExit() {

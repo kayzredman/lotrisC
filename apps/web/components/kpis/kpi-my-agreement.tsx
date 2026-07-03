@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser, useUsersList } from '@/lib/api/hooks/useAuth';
+import { useAcceptKpiAgreement, useKpiAgreement, useKpiAgreements } from '@/lib/api/hooks/useKpi';
 import {
   Search,
   CheckCircle2,
@@ -149,17 +151,15 @@ export default function KpiMyAgreement() {
   const [filterStatus, setFilterStatus] = useState<AgreementStatus | 'ALL'>('ALL');
   const [selectedId, setSelectedId]   = useState<string | null>(null);
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  // Current user info
-  const { data: meRaw }    = trpc['users.me'].useQuery();
+  const { data: meRaw } = useCurrentUser();
   const me = meRaw as Me | undefined;
 
-  const { data: usersRaw } = trpc['users.list'].useQuery({}, { staleTime: 120_000 });
+  const { data: usersRaw } = useUsersList({ staleTime: 120_000 });
   const users: User[] = (usersRaw as User[] | undefined) ?? [];
 
-  // Own agreements — engineerId scopes for both ENGINEER (auto) and TEAM_LEAD (explicit)
-  const { data: listData, isLoading } = trpc['kpi.agreements.list'].useQuery(
+  const { data: listData, isLoading } = useKpiAgreements(
     { engineerId: me?.id },
     { enabled: !!me?.id, staleTime: 30_000 },
   );
@@ -187,10 +187,7 @@ export default function KpiMyAgreement() {
   }, [allAgreements, filterStatus, search, users]);
 
   // Selected agreement detail
-  const { data: detailRaw } = trpc['kpi.agreements.get'].useQuery(
-    { id: selectedId ?? '' },
-    { enabled: !!selectedId, staleTime: 30_000 },
-  );
+  const { data: detailRaw } = useKpiAgreement(selectedId ?? '', { enabled: !!selectedId, staleTime: 30_000 });
   const areas: DbArea[] = (detailRaw as { areas?: DbArea[] } | undefined)?.areas ?? [];
   const selectedAgreement = allAgreements.find(a => a.id === selectedId);
   const lead = users.find(u => u.id === selectedAgreement?.leadId);
@@ -201,12 +198,7 @@ export default function KpiMyAgreement() {
   );
 
   // Accept / sign-off mutation
-  const acceptMutation = trpc['kpi.agreements.accept'].useMutation({
-    onSuccess: () => {
-      utils['kpi.agreements.list'].invalidate();
-      utils['kpi.agreements.get'].invalidate({ id: selectedId ?? '' });
-    },
-  });
+  const acceptMutation = useAcceptKpiAgreement();
 
   return (
     <div>
@@ -466,7 +458,15 @@ export default function KpiMyAgreement() {
                         type="button"
                         className="v2-btn v2-btn-primary v2-btn-sm"
                         style={{ width: '100%', justifyContent: 'center', gap: 7 }}
-                        onClick={() => acceptMutation.mutate({ agreementId: selectedId })}
+                        onClick={() => acceptMutation.mutate(
+                          { id: selectedId },
+                          {
+                            onSuccess: () => {
+                              void queryClient.invalidateQueries({ queryKey: ['kpi', 'agreements'] });
+                              void queryClient.invalidateQueries({ queryKey: ['kpi', 'agreements', selectedId] });
+                            },
+                          },
+                        )}
                         disabled={acceptMutation.isPending}
                       >
                         <ShieldCheck size={13} />

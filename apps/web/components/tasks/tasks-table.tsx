@@ -1,22 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser, useUsersList } from '@/lib/api/hooks/useAuth';
+import { useCreateTask, useTasksList } from '@/lib/api/hooks/useTasks';
 import TaskDrawer from './task-drawer';
 import CreateTaskModal from './create-task-modal';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Plus, ChevronLeft, ChevronRight, Search } from 'lucide-react';
-
-// ── Marketing demo data (fallback) ──────────────────────────────────────────
-const DEMO_TASKS = [
-  { id: 't1', title: 'Monthly DB Backup Verification',      type: 'Maintenance',  priority: 'Critical', assignee: 'A. Okonkwo',  status: 'Overdue',     progress: 60,  dueDate: '30 Apr',  selfLogged: false },
-  { id: 't2', title: 'DR Failover Drill – Core Banking',    type: 'DR/BCP',       priority: 'High',     assignee: 'F. Mohammed', status: 'In Progress', progress: 40,  dueDate: '9 May',   selfLogged: false },
-  { id: 't3', title: 'Update Network Topology Diagrams',    type: 'Documentation',priority: 'Medium',   assignee: 'N. Kamara',   status: 'Open',        progress: 0,   dueDate: '15 May',  selfLogged: false },
-  { id: 't4', title: 'Patch Tuesday – Server OS Updates',   type: 'Change Req.',  priority: 'High',     assignee: 'D. Mensah',   status: 'Review',      progress: 90,  dueDate: 'Today',   selfLogged: false },
-  { id: 't5', title: 'Capacity Planning Q2 2026',           type: 'Maintenance',  priority: 'Medium',   assignee: 'A. Okonkwo',  status: 'In Progress', progress: 75,  dueDate: '12 May',  selfLogged: false },
-  { id: 't6', title: 'Personal Study – Oracle 19c',         type: 'Training',     priority: 'Low',      assignee: 'A. Okonkwo',  status: 'In Progress', progress: 50,  dueDate: '20 May',  selfLogged: true  },
-  { id: 't7', title: 'SLA Policy Document v2 Review',       type: 'Documentation',priority: 'Low',      assignee: 'F. Mohammed', status: 'Done',        progress: 100, dueDate: '28 Apr',  selfLogged: false },
-  { id: 't8', title: 'SSL Certificate Renewal – Web Proxy', type: 'Change Req.',  priority: 'Critical', assignee: 'B. Ibrahim',  status: 'Overdue',     progress: 20,  dueDate: '2 May',   selfLogged: false },
-];
 
 // ── Live task type → display label ────────────────────────────────────────────
 const TASK_TYPE_LABEL: Record<string, string> = {
@@ -65,43 +56,42 @@ export default function TasksTable() {
   const [search, setSearch] = useState('');
   const [page] = useState(1);
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // Role-awareness
-  const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
+  const { data: me } = useCurrentUser({ staleTime: 60_000 });
   const role = (me as { roleName?: string } | undefined)?.roleName ?? '';
   const isEngineer = role === 'ENGINEER';
   const isTeamLead = role === 'TEAM_LEAD';
 
   // Live tasks from MSSQL
-  const { data: liveData } = trpc['tasks.list'].useQuery(
-    { page, limit: 50 },
-    { staleTime: 25_000 },
-  );
+  const { data: liveData, isLoading } = useTasksList({ page, limit: 50 }, { staleTime: 25_000 });
+
+  const taskItems = (liveData?.items ?? liveData?.tasks ?? []) as Array<Record<string, unknown>>;
 
   // Map live rows → display format
-  const liveRows = liveData?.items.map((t) => {
-    const statusRaw = t.status.toUpperCase();
+  const liveRows = taskItems.map((t) => {
+    const statusRaw = String(t.status).toUpperCase();
     // Determine if overdue: OPEN/IN_PROGRESS with past dueDate
-    const isOverdue = (statusRaw === 'OPEN' || statusRaw === 'IN_PROGRESS') && t.dueDate && new Date(t.dueDate) < new Date();
-    const displayStatus = isOverdue ? 'Overdue' : (TASK_STATUS_LABEL[statusRaw] ?? t.status);
+    const isOverdue = (statusRaw === 'OPEN' || statusRaw === 'IN_PROGRESS') && t.dueDate && new Date(t.dueDate as string) < new Date();
+    const displayStatus = isOverdue ? 'Overdue' : (TASK_STATUS_LABEL[statusRaw] ?? String(t.status));
     const dueDateStr = t.dueDate
-      ? new Date(t.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+      ? new Date(t.dueDate as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
       : '–';
     return {
-      id: t.id,
-      title: t.title,
-      type: TASK_TYPE_LABEL[t.taskType] ?? t.taskType,
-      priority: 'Medium' as string, // tasks schema has no priority; use Medium default
-      assignee: USER_SHORT[t.createdBy] ?? 'Engineer',
+      id: t.id as string,
+      title: t.title as string,
+      type: TASK_TYPE_LABEL[t.taskType as string] ?? String(t.taskType),
+      priority: 'Medium' as string,
+      assignee: USER_SHORT[t.createdBy as string] ?? 'Engineer',
       status: displayStatus,
-      progress: t.progress ?? 0,
+      progress: (t.progress as number) ?? 0,
       dueDate: dueDateStr,
       selfLogged: t.source === 'SELF_LOGGED',
     };
   });
 
-  const allRows = (liveRows && liveRows.length > 0) ? liveRows : DEMO_TASKS;
+  const allRows = liveRows;
 
   // Build dynamic STATUS_TABS from live data
   const countByStatus = (status: string) => allRows.filter(t => t.status === status).length;
@@ -245,6 +235,12 @@ export default function TasksTable() {
               </tr>
             </thead>
             <tbody>
+              {isLoading && filtered.length === 0 && (
+                <tr><td colSpan={7}><EmptyState title="Loading tasks…" /></td></tr>
+              )}
+              {!isLoading && filtered.length === 0 && (
+                <tr><td colSpan={7}><EmptyState title="No tasks found" message="Create a task or adjust your filters." /></td></tr>
+              )}
               {filtered.map(t => (
                 <tr key={t.id} onClick={() => setSelectedTaskId(t.id)} style={{ cursor: 'pointer' }}>
                   <td>
@@ -301,7 +297,7 @@ export default function TasksTable() {
       </div>
 
       {selectedTaskId && <TaskDrawer taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />}
-      {showCreate && <CreateTaskModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); void utils['tasks.list'].invalidate(); }} />}
+      {showCreate && <CreateTaskModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); void queryClient.invalidateQueries({ queryKey: ['tasks', 'list'] }); }} />}
     </div>
   );
 }

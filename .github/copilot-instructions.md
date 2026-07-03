@@ -17,24 +17,22 @@ Mockups: `/mockups/*-v2.html` + `/mockups/style-v2.css`
 
 ---
 
-## 4-Agent Workflow
+## 3-Agent workflow
 
-All work is coordinated through four agents (small teams may fold Platform into Backend):
+All work is coordinated through three agents:
 
 | Agent | File | Responsibility |
 |-------|------|----------------|
-| **QA Agent** | `.github/agents/qa-agent.instructions.md` | Assigns jobs, OpenAPI contract approval, CI gate, merges to `dev`, updates docs |
-| **Frontend Dev Agent** | `.github/agents/frontend-agent.instructions.md` | Next.js 15, UI, OpenAPI client, Tailwind, ShadCN — **ui-ux-pro-max skill required** |
-| **Backend Dev Agent** | `.github/agents/backend-agent.instructions.md` | NestJS (legacy) / ASP.NET Core (refactor), DB, background jobs |
-| **Platform Agent** | `.github/agents/platform-agent.instructions.md` | Docker, Helm, CI/CD, on-prem bootstrap |
+| **QA Agent** | `.github/agents/qa-agent.instructions.md` | Assigns jobs, reviews output, **certifies** work before next job/phase, pushes `dev` + `main` to `origin`, updates docs |
+| **Backend Agent** | `.github/agents/backend-agent.instructions.md` | ASP.NET Core (refactor) / NestJS (legacy), DB, background jobs — commits to local `dev` |
+| **Frontend Agent** | `.github/agents/frontend-agent.instructions.md` | Next.js 15, UI, OpenAPI client, Tailwind, ShadCN — commits to local `dev` |
 
-**The QA Agent always goes first.** CI must pass before merge to `dev` — not agent self-attestation alone.
+**The QA Agent always certifies before moving on.** Backend and Frontend do not push to remote; QA pushes after certification.
 
 ```
-QA Agent
-  ├── Backend Agent  ──▶ OpenAPI spec
-  ├── Frontend Agent ◀── OpenAPI spec + ui-ux-pro-max
-  └── Platform Agent ──▶ CI green + compose smoke
+QA Agent (assign → review → certify → push dev + main)
+  ├── Backend Agent  ──▶ commits to local dev
+  └── Frontend Agent ◀── OpenAPI spec + UI work on local dev
 ```
 
 ---
@@ -44,14 +42,15 @@ QA Agent
 Full policy: [`docs/GIT-WORKFLOW.md`](docs/GIT-WORKFLOW.md)
 
 ```
-main     ← PRODUCTION on lotrisC. QA merges dev → main at milestones; tag vX.Y.Z.
-dev      ← DEFAULT. All work here first. Push after QA + CI green.
-feature/phase-X-*  ← optional off dev
+local dev   ← DEFAULT. Backend + Frontend commit here.
+  ↓ QA certifies
+origin dev  ← git push origin dev
+origin main ← merge local dev → local main, git push origin main
 ```
 
 **Remote:** `origin` = https://github.com/kayzredman/lotrisC.git
 
-> **Rule:** Work on `dev`. Promote to `main` only when QA is done **and** tested.
+> **Rule:** Work on local `dev`. QA certifies each job/phase before the next one starts. After certification, QA pushes **both** `dev` and `main` to keep remote current.
 
 **Commit format:** `[Sprint X] type(scope): description`  
 Types: `feat` · `fix` · `refactor` · `test` · `chore` · `docs`

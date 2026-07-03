@@ -1,0 +1,26 @@
+namespace Lotris.Contracts.Tickets;
+
+public record TicketDto(
+    Guid Id,
+    string Title,
+    string? Description,
+    string Status,
+    int Priority,
+    Guid TenantId,
+    Guid? TeamId,
+    string? TeamName,
+    Guid? AssigneeId,
+    string Source,
+    string? RequesterEmail,
+    string? RequesterName,
+    DateTime? SlaPickupDeadline,
+    bool SlaPickupBreached,
+    DateTime? SlaResolutionDeadline,
+    bool SlaResolutionBreached,
+    string SlaWarningLevel,
+    Guid CreatedBy,
+    DateTime? AssignedAt,
+    DateTime? ResolvedAt,
+    DateTime? ClosedAt,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);

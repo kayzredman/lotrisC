@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc';
+import { useAdminUsers, useUpdateAdminUserRole, useSetAdminUserActive } from '@/lib/api/hooks/useAdmin';
 import { InviteUserModal } from './invite-user-modal';
 import type { UserRole } from '@lotris/types';
 
@@ -20,10 +20,10 @@ export function UsersTable() {
   const [showInvite, setShowInvite] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const { data: users = [], isLoading, error, refetch } = trpc['admin.users.list'].useQuery();
+  const { data: users = [], isLoading, error, refetch } = useAdminUsers();
 
-  const updateRoleMutation = trpc['admin.users.updateRole'].useMutation();
-  const setActiveMutation = trpc['admin.users.setActive'].useMutation();
+  const updateRoleMutation = useUpdateAdminUserRole();
+  const setActiveMutation = useSetAdminUserActive();
 
   const handleRoleChange = async (userId: string, role: UserRole) => {
     const roleIds: Record<UserRole, number> = { SUPERADMIN: 1, ADMIN: 2, IT_MANAGER: 3, TEAM_LEAD: 4, ENGINEER: 5, EXECUTIVE: 6 };

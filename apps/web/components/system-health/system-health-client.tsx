@@ -7,7 +7,15 @@ import { QueueDepths } from './queue-depths';
 import { IncidentLog } from './incident-log';
 import { DetailPanel } from './detail-panel';
 import { RestartModal } from './restart-modal';
-import { trpc } from '@/lib/trpc';
+import {
+  useHealthSnapshot,
+  useHealthIncidents,
+  useStoreHealth,
+  useRepairStore,
+  useRestartService,
+  mapToHealthSnapshot,
+} from '@/lib/api/hooks/useHealth';
+import type { ApiRecord } from '@/lib/api/hooks/query-utils';
 import type { HealthSnapshot, ServiceHealthEntry } from '@lotris/types';
 import { Pause, Play, Globe, Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw, Package, Wrench } from 'lucide-react';
 
@@ -22,31 +30,34 @@ export function SystemHealthClient() {
     { enabled: !paused },
   );
 
-  // ── Polling fallback via tRPC (also seeds initial data) ──────────────────
-  const { data: polledSnapshot } = (trpc as any)['health.getSnapshot'].useQuery(undefined, {
+  // ── Polling fallback (also seeds initial data) ──────────────────────────
+  const { data: polledSnapshot } = useHealthSnapshot({
     refetchInterval: paused ? false : 5000,
     staleTime: 1000,
   });
 
-  // Prefer SSE data; fall back to polled
-  const snapshot: HealthSnapshot | null = liveSnapshot ?? polledSnapshot ?? null;
+  const liveMapped = liveSnapshot ? mapToHealthSnapshot(liveSnapshot as ApiRecord) : null;
+  const snapshot: HealthSnapshot | null =
+    liveMapped && liveMapped.services.length > 0
+      ? liveMapped
+      : polledSnapshot ?? liveMapped;
 
-  // ── Incident log ─────────────────────────────────────────────────────────
-  const { data: incidents } = (trpc as any)['health.getIncidents'].useQuery(
+  const { data: incidents } = useHealthIncidents(
     { limit: 20 },
     { refetchInterval: 30_000 },
   );
 
   // ── Derived summary ──────────────────────────────────────────────────────
-  const upCount       = snapshot?.services.filter((s) => s.status === 'UP').length   ?? 0;
-  const degradedCount = snapshot?.services.filter((s) => s.status === 'DEGRADED').length ?? 0;
-  const downCount     = snapshot?.services.filter((s) => s.status === 'DOWN').length ?? 0;
+  const services = snapshot?.services ?? [];
+  const upCount       = services.filter((s) => s.status === 'UP').length;
+  const degradedCount = services.filter((s) => s.status === 'DEGRADED').length;
+  const downCount     = services.filter((s) => s.status === 'DOWN').length;
 
   // ── Store health ─────────────────────────────────────────────────────────
-  const storeHealthQuery = (trpc as any)['health.storeHealth'].useQuery(undefined, {
-    refetchInterval: (query: unknown) => {
-      const state = (query as { state: { data?: { repairState?: string } } }).state.data?.repairState;
-      return state === 'running' ? 5_000 : 30_000;
+  const storeHealthQuery = useStoreHealth({
+    refetchInterval: (query) => {
+      const state = query.state.data as { repairState?: string } | undefined;
+      return state?.repairState === 'running' ? 5_000 : 30_000;
     },
   });
   const storeHealth = storeHealthQuery.data as {
@@ -56,12 +67,8 @@ export function SystemHealthClient() {
     startedAt?: string;
   } | undefined;
 
-  const repairMutation = (trpc as any)['health.repairStore'].useMutation({
-    onSuccess: () => storeHealthQuery.refetch(),
-  });
-
-  // ── Restart mutation ─────────────────────────────────────────────────────
-  const restartMutation = (trpc as any)['health.restartService'].useMutation();
+  const repairMutation = useRepairStore();
+  const restartMutation = useRestartService();
 
   const handleRestartConfirm = useCallback(
     (serviceName: string) => {
@@ -185,7 +192,7 @@ export function SystemHealthClient() {
               {storeHealth.repairState === 'running' && '⏳ Repairing…'}
               {storeHealth.repairState === 'done' && '✓ Repair Complete'}
               {storeHealth.repairState === 'error' && '✗ Repair Failed'}
-              {storeHealth.repairState === 'idle' && (storeHealth.healthy ? '✓ Healthy' : `✗ ${storeHealth.corruptedPackages.length} corrupted`)}
+              {storeHealth.repairState === 'idle' && (storeHealth.healthy ? '✓ Healthy' : `✗ ${(storeHealth.corruptedPackages ?? []).length} corrupted`)}
             </span>
           )}
         </div>
@@ -220,11 +227,11 @@ export function SystemHealthClient() {
                 The following packages have integrity issues in the pnpm store:
               </p>
               <ul style={{ margin: 0, padding: '0 0 0 18px', fontSize: 12, color: 'var(--text-muted)' }}>
-                {storeHealth.corruptedPackages.slice(0, 10).map((pkg) => (
+                {(storeHealth.corruptedPackages ?? []).slice(0, 10).map((pkg) => (
                   <li key={pkg} style={{ fontFamily: 'monospace', marginBottom: 2 }}>{pkg}</li>
                 ))}
-                {storeHealth.corruptedPackages.length > 10 && (
-                  <li style={{ color: 'var(--text-muted)' }}>…and {storeHealth.corruptedPackages.length - 10} more</li>
+                {(storeHealth.corruptedPackages ?? []).length > 10 && (
+                  <li style={{ color: 'var(--text-muted)' }}>…and {(storeHealth.corruptedPackages ?? []).length - 10} more</li>
                 )}
               </ul>
             </div>
@@ -242,7 +249,7 @@ export function SystemHealthClient() {
                 type="button"
                 className="v2-btn v2-btn-primary v2-btn-sm"
                 style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                onClick={() => repairMutation.mutate({})}
+                onClick={() => repairMutation.mutate(undefined, { onSuccess: () => void storeHealthQuery.refetch() })}
                 disabled={repairMutation.isPending || storeHealth?.healthy === true}
                 title={storeHealth?.healthy ? 'Store is healthy — no repair needed' : 'Run pnpm install --force to restore store integrity'}
               >
@@ -250,8 +257,8 @@ export function SystemHealthClient() {
                 {repairMutation.isPending ? 'Starting…' : 'Repair Store'}
               </button>
             )}
-            {repairMutation.data && (
-              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{repairMutation.data.message}</span>
+            {repairMutation.data !== undefined && (
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Repair started</span>
             )}
             {repairMutation.error && (
               <span style={{ fontSize: 12, color: 'var(--red, #dc2626)' }}>

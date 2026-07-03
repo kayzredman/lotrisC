@@ -1,36 +1,48 @@
 import { NextResponse } from 'next/server';
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import type { NextRequest } from 'next/server';
 
-const isPublicRoute = createRouteMatcher(['/', '/login(.*)', '/sign-up(.*)', '/api/dev-login(.*)', '/monitor(.*)', '/request(.*)', '/request-access(.*)']);
+const PUBLIC_PATHS = [
+  '/',
+  '/login',
+  '/sign-up',
+  '/api/dev-login',
+  '/monitor',
+  '/ops',
+  '/request',
+  '/request-access',
+];
 
-export default clerkMiddleware(async (auth, request) => {
-  const url = new URL(request.url);
+function isPublicPath(pathname: string) {
+  return PUBLIC_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+}
 
-  // Clerk invite links land with ?__clerk_ticket=... on whatever redirectUrl was set.
-  // If the ticket arrives on any route other than /sign-up (and not the dev-login API), redirect there preserving all params.
-  if (
-    url.searchParams.has('__clerk_ticket') &&
-    !url.pathname.startsWith('/sign-up') &&
-    !url.pathname.startsWith('/api/dev-login') &&
-    !url.pathname.startsWith('/login')
-  ) {
-    const signUpUrl = new URL('/sign-up', request.url);
-    for (const [key, value] of url.searchParams.entries()) {
-      signUpUrl.searchParams.set(key, value);
-    }
-    return NextResponse.redirect(signUpUrl);
+function hasAuthToken(request: NextRequest) {
+  return Boolean(request.cookies.get('lotris_token')?.value);
+}
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (isPublicPath(pathname)) {
+    return NextResponse.next();
   }
 
-  if (!isPublicRoute(request)) {
-    await auth.protect();
+  if (!hasAuthToken(request)) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(loginUrl);
   }
-});
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and static files
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
     '/(api|trpc)(.*)',
   ],
 };
+
+export default middleware;

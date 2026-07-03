@@ -1,7 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser, useUsersList } from '@/lib/api/hooks/useAuth';
+import {
+  useAssignTicket,
+  useAddTicketComment,
+  useTicket,
+  useTicketComments,
+  useTicketHistory,
+} from '@/lib/api/hooks/useTickets';
 import { SlaBadge } from './sla-badge';
 import { TicketStatusBar } from './ticket-status-bar';
 
@@ -30,38 +38,34 @@ export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
   const [commentBody, setCommentBody] = useState('');
   const [isInternal, setIsInternal] = useState(false);
   const [selectedAssignee, setSelectedAssignee] = useState('');
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  const ticketQuery = trpc['tickets.get'].useQuery({ id: ticketId });
-  const commentsQuery = trpc['tickets.getComments'].useQuery({ ticketId });
-  const historyQuery = trpc['tickets.getHistory'].useQuery({ ticketId });
-  const meQuery = trpc['users.me'].useQuery();
-  const usersQuery = trpc['users.list'].useQuery();
+  const ticketQuery = useTicket(ticketId);
+  const commentsQuery = useTicketComments(ticketId);
+  const historyQuery = useTicketHistory(ticketId);
+  const meQuery = useCurrentUser();
+  const usersQuery = useUsersList();
 
   const canAssign = ASSIGNABLE_ROLES.includes(meQuery.data?.roleName ?? '');
 
-  const assignMutation = trpc['tickets.assign'].useMutation({
-    onSuccess: () => {
-      setSelectedAssignee('');
-      void ticketQuery.refetch();
-      void historyQuery.refetch();
-      void utils['tickets.list'].invalidate();
-    },
-  });
+  const assignMutation = useAssignTicket();
 
-  const addCommentMutation = trpc['tickets.addComment'].useMutation({
-    onSuccess: () => {
-      setCommentBody('');
-      void utils['tickets.getComments'].invalidate({ ticketId });
-    },
-  });
+  const addCommentMutation = useAddTicketComment();
 
   const ticket = ticketQuery.data;
 
   function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
     if (!commentBody.trim()) return;
-    addCommentMutation.mutate({ ticketId, body: commentBody.trim(), isInternal });
+    addCommentMutation.mutate(
+      { ticketId, body: commentBody.trim(), isInternal },
+      {
+        onSuccess: () => {
+          setCommentBody('');
+          void queryClient.invalidateQueries({ queryKey: ['tickets', ticketId, 'comments'] });
+        },
+      },
+    );
   }
 
   return (
@@ -198,7 +202,19 @@ export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
                     <button
                       type="button"
                       disabled={!selectedAssignee || assignMutation.isPending}
-                      onClick={() => assignMutation.mutate({ id: ticketId, assigneeId: selectedAssignee })}
+                      onClick={() =>
+                        assignMutation.mutate(
+                          { ticketId, assigneeId: selectedAssignee },
+                          {
+                            onSuccess: () => {
+                              setSelectedAssignee('');
+                              void ticketQuery.refetch();
+                              void historyQuery.refetch();
+                              void queryClient.invalidateQueries({ queryKey: ['tickets', 'list'] });
+                            },
+                          },
+                        )
+                      }
                       className="h-9 rounded-md bg-indigo-600 px-4 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-40"
                     >
                       {assignMutation.isPending ? 'Assigning…' : 'Assign'}

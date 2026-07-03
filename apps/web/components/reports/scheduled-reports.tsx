@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '@/lib/auth/auth-context';
 
 const FREQUENCIES = [
   { key: 'WEEKLY', label: 'Weekly' },
@@ -26,7 +26,7 @@ interface Schedule {
 }
 
 export function ScheduledReports() {
-  const { getToken } = useAuth();
+  const { accessToken } = useAuth();
 
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -38,7 +38,7 @@ export function ScheduledReports() {
   const [saving, setSaving] = useState(false);
 
   async function loadSchedules() {
-    const token = await getToken();
+    const token = accessToken;
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/reports/schedules`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -52,7 +52,7 @@ export function ScheduledReports() {
   async function handleCreate() {
     setSaving(true);
     try {
-      const token = await getToken();
+      const token = accessToken;
       const emails = recipients.split(',').map((e) => e.trim()).filter(Boolean);
       await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/reports/schedules`, {
         method: 'POST',
@@ -70,7 +70,7 @@ export function ScheduledReports() {
   }
 
   async function handleDelete(id: string) {
-    const token = await getToken();
+    const token = accessToken;
     await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1/reports/schedules/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },

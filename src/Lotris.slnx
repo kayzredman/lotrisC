@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="Lotris.Api/Lotris.Api.csproj" />
+  <Project Path="Lotris.Application/Lotris.Application.csproj" />
+  <Project Path="Lotris.Contracts/Lotris.Contracts.csproj" />
+  <Project Path="Lotris.Domain/Lotris.Domain.csproj" />
+  <Project Path="Lotris.Infrastructure/Lotris.Infrastructure.csproj" />
+  <Project Path="Lotris.Tests.Integration/Lotris.Tests.Integration.csproj" />
+  <Project Path="Lotris.Workers/Lotris.Workers.csproj" />
+</Solution>

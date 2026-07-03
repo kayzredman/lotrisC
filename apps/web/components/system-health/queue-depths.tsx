@@ -14,7 +14,7 @@ export function QueueDepths({ queues }: QueueDepthsProps) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
           <Layers className="w-3.5 h-3.5 text-indigo-400" />
-          BullMQ Queue Depths
+          Hangfire Job Queues
         </div>
         <span className="flex items-center gap-1.5 text-[10.5px] font-semibold text-green-400">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { trpc } from '@/lib/trpc/client';
+import { useOnboardingStatus } from '@/lib/api/hooks/useOnboarding';
 
 /**
  * OnboardingGuard — wraps the (app) layout.
@@ -16,10 +16,7 @@ import { trpc } from '@/lib/trpc/client';
  */
 export function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { data, error } = trpc['onboarding.getStatus'].useQuery(undefined, {
-    retry: false,
-    staleTime: 60_000,
-  });
+  const { data, error } = useOnboardingStatus({ retry: false, staleTime: 60_000 });
 
   useEffect(() => {
     if (error) return; // non-admin role — do not redirect

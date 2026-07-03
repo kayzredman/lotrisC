@@ -1,7 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useUsersList } from '@/lib/api/hooks/useAuth';
+import {
+  useCreateKpiAgreement,
+  useKpiAgreement,
+  useKpiAgreements,
+  useSetKpiAgreementAreas,
+  useSubmitKpiAgreement,
+} from '@/lib/api/hooks/useKpi';
 import {
   Plus,
   Trash2,
@@ -284,21 +292,20 @@ export default function KpiAgreementBuilder() {
   const [leadNotes, setLeadNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitDone, setSubmitDone] = useState(false);
   const [filterStatus, setFilterStatus] = useState<AgreementStatus | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewForm, setShowNewForm] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
-  // ── tRPC queries ─────────────────────────────────────────────────────────
-  const utils = trpc.useUtils();
+  // ── Queries ─────────────────────────────────────────────────────────
+  const queryClient = useQueryClient();
 
-  const { data: usersRaw } = trpc['users.list'].useQuery({}, { staleTime: 120_000 });
+  const { data: usersRaw } = useUsersList({ staleTime: 120_000 });
   const users: User[] = (usersRaw as User[] | undefined) ?? [];
 
-  const { data: listData, isLoading } = trpc['kpi.agreements.list'].useQuery(
-    {},
-    { staleTime: 60_000 },
-  );
+  const { data: listData, isLoading } = useKpiAgreements({}, { staleTime: 60_000 });
   const allAgreements: Agreement[] = (listData as Agreement[] | undefined) ?? [];
   const agreements = allAgreements
     .filter(a => filterStatus === 'ALL' || a.status === filterStatus)
@@ -316,10 +323,7 @@ export default function KpiAgreementBuilder() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Load areas when agreement selected
-  const { data: agreementDetail } = trpc['kpi.agreements.get'].useQuery(
-    { id: selectedId ?? '' },
-    { enabled: !!selectedId, staleTime: 30_000 },
-  );
+  const { data: agreementDetail } = useKpiAgreement(selectedId ?? '', { enabled: !!selectedId, staleTime: 30_000 });
 
   useEffect(() => {
     if (!agreementDetail) return;
@@ -375,41 +379,15 @@ export default function KpiAgreementBuilder() {
       : a));
   }
 
-  // ── tRPC mutations (all auth goes through tRPC context, not REST guard) ──
-  const setAreasMutation = trpc['kpi.agreements.setAreas'].useMutation({
-    onSuccess: () => {
-      utils['kpi.agreements.list'].invalidate();
-      utils['kpi.agreements.get'].invalidate({ id: selectedId ?? '' });
-    },
-  });
+  // ── Mutations ───────────────────────────────────────────────────────
+  const setAreasMutation = useSetKpiAgreementAreas();
+  const submitMutation = useSubmitKpiAgreement();
+  const createAgreementMutation = useCreateKpiAgreement();
 
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitDone, setSubmitDone] = useState(false);
-  const submitMutation = trpc['kpi.agreements.submit'].useMutation({
-    onSuccess: () => {
-      setSubmitDone(true);
-      setSubmitError(null);
-      utils['kpi.agreements.list'].invalidate();
-      utils['kpi.agreements.get'].invalidate({ id: selectedId ?? '' });
-    },
-    onError: (err) => {
-      setSubmitError(err.message ?? 'Failed to send for review');
-    },
-  });
-
-  const createAgreementMutation = trpc['kpi.agreements.create'].useMutation({
-    onSuccess: (data) => {
-      setSelectedId((data as { id: string }).id);
-      setAreas([emptyArea()]);
-      setShowNewForm(false);
-      setCreateError(null);
-      utils['kpi.agreements.list'].invalidate();
-      setTimeout(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
-    },
-    onError: (err) => {
-      setCreateError(err.message ?? 'Error creating agreement');
-    },
-  });
+  const invalidateAgreement = (id: string) => {
+    void queryClient.invalidateQueries({ queryKey: ['kpi', 'agreements'] });
+    void queryClient.invalidateQueries({ queryKey: ['kpi', 'agreements', id] });
+  };
 
   // ── Save/activate ────────────────────────────────────────────────────────
   async function handleSave(activate = false) {
@@ -426,10 +404,13 @@ export default function KpiAgreementBuilder() {
           targetScore: parseFloat(m.targetScore) || 0,
         })),
       }));
-      await setAreasMutation.mutateAsync({ agreementId: selectedId, areas: areasPayload });
+      await setAreasMutation.mutateAsync({ id: selectedId, areas: areasPayload });
       if (activate) {
-        await submitMutation.mutateAsync({ agreementId: selectedId });
+        await submitMutation.mutateAsync({ id: selectedId });
+        setSubmitDone(true);
+        setSubmitError(null);
       }
+      invalidateAgreement(selectedId);
     } finally {
       setSaving(false);
     }
@@ -440,14 +421,37 @@ export default function KpiAgreementBuilder() {
     if (!selectedId) return;
     setSubmitError(null);
     setSubmitDone(false);
-    submitMutation.mutate({ agreementId: selectedId });
+    submitMutation.mutate(
+      { id: selectedId },
+      {
+        onSuccess: () => {
+          setSubmitDone(true);
+          setSubmitError(null);
+          invalidateAgreement(selectedId);
+        },
+        onError: (err) => setSubmitError(err.message ?? 'Failed to send for review'),
+      },
+    );
   }
 
   // ── New agreement ────────────────────────────────────────────────────────
   function handleNewAgreement() {
     if (!engineerId) return;
     setCreateError(null);
-    createAgreementMutation.mutate({ engineerId, periodKey });
+    createAgreementMutation.mutate(
+      { engineerId, periodKey },
+      {
+        onSuccess: (data) => {
+          setSelectedId((data as { id: string }).id);
+          setAreas([emptyArea()]);
+          setShowNewForm(false);
+          setCreateError(null);
+          void queryClient.invalidateQueries({ queryKey: ['kpi', 'agreements'] });
+          setTimeout(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+        },
+        onError: (err) => setCreateError(err.message ?? 'Error creating agreement'),
+      },
+    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────

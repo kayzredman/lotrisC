@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc';
+import { useCurrentUser } from '@/lib/api/hooks/useAuth';
 import { UsersTable } from './users-table';
 import { TeamsTable } from './teams-table';
 import { TeamAccessPanel } from './team-access-panel';
@@ -10,7 +10,7 @@ import { CategoryRoutingPanel } from './category-routing-panel';
 type Tab = 'users' | 'teams' | 'access' | 'routing';
 
 export function AdminTabs() {
-  const { data: me } = trpc['users.me'].useQuery(undefined, { staleTime: 60_000 });
+  const { data: me } = useCurrentUser({ staleTime: 60_000 });
   const role = me?.roleName ?? '';
   const isManagerOnly = role === 'IT_MANAGER'; // sees Teams + Access but NOT Users
 

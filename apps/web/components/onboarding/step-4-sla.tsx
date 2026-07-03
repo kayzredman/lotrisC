@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { trpc } from '@/lib/trpc/client';
+import { useSaveOnboardingSla } from '@/lib/api/hooks/useOnboarding';
+import { useAdminTeams } from '@/lib/api/hooks/useAdmin';
 import { Users } from 'lucide-react';
 
 const PRIORITIES = [
@@ -33,12 +34,9 @@ export function Step4Sla({ onSuccess }: Props) {
   const [escalTeam, setEscalTeam]   = useState('');
   const [error, setError]           = useState('');
 
-  const saveSla = trpc['onboarding.saveSla'].useMutation({
-    onSuccess,
-    onError: (e) => setError(e.message),
-  });
+  const saveSla = useSaveOnboardingSla();
 
-  const { data: teamsData } = trpc['admin.teams.list'].useQuery();
+  const { data: teamsData } = useAdminTeams();
   const teams = (teamsData ?? []) as { id: string; name: string }[];
 
   function updateSla(p: PriorityKey, field: keyof SlaRow, val: string) {
@@ -53,7 +51,10 @@ export function Step4Sla({ onSuccess }: Props) {
     // Map Critical resolution → resolutionSlaMinutes (in minutes from hours)
     const pickupSlaMinutes     = sla.critical.firstResponse * 60;
     const resolutionSlaMinutes = sla.critical.resolution * 60;
-    saveSla.mutate({ pickupSlaMinutes, resolutionSlaMinutes });
+    saveSla.mutate(
+      { pickupSlaMinutes, resolutionSlaMinutes },
+      { onSuccess, onError: (e) => setError(e.message) },
+    );
   }
 
   return (
