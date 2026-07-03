@@ -1,6 +1,5 @@
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
-import type { QueryHookOptions } from './query-utils';
 
 export interface MonitorStats {
   totalOpen: number;
@@ -12,11 +11,13 @@ export interface MonitorStats {
 }
 
 /** Public monitor wall — no auth required */
-export function useMonitorStats(options?: QueryHookOptions) {
+export function useMonitorStats(
+  options?: Omit<UseQueryOptions<MonitorStats>, 'queryKey' | 'queryFn'>,
+) {
   return useQuery<MonitorStats>({
     queryKey: ['monitor', 'stats'],
     queryFn: () => apiFetch<MonitorStats>('/api/v1/monitor/stats'),
     refetchInterval: options?.refetchInterval ?? 30_000,
     ...options,
-  } as Omit<UseQueryOptions<MonitorStats>, 'queryKey' | 'queryFn'>);
+  });
 }

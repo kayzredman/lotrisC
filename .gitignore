@@ -17,6 +17,7 @@ out/
 .env.development
 .env.test
 .env.production
+deploy/.env.onprem
 
 # Drizzle
 packages/db/drizzle/

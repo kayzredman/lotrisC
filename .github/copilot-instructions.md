@@ -24,7 +24,7 @@ All work is coordinated through three agents:
 | Agent | File | Responsibility |
 |-------|------|----------------|
 | **QA Agent** | `.github/agents/qa-agent.instructions.md` | Assigns jobs, reviews output, **certifies** work before next job/phase, pushes `dev` + `main` to `origin`, updates docs |
-| **Backend Agent** | `.github/agents/backend-agent.instructions.md` | ASP.NET Core (refactor) / NestJS (legacy), DB, background jobs — commits to local `dev` |
+| **Backend Agent** | `.github/agents/backend-agent.instructions.md` | ASP.NET Core (`src/Lotris.*`), DB migrations, Hangfire — commits to local `dev` |
 | **Frontend Agent** | `.github/agents/frontend-agent.instructions.md` | Next.js 15, UI, OpenAPI client, Tailwind, ShadCN — commits to local `dev` |
 
 **The QA Agent always certifies before moving on.** Backend and Frontend do not push to remote; QA pushes after certification.
@@ -59,13 +59,13 @@ Types: `feat` · `fix` · `refactor` · `test` · `chore` · `docs`
 
 ## Absolute Rules (all agents)
 
-1. **Stack direction** — see `docs/REFACTOR.md`. Legacy NestJS rules apply until Phase 7 cutover.
-2. **MSSQL = operational + analytics.** Single instance: `dbo` for OLTP, `analytics` schema for rollups/reports. Redis for cache/queues. See `docs/DATABASE-STRATEGY.md`. Legacy NestJS stack may still use Postgres until Phase 7.
+1. **Stack:** C# ASP.NET Core API (`src/Lotris.*`) + Next.js 15 web (`apps/web/`). NestJS/tRPC decommissioned Phase 7.
+2. **MSSQL = operational + analytics.** Single instance: `dbo` for OLTP, `analytics` schema for rollups/reports. Redis for cache/queues. See `docs/DATABASE-STRATEGY.md`.
 3. **Every MSSQL query must include a `tenantId` filter.** Zero exceptions.
-4. **Auth** — hybrid Entra / Identity / LDAP during refactor; legacy Clerk until Phase 5 frontend migration.
+4. **Auth** — JWT Identity (dev/on-prem); hybrid Entra / LDAP for enterprise.
 5. **TypeScript / C# strict mode.** No unjustified `any`.
 6. **Security:** Input validation at every boundary. No secrets in code. Audit log for destructive actions.
-7. **Background jobs must be idempotent** (BullMQ → Hangfire during refactor).
+7. **Background jobs idempotent** — Hangfire in C# API/workers.
 8. **Queue ordering invariant:** `priority DESC, sla_deadline ASC`. Must never silently change.
 9. **mockups/ is read-only reference.** Design decisions go in `docs/design-system.md`.
 10. **Living docs:** `docs/CONTEXT.md`, `docs/SPRINTS.md`, `docs/REFACTOR.md` — QA updates after sprints.
@@ -85,8 +85,7 @@ Types: `feat` · `fix` · `refactor` · `test` · `chore` · `docs`
 | Sprint reviews | `docs/reviews/SPRINT_X_REVIEW.md` |
 | UI mockups (read-only) | `mockups/*-v2.html` |
 | Design tokens (CSS) | `mockups/style-v2.css` |
-| Drizzle schemas (legacy) | `packages/db/schemas/` |
-| NestJS modules (legacy) | `apps/api/src/modules/` |
-| C# solution (refactor) | `src/Lotris.*` |
+| Legacy MSSQL migrations (SQL files) | `packages/db/migrations/mssql/` |
+| C# solution | `src/Lotris.*` |
 | Next.js app | `apps/web/app/` |
-| BullMQ workers (legacy) | `workers/jobs/` |
+| OpenAPI spec | `docs/openapi/v1.json` |
