@@ -75,7 +75,7 @@ If Next.js is stale after switching machines: `pnpm web:dev-reset`.
 | 2 | P1 REST gaps | ✅ batch-reassign, monitor, team-workload |
 | 3 | Queue / SLA / mutex | ✅ `pnpm gate:queue` |
 | 4 | SSE (notifications + health) | ✅ `pnpm gate:sse` |
-| 5 | On-prem compose smoke | ⏸ **Blocked** — local Docker disk failure; stack definition exists, not validated on this machine |
+| 5 | On-prem compose smoke | ⏸ **Not run yet** — defaults use **9090/9091/9092** to avoid dev port clashes; try on new machine |
 | 6 | NestJS decommission | ❌ **Not started** — staged after on-prem smoke green |
 
 ### Explicitly deferred (post–Phase 7 cutover)
@@ -119,26 +119,23 @@ pnpm onprem:smoke
 
 ---
 
-## 5. On-prem attempt on previous machine (context)
+## 5. On-prem (deferred — ready when you are)
 
-A local on-prem spin-up was attempted but **failed** due to Docker I/O errors and **disk full** — not a code defect.
+On-prem was **not validated** on the previous machine (Docker disk failure during first build). Config is packed for a later run:
 
-Actions taken before machine switch:
+| Port | Service |
+|------|---------|
+| **9090** | nginx proxy — browser URL (`PUBLIC_BASE_URL`) |
+| **9091** | API direct (debug / OpenAPI) |
+| **9092** | web direct (debug) |
 
-1. **Reverted** port remapping experiment (9090/9091/9092) — defaults back to port **80** / `http://localhost`
-2. **Removed** local `deploy/.env.onprem` (never committed)
-3. **Did not** validate on-prem smoke on that machine
-
-On-prem packaging (Phase 6) remains in repo: `docker/docker-compose.onprem.yml`, `deploy/INSTALL.md`.
-
-### Docker cleanup (if partial artifacts exist)
+Local dev (`:3000`, `:5153`, `:1433`, `:6379`) is unaffected — on-prem uses separate volumes (`lotris_onprem_*`).
 
 ```bash
-docker compose -f docker/docker-compose.onprem.yml down -v --remove-orphans 2>/dev/null
-docker rm -f lotris_onprem_mssql lotris_onprem_redis lotris_onprem_api \
-  lotris_onprem_web lotris_onprem_proxy lotris_onprem_bootstrap 2>/dev/null
-docker volume rm lotris_onprem_mssql_data lotris_onprem_redis_data lotris_onprem_reports_data 2>/dev/null
-docker builder prune -f && docker image prune -f
+cp deploy/.env.onprem.example deploy/.env.onprem
+docker compose -f docker/docker-compose.onprem.yml --env-file deploy/.env.onprem up -d --build
+docker compose -f docker/docker-compose.onprem.yml --env-file deploy/.env.onprem --profile bootstrap run --rm bootstrap
+pnpm onprem:smoke   # defaults to http://localhost:9090
 ```
 
 ---

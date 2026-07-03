@@ -6,7 +6,7 @@ Install the full Lotris stack on a single host with Docker Compose: **MSSQL + Re
 
 - Docker Engine 24+ and Docker Compose v2
 - 8 GB RAM minimum (MSSQL is memory-heavy)
-- Ports **80** available (or set `LOTRIS_HTTP_PORT` in env)
+- Ports **9090** (proxy), **9091** (API direct), **9092** (web direct) — defaults avoid clashing with local dev (`:3000`, `:5153`, `:80`, `:1433`, `:6379`). Override via `LOTRIS_HTTP_PORT`, `LOTRIS_API_PORT`, `LOTRIS_WEB_PORT` in env.
 
 ## 1. Configure environment
 
@@ -59,7 +59,7 @@ bash scripts/onprem-smoke.sh
 
 Open in browser:
 
-- **App:** `http://localhost/` (or your `PUBLIC_BASE_URL`)
+- **App:** `http://localhost:9090/` (or your `PUBLIC_BASE_URL`)
 - **Ops:** `/ops`
 - **API health:** `/health`
 - **OpenAPI:** `/openapi`

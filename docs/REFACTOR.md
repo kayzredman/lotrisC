@@ -184,8 +184,8 @@ Previously identified gaps (June 2026) and their resolution:
 | `GET /api/v1/monitor/stats` | `MonitorController` (public, no JWT) | ✅ |
 | `GET /api/v1/analytics/team-workload` | `WorkloadAnalyser` — engineers + suggestions | ✅ |
 | OpenAPI sync | `pnpm api:sync` | ✅ 98 operations / 78 paths |
-| FSM + load + tenant tests | `dotnet test` | Pending |
-| Clean VM on-prem smoke | `pnpm onprem:smoke` | Pending |
+| FSM + load + tenant tests | `dotnet test`, `pnpm gate:queue` | ✅ integration + mutex; formal load test optional |
+| Clean VM on-prem smoke | `pnpm onprem:smoke` (default `:9090`) | Pending |
 | Decommission `apps/api` | Remove NestJS + tRPC client | After gate green |
 
 **Remaining gaps (non-blocking for most UI):** NestJS-only `health.storeHealth` / `repairStore` (drop for on-prem); health snapshot RBAC stricter than legacy (ADMIN-only vs IT_MANAGER).

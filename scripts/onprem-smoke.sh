@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Smoke test for on-prem compose stack (expects proxy on port 80).
+# Smoke test for on-prem compose stack (default proxy http://localhost:9090).
 set -euo pipefail
 
-BASE="${LOTRIS_BASE_URL:-http://localhost}"
+BASE="${LOTRIS_BASE_URL:-http://localhost:9090}"
 ENV_FILE="${LOTRIS_ENV_FILE:-deploy/.env.onprem}"
 
 pass=0
