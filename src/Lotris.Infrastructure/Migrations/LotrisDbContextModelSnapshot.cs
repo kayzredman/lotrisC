@@ -256,6 +256,9 @@ namespace Lotris.Infrastructure.Migrations
                     b.Property<string>("DateTo")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("DeliveryRecipients")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ErrorMsg")
                         .HasColumnType("nvarchar(max)");
 
@@ -266,6 +269,9 @@ namespace Lotris.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("InsightsJson")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ReportType")
                         .IsRequired()

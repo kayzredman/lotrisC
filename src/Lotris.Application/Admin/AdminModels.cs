@@ -28,6 +28,9 @@ public sealed class AdminUserUpdateModel
     public string? FullName { get; init; }
     public Guid? TeamId { get; init; }
     public bool ClearTeam { get; init; }
+
+    public bool? IsActive { get; init; }
+
     public DateTime UpdatedAt { get; init; }
 }
 

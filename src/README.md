@@ -1,43 +1,37 @@
 # Lotris C# Backend
 
-ASP.NET Core 10 solution for the Lotris backend refactor (Phases 0–6 complete; Phase 7 parity gate in progress).
+ASP.NET Core solution for the Lotris backend (Phases 0–7 complete; Phase 8 intelligence platform shipped).
 
 ## Projects
 
 | Project | Purpose |
 |---------|---------|
-| `Lotris.Api` | REST API (17 controllers), OpenAPI, health checks, Hangfire dashboard (dev) |
-| `Lotris.Application` | Services, interfaces (tickets, analytics, admin, …) |
+| `Lotris.Api` | REST API (17+ controllers), OpenAPI, health checks, Hangfire dashboard (dev) |
+| `Lotris.Application` | Services, interfaces (tickets, analytics, intelligence, RCA, …) |
 | `Lotris.Domain` | Domain enums and primitives |
 | `Lotris.Contracts` | DTOs shared with clients |
-| `Lotris.Infrastructure` | EF Core, Dapper repos, Identity, JWT, analytics ETL |
+| `Lotris.Infrastructure` | EF Core, Dapper repos, Identity, JWT, Qdrant, analytics ETL |
 | `Lotris.Workers` | Hangfire job registration |
 
 ## Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- Docker (for MSSQL + Redis via repo root compose)
+- [.NET SDK](https://dotnet.microsoft.com/download) (repo targets .NET 9+)
+- Docker (MSSQL + Redis + optional Qdrant via repo root compose)
 
 ## Local run
 
-1. Start infrastructure:
+1. Start infrastructure (or use `pnpm api:restart` from repo root):
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d mssql redis
+docker compose -f docker/docker-compose.yml up -d mssql redis qdrant
 ```
 
-2. Apply EF migrations (first time):
+2. Run the API:
 
 ```bash
-cd src
-dotnet ef database update --project Lotris.Infrastructure --startup-project Lotris.Api
-```
-
-3. Run the API:
-
-```bash
-cd src
-dotnet run --project Lotris.Api
+pnpm api:restart          # from repo root — recommended
+# or foreground:
+cd src/Lotris.Api && dotnet run --urls http://localhost:5153
 ```
 
 - OpenAPI JSON: `/openapi/v1.json`
@@ -54,15 +48,15 @@ Refresh the committed spec after API changes:
 pnpm api:sync   # from repo root — export spec, update docs/API.md, regenerate TS types
 ```
 
-## Phase 7 parity
+## Phase 8 intelligence
 
-See [`docs/PARITY-AUDIT.md`](../docs/PARITY-AUDIT.md) and [`docs/REFACTOR.md`](../docs/REFACTOR.md). Key July 2026 endpoints:
+See [`docs/PHASE-8-UPDATES.md`](../docs/PHASE-8-UPDATES.md) and [`docs/INTELLIGENCE-DEV-SETUP.md`](../docs/INTELLIGENCE-DEV-SETUP.md).
 
-| Endpoint | Auth | Purpose |
-|----------|------|---------|
-| `GET /api/v1/monitor/stats` | Public | NOC monitor wall |
-| `GET /api/v1/analytics/team-workload?teamId=` | TEAM_LEAD+ | Workload + suggestions |
-| `POST /api/v1/tickets/batch-reassign` | TEAM_LEAD+ | Apply rebalancing (max 20) |
+| Feature | Notes |
+|---------|-------|
+| Qdrant RAG | `Intelligence:QdrantUrl` — optional; keyword fallback if down |
+| On-prem unlock | `Lotris:DisablePaymentGates=true` bypasses feature flags |
+| RCA approvals | Migration `0015_rca_approvals.sql` |
 
 ## Configuration
 
@@ -71,9 +65,11 @@ See [`docs/PARITY-AUDIT.md`](../docs/PARITY-AUDIT.md) and [`docs/REFACTOR.md`](.
 | `ConnectionStrings:DefaultConnection` | — | MSSQL (operational + analytics + Hangfire) |
 | `Jwt:Secret` | `JWT_SECRET` | JWT signing key (min 32 chars recommended) |
 | `Database:ApplyLegacyMigrations` | — | When `true`, applies `packages/db/migrations/mssql/*.sql` |
-| `Redis:ConnectionString` | — | Used for health checks and future cache |
-| `OpenApi:Enabled` | — | Serve `/openapi/v1.json` (default `true`; off in Testing) |
-| `OpenApi:UiEnabled` | — | Serve Scalar UI at `/openapi` (default `true`) |
+| `Redis:ConnectionString` | — | Health checks, cooldown, cache |
+| `Intelligence:QdrantUrl` | — | Vector sidecar (dev: `http://localhost:6333`) |
+| `Lotris:DisablePaymentGates` | `Lotris__DisablePaymentGates` | On-prem: unlock all intelligence features |
+| `OpenApi:Enabled` | — | Serve `/openapi/v1.json` |
+| `OpenApi:UiEnabled` | — | Serve Scalar UI at `/openapi` |
 
 ## Docker (optional API container)
 
@@ -90,9 +86,10 @@ cd src
 dotnet ef migrations add <Name> --project Lotris.Infrastructure --startup-project Lotris.Api
 ```
 
-## Build
+## Build & test
 
 ```bash
 cd src
 dotnet build
+dotnet test
 ```

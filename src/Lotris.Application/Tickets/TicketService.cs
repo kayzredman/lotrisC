@@ -1,7 +1,9 @@
 using Lotris.Application.Admin;
 using Lotris.Application.Analytics;
 using Lotris.Application.Common;
+using Lotris.Application.Intelligence;
 using Lotris.Application.Notifications;
+using Lotris.Application.ProblemManagement;
 using Lotris.Application.Tickets;
 using Lotris.Contracts;
 using Lotris.Contracts.Tickets;
@@ -27,6 +29,8 @@ public class TicketService
     private readonly INotificationEnqueuer _notifications;
     private readonly IDashboardCacheService _dashboardCache;
     private readonly IAdminRepository _admin;
+    private readonly RcaService _rca;
+    private readonly ClosedTicketKnowledgeIndexer _ticketIndexer;
 
     public TicketService(
         ITicketRepository tickets,
@@ -35,7 +39,9 @@ public class TicketService
         ISlaJobScheduler slaJobs,
         INotificationEnqueuer notifications,
         IDashboardCacheService dashboardCache,
-        IAdminRepository admin)
+        IAdminRepository admin,
+        RcaService rca,
+        ClosedTicketKnowledgeIndexer ticketIndexer)
     {
         _tickets = tickets;
         _slaConfigs = slaConfigs;
@@ -44,6 +50,8 @@ public class TicketService
         _notifications = notifications;
         _dashboardCache = dashboardCache;
         _admin = admin;
+        _rca = rca;
+        _ticketIndexer = ticketIndexer;
     }
 
     public async Task<TicketDto> CreateAsync(
@@ -318,6 +326,25 @@ public class TicketService
                 TicketTitle = updated.Title,
                 ActorId = session.UserId,
             });
+        }
+
+        if (to == TicketStatus.Closed)
+        {
+            await _rca.EvaluateOnTicketClosedAsync(
+                session.TenantId,
+                ticketId,
+                ticket.Priority,
+                ticket.AssigneeId,
+                ticket.Title,
+                session.UserId,
+                cancellationToken);
+
+            await _ticketIndexer.TryIngestAsync(
+                session.TenantId,
+                ticketId,
+                ticket.Title,
+                ticket.Description,
+                cancellationToken);
         }
 
         await _dashboardCache.InvalidateAsync(session.TenantId, cancellationToken);

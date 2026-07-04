@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from '@/lib/api/client';
+import { apiFetch, API_BASE } from '@/lib/api/client';
 import { useAuthenticatedMutation, useAuthenticatedQuery, type ApiRecord, type QueryHookOptions } from './query-utils';
 
 export function useReportsList(options?: QueryHookOptions) {
@@ -8,6 +8,37 @@ export function useReportsList(options?: QueryHookOptions) {
     '/api/v1/reports',
     options,
   );
+}
+
+export function useReportJobStatus(jobId: string | null, options?: QueryHookOptions) {
+  return useAuthenticatedQuery<ApiRecord>(
+    ['reports', 'status', jobId],
+    `/api/v1/reports/${jobId}/status`,
+    {
+      enabled: !!jobId,
+      refetchInterval: (query) => {
+        const status = (query.state.data as ApiRecord | undefined)?.status;
+        if (status === 'DONE' || status === 'FAILED') return false;
+        return 2000;
+      },
+      ...options,
+    },
+  );
+}
+
+export async function downloadReportFile(jobId: string, token: string, format = 'PDF') {
+  const res = await fetch(`${API_BASE}/api/v1/reports/${jobId}/download`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Download failed');
+  const blob = await res.blob();
+  const ext = format === 'EXCEL' || format === 'XLSX' ? 'xlsx' : 'pdf';
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `lotris-report-${jobId}.${ext}`;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 export function useReportSchedules(options?: QueryHookOptions) {

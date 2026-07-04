@@ -99,3 +99,5 @@ See `docker/helm/lotris/README.md`.
 | Bootstrap “register failed” | Admin may already exist — try login with same credentials |
 
 Service restart from `/ops` is **audit-only** until post–Phase 6 restart wiring lands. Use `docker compose … restart api web` manually.
+
+**Intelligence (on-prem):** Compose sets `Lotris__DeploymentMode=OnPrem` and `Lotris__DisablePaymentGates=true` — all AI features unlocked, no payment gates. Qdrant runs as a sidecar (`Intelligence__QdrantUrl=http://qdrant:6333`).

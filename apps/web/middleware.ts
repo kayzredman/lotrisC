@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 const PUBLIC_PATHS = [
   '/',
   '/login',
+  '/auth/callback',
   '/sign-up',
   '/api/dev-login',
   '/monitor',

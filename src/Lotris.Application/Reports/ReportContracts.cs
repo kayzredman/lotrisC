@@ -25,6 +25,16 @@ public interface IReportRepository
 
     Task DeleteScheduleAsync(Guid tenantId, Guid scheduleId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<ReportScheduleEntity>> ListDueSchedulesAsync(
+        DateTime asOfUtc,
+        CancellationToken cancellationToken = default);
+
+    Task UpdateScheduleRunAsync(
+        Guid scheduleId,
+        DateTime lastRunAt,
+        DateTime nextRunAt,
+        CancellationToken cancellationToken = default);
+
     Task<ReportConfigEntity?> GetConfigAsync(Guid tenantId, CancellationToken cancellationToken = default);
 
     Task UpsertConfigAsync(Guid tenantId, ReportConfigUpdate update, CancellationToken cancellationToken = default);
@@ -35,9 +45,14 @@ public interface IReportJobEnqueuer
     void EnqueueGeneration(Guid jobId);
 }
 
+public interface IReportScheduleRunnerJob
+{
+    Task ExecuteDueSchedulesAsync(CancellationToken cancellationToken = default);
+}
+
 public interface IReportGenerator
 {
-    Task<string> GenerateAsync(
+    Task<ReportGenerationResult> GenerateAsync(
         Guid tenantId,
         string reportType,
         string format,
@@ -47,6 +62,8 @@ public interface IReportGenerator
         string outputDirectory,
         CancellationToken cancellationToken = default);
 }
+
+public sealed record ReportGenerationResult(string FilePath, string? InsightsJson);
 
 public sealed class ReportJobEntity
 {
@@ -61,6 +78,8 @@ public sealed class ReportJobEntity
     public string? DateTo { get; init; }
     public Guid? TeamId { get; init; }
     public string? ErrorMsg { get; init; }
+    public string? InsightsJson { get; init; }
+    public string? DeliveryRecipients { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? CompletedAt { get; init; }
 }

@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ShieldCheck, Ticket, BarChart2 } from 'lucide-react';
 import { LotrisLogo } from '@/components/brand/lotris-mark';
 import { useLogin, useRegister } from '@/lib/api/hooks/useAuth';
+import { apiFetch } from '@/lib/api/client';
+import { buildMicrosoftLoginUrl, MicrosoftSignInButton } from '@/components/auth/microsoft-sign-in-button';
 import styles from './login.module.css';
 
 type Tab = 'login' | 'register';
@@ -21,10 +23,26 @@ export function LoginForm() {
   const [fullName, setFullName] = useState('');
   const [tenantName, setTenantName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [microsoftEnabled, setMicrosoftEnabled] = useState(false);
 
   const loginMutation = useLogin();
   const registerMutation = useRegister();
   const isSubmitting = loginMutation.isPending || registerMutation.isPending;
+
+  useEffect(() => {
+    const msError = searchParams.get('microsoft_error');
+    if (msError) setError(msError);
+  }, [searchParams]);
+
+  useEffect(() => {
+    void apiFetch<{ identity?: boolean; microsoft?: boolean }>('/api/v1/auth/providers')
+      .then((p) => setMicrosoftEnabled(Boolean(p.microsoft)))
+      .catch(() => setMicrosoftEnabled(false));
+  }, []);
+
+  function handleMicrosoftLogin() {
+    window.location.href = buildMicrosoftLoginUrl(redirect);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -147,6 +165,26 @@ export function LoginForm() {
           {isSubmitting ? 'Please wait…' : tab === 'login' ? 'Sign in' : 'Create account'}
         </button>
       </form>
+
+      {tab === 'login' && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: 'var(--text-muted)', fontSize: 12 }}>
+            <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            or
+            <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
+          <MicrosoftSignInButton
+            fullWidth
+            onClick={handleMicrosoftLogin}
+            disabled={!microsoftEnabled}
+            hint={
+              microsoftEnabled
+                ? 'You will be redirected to Microsoft to enter your work email and password — the same sign-in used by Copilot and Microsoft 365.'
+                : 'Microsoft sign-in requires Entra on the deployment (see docs/INTELLIGENCE-ENTERPRISE-SETUP.md).'
+            }
+          />
+        </>
+      )}
 
       <div className={styles.securityNote}>
         <ShieldCheck size={12} strokeWidth={2.5} />

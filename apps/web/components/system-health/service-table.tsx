@@ -17,9 +17,10 @@ const SERVICE_ICONS: Record<string, React.FC<{ className?: string }>> = {
   'hangfire-workers':   ({ className }) => <Server className={className} />,
   'mssql-db':           ({ className }) => <Server className={className} />,
   'redis':              ({ className }) => <Server className={className} />,
+  'qdrant':             ({ className }) => <Server className={className} />,
 };
 
-const DB_SERVICES = new Set(['mssql-db']);
+const NO_RESTART_SERVICES = new Set(['mssql-db', 'qdrant']);
 
 export function ServiceTable({ services, selected, onSelect, onRestart }: ServiceTableProps) {
   if (services.length === 0) {
@@ -85,7 +86,8 @@ function ServiceRow({
   onSelect: () => void;
   onRestart: () => void;
 }) {
-  const isDb = DB_SERVICES.has(svc.id);
+  const isDb = svc.id === 'mssql-db';
+  const noRestart = NO_RESTART_SERVICES.has(svc.id);
   const cpuPct = svc.cpu;
   const memPct = svc.memTotalMb > 0 ? Math.round((svc.memUsedMb / svc.memTotalMb) * 100) : 0;
 
@@ -158,7 +160,7 @@ function ServiceRow({
       {/* Actions */}
       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-1">
-          {!isDb && (
+          {!noRestart && (
             <ActionBtn
               label="Restart"
               icon={<RefreshCw className="w-2.5 h-2.5" />}

@@ -89,3 +89,24 @@ Types: `feat` · `fix` · `refactor` · `test` · `chore` · `docs`
 | C# solution | `src/Lotris.*` |
 | Next.js app | `apps/web/app/` |
 | OpenAPI spec | `docs/openapi/v1.json` |
+| Phase 8 handoff | `docs/HANDOFF.md`, `docs/PHASE-8-UPDATES.md` |
+| Dev scripts | `pnpm api:restart`, `pnpm smoke:phase5`, `pnpm web:dev-reset` |
+
+---
+
+## Phase status (July 2026)
+
+| Phase | Status |
+|-------|--------|
+| Phase 7 — REST parity + NestJS decommission | ✅ Complete |
+| Phase 8.0 — Intelligence MVP (RCA, Knowledge, Reports) | ✅ Complete |
+| Phase 8.1 — Email schedules, similar incidents, auto-index, digest | ✅ Complete @ `4027367` |
+| Phase 8.2 — Qdrant RAG, RCA approvals, on-prem unlock, parity | ✅ Complete @ `607a8fd` |
+
+**On-prem:** `Lotris:DisablePaymentGates=true` unlocks all intelligence features — no Stripe gates.
+
+**Deferred:** API break-glass `/health/console`.
+
+**Out of scope (on-prem):** Stripe/SaaS billing UI, real `/ops` service restart wiring, Ollama air-gap fallback.
+
+**Verify:** `pnpm api:restart` → `cd src && dotnet test` → `pnpm gate:etl` → `pnpm smoke:phase5` → `pnpm onprem:smoke`.

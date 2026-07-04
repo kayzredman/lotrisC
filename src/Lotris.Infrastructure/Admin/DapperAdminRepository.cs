@@ -15,9 +15,10 @@ public sealed class DapperAdminRepository : IAdminRepository
 
     public async Task<IReadOnlyList<AdminUserEntity>> ListUsersAsync(
         Guid tenantId,
+        Guid? teamId = null,
         CancellationToken cancellationToken = default)
     {
-        const string sql = """
+        var sql = """
             SELECT u.id, u.email, u.full_name AS FullName, u.role_id AS RoleId, r.name AS RoleName,
                    u.team_id AS TeamId, t.name AS TeamName, u.is_active AS IsActive,
                    u.is_unavailable AS IsUnavailable
@@ -27,10 +28,18 @@ public sealed class DapperAdminRepository : IAdminRepository
             WHERE u.tenant_id = @TenantId
             """;
 
+        if (teamId.HasValue)
+        {
+            sql += " AND u.team_id = @TeamId";
+        }
+
+        sql += " ORDER BY u.full_name ASC";
+
         await using var connection = await _connections.OpenConnectionAsync(cancellationToken);
         var rows = await connection.QueryAsync<UserRow>(new CommandDefinition(sql, new
         {
             TenantId = SqlGuid.ToSql(tenantId),
+            TeamId = teamId.HasValue ? SqlGuid.ToSql(teamId.Value) : null,
         }, cancellationToken: cancellationToken));
 
         return rows.Select(MapUser).ToList();
@@ -97,9 +106,23 @@ public sealed class DapperAdminRepository : IAdminRepository
             sets.Add("team_id = NULL");
         }
 
+        if (update.IsActive.HasValue)
+        {
+            sets.Add("is_active = @IsActive");
+            parameters.Add("IsActive", update.IsActive.Value ? 1 : 0);
+        }
+
         var sql = $"UPDATE dbo.Users SET {string.Join(", ", sets)} WHERE tenant_id = @TenantId AND id = @UserId";
         await using var connection = await _connections.OpenConnectionAsync(cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+
+        if (update.FullName is not null)
+        {
+            await connection.ExecuteAsync(new CommandDefinition(
+                "UPDATE AspNetUsers SET FullName = @FullName WHERE Id = @UserId",
+                new { FullName = update.FullName, UserId = SqlGuid.ToSql(userId) },
+                cancellationToken: cancellationToken));
+        }
     }
 
     public async Task DeactivateUserAsync(
@@ -142,6 +165,11 @@ public sealed class DapperAdminRepository : IAdminRepository
             RoleId = roleId,
             UpdatedAt = updatedAt,
         }, cancellationToken: cancellationToken));
+
+        await connection.ExecuteAsync(new CommandDefinition(
+            "UPDATE AspNetUsers SET RoleId = @RoleId WHERE Id = @UserId",
+            new { RoleId = roleId, UserId = SqlGuid.ToSql(userId) },
+            cancellationToken: cancellationToken));
     }
 
     public async Task<IReadOnlyList<AdminTeamEntity>> ListTeamsAsync(

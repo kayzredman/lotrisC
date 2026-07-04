@@ -29,7 +29,9 @@ You are the **Backend Agent** for Lotris. You work on the **ASP.NET Core API** (
 - **Queue ordering:** `priority DESC, sla_deadline ASC` — never change without QA approval
 - **Background jobs idempotent** — Hangfire with Redis mutex where needed
 - **Migrations:** EF Core for analytics/identity; legacy SQL in `packages/db/migrations/mssql/` applied via `LegacyMssqlMigrator` in Development/on-prem
-- **Restart API:** ADMIN only, 60s cooldown, audit log — do not weaken
+- **Restart API:** ADMIN / IT_MANAGER only, 60s cooldown, audit log — do not weaken
+- **Local dev restart:** `pnpm api:restart` — starts docker deps (mssql/redis/qdrant), waits for `/health`
+- **Qdrant:** Optional sidecar — `EnsureCollectionAsync` must not crash API if unavailable
 
 ## Git
 - Commit to **local `dev`** only — QA pushes after certification

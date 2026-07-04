@@ -1,9 +1,13 @@
+using Lotris.Api.Auth;
 using Lotris.Application.Auth;
 using Lotris.Contracts;
 using Lotris.Contracts.Auth;
 using Lotris.Domain;
 using Lotris.Infrastructure.Auth;
 using Lotris.Infrastructure.Identity;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -18,17 +22,109 @@ public class AuthController : ControllerBase
     private readonly IAuthTokenService _tokenService;
     private readonly ILegacyUserProvisioner _legacyProvisioner;
     private readonly AuthOptions _authOptions;
+    private readonly EntraAuthOptions _entraOptions;
+    private readonly IConfiguration _configuration;
+    private readonly MicrosoftAuthService? _microsoftAuth;
 
     public AuthController(
         UserManager<LotrisIdentityUser> userManager,
         IAuthTokenService tokenService,
         ILegacyUserProvisioner legacyProvisioner,
-        IOptions<AuthOptions> authOptions)
+        IOptions<AuthOptions> authOptions,
+        IOptions<EntraAuthOptions> entraOptions,
+        IConfiguration configuration,
+        MicrosoftAuthService? microsoftAuth = null)
     {
         _userManager = userManager;
         _tokenService = tokenService;
         _legacyProvisioner = legacyProvisioner;
         _authOptions = authOptions.Value;
+        _entraOptions = entraOptions.Value;
+        _configuration = configuration;
+        _microsoftAuth = microsoftAuth;
+    }
+
+    [HttpGet("providers")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult Providers()
+        => Ok(new
+        {
+            identity = _authOptions.IdentityEnabled,
+            microsoft = _entraOptions.Enabled &&
+                        !string.IsNullOrWhiteSpace(_entraOptions.ClientId) &&
+                        !string.IsNullOrWhiteSpace(_entraOptions.TenantId),
+        });
+
+    [HttpGet("microsoft/login")]
+    [AllowAnonymous]
+    public IActionResult MicrosoftLogin([FromQuery] string? returnUrl)
+    {
+        if (!IsMicrosoftOAuthReady())
+        {
+            return RedirectToWebWithError(returnUrl ?? "/login", "Microsoft sign-in is not configured on this server.");
+        }
+
+        var props = new AuthenticationProperties
+        {
+            RedirectUri = Url.Action(nameof(MicrosoftComplete)) ?? "/api/v1/auth/microsoft/complete",
+            Items = { ["returnUrl"] = returnUrl ?? "/dashboard" },
+        };
+
+        return Challenge(props, EntraAuthenticationExtensions.MicrosoftScheme);
+    }
+
+    private bool IsMicrosoftOAuthReady() =>
+        _entraOptions.Enabled &&
+        !string.IsNullOrWhiteSpace(_entraOptions.ClientId) &&
+        !string.IsNullOrWhiteSpace(_entraOptions.ClientSecret) &&
+        !string.IsNullOrWhiteSpace(_entraOptions.TenantId);
+
+    private IActionResult RedirectToWebWithError(string returnUrl, string message)
+    {
+        var webUrl = (_configuration["App:WebUrl"] ?? _configuration["Cors:AllowedOrigins"] ?? "http://localhost:3000")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
+
+        var path = returnUrl.StartsWith('/') ? returnUrl : $"/{returnUrl}";
+        var redirect = new UriBuilder(webUrl)
+        {
+            Path = path.Split('?')[0],
+            Query = $"microsoft_error={Uri.EscapeDataString(message)}",
+        };
+
+        return Redirect(redirect.Uri.ToString());
+    }
+
+    [HttpGet("microsoft/complete")]
+    [AllowAnonymous]
+    public async Task<IActionResult> MicrosoftComplete(CancellationToken cancellationToken)
+    {
+        if (_microsoftAuth is null)
+        {
+            return BadRequest(new { message = "Microsoft sign-in is not configured." });
+        }
+
+        var authenticate = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        if (!authenticate.Succeeded || authenticate.Principal is null)
+        {
+            return Unauthorized(new { message = "Microsoft authentication failed." });
+        }
+
+        var auth = await _microsoftAuth.SignInAsync(authenticate.Principal, cancellationToken);
+        var returnUrl = authenticate.Properties?.Items.TryGetValue("returnUrl", out var ru) == true && !string.IsNullOrWhiteSpace(ru)
+            ? ru
+            : "/dashboard";
+
+        var webUrl = (_configuration["App:WebUrl"] ?? _configuration["Cors:AllowedOrigins"] ?? "http://localhost:3000")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
+
+        var redirect = new UriBuilder(webUrl)
+        {
+            Path = "/auth/callback",
+            Query = $"access_token={Uri.EscapeDataString(auth.AccessToken)}&expires_at={Uri.EscapeDataString(auth.ExpiresAt.ToString("O"))}&returnUrl={Uri.EscapeDataString(returnUrl)}",
+        };
+
+        return Redirect(redirect.Uri.ToString());
     }
 
     [HttpPost("login")]

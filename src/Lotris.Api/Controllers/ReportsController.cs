@@ -78,6 +78,11 @@ public sealed class ReportsController : ControllerBase
     public async Task<IActionResult> Download(Guid id, CancellationToken cancellationToken)
     {
         var filePath = await _reports.GetFilePathAsync(HttpContext.GetLotrisSession(), id, cancellationToken);
+        if (!Path.IsPathRooted(filePath))
+        {
+            filePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), filePath));
+        }
+
         var ext = Path.GetExtension(filePath);
         var contentType = ext.Equals(".pdf", StringComparison.OrdinalIgnoreCase)
             ? "application/pdf"

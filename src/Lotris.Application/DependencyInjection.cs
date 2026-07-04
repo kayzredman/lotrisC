@@ -4,6 +4,8 @@ using Lotris.Application.AuditLogs;
 using Lotris.Application.Kpi;
 using Lotris.Application.Onboarding;
 using Lotris.Application.Queue;
+using Lotris.Application.Intelligence;
+using Lotris.Application.ProblemManagement;
 using Lotris.Application.Reports;
 using Lotris.Application.Tasks;
 using Lotris.Application.Tickets;
@@ -26,6 +28,10 @@ public static class DependencyInjection
         services.AddScoped<ReportService>();
         services.AddScoped<AnalyticsJobsService>();
         services.AddScoped<DashboardService>();
+        services.AddScoped<RcaService>();
+        services.AddScoped<IntelligenceService>();
+        services.AddScoped<KnowledgeIngestionService>();
+        services.AddScoped<ClosedTicketKnowledgeIndexer>();
         return services;
     }
 }

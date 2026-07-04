@@ -1,9 +1,9 @@
 # Lotris — Machine migration & session handoff
 
 > **Last updated:** July 2026  
-> **Branch:** `dev` @ `5deebc0` (pushed to `origin/dev`)  
+> **Branch:** `dev` @ `607a8fd` (synced with `origin/dev`)  
 > **Repo:** [github.com/kayzredman/lotrisC](https://github.com/kayzredman/lotrisC.git)  
-> **Purpose:** Pick up Phase 7 on a new machine without relying on Cursor chat history.
+> **Purpose:** Pick up Phase 8 on a new machine without relying on Cursor chat history.
 
 ---
 
@@ -16,19 +16,19 @@ git checkout dev
 pnpm install
 ```
 
-**Prerequisites:** Node ≥ 20, pnpm 9, .NET 9 SDK, Docker Desktop (for dev MSSQL/Redis).
+**Prerequisites:** Node ≥ 20, pnpm 9, .NET 9 SDK, Docker Desktop (for dev MSSQL/Redis/Qdrant).
 
 **Start dev infra:**
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml up -d mssql redis qdrant
 ```
 
-**Start API + web** (separate terminals or your usual process manager):
+**Start API + web:**
 
 ```bash
-cd src/Lotris.Api && dotnet run          # http://localhost:5153
-pnpm --filter @lotris/web dev            # http://localhost:3000
+pnpm api:restart          # background API on :5153 (starts docker deps if needed)
+pnpm --filter @lotris/web dev   # http://localhost:3000
 ```
 
 If Next.js is stale after switching machines: `pnpm web:dev-reset`.
@@ -46,6 +46,7 @@ If Next.js is stale after switching machines: `pnpm web:dev-reset`.
 | Monitor wall | `http://localhost:3000/monitor` |
 | Dev MSSQL | `localhost:1433` |
 | Dev Redis | `localhost:6379` |
+| Qdrant (semantic search) | `http://localhost:6333` |
 
 **Ops login (seeded in dev):** `admin-loose@test.local` / `Test1234!`
 
@@ -53,48 +54,84 @@ If Next.js is stale after switching machines: `pnpm web:dev-reset`.
 
 ---
 
-## 3. Where we left off (Phase 7)
+## 3. Where we left off (Phase 8)
 
-**Status:** Phase 7 parity gate **complete** — REST parity shipped; NestJS/tRPC decommissioned July 2026.
+**Status:** Phase 8 **MVP + 8.1 + 8.2 complete**; **ETL gate complete** on local `dev`. Ready for merge to `main`.
 
-### Shipped in `5deebc0`
+### ETL & analytics jobs (July 2026)
 
 | Area | What |
 |------|------|
-| **P1 REST parity** | `POST /api/v1/tickets/batch-reassign`, `GET /api/v1/monitor/stats` (public), `GET /api/v1/analytics/team-workload?teamId=` |
-| **Frontend** | Hooks wired in `useTickets`, `useMonitor`, `useAnalytics` |
-| **SSE fix** | Notifications stream sends `: connected` handshake frame (`SseConnectionManager.cs`) |
-| **Gate tests** | FSM lifecycle, tenant isolation, queue mutex (`QueueEngineGateTests`), SSE script |
-| **Docs** | `PARITY-AUDIT.md`, `REFACTOR.md`, OpenAPI sync |
+| **Admin API** | `GET/PATCH config`, `GET status`, `POST {jobKey}/run-now` |
+| **Ops UI** | `/ops` → Analytics & ETL Jobs panel |
+| **Gate** | `pnpm gate:etl` — config, run-now, 60s cooldown |
+| **Tests** | `AnalyticsJobsGateTests` (4 cases) |
+
+### Phase 8.2 — `607a8fd` (on `origin/dev`)
+
+| Area | What |
+|------|------|
+| **On-prem unlock** | `Lotris:DeploymentMode=OnPrem` or `Lotris:DisablePaymentGates=true` → all intelligence features + quota bypass (no Stripe gates on-prem) |
+| **Qdrant RAG** | Vector sidecar, semantic search with keyword/SQL fallback; graceful startup if Qdrant down |
+| **RCA approvals** | DRAFT → IN_REVIEW → APPROVED → PUBLISHED; `POST /api/v1/rca/{id}/approve`; migration `0015_rca_approvals.sql` |
+| **Minor parity** | Health RBAC: IT_MANAGER + TEAM_LEAD on snapshot/SSE/incidents; `GET /health/store`, `POST /health/store/repair` stubs |
+
+### Phase 8.1 — `4027367`
+
+| Area | What |
+|------|------|
+| **Scheduled report email** | Hangfire delivers generated reports to `DeliveryRecipients` |
+| **Similar incidents** | Ticket drawer shows related incidents via intelligence search |
+| **Auto-index closed tickets** | Tenant setting wired; closed tickets ingested to knowledge index |
+| **Recurring incident digest** | Hangfire job for periodic incident summaries |
+| **EF migration** | `DeliveryRecipients` column fix (`0014` + EF migration) |
+
+### Phase 8 MVP — `45dc74c` and earlier
+
+| Area | What |
+|------|------|
+| **Intelligence & AI Setup** | Multi-provider connect, feature toggles |
+| **Knowledge Base** | Ask Knowledge Base Q&A, seed scripts |
+| **Problems / RCA** | List + wizard; AI suggest with knowledge fallback |
+| **Reports** | Generate polling, schedules, download fix |
+| **Admin** | Team/user edit modals |
+
+**Full changelog:** [PHASE-8-UPDATES.md](PHASE-8-UPDATES.md)
+
+### Phase 7 (complete)
+
+Phase 7 parity gate **complete** — REST parity shipped; NestJS/tRPC decommissioned July 2026. See commits through `e953a4b`.
 
 ### Phase 7 gate checklist
 
 | # | Item | Status |
 |---|------|--------|
-| 1 | FSM + tenant isolation | ✅ `dotnet test` — lifecycle + `TenantIsolationIntegrationTests` |
+| 1 | FSM + tenant isolation | ✅ `dotnet test` |
 | 2 | P1 REST gaps | ✅ batch-reassign, monitor, team-workload |
 | 3 | Queue / SLA / mutex | ✅ `pnpm gate:queue` |
 | 4 | SSE (notifications + health) | ✅ `pnpm gate:sse` |
-| 5 | On-prem compose smoke | ✅ `pnpm onprem:smoke` on this machine |
-| 6 | NestJS decommission | ✅ `apps/api`, `workers/`, tRPC client removed |
+| 5 | On-prem compose smoke | ⏳ `pnpm onprem:smoke` — config ready |
+| 6 | NestJS decommission | ✅ |
 
-### Explicitly deferred (post–Phase 7 cutover)
+### Explicitly out of scope (on-prem)
 
-- ETL/analytics gate (job reschedule, run-now cooldown)
-- Real service restart wiring from `/ops` (audit-only today)
+- Stripe / SaaS entitlements UI — cloud-only; on-prem uses `DisablePaymentGates`
+- Real `/ops` service restart wiring — not planned for on-prem
+- Ollama air-gap LLM fallback — not planned
+
+### Explicitly deferred
+
 - API break-glass `/health/console`
-- NestJS-only `health.storeHealth` / `repairStore` — **drop for on-prem** (P3)
-
-### Remaining parity notes
-
-- Only dev-only gap: `health.storeHealth` / `repairStore` (see [PARITY-AUDIT.md](PARITY-AUDIT.md))
-- Health snapshot RBAC is **stricter on REST** (Admin-only vs legacy IT_MANAGER) — decide if alignment needed
+- Stripe / SaaS payment UI (on-prem uses `DisablePaymentGates`)
 
 ---
 
 ## 4. Verification commands
 
 ```bash
+# Restart API (failsafe — docker deps + health wait)
+pnpm api:restart
+
 # Full integration suite
 cd src && dotnet test
 
@@ -104,6 +141,7 @@ pnpm smoke:phase5
 # Phase 7 gate scripts
 pnpm gate:queue
 pnpm gate:sse
+pnpm gate:etl
 
 # OpenAPI refresh after API changes
 pnpm api:sync
@@ -115,13 +153,11 @@ docker compose -f docker/docker-compose.onprem.yml --env-file deploy/.env.onprem
 pnpm onprem:smoke
 ```
 
-**Living status board:** [mockups/lotris-status-phase7.html](../mockups/lotris-status-phase7.html) (browser localStorage checklist).
-
 ---
 
-## 5. On-prem (deferred — ready when you are)
+## 5. On-prem
 
-On-prem was **not validated** on the previous machine (Docker disk failure during first build). Config is packed for a later run:
+On-prem compose sets `Lotris__DeploymentMode=OnPrem` and `Lotris__DisablePaymentGates=true` — **all intelligence features unlocked**, no payment gates.
 
 | Port | Service |
 |------|---------|
@@ -129,14 +165,9 @@ On-prem was **not validated** on the previous machine (Docker disk failure durin
 | **9091** | API direct (debug / OpenAPI) |
 | **9092** | web direct (debug) |
 
-Local dev (`:3000`, `:5153`, `:1433`, `:6379`) is unaffected — on-prem uses separate volumes (`lotris_onprem_*`).
+Local dev (`:3000`, `:5153`, `:1433`, `:6379`, `:6333`) uses separate volumes from on-prem (`lotris_onprem_*`).
 
-```bash
-cp deploy/.env.onprem.example deploy/.env.onprem
-docker compose -f docker/docker-compose.onprem.yml --env-file deploy/.env.onprem up -d --build
-docker compose -f docker/docker-compose.onprem.yml --env-file deploy/.env.onprem --profile bootstrap run --rm bootstrap
-pnpm onprem:smoke   # defaults to http://localhost:9090
-```
+See [deploy/INSTALL.md](../deploy/INSTALL.md).
 
 ---
 
@@ -144,10 +175,10 @@ pnpm onprem:smoke   # defaults to http://localhost:9090
 
 | Remote | URL | Use |
 |--------|-----|-----|
-| `origin` | `https://github.com/kayzredman/lotrisC.git` | **Canonical** — clone this |
-| `legacy` | `https://github.com/kayzredman/lotris.git` | Old NestJS-era repo (reference only) |
+| `origin` | `https://github.com/kayzredman/lotrisC.git` | **Canonical** |
+| `legacy` | `https://github.com/kayzredman/lotris.git` | NestJS-era reference |
 
-**Workflow:** feature work on **local `dev`** → **QA Agent certifies** → push `origin dev` and `origin main` (merge local `dev` → local `main` first). See [GIT-WORKFLOW.md](GIT-WORKFLOW.md).
+**Workflow:** feature work on **`dev`** → QA certifies → push `origin dev` and merge to `main`. See [GIT-WORKFLOW.md](GIT-WORKFLOW.md).
 
 ---
 
@@ -157,22 +188,31 @@ pnpm onprem:smoke   # defaults to http://localhost:9090
 |-------|----------|----------------|
 | **This handoff + project docs** | `docs/` in repo | ✅ Clone |
 | **Agent instructions** | `.github/copilot-instructions.md`, `.github/agents/*.instructions.md` | ✅ Clone |
-| **Chat sessions** | Cursor app / `~/.cursor/projects/...` | ❌ Copy manually or start fresh; point agent at this file |
-| **User rules** (commit protocol, etc.) | Cursor Settings → Rules | Re-add or sync via Cursor account |
-| **Skills** (`ui-ux-pro-max`, etc.) | `~/.cursor/skills-cursor/`, `~/.agents/skills/` | Copy from old machine or reinstall |
-| **MCP servers** (e.g. Sanity) | Cursor Settings → MCP | Reconfigure |
+| **Chat sessions** | Cursor app | ❌ Start fresh; point agent at this file |
+| **User rules** | Cursor Settings → Rules | Re-add or sync |
+| **Skills** | `~/.cursor/skills-cursor/` | Copy or reinstall |
+| **MCP servers** | Cursor Settings → MCP | Reconfigure |
 
 **Recommended first prompt on new machine:**
 
-> Read `docs/HANDOFF.md` and `docs/REFACTOR.md`. Continue Phase 7 — on-prem smoke, then NestJS decommission discussion.
+> Read `docs/HANDOFF.md` and `docs/INTELLIGENCE-DEV-SETUP.md`. Run `pnpm api:restart` and continue Phase 8 QA or on-prem smoke.
 
 ---
 
 ## 8. Recommended next steps
 
-1. **Green dev stack** — Docker infra, API `:5153`, web `:3000`, run `pnpm smoke:phase5`
-2. **On-prem smoke** on clean Docker or VM — `pnpm onprem:smoke`
-3. **Post–Phase 7** — merge `dev` → `main` per [GIT-WORKFLOW.md](GIT-WORKFLOW.md); tag release
+1. **Smoke** — `pnpm smoke:phase5` (local), then `pnpm onprem:smoke` when on-prem stack is up
+2. **Intelligence (local)** — Connect ChatGPT/OpenAI per [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md); optional Qdrant for semantic search
+3. **Phase 8 QA** — RCA approvals, Knowledge semantic search, scheduled reports + email, on-prem all-features-unlocked
+4. **Release** — merge `dev` → `main` per [GIT-WORKFLOW.md](GIT-WORKFLOW.md) after QA certifies
+
+### Deferred (post–Phase 8.2)
+
+| Item | Notes |
+|------|-------|
+| API break-glass `/health/console` | Optional ops fallback |
+
+**Out of scope for on-prem:** Stripe/SaaS billing UI, real `/ops` service restart wiring, Ollama air-gap fallback.
 
 ---
 
@@ -180,10 +220,14 @@ pnpm onprem:smoke   # defaults to http://localhost:9090
 
 | Doc | Purpose |
 |-----|---------|
+| [PHASE-8-UPDATES.md](PHASE-8-UPDATES.md) | Phase 8 implementation changelog (8.0–8.2) |
+| [PHASE-8-RESEARCH.md](PHASE-8-RESEARCH.md) | RCA & intelligence research |
+| [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md) | Local dev AI + Qdrant setup |
+| [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md) | Customer Entra + Copilot deploy |
+| [PARITY-AUDIT.md](PARITY-AUDIT.md) | tRPC → REST mapping (~100%) |
+| [TOOLS.md](TOOLS.md) | `/ops`, scripts, `pnpm api:restart` |
 | [REFACTOR.md](REFACTOR.md) | C# refactor phases & gate checklist |
-| [PARITY-AUDIT.md](PARITY-AUDIT.md) | tRPC → REST mapping (~95%) |
 | [API.md](API.md) | REST endpoint index |
-| [TOOLS.md](TOOLS.md) | `/ops`, `/monitor`, scripts |
 | [deploy/INSTALL.md](../deploy/INSTALL.md) | On-prem install |
 | [CONTEXT.md](CONTEXT.md) | Full product spec |
 

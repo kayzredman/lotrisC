@@ -12,16 +12,20 @@ type Tab = 'users' | 'teams' | 'access' | 'routing';
 export function AdminTabs() {
   const { data: me } = useCurrentUser({ staleTime: 60_000 });
   const role = me?.roleName ?? '';
-  const isManagerOnly = role === 'IT_MANAGER'; // sees Teams + Access but NOT Users
+  const isManagerOnly = role === 'IT_MANAGER';
+  const isTeamLeadOnly = role === 'TEAM_LEAD';
 
-  // IT_MANAGER: start on 'teams'; ADMIN/SUPERADMIN: start on 'users'
-  const [active, setActive] = useState<Tab>(isManagerOnly ? 'teams' : 'users');
+  const [active, setActive] = useState<Tab>(
+    isTeamLeadOnly ? 'users' : isManagerOnly ? 'teams' : 'users',
+  );
 
   const tabs: { key: Tab; label: string }[] = [
     ...(!isManagerOnly ? [{ key: 'users' as Tab, label: 'Users' }] : []),
     { key: 'teams', label: 'Teams' },
-    { key: 'access', label: 'Cross-Team Access' },
-    { key: 'routing', label: 'Intake Routing' },
+    ...(!isTeamLeadOnly ? [
+      { key: 'access' as Tab, label: 'Cross-Team Access' },
+      { key: 'routing' as Tab, label: 'Intake Routing' },
+    ] : []),
   ];
 
   return (

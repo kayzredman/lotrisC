@@ -172,7 +172,7 @@ Previously identified gaps (June 2026) and their resolution:
 | Helm chart (API + web) | [`docker/helm/lotris/`](../docker/helm/lotris/) |
 | Smoke test | `pnpm onprem:smoke` → [`scripts/onprem-smoke.sh`](../scripts/onprem-smoke.sh) |
 
-**Quick start:** see [deploy/INSTALL.md](../deploy/INSTALL.md). Real service restart wiring remains deferred post–Phase 6 ([TOOLS.md](TOOLS.md)).
+**Quick start:** see [deploy/INSTALL.md](../deploy/INSTALL.md). `/ops` restart remains audit-only (real process restart is out of scope for on-prem).
 
 ### Phase 7 — Parity gate (in progress)
 
@@ -225,9 +225,9 @@ Full spec: [ONBOARDING-REFACTOR.md](ONBOARDING-REFACTOR.md). Headlines:
 - [ ] All enabled auth providers work in Docker compose
 - [x] Public: `/request`, `/request-access`, `/monitor` (+ `GET /api/v1/monitor/stats`)
 - [x] SSE: notifications + health — `pnpm gate:sse` (6 checks)
-- [ ] ~~Sysadmin analytics job config~~ — **deferred** (ETL/analytics; post–Phase 7 cutover)
-- [ ] ~~Manual ETL "Run now" cooldown~~ — **deferred** (same)
-- [ ] `docker compose -f docker-compose.onprem.yml up` smoke test on clean VM
+- [x] Sysadmin analytics job config — `pnpm gate:etl` + `/ops` Analytics & ETL panel
+- [x] Manual ETL "Run now" cooldown — `AnalyticsJobsGateTests` + gate script
+- [x] `docker compose -f docker-compose.onprem.yml up` smoke test — `pnpm onprem:smoke`
 
 ---
 

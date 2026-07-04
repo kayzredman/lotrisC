@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Lotris.Application.Notifications;
+using Lotris.Infrastructure.Notifications;
 using Microsoft.Extensions.Logging;
 
 namespace Lotris.Workers.Jobs;
@@ -8,15 +9,18 @@ public sealed class NotificationJob : INotificationJob
 {
     private readonly IEmailSender _email;
     private readonly INotificationPublisher _publisher;
+    private readonly ITeamsNotifier _teams;
     private readonly ILogger<NotificationJob> _logger;
 
     public NotificationJob(
         IEmailSender email,
         INotificationPublisher publisher,
+        ITeamsNotifier teams,
         ILogger<NotificationJob> logger)
     {
         _email = email;
         _publisher = publisher;
+        _teams = teams;
         _logger = logger;
     }
 
@@ -49,6 +53,19 @@ public sealed class NotificationJob : INotificationJob
                     await PublishSseAsync(payload.RecipientId, payload, cancellationToken);
                 }
 
+                break;
+            case "RCA_PUBLISHED":
+            case "RCA_REVIEW_REQUESTED":
+            case "RCA_CREATED":
+                _logger.LogInformation("RCA notification {Type} tenant={TenantId}", payload.Type, payload.TenantId);
+                if (payload.TenantId.HasValue)
+                {
+                    await _teams.SendAsync(
+                        payload.TenantId.Value,
+                        payload.Type.Replace('_', ' '),
+                        payload.TicketTitle ?? "A root cause analysis event occurred in Lotris.",
+                        cancellationToken);
+                }
                 break;
             default:
                 _logger.LogWarning("Unknown notification type {Type}", payload.Type);

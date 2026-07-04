@@ -1,5 +1,8 @@
+using System.Text.Json;
 using ClosedXML.Excel;
+using Lotris.Application.Intelligence;
 using Lotris.Application.Reports;
+using Lotris.Contracts.Intelligence;
 using Lotris.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
@@ -16,13 +19,15 @@ public sealed class ReportGenerator : IReportGenerator
     }
 
     private readonly LotrisDbContext _db;
+    private readonly IntelligenceService _intelligence;
 
-    public ReportGenerator(LotrisDbContext db)
+    public ReportGenerator(LotrisDbContext db, IntelligenceService intelligence)
     {
         _db = db;
+        _intelligence = intelligence;
     }
 
-    public async Task<string> GenerateAsync(
+    public async Task<ReportGenerationResult> GenerateAsync(
         Guid tenantId,
         string reportType,
         string format,
@@ -35,84 +40,131 @@ public sealed class ReportGenerator : IReportGenerator
         Directory.CreateDirectory(outputDirectory);
         var extension = format == "EXCEL" ? ".xlsx" : ".pdf";
         var filePath = Path.Combine(outputDirectory, $"lotris-report-{Guid.NewGuid():N}{extension}");
+        var content = await BuildReportContentAsync(tenantId, reportType, dateFrom, dateTo, cancellationToken);
+        var snapshotJson = JsonSerializer.Serialize(new
+        {
+            reportType,
+            dateFrom,
+            dateTo,
+            lines = content.Lines,
+            headers = content.Headers,
+            rowCount = content.TableRows.Count,
+        });
+        var narrative = await _intelligence.TryGenerateReportNarrativeAsync(
+            tenantId, reportType, snapshotJson, cancellationToken);
+        var insightsJson = narrative is null
+            ? null
+            : JsonSerializer.Serialize(narrative);
 
         if (format == "EXCEL")
         {
-            await GenerateExcelAsync(tenantId, reportType, dateFrom, dateTo, filePath, cancellationToken);
+            await GenerateExcelAsync(content, narrative, filePath, cancellationToken);
         }
         else
         {
-            await GeneratePdfAsync(tenantId, reportType, dateFrom, dateTo, filePath, cancellationToken);
+            await GeneratePdfAsync(reportType, content, narrative, filePath, cancellationToken);
         }
 
-        return filePath;
+        return new ReportGenerationResult(filePath, insightsJson);
     }
 
     private async Task GeneratePdfAsync(
-        Guid tenantId,
         string reportType,
-        string? dateFrom,
-        string? dateTo,
+        ReportContent content,
+        ReportNarrativeDto? narrative,
         string filePath,
         CancellationToken cancellationToken)
     {
         var label = LabelFor(reportType);
-        var content = await BuildReportContentAsync(tenantId, reportType, dateFrom, dateTo, cancellationToken);
 
-        Document.Create(container =>
+        await Task.Run(() =>
         {
-            container.Page(page =>
+            Document.Create(container =>
             {
-                page.Margin(50);
-                page.Size(PageSizes.A4);
-                page.Header().Column(col =>
+                container.Page(page =>
                 {
-                    col.Item().Text("Lotris — IT Help Desk Report").FontSize(20).Bold();
-                    col.Item().Text(label).FontSize(14);
-                    col.Item().Text($"Generated: {DateTime.UtcNow:R}").FontSize(10).FontColor(Colors.Grey.Medium);
-                });
-                page.Content().PaddingVertical(20).Column(col =>
-                {
-                    foreach (var line in content.Lines)
+                    page.Margin(50);
+                    page.Size(PageSizes.A4);
+                    page.Header().Column(col =>
                     {
-                        col.Item().Text(line).FontSize(line.StartsWith("Period:", StringComparison.Ordinal) ? 12 : 10);
-                    }
+                        col.Item().Text("Lotris — IT Help Desk Report").FontSize(20).Bold();
+                        col.Item().Text(label).FontSize(14);
+                        col.Item().Text($"Generated: {DateTime.UtcNow:R}").FontSize(10).FontColor(Colors.Grey.Medium);
+                    });
+                    page.Content().PaddingVertical(20).Column(col =>
+                    {
+                        if (narrative is not null)
+                        {
+                            col.Item().PaddingBottom(12).Column(insightCol =>
+                            {
+                                insightCol.Item().Text("Executive Insights").FontSize(14).Bold().FontColor(Colors.Indigo.Darken2);
+                                insightCol.Item().PaddingTop(6).Text(narrative.Summary).FontSize(10).LineHeight(1.4f);
+                                if (!string.IsNullOrWhiteSpace(narrative.Recommendations))
+                                {
+                                    insightCol.Item().PaddingTop(8).Text("Recommendations").FontSize(11).Bold();
+                                    insightCol.Item().Text(narrative.Recommendations).FontSize(10).LineHeight(1.4f);
+                                }
+                            });
+                            col.Item().PaddingVertical(8).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                        }
+
+                        foreach (var line in content.Lines)
+                        {
+                            col.Item().Text(line).FontSize(line.StartsWith("Period:", StringComparison.Ordinal) ? 12 : 10);
+                        }
+                    });
                 });
-            });
-        }).GeneratePdf(filePath);
+            }).GeneratePdf(filePath);
+        }, cancellationToken);
     }
 
     private async Task GenerateExcelAsync(
-        Guid tenantId,
-        string reportType,
-        string? dateFrom,
-        string? dateTo,
+        ReportContent content,
+        ReportNarrativeDto? narrative,
         string filePath,
         CancellationToken cancellationToken)
     {
-        var content = await BuildReportContentAsync(tenantId, reportType, dateFrom, dateTo, cancellationToken);
-        using var workbook = new XLWorkbook();
-        var sheet = workbook.Worksheets.Add(LabelFor(reportType));
-
-        var rowIndex = 1;
-        foreach (var header in content.Headers)
+        await Task.Run(() =>
         {
-            sheet.Cell(rowIndex, 1).Value = header;
-            rowIndex++;
-        }
+            using var workbook = new XLWorkbook();
+            var sheet = workbook.Worksheets.Add("Report");
+            var rowIndex = 1;
 
-        rowIndex++;
-        foreach (var row in content.TableRows)
-        {
-            for (var col = 0; col < row.Count; col++)
+            if (narrative is not null)
             {
-                sheet.Cell(rowIndex, col + 1).Value = row[col];
+                sheet.Cell(rowIndex++, 1).Value = "Executive Insights";
+                sheet.Cell(rowIndex++, 1).Value = narrative.Summary;
+                if (!string.IsNullOrWhiteSpace(narrative.Recommendations))
+                {
+                    sheet.Cell(rowIndex++, 1).Value = "Recommendations";
+                    sheet.Cell(rowIndex++, 1).Value = narrative.Recommendations;
+                }
+                rowIndex++;
+            }
+
+            foreach (var line in content.Lines)
+            {
+                sheet.Cell(rowIndex++, 1).Value = line;
             }
 
             rowIndex++;
-        }
+            for (var col = 0; col < content.Headers.Count; col++)
+            {
+                sheet.Cell(rowIndex, col + 1).Value = content.Headers[col];
+            }
+            rowIndex++;
 
-        await Task.Run(() => workbook.SaveAs(filePath), cancellationToken);
+            foreach (var row in content.TableRows)
+            {
+                for (var col = 0; col < row.Count; col++)
+                {
+                    sheet.Cell(rowIndex, col + 1).Value = row[col];
+                }
+                rowIndex++;
+            }
+
+            workbook.SaveAs(filePath);
+        }, cancellationToken);
     }
 
     private async Task<ReportContent> BuildReportContentAsync(

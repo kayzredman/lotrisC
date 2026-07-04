@@ -15,7 +15,7 @@ public sealed record CreateUserResponse(
     Guid? TeamId,
     string? TemporaryPassword);
 
-public sealed record UpdateUserRequest(string? FullName = null, Guid? TeamId = null);
+public sealed record UpdateUserRequest(string? FullName = null, Guid? TeamId = null, bool? IsActive = null);
 
 public sealed record AssignRoleRequest(int RoleId);
 

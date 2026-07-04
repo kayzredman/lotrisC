@@ -117,16 +117,16 @@ export function useStoreHealth(options?: QueryHookOptions) {
   return useAuthenticatedQuery<ApiRecord>(
     ['health', 'store'],
     '/health/store',
-    {
-      enabled: false,
-      initialData: { healthy: true, corruptedPackages: [], repairState: 'idle' },
-      refetchInterval: typeof options?.refetchInterval === 'number' ? options.refetchInterval : false,
-    },
+    options,
   );
 }
 
 export function useRepairStore() {
-  return useAuthenticatedMutation<void, void>(async () => undefined);
+  const qc = useQueryClient();
+  return useAuthenticatedMutation<ApiRecord, void>(
+    (token) => apiFetch('/health/store/repair', { method: 'POST', token }),
+    { onSuccess: () => void qc.invalidateQueries({ queryKey: ['health', 'store'] }) },
+  );
 }
 
 export function useRestartService() {

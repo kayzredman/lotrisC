@@ -13,6 +13,7 @@ using Lotris.Domain;
 using Lotris.Domain.Tickets;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
@@ -99,9 +100,27 @@ public sealed class LotrisWebApplicationFactory : WebApplicationFactory<Program>
     private readonly InMemoryAuditLogRepository _auditLogs = new();
     private readonly InMemoryReportRepository _reports = new();
 
+    private const string TestJwtSecret = "dev-only-change-me-use-at-least-32-characters-long-secret";
+
     protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.UseSetting("JWT_SECRET", TestJwtSecret);
+        builder.UseSetting("Jwt:Secret", TestJwtSecret);
+        builder.UseSetting("Jwt:Issuer", "lotris");
+        builder.UseSetting("Jwt:Audience", "lotris-api");
+        builder.UseSetting("Auth:Providers:Entra:Enabled", "false");
+        builder.ConfigureAppConfiguration((_, config) =>
+        {
+            config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["JWT_SECRET"] = TestJwtSecret,
+                ["Jwt:Secret"] = TestJwtSecret,
+                ["Jwt:Issuer"] = "lotris",
+                ["Jwt:Audience"] = "lotris-api",
+                ["Auth:Providers:Entra:Enabled"] = "false",
+            });
+        });
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<ITicketRepository>();
@@ -145,8 +164,7 @@ public sealed class LotrisWebApplicationFactory : WebApplicationFactory<Program>
         Guid? tenantId = null,
         Guid? userId = null)
     {
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes("dev-only-change-me-use-at-least-32-characters-long-secret"));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TestJwtSecret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]

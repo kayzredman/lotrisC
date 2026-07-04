@@ -43,6 +43,8 @@ public sealed class EmailMessage
     public required string Subject { get; init; }
     public required string HtmlBody { get; init; }
     public string? TextBody { get; init; }
+    public string? AttachmentPath { get; init; }
+    public string? AttachmentName { get; init; }
 }
 
 public interface IEmailSender

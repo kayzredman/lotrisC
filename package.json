@@ -14,10 +14,13 @@
     "api:codegen": "pnpm --filter @lotris/web api:codegen",
     "api:sync": "pnpm api:export && pnpm api:docs && pnpm api:codegen",
     "web:dev-reset": "bash scripts/web-dev-reset.sh",
+    "api:restart": "bash scripts/restart-api.sh",
     "smoke:phase5": "bash scripts/smoke-phase5.sh",
     "gate:sse": "bash scripts/gate-sse.sh",
     "gate:queue": "dotnet test src/Lotris.Tests.Integration/Lotris.Tests.Integration.csproj --filter QueueEngineGateTests -m:1",
-    "onprem:smoke": "bash scripts/onprem-smoke.sh"
+    "gate:etl": "bash scripts/gate-etl.sh",
+    "onprem:smoke": "bash scripts/onprem-smoke.sh",
+    "seed:digital": "node scripts/seed-lotris-digital-setup.mjs"
   },
   "devDependencies": {
     "turbo": "^2.3.0",

@@ -29,6 +29,8 @@ public sealed class EfReportRepository : IReportRepository
             DateTo = job.DateTo,
             TeamId = job.TeamId,
             ErrorMsg = job.ErrorMsg,
+            InsightsJson = job.InsightsJson,
+            DeliveryRecipients = job.DeliveryRecipients,
             CreatedAt = job.CreatedAt,
             CompletedAt = job.CompletedAt,
         };
@@ -93,6 +95,9 @@ public sealed class EfReportRepository : IReportRepository
                 case "completed_at":
                     entity.CompletedAt = (DateTime?)value;
                     break;
+                case "insights_json":
+                    entity.InsightsJson = (string?)value;
+                    break;
             }
         }
 
@@ -149,6 +154,32 @@ public sealed class EfReportRepository : IReportRepository
         }
 
         _db.ReportSchedules.Remove(entity);
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ReportScheduleEntity>> ListDueSchedulesAsync(
+        DateTime asOfUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await _db.ReportSchedules
+            .AsNoTracking()
+            .Where(s => s.IsActive && s.NextRunAt != null && s.NextRunAt <= asOfUtc)
+            .OrderBy(s => s.NextRunAt)
+            .ToListAsync(cancellationToken);
+        return rows.Select(MapSchedule).ToList();
+    }
+
+    public async Task UpdateScheduleRunAsync(
+        Guid scheduleId,
+        DateTime lastRunAt,
+        DateTime nextRunAt,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _db.ReportSchedules.FirstOrDefaultAsync(s => s.Id == scheduleId, cancellationToken)
+            ?? throw new InvalidOperationException($"Report schedule {scheduleId} not found");
+
+        entity.LastRunAt = lastRunAt;
+        entity.NextRunAt = nextRunAt;
         await _db.SaveChangesAsync(cancellationToken);
     }
 
@@ -222,6 +253,8 @@ public sealed class EfReportRepository : IReportRepository
         DateTo = entity.DateTo,
         TeamId = entity.TeamId,
         ErrorMsg = entity.ErrorMsg,
+        InsightsJson = entity.InsightsJson,
+        DeliveryRecipients = entity.DeliveryRecipients,
         CreatedAt = entity.CreatedAt,
         CompletedAt = entity.CompletedAt,
     };

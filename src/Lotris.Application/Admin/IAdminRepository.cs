@@ -2,7 +2,10 @@ namespace Lotris.Application.Admin;
 
 public interface IAdminRepository
 {
-    Task<IReadOnlyList<AdminUserEntity>> ListUsersAsync(Guid tenantId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AdminUserEntity>> ListUsersAsync(
+        Guid tenantId,
+        Guid? teamId = null,
+        CancellationToken cancellationToken = default);
 
     Task<AdminUserEntity?> GetUserAsync(Guid tenantId, Guid userId, CancellationToken cancellationToken = default);
 

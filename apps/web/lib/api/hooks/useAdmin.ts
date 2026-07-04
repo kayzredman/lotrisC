@@ -46,6 +46,18 @@ export function useUpdateAdminUserRole() {
   );
 }
 
+export function useUpdateAdminUser() {
+  const qc = useQueryClient();
+  return useAuthenticatedMutation<
+    void,
+    { userId: string; fullName?: string; teamId?: string | null; isActive?: boolean }
+  >(
+    (token, { userId, ...body }) =>
+      apiFetch(`/api/v1/admin/users/${userId}`, { method: 'PATCH', token, body }),
+    { onSuccess: () => void qc.invalidateQueries({ queryKey: ['admin', 'users'] }) },
+  );
+}
+
 export function useSetAdminUserActive() {
   const qc = useQueryClient();
   return useAuthenticatedMutation<

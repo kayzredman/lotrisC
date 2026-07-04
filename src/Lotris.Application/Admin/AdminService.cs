@@ -4,6 +4,7 @@ using Lotris.Application.Auth;
 using Lotris.Application.AuditLogs;
 using Lotris.Application.Common;
 using Lotris.Contracts.Admin;
+using Lotris.Domain;
 
 namespace Lotris.Application.Admin;
 
@@ -25,9 +26,12 @@ public class AdminService
 
     public async Task<IReadOnlyList<UserListItemDto>> ListUsersAsync(
         Guid tenantId,
+        Guid actorId,
+        UserRole actorRole,
         CancellationToken cancellationToken = default)
     {
-        var rows = await _admin.ListUsersAsync(tenantId, cancellationToken);
+        var teamFilter = await ResolveUserTeamFilterAsync(tenantId, actorId, actorRole, cancellationToken);
+        var rows = await _admin.ListUsersAsync(tenantId, teamFilter, cancellationToken);
         return rows.Select(u => new UserListItemDto(
             u.Id,
             u.Email,
@@ -43,64 +47,83 @@ public class AdminService
     public async Task<CreateUserResponse> CreateUserAsync(
         Guid tenantId,
         Guid actorId,
+        UserRole actorRole,
         CreateUserRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (await _admin.EmailExistsAsync(request.Email, cancellationToken))
+        await AssertCanCreateUserAsync(tenantId, actorId, actorRole, request, cancellationToken);
+
+        var effectiveRequest = request;
+        if (actorRole == UserRole.TeamLead)
+        {
+            var actor = await _admin.GetUserAsync(tenantId, actorId, cancellationToken)
+                ?? throw new ForbiddenException("User profile not found.");
+            effectiveRequest = request with
+            {
+                RoleId = (int)UserRole.Engineer,
+                TeamId = actor.TeamId,
+            };
+        }
+
+        if (await _admin.EmailExistsAsync(effectiveRequest.Email, cancellationToken))
         {
             throw new BadRequestException("A user with this email already exists.");
         }
 
-        var tempPassword = request.TemporaryPassword ?? GenerateTemporaryPassword();
+        var tempPassword = effectiveRequest.TemporaryPassword ?? GenerateTemporaryPassword();
 
         var created = await _userAccountCreator.CreateAsync(new UserAccountCreateRequest
         {
             TenantId = tenantId,
-            Email = request.Email,
-            FullName = request.FullName,
-            RoleId = request.RoleId,
-            TeamId = request.TeamId,
+            Email = effectiveRequest.Email,
+            FullName = effectiveRequest.FullName,
+            RoleId = effectiveRequest.RoleId,
+            TeamId = effectiveRequest.TeamId,
             Password = tempPassword,
         }, cancellationToken);
 
         await WriteAuditAsync(tenantId, actorId, "USER_CREATED", "User", created.UserId.ToString(), new
         {
-            request.Email,
-            request.RoleId,
-            request.TeamId,
+            effectiveRequest.Email,
+            effectiveRequest.RoleId,
+            effectiveRequest.TeamId,
         }, cancellationToken);
 
         return new CreateUserResponse(
             created.UserId,
-            request.Email,
-            request.FullName,
-            request.RoleId,
-            request.TeamId,
-            request.TemporaryPassword is null ? tempPassword : null);
+            effectiveRequest.Email,
+            effectiveRequest.FullName,
+            effectiveRequest.RoleId,
+            effectiveRequest.TeamId,
+            effectiveRequest.TemporaryPassword is null ? tempPassword : null);
     }
 
     public async Task UpdateUserAsync(
         Guid tenantId,
         Guid actorId,
+        UserRole actorRole,
         Guid userId,
         UpdateUserRequest request,
         CancellationToken cancellationToken = default)
     {
-        await AssertUserExistsAsync(tenantId, userId, cancellationToken);
+        var target = await GetManagedUserAsync(tenantId, actorId, actorRole, userId, cancellationToken);
+        AssertCanUpdateUser(actorRole, target, request);
 
         await _admin.UpdateUserAsync(tenantId, userId, new AdminUserUpdateModel
         {
             FullName = request.FullName,
             TeamId = request.TeamId,
+            IsActive = request.IsActive,
             UpdatedAt = DateTime.UtcNow,
         }, cancellationToken);
 
-        await WriteAuditAsync(tenantId, actorId, "USER_UPDATED", "User", userId.ToString(), request, cancellationToken);
+        await WriteAuditAsync(tenantId, actorId, request.IsActive == true ? "USER_REACTIVATED" : request.IsActive == false ? "USER_DEACTIVATED" : "USER_UPDATED", "User", userId.ToString(), request, cancellationToken);
     }
 
     public async Task DeactivateUserAsync(
         Guid tenantId,
         Guid actorId,
+        UserRole actorRole,
         Guid userId,
         CancellationToken cancellationToken = default)
     {
@@ -109,18 +132,30 @@ public class AdminService
             throw new ForbiddenException("You cannot deactivate your own account");
         }
 
-        await AssertUserExistsAsync(tenantId, userId, cancellationToken);
-        await _admin.DeactivateUserAsync(tenantId, userId, DateTime.UtcNow, cancellationToken);
+        var target = await GetManagedUserAsync(tenantId, actorId, actorRole, userId, cancellationToken);
+        AssertCanDeactivateUser(actorRole, target);
+
+        await _admin.UpdateUserAsync(tenantId, userId, new AdminUserUpdateModel
+        {
+            IsActive = false,
+            UpdatedAt = DateTime.UtcNow,
+        }, cancellationToken);
         await WriteAuditAsync(tenantId, actorId, "USER_DEACTIVATED", "User", userId.ToString(), null, cancellationToken);
     }
 
     public async Task AssignRoleAsync(
         Guid tenantId,
         Guid actorId,
+        UserRole actorRole,
         Guid userId,
         int roleId,
         CancellationToken cancellationToken = default)
     {
+        if (actorRole == UserRole.TeamLead)
+        {
+            throw new ForbiddenException("Team leads cannot change user roles.");
+        }
+
         await AssertUserExistsAsync(tenantId, userId, cancellationToken);
         await _admin.AssignRoleAsync(tenantId, userId, roleId, DateTime.UtcNow, cancellationToken);
         await WriteAuditAsync(tenantId, actorId, "ROLE_ASSIGNED", "User", userId.ToString(), new { roleId }, cancellationToken);
@@ -143,9 +178,15 @@ public class AdminService
     public async Task<CreateTeamResponse> CreateTeamAsync(
         Guid tenantId,
         Guid actorId,
+        UserRole actorRole,
         CreateTeamRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (actorRole == UserRole.TeamLead)
+        {
+            throw new ForbiddenException("Team leads cannot create teams.");
+        }
+
         var now = DateTime.UtcNow;
         var id = Guid.NewGuid();
 
@@ -167,11 +208,13 @@ public class AdminService
     public async Task UpdateTeamAsync(
         Guid tenantId,
         Guid actorId,
+        UserRole actorRole,
         Guid teamId,
         UpdateTeamRequest request,
         CancellationToken cancellationToken = default)
     {
         await AssertTeamExistsAsync(tenantId, teamId, cancellationToken);
+        await AssertCanManageTeamAsync(tenantId, actorId, actorRole, teamId, request, cancellationToken);
 
         await _admin.UpdateTeamAsync(tenantId, teamId, new AdminTeamUpdateModel
         {
@@ -268,6 +311,167 @@ public class AdminService
     {
         await _admin.DeleteCategoryRoutingAsync(tenantId, id, cancellationToken);
         await WriteAuditAsync(tenantId, actorId, "CATEGORY_ROUTING_DELETED", "CategoryRouting", id.ToString(), null, cancellationToken);
+    }
+
+    private async Task<Guid?> ResolveUserTeamFilterAsync(
+        Guid tenantId,
+        Guid actorId,
+        UserRole actorRole,
+        CancellationToken cancellationToken)
+    {
+        if (actorRole is UserRole.SuperAdmin or UserRole.Admin or UserRole.ItManager)
+        {
+            return null;
+        }
+
+        if (actorRole != UserRole.TeamLead)
+        {
+            throw new ForbiddenException("You do not have permission to list users.");
+        }
+
+        var actor = await _admin.GetUserAsync(tenantId, actorId, cancellationToken)
+            ?? throw new ForbiddenException("User profile not found.");
+
+        if (actor.TeamId is null)
+        {
+            throw new ForbiddenException("Assign yourself to a team before managing users.");
+        }
+
+        return actor.TeamId;
+    }
+
+    private async Task AssertCanCreateUserAsync(
+        Guid tenantId,
+        Guid actorId,
+        UserRole actorRole,
+        CreateUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (actorRole is UserRole.SuperAdmin or UserRole.Admin or UserRole.ItManager)
+        {
+            if (request.RoleId == (int)UserRole.SuperAdmin && actorRole != UserRole.SuperAdmin)
+            {
+                throw new ForbiddenException("Only super admins can create super admin accounts.");
+            }
+            return;
+        }
+
+        if (actorRole != UserRole.TeamLead)
+        {
+            throw new ForbiddenException("You do not have permission to create users.");
+        }
+
+        var actor = await _admin.GetUserAsync(tenantId, actorId, cancellationToken)
+            ?? throw new ForbiddenException("User profile not found.");
+
+        if (actor.TeamId is null)
+        {
+            throw new ForbiddenException("Assign yourself to a team before inviting users.");
+        }
+
+        if (request.RoleId != (int)UserRole.Engineer)
+        {
+            throw new ForbiddenException("Team leads can only invite engineers.");
+        }
+
+        if (request.TeamId.HasValue && request.TeamId != actor.TeamId)
+        {
+            throw new ForbiddenException("Team leads can only invite users to their own team.");
+        }
+    }
+
+    private async Task<AdminUserEntity> GetManagedUserAsync(
+        Guid tenantId,
+        Guid actorId,
+        UserRole actorRole,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var target = await _admin.GetUserAsync(tenantId, userId, cancellationToken)
+            ?? throw new NotFoundException("User not found");
+
+        if (actorRole is UserRole.SuperAdmin or UserRole.Admin or UserRole.ItManager)
+        {
+            return target;
+        }
+
+        if (actorRole != UserRole.TeamLead)
+        {
+            throw new ForbiddenException("You do not have permission to manage users.");
+        }
+
+        var actor = await _admin.GetUserAsync(tenantId, actorId, cancellationToken)
+            ?? throw new ForbiddenException("User profile not found.");
+
+        if (actor.TeamId is null || target.TeamId != actor.TeamId)
+        {
+            throw new ForbiddenException("You can only manage users on your own team.");
+        }
+
+        return target;
+    }
+
+    private static void AssertCanUpdateUser(UserRole actorRole, AdminUserEntity target, UpdateUserRequest request)
+    {
+        if (actorRole is UserRole.SuperAdmin or UserRole.Admin or UserRole.ItManager)
+        {
+            return;
+        }
+
+        if (request.TeamId.HasValue && request.TeamId != target.TeamId)
+        {
+            throw new ForbiddenException("Team leads cannot move users to another team.");
+        }
+
+        if (request.IsActive.HasValue && target.RoleId != (int)UserRole.Engineer)
+        {
+            throw new ForbiddenException("Team leads can only activate or deactivate engineers.");
+        }
+    }
+
+    private static void AssertCanDeactivateUser(UserRole actorRole, AdminUserEntity target)
+    {
+        if (actorRole is UserRole.SuperAdmin or UserRole.Admin or UserRole.ItManager)
+        {
+            return;
+        }
+
+        if (target.RoleId != (int)UserRole.Engineer)
+        {
+            throw new ForbiddenException("Team leads can only deactivate engineers.");
+        }
+    }
+
+    private async Task AssertCanManageTeamAsync(
+        Guid tenantId,
+        Guid actorId,
+        UserRole actorRole,
+        Guid teamId,
+        UpdateTeamRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (actorRole is UserRole.SuperAdmin or UserRole.Admin or UserRole.ItManager)
+        {
+            return;
+        }
+
+        if (actorRole != UserRole.TeamLead)
+        {
+            throw new ForbiddenException("You do not have permission to manage teams.");
+        }
+
+        if (request.IsActive.HasValue)
+        {
+            throw new ForbiddenException("Team leads cannot activate or deactivate teams.");
+        }
+
+        var actor = await _admin.GetUserAsync(tenantId, actorId, cancellationToken)
+            ?? throw new ForbiddenException("User profile not found.");
+
+        if (actor.TeamId != teamId)
+        {
+            throw new ForbiddenException("You can only update your own team.");
+        }
     }
 
     private async Task AssertUserExistsAsync(Guid tenantId, Guid userId, CancellationToken cancellationToken)

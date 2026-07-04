@@ -190,7 +190,7 @@ public sealed class ReportService
         }
     }
 
-    internal static DateTime ComputeNextRunAt(string frequency)
+    public static DateTime ComputeNextRunAt(string frequency)
     {
         var now = DateTime.UtcNow;
         const int localHour = 8;
@@ -232,6 +232,7 @@ public sealed class ReportService
         row.DateTo,
         row.TeamId,
         row.ErrorMsg,
+        row.InsightsJson,
         row.CreatedAt,
         row.CompletedAt);
 

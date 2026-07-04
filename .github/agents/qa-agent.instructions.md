@@ -73,5 +73,7 @@ After each sprint:
 - MSSQL = operational DB (`dbo`) + analytics schema on same instance; PostgreSQL **removed** in C# refactor (see `docs/DATABASE-STRATEGY.md`)
 - All background jobs must be idempotent (BullMQ today; Hangfire during refactor)
 - Auth: hybrid providers during refactor (Entra / Identity / LDAP); legacy Clerk until Phase 5
-- Restart API — ADMIN only, 60s cooldown, audit log — do not weaken
+- Restart API — ADMIN / IT_MANAGER only, 60s cooldown, audit log — do not weaken
+- **Local verify:** `pnpm api:restart` → `dotnet test` → `pnpm smoke:phase5`
+- **Phase 8 complete** @ `607a8fd` — see `docs/HANDOFF.md` before assigning Phase 9 work
 - **Never merge to `dev` if CI is red**
