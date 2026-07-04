@@ -6,6 +6,7 @@ using Lotris.Api.OpenApi;
 using Lotris.Api.Filters;
 using Lotris.Api.Intake;
 using Lotris.Application;
+using Lotris.Application.Intelligence;
 using Lotris.Infrastructure;
 using Lotris.Infrastructure.Analytics;
 using Lotris.Infrastructure.Data;
@@ -94,6 +95,9 @@ if (!app.Environment.IsEnvironment("Testing"))
         await scope.ServiceProvider.InitializeAnalyticsJobsAsync();
         ReportScheduleStartupExtensions.RegisterReportScheduleJob();
         ReportScheduleStartupExtensions.RegisterRecurringIncidentDigestJob();
+
+        var vectorStore = scope.ServiceProvider.GetRequiredService<IVectorStore>();
+        await vectorStore.EnsureCollectionAsync();
     }
 }
 

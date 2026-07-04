@@ -9,6 +9,7 @@ import {
   usePublishRca,
   useRca,
   useSubmitRca,
+  useApproveRca,
   useUpdateRca,
 } from '@/lib/api/hooks/useRca';
 import { useRcaSuggest } from '@/lib/api/hooks/useIntelligence';
@@ -24,7 +25,7 @@ const STEPS = [
 
 const LEAD_ROLES = ['SUPERADMIN', 'ADMIN', 'IT_MANAGER', 'TEAM_LEAD'];
 
-const STATUS_PIPELINE = ['DRAFT', 'IN_REVIEW', 'PUBLISHED'];
+const STATUS_PIPELINE = ['DRAFT', 'IN_REVIEW', 'APPROVED', 'PUBLISHED'];
 
 type RcaWizardProps = { rcaId: string };
 
@@ -40,6 +41,7 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
   const { data: rca, isLoading, isError, error, refetch } = useRca(rcaId);
   const updateMutation = useUpdateRca();
   const submitMutation = useSubmitRca();
+  const approveMutation = useApproveRca();
   const publishMutation = usePublishRca();
   const delegateMutation = useDelegateRca();
   const addActionMutation = useAddRcaAction();
@@ -106,6 +108,7 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
   }
 
   const actions = (r?.actions ?? []) as Array<Record<string, unknown>>;
+  const approvals = (r?.approvals ?? []) as Array<Record<string, unknown>>;
   const isLastStep = step === STEPS.length - 1;
   const nextStep = STEPS[step + 1];
 
@@ -165,7 +168,7 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
       );
     }
 
-    if (isLead && status === 'IN_REVIEW') {
+    if (isLead && status === 'APPROVED') {
       return (
         <button
           type="button"
@@ -178,19 +181,37 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
       );
     }
 
+    const pendingApproval = approvals.find((a) => String(a.decision) === 'PENDING');
+    const canApprove =
+      pendingApproval &&
+      (String(pendingApproval.approverId) === String(me?.id) || isLead);
+
+    if (status === 'IN_REVIEW' && canApprove) {
+      return (
+        <button
+          type="button"
+          className="v2-btn v2-btn-primary v2-btn-sm"
+          disabled={approveMutation.isPending}
+          onClick={() => approveMutation.mutate({ id: rcaId }, { onSuccess: () => void refetch() })}
+        >
+          {approveMutation.isPending ? 'Approving…' : `Approve (${String(pendingApproval.approverRole ?? '').replace('_', ' ')})`}
+        </button>
+      );
+    }
+
+    if (isLead && status === 'IN_REVIEW') {
+      return (
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          Awaiting owner approvals before publish
+        </span>
+      );
+    }
+
     if (status === 'PUBLISHED') {
       return (
         <Link href="/knowledge" className="v2-btn v2-btn-primary v2-btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           View in Knowledge <ExternalLink size={12} />
         </Link>
-      );
-    }
-
-    if (status === 'IN_REVIEW') {
-      return (
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          Submitted — awaiting lead review
-        </span>
       );
     }
 
@@ -492,6 +513,32 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
                   </div>
                 )}
                 {renderReviewSummary()}
+                {approvals.length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Approvals</p>
+                    <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: 8 }}>
+                      {approvals.map((a) => (
+                        <li
+                          key={String(a.approverRole)}
+                          style={{
+                            padding: '8px 10px',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 12,
+                          }}
+                        >
+                          <strong>{String(a.approverRole ?? '').replace('_', ' ')}</strong>
+                          {' — '}
+                          {String(a.approverName ?? '—')}
+                          {' · '}
+                          <span className={`v2-badge ${String(a.decision) === 'APPROVED' ? 'v2-badge-green' : 'v2-badge-yellow'}`}>
+                            {String(a.decision ?? 'PENDING')}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
           </div>

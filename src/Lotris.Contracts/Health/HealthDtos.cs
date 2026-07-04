@@ -44,3 +44,9 @@ public record IncidentEntryDto(
     string? Details);
 
 public record RestartServiceResponse(bool Queued, int? CooldownSeconds, string? Error);
+
+public record StoreHealthDto(
+    bool Healthy,
+    IReadOnlyList<string> CorruptedPackages,
+    string RepairState,
+    DateTime? StartedAt);

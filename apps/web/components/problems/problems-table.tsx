@@ -18,6 +18,7 @@ const FILTERS = [
 const RCA_STATUS_LABEL: Record<string, string> = {
   DRAFT: 'Draft',
   IN_REVIEW: 'In Review',
+  APPROVED: 'Approved',
   PUBLISHED: 'Published',
   CLOSED: 'Closed',
 };
@@ -25,6 +26,7 @@ const RCA_STATUS_LABEL: Record<string, string> = {
 const RCA_STATUS_BADGE: Record<string, string> = {
   DRAFT: 'v2-badge-gray',
   IN_REVIEW: 'v2-badge-yellow',
+  APPROVED: 'v2-badge-blue',
   PUBLISHED: 'v2-badge-green',
   CLOSED: 'v2-badge-indigo',
 };

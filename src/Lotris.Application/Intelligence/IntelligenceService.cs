@@ -5,6 +5,7 @@ using Lotris.Application.ProblemManagement;
 using Lotris.Contracts;
 using Lotris.Contracts.Intelligence;
 using Lotris.Domain;
+using Microsoft.Extensions.Options;
 
 namespace Lotris.Application.Intelligence;
 
@@ -22,23 +23,29 @@ public sealed class IntelligenceService
     private readonly IRcaRepository _rca;
     private readonly IChatProvider _chat;
     private readonly IEmbeddingProvider _embeddings;
+    private readonly IVectorStore _vectors;
     private readonly IApiKeyProtector _protector;
     private readonly IAiProviderValidator _aiValidator;
+    private readonly LotrisDeploymentOptions _deployment;
 
     public IntelligenceService(
         IIntelligenceRepository repo,
         IRcaRepository rca,
         IChatProvider chat,
         IEmbeddingProvider embeddings,
+        IVectorStore vectors,
         IApiKeyProtector protector,
-        IAiProviderValidator aiValidator)
+        IAiProviderValidator aiValidator,
+        IOptions<LotrisDeploymentOptions> deployment)
     {
         _repo = repo;
         _rca = rca;
         _chat = chat;
         _embeddings = embeddings;
+        _vectors = vectors;
         _protector = protector;
         _aiValidator = aiValidator;
+        _deployment = deployment.Value;
     }
 
     public IReadOnlyList<AiProviderOptionDto> ListAiProviders()
@@ -298,6 +305,24 @@ public sealed class IntelligenceService
         CancellationToken cancellationToken = default)
     {
         var config = await _repo.GetOrCreateConfigAsync(tenantId, cancellationToken);
+
+        if (_vectors.IsEnabled && CanEmbed(config))
+        {
+            try
+            {
+                var queryVec = await _embeddings.EmbedAsync(query, config, cancellationToken);
+                var vectorHits = await _vectors.SearchAsync(tenantId, queryVec, topK, cancellationToken);
+                if (vectorHits.Count > 0)
+                {
+                    return await MapVectorHits(tenantId, vectorHits, cancellationToken);
+                }
+            }
+            catch
+            {
+                // Fall through to SQL/keyword search.
+            }
+        }
+
         var chunks = await _repo.ListChunksForTenantAsync(tenantId, cancellationToken);
 
         if (chunks.Count == 0)
@@ -309,8 +334,7 @@ public sealed class IntelligenceService
                 0.5)).ToList();
         }
 
-        var canEmbed = IsProviderReady(config) &&
-                       (config.ProviderPath is AiProviders.Enterprise or AiProviders.Copilot);
+        var canEmbed = CanEmbed(config);
         if (canEmbed)
         {
             try
@@ -415,7 +439,7 @@ public sealed class IntelligenceService
         CancellationToken cancellationToken = default)
     {
         var config = await _repo.GetOrCreateConfigAsync(tenantId, cancellationToken);
-        if (!config.FeatureReportNarrative || !IsProviderReady(config))
+        if ((!_deployment.AllFeaturesUnlocked && !config.FeatureReportNarrative) || !IsProviderReady(config))
         {
             return null;
         }
@@ -441,7 +465,7 @@ public sealed class IntelligenceService
         LotrisSession session,
         CancellationToken cancellationToken)
     {
-        if (!featureFlag)
+        if (!_deployment.AllFeaturesUnlocked && !featureFlag)
         {
             throw new ForbiddenException("This intelligence feature is disabled for your tenant.");
         }
@@ -451,11 +475,42 @@ public sealed class IntelligenceService
             throw new BadRequestException("Connect an AI provider via Admin → Intelligence and AI Setup first.");
         }
 
+        if (_deployment.AllFeaturesUnlocked)
+        {
+            return;
+        }
+
         var used = await _repo.CountQueriesThisMonthAsync(session.TenantId, cancellationToken);
         if (used >= config.MonthlyQueryQuota)
         {
             throw new BadRequestException("Monthly intelligence query quota exceeded.");
         }
+    }
+
+    private static bool CanEmbed(IntelligenceConfigEntity config) =>
+        config.ProviderPath != AiProviders.Disabled &&
+        !string.IsNullOrWhiteSpace(config.AzureOpenaiApiKey) &&
+        (AiProviders.UsesCredentialLogin(config.ProviderPath) ||
+         !string.IsNullOrWhiteSpace(config.AzureOpenaiEndpoint));
+
+    private async Task<IReadOnlyList<KnowledgeSearchResultDto>> MapVectorHits(
+        Guid tenantId,
+        IReadOnlyList<VectorSearchHit> hits,
+        CancellationToken cancellationToken)
+    {
+        var results = new List<KnowledgeSearchResultDto>();
+        foreach (var hit in hits)
+        {
+            var chunk = await _repo.GetChunkAsync(tenantId, hit.ChunkId, cancellationToken);
+            if (chunk is null) continue;
+            var article = await _repo.GetArticleAsync(tenantId, chunk.ArticleId, cancellationToken);
+            if (article is null) continue;
+            var excerpt = chunk.ChunkText.Length > 240 ? chunk.ChunkText[..240] + "…" : chunk.ChunkText;
+            results.Add(new KnowledgeSearchResultDto(
+                article.Id, article.SourceType, article.SourceId, article.Title, excerpt, hit.Score));
+        }
+
+        return results;
     }
 
     private async Task RecordUsage(
@@ -570,13 +625,13 @@ public sealed class IntelligenceService
         config.AzureOpenaiDeploymentEmbed,
         !string.IsNullOrWhiteSpace(config.AzureOpenaiApiKey),
         IsConnected(config),
-        config.FeatureRcaSuggest,
-        config.FeatureKnowledgeCopilot,
-        config.FeatureReportNarrative,
-        config.FeatureAutoIndexTickets,
+        _deployment.AllFeaturesUnlocked || config.FeatureRcaSuggest,
+        _deployment.AllFeaturesUnlocked || config.FeatureKnowledgeCopilot,
+        _deployment.AllFeaturesUnlocked || config.FeatureReportNarrative,
+        _deployment.AllFeaturesUnlocked || config.FeatureAutoIndexTickets,
         config.TeamsEnabled,
         !string.IsNullOrWhiteSpace(config.TeamsWebhookUrl),
-        config.MonthlyQueryQuota,
+        _deployment.AllFeaturesUnlocked ? 1_000_000 : config.MonthlyQueryQuota,
         queries);
 
     private static void AssertLead(LotrisSession session)

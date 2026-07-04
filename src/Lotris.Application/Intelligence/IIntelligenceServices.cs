@@ -15,6 +15,7 @@ public interface IIntelligenceRepository
     Task<IReadOnlyList<KnowledgeChunkEntity>> ListChunksForTenantAsync(Guid tenantId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<KnowledgeArticleEntity>> SearchArticlesKeywordAsync(Guid tenantId, string query, int limit, CancellationToken cancellationToken = default);
     Task<KnowledgeArticleEntity?> GetArticleAsync(Guid tenantId, Guid articleId, CancellationToken cancellationToken = default);
+    Task<KnowledgeChunkEntity?> GetChunkAsync(Guid tenantId, Guid chunkId, CancellationToken cancellationToken = default);
 
     Task InsertIndexRunAsync(Guid id, Guid tenantId, string sourceType, Guid sourceId, string status, CancellationToken cancellationToken = default);
     Task CompleteIndexRunAsync(Guid id, int chunkCount, string? error, CancellationToken cancellationToken = default);

@@ -532,6 +532,93 @@ public sealed class DapperRcaRepository : IRcaRepository
         return rows.ToList();
     }
 
+    public async Task ResetApprovalsAsync(
+        Guid tenantId,
+        Guid rcaId,
+        Guid processOwnerId,
+        Guid technicalOwnerId,
+        CancellationToken cancellationToken = default)
+    {
+        const string deleteSql = "DELETE FROM dbo.RCA_Approvals WHERE tenant_id = @TenantId AND rca_id = @RcaId";
+        await using var connection = await _connections.OpenConnectionAsync(cancellationToken);
+        await connection.ExecuteAsync(new CommandDefinition(deleteSql, new
+        {
+            TenantId = SqlGuid.ToSql(tenantId),
+            RcaId = SqlGuid.ToSql(rcaId),
+        }, cancellationToken: cancellationToken));
+
+        var now = DateTime.UtcNow;
+        foreach (var (role, ownerId) in new[] { ("PROCESS_OWNER", processOwnerId), ("TECHNICAL_OWNER", technicalOwnerId) })
+        {
+            await connection.ExecuteAsync(new CommandDefinition(
+                """
+                INSERT INTO dbo.RCA_Approvals (id, tenant_id, rca_id, approver_role, approver_id, decision, created_at)
+                VALUES (@Id, @TenantId, @RcaId, @Role, @ApproverId, 'PENDING', @Now)
+                """,
+                new
+                {
+                    Id = SqlGuid.ToSql(Guid.NewGuid()),
+                    TenantId = SqlGuid.ToSql(tenantId),
+                    RcaId = SqlGuid.ToSql(rcaId),
+                    Role = role,
+                    ApproverId = SqlGuid.ToSql(ownerId),
+                    Now = now,
+                },
+                cancellationToken: cancellationToken));
+        }
+    }
+
+    public async Task<IReadOnlyList<RcaApprovalRow>> ListApprovalsAsync(
+        Guid tenantId,
+        Guid rcaId,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            SELECT a.id AS Id, a.approver_role AS ApproverRole, a.approver_id AS ApproverId,
+                   u.full_name AS ApproverName, a.decision AS Decision, a.comments AS Comments,
+                   a.decided_at AS DecidedAt
+            FROM dbo.RCA_Approvals a
+            LEFT JOIN dbo.Users u ON u.id = a.approver_id
+            WHERE a.tenant_id = @TenantId AND a.rca_id = @RcaId
+            ORDER BY a.approver_role
+            """;
+        await using var connection = await _connections.OpenConnectionAsync(cancellationToken);
+        var rows = await connection.QueryAsync<RcaApprovalRow>(
+            new CommandDefinition(sql, new
+            {
+                TenantId = SqlGuid.ToSql(tenantId),
+                RcaId = SqlGuid.ToSql(rcaId),
+            }, cancellationToken: cancellationToken));
+        return rows.ToList();
+    }
+
+    public async Task SetApprovalDecisionAsync(
+        Guid tenantId,
+        Guid rcaId,
+        string approverRole,
+        Guid approverId,
+        string decision,
+        string? comments,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            UPDATE dbo.RCA_Approvals SET decision = @Decision, comments = @Comments,
+                decided_at = @DecidedAt, approver_id = @ApproverId
+            WHERE tenant_id = @TenantId AND rca_id = @RcaId AND approver_role = @Role
+            """;
+        await using var connection = await _connections.OpenConnectionAsync(cancellationToken);
+        await connection.ExecuteAsync(new CommandDefinition(sql, new
+        {
+            TenantId = SqlGuid.ToSql(tenantId),
+            RcaId = SqlGuid.ToSql(rcaId),
+            Role = approverRole,
+            ApproverId = SqlGuid.ToSql(approverId),
+            Decision = decision,
+            Comments = comments,
+            DecidedAt = DateTime.UtcNow,
+        }, cancellationToken: cancellationToken));
+    }
+
     public async Task<IReadOnlyList<Guid>> ListActiveTenantIdsAsync(CancellationToken cancellationToken = default)
     {
         const string sql = "SELECT id FROM dbo.Tenants WHERE is_active = 1";

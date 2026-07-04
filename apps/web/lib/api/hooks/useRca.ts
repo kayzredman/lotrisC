@@ -39,6 +39,20 @@ export function useSubmitRca() {
   );
 }
 
+export function useApproveRca() {
+  const qc = useQueryClient();
+  return useAuthenticatedMutation<ApiRecord, { id: string; comments?: string }>(
+    (token, { id, comments }) =>
+      apiFetch(`/api/v1/rca/${id}/approve`, { method: 'POST', token, body: { comments } }),
+    {
+      onSuccess: (_, { id }) => {
+        void qc.invalidateQueries({ queryKey: ['rca', id] });
+        void qc.invalidateQueries({ queryKey: ['problems'] });
+      },
+    },
+  );
+}
+
 export function usePublishRca() {
   const qc = useQueryClient();
   return useAuthenticatedMutation<ApiRecord, { id: string }>(

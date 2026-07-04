@@ -64,17 +64,17 @@ public class HealthController : ControllerBase
             : StatusCode(StatusCodes.Status503ServiceUnavailable, response);
     }
 
-    /// <summary>Full system health snapshot — services, queues, metrics (ADMIN).</summary>
+    /// <summary>Full system health snapshot — services, queues, metrics (ADMIN / IT_MANAGER).</summary>
     [Authorize]
-    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin)]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin, UserRole.ItManager, UserRole.TeamLead)]
     [HttpGet("snapshot")]
     [ProducesResponseType(typeof(HealthSnapshotDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSnapshot(CancellationToken cancellationToken) =>
         Ok(await _systemHealth.GetSnapshotAsync(cancellationToken));
 
-    /// <summary>Live SSE health stream — emits a snapshot every second (ADMIN).</summary>
+    /// <summary>Live SSE health stream — emits a snapshot every second (ADMIN / IT_MANAGER).</summary>
     [Authorize]
-    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin)]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin, UserRole.ItManager, UserRole.TeamLead)]
     [HttpGet("sse")]
     public async Task StreamSnapshot(CancellationToken cancellationToken)
     {
@@ -102,19 +102,35 @@ public class HealthController : ControllerBase
         }
     }
 
-    /// <summary>Recent service incidents from audit log (ADMIN).</summary>
+    /// <summary>Recent service incidents from audit log (ADMIN / IT_MANAGER).</summary>
     [Authorize]
-    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin)]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin, UserRole.ItManager, UserRole.TeamLead)]
     [HttpGet("incidents")]
     [ProducesResponseType(typeof(IReadOnlyList<IncidentEntryDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetIncidents([FromQuery] int limit = 20, CancellationToken cancellationToken = default) =>
         Ok(await _systemHealth.GetIncidentsAsync(limit, cancellationToken));
 
-    /// <summary>Request a service restart — 60s cooldown, audit logged (ADMIN).</summary>
+    /// <summary>Request a service restart — 60s cooldown, audit logged (ADMIN / IT_MANAGER).</summary>
     [Authorize]
-    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin)]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin, UserRole.ItManager)]
     [HttpPost("restart/{serviceName}")]
     [ProducesResponseType(typeof(RestartServiceResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> RestartService(string serviceName, CancellationToken cancellationToken) =>
         Ok(await _systemHealth.RequestRestartAsync(serviceName, HttpContext.GetLotrisSession(), cancellationToken));
+
+    /// <summary>Dev store integrity check — always healthy in C# deployment (parity stub).</summary>
+    [Authorize]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin, UserRole.ItManager)]
+    [HttpGet("store")]
+    [ProducesResponseType(typeof(StoreHealthDto), StatusCodes.Status200OK)]
+    public IActionResult GetStoreHealth() =>
+        Ok(new StoreHealthDto(true, [], "idle", null));
+
+    /// <summary>Dev store repair — no-op in C# deployment (parity stub).</summary>
+    [Authorize]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin, UserRole.ItManager)]
+    [HttpPost("store/repair")]
+    [ProducesResponseType(typeof(StoreHealthDto), StatusCodes.Status200OK)]
+    public IActionResult RepairStore() =>
+        Ok(new StoreHealthDto(true, [], "done", DateTime.UtcNow));
 }

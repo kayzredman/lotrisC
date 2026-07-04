@@ -1,5 +1,6 @@
 using Lotris.Application.Admin;
 using Lotris.Application.Analytics;
+using Lotris.Application.Common;
 using Lotris.Application.Health;
 using Lotris.Application.Intake;
 using Lotris.Application.Auth;
@@ -34,6 +35,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 namespace Lotris.Infrastructure;
@@ -48,6 +50,9 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required.");
 
         DapperTypeHandlers.Register();
+
+        services.Configure<LotrisDeploymentOptions>(configuration.GetSection(LotrisDeploymentOptions.SectionName));
+        services.Configure<IntelligenceOptions>(configuration.GetSection(IntelligenceOptions.SectionName));
 
         services.AddDbContext<LotrisDbContext>(options =>
             options.UseSqlServer(connectionString, sql =>
@@ -119,13 +124,23 @@ public static class DependencyInjection
         services.AddScoped<IIntelligenceRepository, DapperIntelligenceRepository>();
         services.AddScoped<IApiKeyProtector, SimpleApiKeyProtector>();
         services.AddScoped<AzureOpenAIProviders>();
-        services.AddScoped<IEmbeddingProvider, AzureOpenAIProviders>();
+        services.AddScoped<IEmbeddingProvider, RoutedEmbeddingProvider>();
         services.AddScoped<IChatProvider, RoutedChatProvider>();
         services.AddScoped<IAiProviderValidator, AiProviderValidator>();
         services.AddScoped<ITeamsNotifier, TeamsWebhookNotifier>();
+        services.AddSingleton<NullVectorStore>();
+        services.AddScoped<QdrantVectorStore>();
+        services.AddScoped<IVectorStore>(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<IntelligenceOptions>>().Value;
+            return opts.IsQdrantEnabled
+                ? sp.GetRequiredService<QdrantVectorStore>()
+                : sp.GetRequiredService<NullVectorStore>();
+        });
         services.AddHttpClient("azure-openai", c => c.Timeout = TimeSpan.FromSeconds(60));
         services.AddHttpClient("ai-provider", c => c.Timeout = TimeSpan.FromSeconds(60));
         services.AddHttpClient("teams-webhook", c => c.Timeout = TimeSpan.FromSeconds(15));
+        services.AddHttpClient("qdrant", c => c.Timeout = TimeSpan.FromSeconds(30));
 
         if (!services.Any(d => d.ServiceType == typeof(IConnectionMultiplexer)))
         {

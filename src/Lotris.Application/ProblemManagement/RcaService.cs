@@ -80,10 +80,11 @@ public sealed class RcaService
 
         var links = await _rca.GetTicketLinksAsync(session.TenantId, rcaId, cancellationToken);
         var actions = await _rca.GetActionsAsync(session.TenantId, rcaId, cancellationToken);
+        var approvals = await _rca.ListApprovalsAsync(session.TenantId, rcaId, cancellationToken);
         var users = await _admin.ListUsersAsync(session.TenantId, teamId: null, cancellationToken);
         var userMap = users.ToDictionary(u => u.Id, u => u.FullName);
 
-        return MapDetail(rca, problem, links, actions, userMap);
+        return MapDetail(rca, problem, links, actions, approvals, userMap);
     }
 
     public async Task<RcaDetailDto> CreateAsync(
@@ -158,6 +159,7 @@ public sealed class RcaService
 
         RcaLifecycle.AssertTransition(rca.Status, RcaStatus.InReview);
         await _rca.UpdateRcaStatusAsync(session.TenantId, rcaId, RcaStatus.InReview, DateTime.UtcNow, null, cancellationToken);
+        await _rca.ResetApprovalsAsync(session.TenantId, rcaId, rca.ProcessOwnerId, rca.TechnicalOwnerId, cancellationToken);
 
         _notifications.EnqueueNotification(new NotificationPayload
         {
@@ -165,6 +167,57 @@ public sealed class RcaService
             TenantId = session.TenantId,
             RecipientId = rca.ProcessOwnerId,
         });
+
+        return await GetByIdAsync(session, rcaId, cancellationToken);
+    }
+
+    public async Task<RcaDetailDto> ApproveAsync(
+        LotrisSession session,
+        Guid rcaId,
+        ApproveRcaRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var rca = await GetRcaOrThrowAsync(session, rcaId, cancellationToken);
+        if (rca.Status != RcaStatus.InReview)
+        {
+            throw new BadRequestException("RCA is not awaiting approval.");
+        }
+
+        string? role = null;
+        if (session.UserId == rca.ProcessOwnerId)
+        {
+            role = "PROCESS_OWNER";
+        }
+        else if (session.UserId == rca.TechnicalOwnerId)
+        {
+            role = "TECHNICAL_OWNER";
+        }
+        else if (LeadRoles.Contains(session.Role))
+        {
+            var existing = await _rca.ListApprovalsAsync(session.TenantId, rcaId, cancellationToken);
+            role = existing.FirstOrDefault(a => a.Decision == "PENDING")?.ApproverRole;
+        }
+
+        if (role is null)
+        {
+            throw new ForbiddenException("You are not an approver for this RCA.");
+        }
+
+        await _rca.SetApprovalDecisionAsync(
+            session.TenantId,
+            rcaId,
+            role,
+            session.UserId,
+            "APPROVED",
+            request.Comments,
+            cancellationToken);
+
+        var updatedApprovals = await _rca.ListApprovalsAsync(session.TenantId, rcaId, cancellationToken);
+        if (updatedApprovals.Count > 0 && updatedApprovals.All(a => a.Decision == "APPROVED"))
+        {
+            RcaLifecycle.AssertTransition(rca.Status, RcaStatus.Approved);
+            await _rca.UpdateRcaStatusAsync(session.TenantId, rcaId, RcaStatus.Approved, DateTime.UtcNow, null, cancellationToken);
+        }
 
         return await GetByIdAsync(session, rcaId, cancellationToken);
     }
@@ -177,10 +230,12 @@ public sealed class RcaService
         AssertLead(session);
         var rca = await GetRcaOrThrowAsync(session, rcaId, cancellationToken);
 
-        if (rca.Status is not RcaStatus.Approved and not RcaStatus.InReview)
+        if (rca.Status != RcaStatus.Approved)
         {
-            RcaLifecycle.AssertTransition(rca.Status, RcaStatus.Published);
+            throw new BadRequestException("RCA must be approved by process and technical owners before publishing.");
         }
+
+        RcaLifecycle.AssertTransition(rca.Status, RcaStatus.Published);
 
         var now = DateTime.UtcNow;
         await _rca.UpdateRcaStatusAsync(session.TenantId, rcaId, RcaStatus.Published, now, now, cancellationToken);
@@ -445,6 +500,7 @@ public sealed class RcaService
         ProblemEntity problem,
         IReadOnlyList<RcaTicketLinkDto> links,
         IReadOnlyList<RcaActionDto> actions,
+        IReadOnlyList<RcaApprovalRow> approvals,
         IReadOnlyDictionary<Guid, string> userMap) => new(
         rca.Id,
         rca.RcaRef,
@@ -474,7 +530,14 @@ public sealed class RcaService
         rca.UpdatedAt,
         links.Select(l => new ContractsRcaTicketLinkDto(
             l.TicketId, l.TicketRef, l.LinkType, l.TicketTitle, l.TicketPriority)).ToList(),
-        actions.Select(MapAction).ToList());
+        actions.Select(MapAction).ToList(),
+        approvals.Select(a => new RcaApprovalDto(
+            a.ApproverRole,
+            a.ApproverId,
+            a.ApproverName ?? userMap.GetValueOrDefault(a.ApproverId),
+            a.Decision,
+            a.Comments,
+            a.DecidedAt)).ToList());
 
     private static ContractsRcaActionDto MapAction(RcaActionDto action) => new(
         action.Id,

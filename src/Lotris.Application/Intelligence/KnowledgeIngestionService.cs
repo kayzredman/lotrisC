@@ -1,8 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using Lotris.Application.ProblemManagement;
-using Lotris.Contracts.Intelligence;
-using Lotris.Domain;
 
 namespace Lotris.Application.Intelligence;
 
@@ -10,11 +8,16 @@ public sealed class KnowledgeIngestionService
 {
     private readonly IIntelligenceRepository _repo;
     private readonly IEmbeddingProvider _embeddings;
+    private readonly IVectorStore _vectors;
 
-    public KnowledgeIngestionService(IIntelligenceRepository repo, IEmbeddingProvider embeddings)
+    public KnowledgeIngestionService(
+        IIntelligenceRepository repo,
+        IEmbeddingProvider embeddings,
+        IVectorStore vectors)
     {
         _repo = repo;
         _embeddings = embeddings;
+        _vectors = vectors;
     }
 
     public async Task IngestPublishedRcaAsync(
@@ -28,72 +31,8 @@ public sealed class KnowledgeIngestionService
         string? lessonsLearned,
         CancellationToken cancellationToken = default)
     {
-        var runId = Guid.NewGuid();
-        await _repo.InsertIndexRunAsync(runId, tenantId, "RCA", rcaId, "RUNNING", cancellationToken);
-
-        try
-        {
-            var config = await _repo.GetOrCreateConfigAsync(tenantId, cancellationToken);
-            var body = BuildRcaMarkdown(title, incidentSummary, rootCause, workaround, permanentFix, lessonsLearned);
-            var now = DateTime.UtcNow;
-            var articleId = await _repo.UpsertArticleAsync(new KnowledgeArticleEntity
-            {
-                Id = Guid.NewGuid(),
-                TenantId = tenantId,
-                SourceType = "RCA",
-                SourceId = rcaId,
-                Title = title,
-                BodyMarkdown = body,
-                Tags = "rca,kedb",
-                Status = "ACTIVE",
-                PublishedAt = now,
-                UpdatedAt = now,
-            }, cancellationToken);
-
-            await _repo.DeleteChunksForArticleAsync(tenantId, articleId, cancellationToken);
-            var chunks = ChunkText(body, 1200);
-            var canEmbed = config.ProviderPath == "ENTERPRISE" &&
-                           !string.IsNullOrWhiteSpace(config.AzureOpenaiEndpoint) &&
-                           !string.IsNullOrWhiteSpace(config.AzureOpenaiDeploymentEmbed) &&
-                           !string.IsNullOrWhiteSpace(config.AzureOpenaiApiKey);
-
-            for (var i = 0; i < chunks.Count; i++)
-            {
-                string? embeddingJson = null;
-                if (canEmbed)
-                {
-                    try
-                    {
-                        var vec = await _embeddings.EmbedAsync(chunks[i], config, cancellationToken);
-                        embeddingJson = JsonSerializer.Serialize(vec);
-                    }
-                    catch
-                    {
-                        // Keyword search still works without embeddings.
-                    }
-                }
-
-                await _repo.InsertChunkAsync(new KnowledgeChunkEntity
-                {
-                    Id = Guid.NewGuid(),
-                    TenantId = tenantId,
-                    ArticleId = articleId,
-                    ChunkIndex = i,
-                    ChunkText = chunks[i],
-                    TokenCount = EstimateTokens(chunks[i]),
-                    EmbeddingJson = embeddingJson,
-                    AclJson = """{"roles":["ENGINEER","TEAM_LEAD","IT_MANAGER","ADMIN","SUPERADMIN"]}""",
-                    CreatedAt = now,
-                }, cancellationToken);
-            }
-
-            await _repo.CompleteIndexRunAsync(runId, chunks.Count, null, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            await _repo.CompleteIndexRunAsync(runId, 0, ex.Message, cancellationToken);
-            throw;
-        }
+        var body = BuildRcaMarkdown(title, incidentSummary, rootCause, workaround, permanentFix, lessonsLearned);
+        await IndexArticleAsync(tenantId, "RCA", rcaId, title, body, "rca,kedb", cancellationToken);
     }
 
     public async Task IngestClosedTicketAsync(
@@ -103,44 +42,58 @@ public sealed class KnowledgeIngestionService
         string? description,
         CancellationToken cancellationToken = default)
     {
+        var body = BuildTicketMarkdown(title, description);
+        await IndexArticleAsync(tenantId, "TICKET", ticketId, title, body, "ticket,incident", cancellationToken);
+    }
+
+    private async Task IndexArticleAsync(
+        Guid tenantId,
+        string sourceType,
+        Guid sourceId,
+        string title,
+        string body,
+        string tags,
+        CancellationToken cancellationToken)
+    {
         var runId = Guid.NewGuid();
-        await _repo.InsertIndexRunAsync(runId, tenantId, "TICKET", ticketId, "RUNNING", cancellationToken);
+        await _repo.InsertIndexRunAsync(runId, tenantId, sourceType, sourceId, "RUNNING", cancellationToken);
 
         try
         {
             var config = await _repo.GetOrCreateConfigAsync(tenantId, cancellationToken);
-            var body = BuildTicketMarkdown(title, description);
             var now = DateTime.UtcNow;
             var articleId = await _repo.UpsertArticleAsync(new KnowledgeArticleEntity
             {
                 Id = Guid.NewGuid(),
                 TenantId = tenantId,
-                SourceType = "TICKET",
-                SourceId = ticketId,
+                SourceType = sourceType,
+                SourceId = sourceId,
                 Title = title,
                 BodyMarkdown = body,
-                Tags = "ticket,incident",
+                Tags = tags,
                 Status = "ACTIVE",
                 PublishedAt = now,
                 UpdatedAt = now,
             }, cancellationToken);
 
+            await _vectors.DeleteArticleVectorsAsync(tenantId, articleId, cancellationToken);
             await _repo.DeleteChunksForArticleAsync(tenantId, articleId, cancellationToken);
-            var chunks = ChunkText(body, 1200);
-            var canEmbed = config.ProviderPath == "ENTERPRISE" &&
-                           !string.IsNullOrWhiteSpace(config.AzureOpenaiEndpoint) &&
-                           !string.IsNullOrWhiteSpace(config.AzureOpenaiDeploymentEmbed) &&
-                           !string.IsNullOrWhiteSpace(config.AzureOpenaiApiKey);
 
+            var chunks = ChunkText(body, 1200);
             for (var i = 0; i < chunks.Count; i++)
             {
+                var chunkId = Guid.NewGuid();
                 string? embeddingJson = null;
-                if (canEmbed)
+                if (CanEmbed(config))
                 {
                     try
                     {
                         var vec = await _embeddings.EmbedAsync(chunks[i], config, cancellationToken);
                         embeddingJson = JsonSerializer.Serialize(vec);
+                        if (_vectors.IsEnabled)
+                        {
+                            await _vectors.UpsertChunkAsync(tenantId, chunkId, articleId, vec, chunks[i], cancellationToken);
+                        }
                     }
                     catch
                     {
@@ -150,13 +103,14 @@ public sealed class KnowledgeIngestionService
 
                 await _repo.InsertChunkAsync(new KnowledgeChunkEntity
                 {
-                    Id = Guid.NewGuid(),
+                    Id = chunkId,
                     TenantId = tenantId,
                     ArticleId = articleId,
                     ChunkIndex = i,
                     ChunkText = chunks[i],
                     TokenCount = EstimateTokens(chunks[i]),
                     EmbeddingJson = embeddingJson,
+                    VectorId = _vectors.IsEnabled ? chunkId.ToString() : null,
                     AclJson = """{"roles":["ENGINEER","TEAM_LEAD","IT_MANAGER","ADMIN","SUPERADMIN"]}""",
                     CreatedAt = now,
                 }, cancellationToken);
@@ -170,6 +124,12 @@ public sealed class KnowledgeIngestionService
             throw;
         }
     }
+
+    private static bool CanEmbed(IntelligenceConfigEntity config) =>
+        config.ProviderPath != AiProviders.Disabled &&
+        !string.IsNullOrWhiteSpace(config.AzureOpenaiApiKey) &&
+        (AiProviders.UsesCredentialLogin(config.ProviderPath) ||
+         !string.IsNullOrWhiteSpace(config.AzureOpenaiEndpoint));
 
     private static string BuildTicketMarkdown(string title, string? description) =>
         new StringBuilder()

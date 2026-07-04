@@ -35,6 +35,27 @@ public interface IRcaRepository
     Task<Guid> PublishKnownErrorAsync(Guid tenantId, Guid rcaId, KnownErrorCreateModel model, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<KnownErrorRow>> ListKnownErrorsAsync(Guid tenantId, CancellationToken cancellationToken = default);
 
+    Task ResetApprovalsAsync(
+        Guid tenantId,
+        Guid rcaId,
+        Guid processOwnerId,
+        Guid technicalOwnerId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<RcaApprovalRow>> ListApprovalsAsync(
+        Guid tenantId,
+        Guid rcaId,
+        CancellationToken cancellationToken = default);
+
+    Task SetApprovalDecisionAsync(
+        Guid tenantId,
+        Guid rcaId,
+        string approverRole,
+        Guid approverId,
+        string decision,
+        string? comments,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<Guid>> ListActiveTenantIdsAsync(CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<RecurringProblemDigestRow>> ListRecurringProblemsAsync(
@@ -54,6 +75,17 @@ public sealed class RecurringProblemDigestRow
     public string? RcaRef { get; init; }
     public string? RcaStatus { get; init; }
     public int LinkedTicketCount { get; init; }
+}
+
+public sealed class RcaApprovalRow
+{
+    public Guid Id { get; init; }
+    public string ApproverRole { get; init; } = "";
+    public Guid ApproverId { get; init; }
+    public string? ApproverName { get; init; }
+    public string Decision { get; init; } = "PENDING";
+    public string? Comments { get; init; }
+    public DateTime? DecidedAt { get; init; }
 }
 
 public sealed class UpdateRcaPatch

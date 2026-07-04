@@ -280,6 +280,36 @@ public sealed class DapperIntelligenceRepository : IIntelligenceRepository
         return row is null ? null : MapArticle(row);
     }
 
+    public async Task<KnowledgeChunkEntity?> GetChunkAsync(
+        Guid tenantId,
+        Guid chunkId,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            SELECT id AS Id, tenant_id AS TenantId, article_id AS ArticleId, chunk_index AS ChunkIndex,
+                   chunk_text AS ChunkText, token_count AS TokenCount, embedding_json AS EmbeddingJson,
+                   vector_id AS VectorId, acl_json AS AclJson, created_at AS CreatedAt
+            FROM knowledge.Knowledge_Chunks WHERE tenant_id = @TenantId AND id = @Id
+            """;
+        await using var connection = await _connections.OpenConnectionAsync(cancellationToken);
+        var row = await connection.QuerySingleOrDefaultAsync<ChunkRow>(
+            new CommandDefinition(sql, new { TenantId = SqlGuid.ToSql(tenantId), Id = SqlGuid.ToSql(chunkId) }, cancellationToken: cancellationToken));
+        if (row is null) return null;
+        return new KnowledgeChunkEntity
+        {
+            Id = SqlGuid.FromSql(row.Id),
+            TenantId = SqlGuid.FromSql(row.TenantId),
+            ArticleId = SqlGuid.FromSql(row.ArticleId),
+            ChunkIndex = row.ChunkIndex,
+            ChunkText = row.ChunkText,
+            TokenCount = row.TokenCount,
+            EmbeddingJson = row.EmbeddingJson,
+            VectorId = row.VectorId,
+            AclJson = row.AclJson,
+            CreatedAt = row.CreatedAt,
+        };
+    }
+
     public async Task InsertIndexRunAsync(Guid id, Guid tenantId, string sourceType, Guid sourceId, string status, CancellationToken cancellationToken = default)
     {
         const string sql = """

@@ -39,6 +39,11 @@ public sealed class RcaController : ControllerBase
     public async Task<IActionResult> Submit(Guid id, CancellationToken cancellationToken)
         => Ok(await _rca.SubmitForReviewAsync(HttpContext.GetLotrisSession(), id, cancellationToken));
 
+    [HttpPost("{id:guid}/approve")]
+    [ProducesResponseType(typeof(RcaDetailDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Approve(Guid id, [FromBody] ApproveRcaRequest request, CancellationToken cancellationToken)
+        => Ok(await _rca.ApproveAsync(HttpContext.GetLotrisSession(), id, request, cancellationToken));
+
     [HttpPost("{id:guid}/publish")]
     [AuthorizeRoles(UserRole.SuperAdmin, UserRole.Admin, UserRole.ItManager, UserRole.TeamLead)]
     [ProducesResponseType(typeof(RcaDetailDto), StatusCodes.Status200OK)]

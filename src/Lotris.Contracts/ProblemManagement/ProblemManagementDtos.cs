@@ -46,7 +46,18 @@ public record RcaDetailDto(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     IReadOnlyList<RcaTicketLinkDto> LinkedTickets,
-    IReadOnlyList<RcaActionDto> Actions);
+    IReadOnlyList<RcaActionDto> Actions,
+    IReadOnlyList<RcaApprovalDto> Approvals);
+
+public record RcaApprovalDto(
+    string ApproverRole,
+    Guid ApproverId,
+    string? ApproverName,
+    string Decision,
+    string? Comments,
+    DateTime? DecidedAt);
+
+public record ApproveRcaRequest(string? Comments);
 
 public record RcaTicketLinkDto(
     Guid TicketId,
