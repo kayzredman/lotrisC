@@ -4,6 +4,6 @@ IF COL_LENGTH('dbo.Tenant_Intelligence_Config', 'feature_auto_index_tickets') IS
   ALTER TABLE dbo.Tenant_Intelligence_Config
     ADD feature_auto_index_tickets BIT NOT NULL DEFAULT 0;
 
-IF COL_LENGTH('analytics.ReportJobs', 'delivery_recipients') IS NULL
+IF COL_LENGTH('analytics.ReportJobs', 'DeliveryRecipients') IS NULL
   ALTER TABLE analytics.ReportJobs
-    ADD delivery_recipients NVARCHAR(MAX) NULL;
+    ADD DeliveryRecipients NVARCHAR(MAX) NULL;

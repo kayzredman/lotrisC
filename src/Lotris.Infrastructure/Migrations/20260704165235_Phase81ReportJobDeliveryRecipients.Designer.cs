@@ -4,6 +4,7 @@ using Lotris.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lotris.Infrastructure.Migrations
 {
     [DbContext(typeof(LotrisDbContext))]
-    partial class LotrisDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260704165235_Phase81ReportJobDeliveryRecipients")]
+    partial class Phase81ReportJobDeliveryRecipients
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
