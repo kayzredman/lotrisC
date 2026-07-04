@@ -18,6 +18,7 @@
     "smoke:phase5": "bash scripts/smoke-phase5.sh",
     "gate:sse": "bash scripts/gate-sse.sh",
     "gate:queue": "dotnet test src/Lotris.Tests.Integration/Lotris.Tests.Integration.csproj --filter QueueEngineGateTests -m:1",
+    "gate:etl": "bash scripts/gate-etl.sh",
     "onprem:smoke": "bash scripts/onprem-smoke.sh",
     "seed:digital": "node scripts/seed-lotris-digital-setup.mjs"
   },

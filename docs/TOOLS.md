@@ -19,6 +19,7 @@ Living catalog of operational surfaces, scripts, and API probes in this repo. Up
 **What it can do:**
 
 - Live service status (SSE stream + 5s polling fallback)
+- **Analytics & ETL Jobs** — configure rollup intervals, batch times, run-now (60s cooldown)
 - Summary chips: services UP / DEGRADED / DOWN
 - Service table: CPU, memory, uptime, last ping, per-service detail panel
 - Queue depths (Hangfire/BullMQ-style job queues)
@@ -197,7 +198,20 @@ pnpm smoke:phase5
 # LOTRIS_API_URL=http://localhost:5153 bash scripts/smoke-phase5.sh
 ```
 
-**What it checks (27 checks):** public health/openapi/monitor, login, dashboard, analytics team-workload, tickets, tasks, KPIs, reports, admin, onboarding, audit, etc.
+**What it checks (29 checks):** public health/openapi/monitor, login, dashboard, analytics jobs, tickets, tasks, KPIs, reports, admin, audit, health snapshot, etc.
+
+---
+
+### `gate-etl.sh` — analytics & ETL jobs gate
+
+**When:** After analytics job scheduler changes.
+
+```bash
+pnpm gate:etl
+# LOTRIS_API_URL=http://localhost:9090 pnpm gate:etl
+```
+
+**Checks:** GET/PATCH analytics job config, GET status, run-now + 60s cooldown (429), unauthorized 401.
 
 ---
 
@@ -284,6 +298,7 @@ Seeds 3 problems + RCAs (2 published) + 2 known errors.
 | Web dev reset | `pnpm web:dev-reset` |
 | Seed Lotris Digital Setup | `pnpm seed:digital` |
 | Phase 5 smoke | `pnpm smoke:phase5` |
+| ETL gate | `pnpm gate:etl` |
 | SSE gate | `pnpm gate:sse` |
 | Queue engine gate | `pnpm gate:queue` |
 | OpenAPI export + docs + codegen | `pnpm api:sync` |
@@ -308,9 +323,8 @@ Run via the API package's documented npm/pnpm scripts (see `apps/api/package.jso
 
 | Item | Target | Notes |
 |------|--------|-------|
-| **Real service restart** | Post–Phase 6 | Wire `nextjs-web`, workers, API to docker compose / k8s / supervisor from `POST /health/restart/{name}`. UI + audit + cooldown already exist. |
 | API-hosted break-glass console | Post–Phase 6 | `GET /health/console` — static HTML, no Next.js dependency |
-| Analytics & ETL panel on ops | TBD | Planned on ops console (DATABASE-STRATEGY.md §11) |
+| Analytics & ETL panel on ops | Done | `/ops` — Analytics & ETL Jobs panel |
 
 ---
 

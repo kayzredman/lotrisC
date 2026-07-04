@@ -7,6 +7,7 @@ import { QueueDepths } from './queue-depths';
 import { IncidentLog } from './incident-log';
 import { DetailPanel } from './detail-panel';
 import { RestartModal } from './restart-modal';
+import { AnalyticsJobsPanel } from './analytics-jobs-panel';
 import {
   useHealthSnapshot,
   useHealthIncidents,
@@ -156,6 +157,9 @@ export function SystemHealthClient() {
         </div>
         <IncidentLog incidents={incidents ?? []} />
       </div>
+
+      {/* Analytics & ETL jobs */}
+      <AnalyticsJobsPanel />
 
       {/* Package store health */}
       <div className="v2-card">

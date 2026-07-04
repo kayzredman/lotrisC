@@ -56,7 +56,16 @@ If Next.js is stale after switching machines: `pnpm web:dev-reset`.
 
 ## 3. Where we left off (Phase 8)
 
-**Status:** Phase 8 **MVP + 8.1 + 8.2 complete** on `origin/dev` @ `607a8fd`. Ready for smoke, on-prem validation, and merge to `main`.
+**Status:** Phase 8 **MVP + 8.1 + 8.2 complete**; **ETL gate complete** on local `dev`. Ready for merge to `main`.
+
+### ETL & analytics jobs (July 2026)
+
+| Area | What |
+|------|------|
+| **Admin API** | `GET/PATCH config`, `GET status`, `POST {jobKey}/run-now` |
+| **Ops UI** | `/ops` → Analytics & ETL Jobs panel |
+| **Gate** | `pnpm gate:etl` — config, run-now, 60s cooldown |
+| **Tests** | `AnalyticsJobsGateTests` (4 cases) |
 
 ### Phase 8.2 — `607a8fd` (on `origin/dev`)
 
@@ -104,10 +113,14 @@ Phase 7 parity gate **complete** — REST parity shipped; NestJS/tRPC decommissi
 | 5 | On-prem compose smoke | ⏳ `pnpm onprem:smoke` — config ready |
 | 6 | NestJS decommission | ✅ |
 
-### Explicitly deferred (post–Phase 8)
+### Explicitly out of scope (on-prem)
 
-- ETL/analytics gate (job reschedule, run-now cooldown)
-- Real service restart wiring from `/ops` (audit-only today)
+- Stripe / SaaS entitlements UI — cloud-only; on-prem uses `DisablePaymentGates`
+- Real `/ops` service restart wiring — not planned for on-prem
+- Ollama air-gap LLM fallback — not planned
+
+### Explicitly deferred
+
 - API break-glass `/health/console`
 - Stripe / SaaS payment UI (on-prem uses `DisablePaymentGates`)
 
@@ -128,6 +141,7 @@ pnpm smoke:phase5
 # Phase 7 gate scripts
 pnpm gate:queue
 pnpm gate:sse
+pnpm gate:etl
 
 # OpenAPI refresh after API changes
 pnpm api:sync
@@ -196,10 +210,9 @@ See [deploy/INSTALL.md](../deploy/INSTALL.md).
 
 | Item | Notes |
 |------|-------|
-| Stripe / SaaS entitlements UI | Cloud-only; on-prem bypasses via `DisablePaymentGates` |
-| Real `/ops` service restart | docker/k8s wiring — audit-only today |
-| On-prem smoke validation | Config ready; run when VM/Docker available |
-| ETL gate | Phase 7 deferred item |
+| API break-glass `/health/console` | Optional ops fallback |
+
+**Out of scope for on-prem:** Stripe/SaaS billing UI, real `/ops` service restart wiring, Ollama air-gap fallback.
 
 ---
 

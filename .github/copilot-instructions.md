@@ -105,6 +105,8 @@ Types: `feat` · `fix` · `refactor` · `test` · `chore` · `docs`
 
 **On-prem:** `Lotris:DisablePaymentGates=true` unlocks all intelligence features — no Stripe gates.
 
-**Deferred:** Real `/ops` service restart wiring, ETL gate, SaaS payment UI.
+**Deferred:** API break-glass `/health/console`.
 
-**Verify:** `pnpm api:restart` → `cd src && dotnet test` → `pnpm smoke:phase5` → `pnpm onprem:smoke`.
+**Out of scope (on-prem):** Stripe/SaaS billing UI, real `/ops` service restart wiring, Ollama air-gap fallback.
+
+**Verify:** `pnpm api:restart` → `cd src && dotnet test` → `pnpm gate:etl` → `pnpm smoke:phase5` → `pnpm onprem:smoke`.

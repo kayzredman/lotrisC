@@ -113,6 +113,11 @@ done
 code=$($CURL -s -o /tmp/smoke-body.json -w '%{http_code}' -H "$AUTH" "$BASE/api/v1/audit-logs?limit=10")
 check "GET /api/v1/audit-logs" 200 "$code" "$(cat /tmp/smoke-body.json)"
 
+for path in /api/v1/admin/analytics-jobs/config /api/v1/admin/analytics-jobs/status; do
+  code=$($CURL -s -o /tmp/smoke-body.json -w '%{http_code}' -H "$AUTH" "$BASE$path")
+  check "GET $path" 200 "$code" "$(cat /tmp/smoke-body.json)"
+done
+
 code=$($CURL -s -o /tmp/smoke-body.json -w '%{http_code}' -H "$AUTH" "$BASE/health/snapshot")
 check "GET /health/snapshot" 200 "$code" "$(cat /tmp/smoke-body.json)"
 
