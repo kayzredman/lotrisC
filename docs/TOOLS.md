@@ -336,7 +336,7 @@ Run via the API package's documented npm/pnpm scripts (see `apps/api/package.jso
 | Compose file | `docker/docker-compose.onprem.yml` |
 | Env template | `deploy/.env.onprem.example` → `deploy/.env.onprem` |
 | Bootstrap | `docker compose … --profile bootstrap run --rm bootstrap` |
-| Smoke | `pnpm onprem:smoke` |
+| Smoke | `pnpm onprem:smoke` (9 checks — health, login, analytics jobs) |
 
 ```bash
 cp deploy/.env.onprem.example deploy/.env.onprem
