@@ -23,19 +23,122 @@ public sealed class IntelligenceService
     private readonly IChatProvider _chat;
     private readonly IEmbeddingProvider _embeddings;
     private readonly IApiKeyProtector _protector;
+    private readonly IAiProviderValidator _aiValidator;
 
     public IntelligenceService(
         IIntelligenceRepository repo,
         IRcaRepository rca,
         IChatProvider chat,
         IEmbeddingProvider embeddings,
-        IApiKeyProtector protector)
+        IApiKeyProtector protector,
+        IAiProviderValidator aiValidator)
     {
         _repo = repo;
         _rca = rca;
         _chat = chat;
         _embeddings = embeddings;
         _protector = protector;
+        _aiValidator = aiValidator;
+    }
+
+    public IReadOnlyList<AiProviderOptionDto> ListAiProviders()
+        =>
+        [
+            new(AiProviders.Claude, "Claude", "credentials", "Email + Anthropic API key as password"),
+            new(AiProviders.Cursor, "Cursor", "credentials", "Email + Cursor API key (crsr_…) from dashboard as password"),
+            new(AiProviders.ChatGpt, "ChatGPT", "credentials", "Email + OpenAI API key (sk-…) as password"),
+            new(AiProviders.Copilot, "Copilot", "microsoft", "Sign in with Microsoft (Entra + Azure OpenAI)"),
+            new(AiProviders.OpenAi, "OpenAI", "credentials", "Email + OpenAI API key (sk-…) as password"),
+        ];
+
+    public async Task<ConnectAiProviderResponse> ConnectAiProviderAsync(
+        LotrisSession session,
+        ConnectAiProviderRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        AssertLead(session);
+        var provider = request.Provider?.Trim().ToUpperInvariant() ?? "";
+        if (!AiProviders.IsValid(provider))
+        {
+            throw new BadRequestException("Select a supported AI provider.");
+        }
+
+        if (AiProviders.UsesMicrosoftOAuth(provider))
+        {
+            throw new BadRequestException("Copilot uses Sign in with Microsoft — use the Microsoft button.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Username))
+        {
+            throw new BadRequestException("Username or email is required.");
+        }
+
+        await _aiValidator.ValidateAsync(provider, request.Username.Trim(), request.Password, cancellationToken);
+
+        var existing = await _repo.GetOrCreateConfigAsync(session.TenantId, cancellationToken);
+        var now = DateTime.UtcNow;
+        var config = new IntelligenceConfigEntity
+        {
+            TenantId = session.TenantId,
+            ProviderPath = provider,
+            AiUsername = request.Username.Trim(),
+            AiConnectedAt = now,
+            AiConnectedById = session.UserId,
+            AzureOpenaiApiKey = _protector.Protect(request.Password.Trim()),
+            EntraTenantId = existing.EntraTenantId,
+            EntraConnectedAt = existing.EntraConnectedAt,
+            EntraConnectedById = existing.EntraConnectedById,
+            AzureOpenaiEndpoint = existing.AzureOpenaiEndpoint,
+            AzureOpenaiDeploymentChat = existing.AzureOpenaiDeploymentChat,
+            AzureOpenaiDeploymentEmbed = existing.AzureOpenaiDeploymentEmbed,
+            FeatureRcaSuggest = existing.FeatureRcaSuggest || true,
+            FeatureKnowledgeCopilot = existing.FeatureKnowledgeCopilot || true,
+            FeatureReportNarrative = existing.FeatureReportNarrative,
+            TeamsEnabled = existing.TeamsEnabled,
+            TeamsWebhookUrl = existing.TeamsWebhookUrl,
+            MonthlyQueryQuota = existing.MonthlyQueryQuota,
+            UpdatedAt = now,
+        };
+
+        await _repo.SaveConfigAsync(config, cancellationToken);
+        return new ConnectAiProviderResponse(
+            true,
+            provider,
+            config.AiUsername,
+            config.AiConnectedAt,
+            $"{provider} connected. AI intelligence features will use this provider.");
+    }
+
+    public async Task<KnowledgeQueryResponse> TestConnectionAsync(
+        LotrisSession session,
+        CancellationToken cancellationToken = default)
+    {
+        var config = await _repo.GetOrCreateConfigAsync(session.TenantId, cancellationToken);
+        if (!IsProviderReady(config))
+        {
+            throw new BadRequestException("Connect an AI provider first.");
+        }
+
+        if (string.Equals(config.ProviderPath, AiProviders.Cursor, StringComparison.OrdinalIgnoreCase))
+        {
+            var cred = _protector.Unprotect(config.AzureOpenaiApiKey!);
+            if (cred.StartsWith("crsr_", StringComparison.OrdinalIgnoreCase))
+            {
+                return new KnowledgeQueryResponse(
+                    "Cursor account linked successfully. Your API key is valid — intelligence features are enabled for this tenant.",
+                    [],
+                    0);
+            }
+        }
+
+        var (answer, tokensIn, tokensOut) = await _chat.CompleteAsync(
+            "You are Lotris AI setup assistant.",
+            "Reply with one short sentence confirming the AI provider connection works.",
+            config,
+            cancellationToken);
+
+        await RecordUsage(session, "AI_SETUP_TEST", tokensIn, tokensOut, config.ProviderPath, cancellationToken);
+        return new KnowledgeQueryResponse(answer, [], tokensIn + tokensOut);
     }
 
     public async Task<IntelligenceConfigDto> GetConfigAsync(LotrisSession session, CancellationToken cancellationToken = default)
@@ -63,7 +166,9 @@ public sealed class IntelligenceService
         var config = new IntelligenceConfigEntity
         {
             TenantId = session.TenantId,
-            ProviderPath = request.ProviderPath is "ENTERPRISE" or "DISABLED" ? request.ProviderPath : "DISABLED",
+            ProviderPath = AiProviders.IsValid(request.ProviderPath) || request.ProviderPath is "ENTERPRISE" or "DISABLED"
+                ? request.ProviderPath.ToUpperInvariant()
+                : existing.ProviderPath,
             EntraTenantId = request.EntraTenantId ?? existing.EntraTenantId,
             EntraConnectedAt = existing.EntraConnectedAt,
             EntraConnectedById = existing.EntraConnectedById,
@@ -71,6 +176,9 @@ public sealed class IntelligenceService
             AzureOpenaiDeploymentChat = request.AzureOpenaiDeploymentChat,
             AzureOpenaiDeploymentEmbed = request.AzureOpenaiDeploymentEmbed,
             AzureOpenaiApiKey = apiKey,
+            AiUsername = existing.AiUsername,
+            AiConnectedAt = existing.AiConnectedAt,
+            AiConnectedById = existing.AiConnectedById,
             FeatureRcaSuggest = request.FeatureRcaSuggest,
             FeatureKnowledgeCopilot = request.FeatureKnowledgeCopilot,
             FeatureReportNarrative = request.FeatureReportNarrative,
@@ -91,14 +199,31 @@ public sealed class IntelligenceService
         CancellationToken cancellationToken = default)
     {
         AssertLead(session);
-        var existing = await _repo.GetOrCreateConfigAsync(session.TenantId, cancellationToken);
+        return await ConnectEntraForTenantAsync(session.TenantId, session.UserId, request.EntraTenantId, cancellationToken);
+    }
+
+    public async Task<IntelligenceConfigDto> ConnectEntraForTenantAsync(
+        Guid tenantId,
+        Guid userId,
+        string entraTenantId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(entraTenantId))
+        {
+            throw new BadRequestException("Entra tenant ID is required.");
+        }
+
+        var existing = await _repo.GetOrCreateConfigAsync(tenantId, cancellationToken);
         var config = new IntelligenceConfigEntity
         {
-            TenantId = session.TenantId,
-            ProviderPath = "ENTERPRISE",
-            EntraTenantId = request.EntraTenantId,
+            TenantId = tenantId,
+            ProviderPath = AiProviders.Copilot,
+            EntraTenantId = entraTenantId.Trim(),
             EntraConnectedAt = DateTime.UtcNow,
-            EntraConnectedById = session.UserId,
+            EntraConnectedById = userId,
+            AiUsername = existing.AiUsername,
+            AiConnectedAt = existing.AiConnectedAt,
+            AiConnectedById = existing.AiConnectedById,
             AzureOpenaiEndpoint = existing.AzureOpenaiEndpoint,
             AzureOpenaiDeploymentChat = existing.AzureOpenaiDeploymentChat,
             AzureOpenaiDeploymentEmbed = existing.AzureOpenaiDeploymentEmbed,
@@ -112,7 +237,7 @@ public sealed class IntelligenceService
             UpdatedAt = DateTime.UtcNow,
         };
         await _repo.SaveConfigAsync(config, cancellationToken);
-        var queries = await _repo.CountQueriesThisMonthAsync(session.TenantId, cancellationToken);
+        var queries = await _repo.CountQueriesThisMonthAsync(tenantId, cancellationToken);
         return MapConfig(config, queries);
     }
 
@@ -129,21 +254,33 @@ public sealed class IntelligenceService
         if (hits.Count == 0)
         {
             return new KnowledgeQueryResponse(
-                "I could not find relevant knowledge articles for this question. Try publishing RCAs to the knowledge base first.",
+                "No knowledge articles match your question yet. Publish RCAs from Problem Management to add them to the knowledge base, then try again.",
                 [],
                 0);
         }
 
         var context = string.Join("\n\n", hits.Select((h, i) => $"[{i + 1}] {h.Title}\n{h.Excerpt}"));
         var system = """
-            You are Lotris IT knowledge copilot. Answer only using the provided context.
+            You are Lotris IT knowledge assistant. Answer only using the provided context.
             Always cite sources as [1], [2], etc. If the context is insufficient, say so.
             Be concise and actionable for IT engineers.
             """;
         var user = $"Context:\n{context}\n\nQuestion: {request.Query}";
 
-        var (answer, tokensIn, tokensOut) = await _chat.CompleteAsync(system, user, config, cancellationToken);
-        await RecordUsage(session, "KNOWLEDGE_COPILOT", tokensIn, tokensOut, cancellationToken);
+        string answer;
+        int tokensIn;
+        int tokensOut;
+        try
+        {
+            (answer, tokensIn, tokensOut) = await _chat.CompleteAsync(system, user, config, cancellationToken);
+            await RecordUsage(session, "KNOWLEDGE_COPILOT", tokensIn, tokensOut, cancellationToken);
+        }
+        catch (InvalidOperationException)
+        {
+            answer = BuildRetrievalOnlyAnswer(request.Query, hits);
+            tokensIn = 0;
+            tokensOut = 0;
+        }
 
         var citations = hits.Select(h => new KnowledgeCitationDto(
             h.ArticleId, h.SourceType, h.SourceId, h.Title, h.Excerpt, h.Score)).ToList();
@@ -169,7 +306,8 @@ public sealed class IntelligenceService
                 0.5)).ToList();
         }
 
-        var canEmbed = IsEnterpriseReady(config);
+        var canEmbed = IsProviderReady(config) &&
+                       (config.ProviderPath is AiProviders.Enterprise or AiProviders.Copilot);
         if (canEmbed)
         {
             try
@@ -264,16 +402,23 @@ public sealed class IntelligenceService
         CancellationToken cancellationToken = default)
     {
         var config = await _repo.GetOrCreateConfigAsync(tenantId, cancellationToken);
-        if (!config.FeatureReportNarrative || !IsEnterpriseReady(config))
+        if (!config.FeatureReportNarrative || !IsProviderReady(config))
         {
             return null;
         }
 
         var system = "Write a concise executive summary (2-3 paragraphs) and 3 bullet recommendations for an IT operations report. Use only the JSON data provided.";
         var user = $"Report type: {reportType}\nData:\n{dataSnapshotJson}";
-        var (content, _, _) = await _chat.CompleteAsync(system, user, config, cancellationToken);
-        var parts = content.Split("Recommendations:", 2, StringSplitOptions.TrimEntries);
-        return new ReportNarrativeDto(parts[0], parts.Length > 1 ? parts[1] : null);
+        try
+        {
+            var (content, _, _) = await _chat.CompleteAsync(system, user, config, cancellationToken);
+            var parts = content.Split("Recommendations:", 2, StringSplitOptions.TrimEntries);
+            return new ReportNarrativeDto(parts[0], parts.Length > 1 ? parts[1] : null);
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
     }
 
     private async Task EnsureFeatureEnabled(
@@ -288,9 +433,9 @@ public sealed class IntelligenceService
             throw new ForbiddenException("This intelligence feature is disabled for your tenant.");
         }
 
-        if (!IsEnterpriseReady(config))
+        if (!IsProviderReady(config))
         {
-            throw new BadRequestException("Connect Azure OpenAI via Admin → Intelligence (Enterprise / Microsoft) first.");
+            throw new BadRequestException("Connect an AI provider via Admin → Intelligence and AI Setup first.");
         }
 
         var used = await _repo.CountQueriesThisMonthAsync(session.TenantId, cancellationToken);
@@ -306,6 +451,15 @@ public sealed class IntelligenceService
         int tokensIn,
         int tokensOut,
         CancellationToken cancellationToken)
+        => await RecordUsage(session, feature, tokensIn, tokensOut, "AZURE_OPENAI", cancellationToken);
+
+    private async Task RecordUsage(
+        LotrisSession session,
+        string feature,
+        int tokensIn,
+        int tokensOut,
+        string provider,
+        CancellationToken cancellationToken)
     {
         await _repo.InsertUsageAsync(new UsageLedgerEntry
         {
@@ -313,7 +467,7 @@ public sealed class IntelligenceService
             TenantId = session.TenantId,
             UserId = session.UserId,
             Feature = feature,
-            Provider = "AZURE_OPENAI",
+            Provider = provider,
             TokensIn = tokensIn,
             TokensOut = tokensOut,
             CreatedAt = DateTime.UtcNow,
@@ -365,20 +519,44 @@ public sealed class IntelligenceService
         return await MapChunkHits(tenantId, scored, cancellationToken);
     }
 
-    private static bool IsEnterpriseReady(IntelligenceConfigEntity config) =>
-        config.ProviderPath == "ENTERPRISE" &&
-        !string.IsNullOrWhiteSpace(config.AzureOpenaiEndpoint) &&
-        !string.IsNullOrWhiteSpace(config.AzureOpenaiDeploymentChat) &&
-        !string.IsNullOrWhiteSpace(config.AzureOpenaiApiKey);
+    private static bool IsProviderReady(IntelligenceConfigEntity config)
+    {
+        if (config.ProviderPath == AiProviders.Disabled)
+        {
+            return false;
+        }
+
+        if (AiProviders.UsesCredentialLogin(config.ProviderPath))
+        {
+            return config.AiConnectedAt.HasValue && !string.IsNullOrWhiteSpace(config.AzureOpenaiApiKey);
+        }
+
+        if (string.Equals(config.ProviderPath, AiProviders.Copilot, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(config.ProviderPath, AiProviders.Enterprise, StringComparison.OrdinalIgnoreCase))
+        {
+            return !string.IsNullOrWhiteSpace(config.AzureOpenaiApiKey) &&
+                   !string.IsNullOrWhiteSpace(config.AzureOpenaiEndpoint) &&
+                   !string.IsNullOrWhiteSpace(config.AzureOpenaiDeploymentChat);
+        }
+
+        return false;
+    }
+
+    private static bool IsConnected(IntelligenceConfigEntity config) =>
+        (AiProviders.UsesCredentialLogin(config.ProviderPath) && config.AiConnectedAt.HasValue) ||
+        (string.Equals(config.ProviderPath, AiProviders.Copilot, StringComparison.OrdinalIgnoreCase) && config.EntraConnectedAt.HasValue);
 
     private IntelligenceConfigDto MapConfig(IntelligenceConfigEntity config, int queries) => new(
         config.ProviderPath,
+        config.AiUsername,
+        config.AiConnectedAt,
         config.EntraTenantId,
         config.EntraConnectedAt,
         config.AzureOpenaiEndpoint,
         config.AzureOpenaiDeploymentChat,
         config.AzureOpenaiDeploymentEmbed,
         !string.IsNullOrWhiteSpace(config.AzureOpenaiApiKey),
+        IsConnected(config),
         config.FeatureRcaSuggest,
         config.FeatureKnowledgeCopilot,
         config.FeatureReportNarrative,
@@ -420,6 +598,20 @@ public sealed class IntelligenceService
         }
 
         return na == 0 || nb == 0 ? 0 : dot / (Math.Sqrt(na) * Math.Sqrt(nb));
+    }
+
+    private static string BuildRetrievalOnlyAnswer(
+        string query,
+        IReadOnlyList<KnowledgeSearchResultDto> hits)
+    {
+        var excerpts = string.Join("\n\n", hits.Select((h, i) => $"[{i + 1}] {h.Title}\n{h.Excerpt}"));
+        return $"""
+            Here is what we found in the knowledge base for "{query}":
+
+            {excerpts}
+
+            Connect ChatGPT or OpenAI in Intelligence and AI Setup for full AI-generated answers.
+            """;
     }
 
     private static string ExtractJson(string raw)

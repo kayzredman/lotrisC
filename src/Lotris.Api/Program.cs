@@ -1,6 +1,7 @@
 using System.Text;
 using Hangfire;
 using Lotris.Api.Auth;
+using Lotris.Api.Configuration;
 using Lotris.Api.OpenApi;
 using Lotris.Api.Filters;
 using Lotris.Api.Intake;
@@ -14,6 +15,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+
+DotEnvLoader.LoadForDevelopment();
 
 var builder = WebApplication.CreateBuilder(args);
 

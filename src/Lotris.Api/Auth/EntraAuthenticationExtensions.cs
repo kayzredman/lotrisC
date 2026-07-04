@@ -68,8 +68,10 @@ public static class EntraAuthenticationExtensions
                     options.ClientSecret = entra.ClientSecret;
                     options.CallbackPath = entra.CallbackPath;
                     options.ResponseType = "code";
+                    options.ResponseMode = "query";
                     options.SaveTokens = false;
                     options.GetClaimsFromUserInfoEndpoint = true;
+                    options.Prompt = "select_account";
                     options.Scope.Clear();
                     options.Scope.Add("openid");
                     options.Scope.Add("profile");

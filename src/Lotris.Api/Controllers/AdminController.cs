@@ -9,7 +9,6 @@ namespace Lotris.Api.Controllers;
 
 [ApiController]
 [Authorize]
-[AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin)]
 [Route("api/v1/admin")]
 public sealed class AdminController : ControllerBase
 {
@@ -21,22 +20,25 @@ public sealed class AdminController : ControllerBase
     }
 
     [HttpGet("users")]
+    [AuthorizeRoles(UserRole.SuperAdmin, UserRole.Admin, UserRole.ItManager, UserRole.TeamLead)]
     public async Task<IActionResult> ListUsers(CancellationToken cancellationToken)
     {
         var session = HttpContext.GetLotrisSession();
-        return Ok(await _admin.ListUsersAsync(session.TenantId, cancellationToken));
+        return Ok(await _admin.ListUsersAsync(session.TenantId, session.UserId, session.Role, cancellationToken));
     }
 
     [HttpPost("users")]
+    [AuthorizeRoles(UserRole.SuperAdmin, UserRole.Admin, UserRole.ItManager, UserRole.TeamLead)]
     [ProducesResponseType(typeof(CreateUserResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request, CancellationToken cancellationToken)
     {
         var session = HttpContext.GetLotrisSession();
-        var created = await _admin.CreateUserAsync(session.TenantId, session.UserId, request, cancellationToken);
+        var created = await _admin.CreateUserAsync(session.TenantId, session.UserId, session.Role, request, cancellationToken);
         return CreatedAtAction(nameof(ListUsers), created);
     }
 
     [HttpPatch("users/{id:guid}")]
+    [AuthorizeRoles(UserRole.SuperAdmin, UserRole.Admin, UserRole.ItManager, UserRole.TeamLead)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateUser(
         Guid id,
@@ -44,20 +46,22 @@ public sealed class AdminController : ControllerBase
         CancellationToken cancellationToken)
     {
         var session = HttpContext.GetLotrisSession();
-        await _admin.UpdateUserAsync(session.TenantId, session.UserId, id, request, cancellationToken);
+        await _admin.UpdateUserAsync(session.TenantId, session.UserId, session.Role, id, request, cancellationToken);
         return NoContent();
     }
 
     [HttpDelete("users/{id:guid}")]
+    [AuthorizeRoles(UserRole.SuperAdmin, UserRole.Admin, UserRole.ItManager, UserRole.TeamLead)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeactivateUser(Guid id, CancellationToken cancellationToken)
     {
         var session = HttpContext.GetLotrisSession();
-        await _admin.DeactivateUserAsync(session.TenantId, session.UserId, id, cancellationToken);
+        await _admin.DeactivateUserAsync(session.TenantId, session.UserId, session.Role, id, cancellationToken);
         return NoContent();
     }
 
     [HttpPatch("users/{id:guid}/role")]
+    [AuthorizeRoles(UserRole.SuperAdmin, UserRole.Admin, UserRole.ItManager)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> AssignRole(
         Guid id,
@@ -65,11 +69,12 @@ public sealed class AdminController : ControllerBase
         CancellationToken cancellationToken)
     {
         var session = HttpContext.GetLotrisSession();
-        await _admin.AssignRoleAsync(session.TenantId, session.UserId, id, request.RoleId, cancellationToken);
+        await _admin.AssignRoleAsync(session.TenantId, session.UserId, session.Role, id, request.RoleId, cancellationToken);
         return NoContent();
     }
 
     [HttpGet("teams")]
+    [AuthorizeRoles(UserRole.SuperAdmin, UserRole.Admin, UserRole.ItManager, UserRole.TeamLead)]
     public async Task<IActionResult> ListTeams(CancellationToken cancellationToken)
     {
         var session = HttpContext.GetLotrisSession();
@@ -77,15 +82,17 @@ public sealed class AdminController : ControllerBase
     }
 
     [HttpPost("teams")]
+    [AuthorizeRoles(UserRole.SuperAdmin, UserRole.Admin, UserRole.ItManager)]
     [ProducesResponseType(typeof(CreateTeamResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateTeam([FromBody] CreateTeamRequest request, CancellationToken cancellationToken)
     {
         var session = HttpContext.GetLotrisSession();
-        var created = await _admin.CreateTeamAsync(session.TenantId, session.UserId, request, cancellationToken);
+        var created = await _admin.CreateTeamAsync(session.TenantId, session.UserId, session.Role, request, cancellationToken);
         return CreatedAtAction(nameof(ListTeams), created);
     }
 
     [HttpPatch("teams/{id:guid}")]
+    [AuthorizeRoles(UserRole.SuperAdmin, UserRole.Admin, UserRole.ItManager, UserRole.TeamLead)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateTeam(
         Guid id,
@@ -93,11 +100,12 @@ public sealed class AdminController : ControllerBase
         CancellationToken cancellationToken)
     {
         var session = HttpContext.GetLotrisSession();
-        await _admin.UpdateTeamAsync(session.TenantId, session.UserId, id, request, cancellationToken);
+        await _admin.UpdateTeamAsync(session.TenantId, session.UserId, session.Role, id, request, cancellationToken);
         return NoContent();
     }
 
     [HttpGet("team-access")]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin, UserRole.ItManager)]
     public async Task<IActionResult> ListTeamAccess(CancellationToken cancellationToken)
     {
         var session = HttpContext.GetLotrisSession();
@@ -105,6 +113,7 @@ public sealed class AdminController : ControllerBase
     }
 
     [HttpPost("team-access")]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin, UserRole.ItManager)]
     [ProducesResponseType(typeof(GrantTeamAccessResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> GrantTeamAccess(
         [FromBody] GrantTeamAccessRequest request,
@@ -116,6 +125,7 @@ public sealed class AdminController : ControllerBase
     }
 
     [HttpDelete("team-access/{id:guid}")]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin, UserRole.ItManager)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RevokeTeamAccess(Guid id, CancellationToken cancellationToken)
     {
@@ -125,6 +135,7 @@ public sealed class AdminController : ControllerBase
     }
 
     [HttpGet("category-routing")]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin, UserRole.ItManager)]
     public async Task<IActionResult> ListCategoryRouting(CancellationToken cancellationToken)
     {
         var session = HttpContext.GetLotrisSession();
@@ -132,6 +143,7 @@ public sealed class AdminController : ControllerBase
     }
 
     [HttpPut("category-routing")]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin, UserRole.ItManager)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpsertCategoryRouting(
         [FromBody] UpsertCategoryRoutingRequest request,
@@ -143,6 +155,7 @@ public sealed class AdminController : ControllerBase
     }
 
     [HttpDelete("category-routing/{id:guid}")]
+    [AuthorizeRoles(UserRole.Admin, UserRole.SuperAdmin, UserRole.ItManager)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteCategoryRouting(Guid id, CancellationToken cancellationToken)
     {

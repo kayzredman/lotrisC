@@ -2,12 +2,15 @@ namespace Lotris.Contracts.Intelligence;
 
 public record IntelligenceConfigDto(
     string ProviderPath,
+    string? AiUsername,
+    DateTime? AiConnectedAt,
     string? EntraTenantId,
     DateTime? EntraConnectedAt,
     string? AzureOpenaiEndpoint,
     string? AzureOpenaiDeploymentChat,
     string? AzureOpenaiDeploymentEmbed,
     bool HasApiKey,
+    bool IsConnected,
     bool FeatureRcaSuggest,
     bool FeatureKnowledgeCopilot,
     bool FeatureReportNarrative,
@@ -15,6 +18,17 @@ public record IntelligenceConfigDto(
     bool TeamsConfigured,
     int MonthlyQueryQuota,
     int QueriesThisMonth);
+
+public record AiProviderOptionDto(string Id, string Label, string AuthType, string? Hint);
+
+public record ConnectAiProviderRequest(string Provider, string Username, string Password);
+
+public record ConnectAiProviderResponse(
+    bool Success,
+    string Provider,
+    string? Username,
+    DateTime? ConnectedAt,
+    string? Message);
 
 public record UpdateIntelligenceConfigRequest(
     string ProviderPath,

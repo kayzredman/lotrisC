@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/auth/auth-context';
 import { useCurrentUser } from '@/lib/api/hooks/useAuth';
 import {
   useReportsList,
@@ -9,6 +10,8 @@ import {
   useCreateReportSchedule,
   useDeleteReportSchedule,
   useGenerateReport,
+  useReportJobStatus,
+  downloadReportFile,
 } from '@/lib/api/hooks/useReports';
 import { FileText, Download, Clock, Calendar, Plus, Search, BarChart2, CheckCircle, AlertCircle, Settings, Trash2, Lock } from 'lucide-react';
 import { ReportSettingsPanel } from './report-settings-panel';
@@ -47,9 +50,19 @@ export function ReportsLayout() {
   const [dateRange, setDateRange] = useState('last_30');
   const [generating, setGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState<{ ok: boolean; message: string } | null>(null);
+  const [pendingJobId, setPendingJobId] = useState<string | null>(null);
+  const [highlightJobId, setHighlightJobId] = useState<string | null>(null);
 
+  const { accessToken } = useAuth();
   const { data: me } = useCurrentUser({ staleTime: 60_000 });
-  const { data: liveReportsRaw, isLoading: reportsLoading } = useReportsList({ staleTime: 15_000 });
+  const { data: liveReportsRaw, isLoading: reportsLoading } = useReportsList({
+    staleTime: 5_000,
+    refetchInterval: (query) => {
+      const rows = (query.state.data as Array<Record<string, unknown>> | undefined) ?? [];
+      return rows.some((r) => r.status === 'PROCESSING') ? 3000 : false;
+    },
+  });
+  const { data: pendingJob } = useReportJobStatus(pendingJobId);
   const { data: schedulesRaw } = useReportSchedules({ staleTime: 15_000 });
   const generateReport = useGenerateReport();
 
@@ -61,6 +74,31 @@ export function ReportsLayout() {
 
   // Schedule mutations
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!pendingJob) return;
+    const status = String(pendingJob.status ?? '');
+    void queryClient.invalidateQueries({ queryKey: ['reports', 'list'] });
+    if (status === 'DONE') {
+      setGenStatus({ ok: true, message: 'Report generated successfully. Showing in history below.' });
+      setHighlightJobId(String(pendingJob.id ?? pendingJobId));
+      setPendingJobId(null);
+      setShowGenerate(false);
+      setActiveTab('history');
+    } else if (status === 'FAILED') {
+      setGenStatus({ ok: false, message: String(pendingJob.errorMsg ?? 'Report generation failed.') });
+      setPendingJobId(null);
+    }
+  }, [pendingJob, pendingJobId, queryClient]);
+
+  async function handleDownload(jobId: string, format: string) {
+    if (!accessToken) return;
+    try {
+      await downloadReportFile(jobId, accessToken, format);
+    } catch {
+      setGenStatus({ ok: false, message: 'Download failed. Try again from the report list.' });
+    }
+  }
   const [showAddSchedule, setShowAddSchedule] = useState(false);
   const [schedForm, setSchedForm] = useState({ reportType: 'TICKET_SUMMARY', format: 'PDF', frequency: 'WEEKLY', recipients: '' });
   const createScheduleMutation = useCreateReportSchedule();
@@ -81,15 +119,21 @@ export function ReportsLayout() {
   const handleGenerate = async () => {
     setGenerating(true);
     setGenStatus(null);
+    setHighlightJobId(null);
+    setPendingJobId(null);
     try {
       const { dateFrom, dateTo } = dateRangeParams(dateRange);
-      await generateReport.mutateAsync({
+      const apiFormat = format === 'XLSX' ? 'EXCEL' : format;
+      const result = await generateReport.mutateAsync({
         reportType,
-        format: format === 'XLSX' ? 'EXCEL' : format,
+        format: apiFormat,
         dateFrom,
         dateTo,
-      });
-      setGenStatus({ ok: true, message: 'Report generation queued. It will appear in your list shortly.' });
+      }) as Record<string, unknown>;
+      const jobId = String(result.jobId ?? result.JobId ?? '');
+      if (!jobId) throw new Error('No job id returned from server.');
+      setPendingJobId(jobId);
+      setGenStatus({ ok: true, message: 'Generating report… this usually takes a few seconds.' });
       void queryClient.invalidateQueries({ queryKey: ['reports', 'list'] });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Generation failed. Please try again.';
@@ -232,7 +276,6 @@ export function ReportsLayout() {
                 <select id="fmt-select" className="v2-select" style={{ width: '100%' }} value={format} onChange={e => setFormat(e.target.value)}>
                   <option value="PDF">PDF</option>
                   <option value="XLSX">XLSX</option>
-                  <option value="CSV">CSV</option>
                 </select>
               </div>
             </div>
@@ -291,7 +334,10 @@ export function ReportsLayout() {
                     <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>No reports generated yet.</td></tr>
                   )}
                   {filteredReports.map(r => (
-                    <tr key={r.id as string}>
+                    <tr
+                      key={r.id as string}
+                      style={highlightJobId === String(r.id) ? { background: 'rgba(79,70,229,0.06)' } : undefined}
+                    >
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <FileText size={14} style={{ color: 'var(--indigo)', flexShrink: 0 }} />
@@ -311,7 +357,12 @@ export function ReportsLayout() {
                       <td>
                         {r.status === 'DONE' && Boolean(r.filePath) && (
                           <div className="v2-row-actions">
-                            <button type="button" className="v2-row-action-btn" title="Download">
+                            <button
+                              type="button"
+                              className="v2-row-action-btn"
+                              title="Download"
+                              onClick={() => void handleDownload(String(r.id), String(r.format))}
+                            >
                               <Download size={11} />
                             </button>
                           </div>

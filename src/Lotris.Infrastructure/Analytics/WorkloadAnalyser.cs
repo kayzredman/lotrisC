@@ -51,7 +51,7 @@ public sealed class WorkloadAnalyser : IWorkloadAnalyser
         var queueCfg = await _queue.GetConfigAsync(tenantId, teamId, cancellationToken);
         var maxCapacity = queueCfg.MaxCapacityPerEngineer;
 
-        var engineers = (await _admin.ListUsersAsync(tenantId, cancellationToken))
+        var engineers = (await _admin.ListUsersAsync(tenantId, teamId: null, cancellationToken))
             .Where(u => u.TeamId == teamId && u.IsActive)
             .ToList();
 

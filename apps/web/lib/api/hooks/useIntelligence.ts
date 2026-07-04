@@ -10,6 +10,14 @@ export function useIntelligenceConfig(options?: QueryHookOptions) {
   );
 }
 
+export function useAiProviders(options?: QueryHookOptions) {
+  return useAuthenticatedQuery<ApiRecord[]>(
+    ['intelligence', 'ai-providers'],
+    '/api/v1/admin/intelligence/ai-providers',
+    options,
+  );
+}
+
 export function useUpdateIntelligenceConfig() {
   const qc = useQueryClient();
   return useAuthenticatedMutation<ApiRecord, ApiRecord>(
@@ -18,10 +26,32 @@ export function useUpdateIntelligenceConfig() {
   );
 }
 
+export function useConnectAiProvider() {
+  const qc = useQueryClient();
+  return useAuthenticatedMutation<ApiRecord, { provider: string; username: string; password: string }>(
+    (token, body) => apiFetch('/api/v1/admin/intelligence/connect-provider', { method: 'POST', token, body }),
+    { onSuccess: () => void qc.invalidateQueries({ queryKey: ['intelligence', 'config'] }) },
+  );
+}
+
+export function useTestAiConnection() {
+  return useAuthenticatedMutation<ApiRecord, void>(
+    (token) => apiFetch('/api/v1/admin/intelligence/test-connection', { method: 'POST', token }),
+  );
+}
+
 export function useConnectEntra() {
   const qc = useQueryClient();
   return useAuthenticatedMutation<ApiRecord, { entraTenantId: string }>(
     (token, body) => apiFetch('/api/v1/admin/intelligence/connect-entra', { method: 'POST', token, body }),
+    { onSuccess: () => void qc.invalidateQueries({ queryKey: ['intelligence', 'config'] }) },
+  );
+}
+
+export function useConnectEntraDev() {
+  const qc = useQueryClient();
+  return useAuthenticatedMutation<ApiRecord, void>(
+    (token) => apiFetch('/api/v1/admin/intelligence/connect-entra/dev', { method: 'POST', token }),
     { onSuccess: () => void qc.invalidateQueries({ queryKey: ['intelligence', 'config'] }) },
   );
 }

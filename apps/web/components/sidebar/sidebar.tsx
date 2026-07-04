@@ -52,7 +52,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Teams',           href: '/admin',               icon: Users,       newTab: true },
   { label: 'KPI Setup',       href: '/admin/kpi-setup',     icon: Settings2,   newTab: true },
   { label: 'RCA Settings',    href: '/admin/rca-settings',  icon: Search,      newTab: true },
-  { label: 'Intelligence',    href: '/admin/intelligence',  icon: BookOpen,    newTab: true },
+  { label: 'Intelligence and AI Setup', href: '/admin/intelligence', icon: BookOpen, newTab: true },
   { label: 'KPI Agreement',   href: '/kpis/agreements',     icon: FilePenLine, newTab: true },
   { label: 'System Health',   href: '/ops',                 icon: Activity,    newTab: true },
   { label: 'Audit Log',       href: '/audit-log',           icon: ShieldCheck, newTab: true },
@@ -102,12 +102,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   // Build admin nav based on role
   // SUPERADMIN/ADMIN: all admin items
   // IT_MANAGER: teams, kpi setup, system health, audit log (no KPI Agreement)
-  // TEAM_LEAD: KPI Agreement builder + KPI Setup
+  // TEAM_LEAD: teams + KPI agreement/setup
   // ENGINEER/EXECUTIVE: no admin section
   const visibleAdminNav = (() => {
     if (role === 'SUPERADMIN' || role === 'ADMIN') return ADMIN_NAV;
     if (role === 'IT_MANAGER') return ADMIN_NAV.filter(i => i.href !== '/kpis/agreements');
-    if (role === 'TEAM_LEAD') return ADMIN_NAV.filter(i => i.href === '/kpis/agreements' || i.href === '/admin/kpi-setup');
+    if (role === 'TEAM_LEAD') {
+      return ADMIN_NAV.filter(i =>
+        i.href === '/kpis/agreements' || i.href === '/admin/kpi-setup' || i.href === '/admin',
+      );
+    }
     return [];
   })();
 

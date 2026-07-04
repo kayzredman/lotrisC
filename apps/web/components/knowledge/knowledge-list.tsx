@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useKnownErrors } from '@/lib/api/hooks/useKnowledge';
 import { useKnowledgeQuery } from '@/lib/api/hooks/useIntelligence';
 import { EmptyState } from '@/components/ui/empty-state';
-import { BookOpen, Sparkles } from 'lucide-react';
+import { BookOpen, Search } from 'lucide-react';
 
 export default function KnowledgeList() {
   const [copilotQuery, setCopilotQuery] = useState('');
@@ -37,20 +37,23 @@ export default function KnowledgeList() {
       <div className="v2-card" style={{ marginBottom: 20 }}>
         <div className="v2-card-header">
           <div className="v2-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Sparkles size={14} style={{ color: 'var(--indigo)' }} /> Knowledge Copilot
+            <BookOpen size={14} style={{ color: 'var(--indigo)' }} /> Ask Knowledge Base
           </div>
         </div>
         <form className="v2-card-body" onSubmit={handleCopilot}>
-          <input
-            type="text"
-            value={copilotQuery}
-            onChange={(e) => setCopilotQuery(e.target.value)}
-            placeholder="Ask: How did we fix database timeouts before?"
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: 13, marginBottom: 10 }}
-          />
-          <button type="submit" className="v2-btn v2-btn-primary v2-btn-sm" disabled={copilotMutation.isPending}>
-            {copilotMutation.isPending ? 'Searching…' : 'Ask copilot'}
-          </button>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            <input
+              type="text"
+              value={copilotQuery}
+              onChange={(e) => setCopilotQuery(e.target.value)}
+              placeholder="Ask: How did we fix database timeouts before?"
+              style={{ flex: 1, padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: 13 }}
+            />
+            <button type="submit" className="v2-btn v2-btn-primary v2-btn-sm" disabled={copilotMutation.isPending} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+              <Search size={14} />
+              {copilotMutation.isPending ? 'Searching…' : 'Ask Knowledge Base'}
+            </button>
+          </div>
           {copilotMutation.isError && (
             <p style={{ fontSize: 12, color: 'var(--red)', marginTop: 10 }}>{copilotMutation.error.message}</p>
           )}

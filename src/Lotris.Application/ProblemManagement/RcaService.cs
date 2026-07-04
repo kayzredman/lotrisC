@@ -80,7 +80,7 @@ public sealed class RcaService
 
         var links = await _rca.GetTicketLinksAsync(session.TenantId, rcaId, cancellationToken);
         var actions = await _rca.GetActionsAsync(session.TenantId, rcaId, cancellationToken);
-        var users = await _admin.ListUsersAsync(session.TenantId, cancellationToken);
+        var users = await _admin.ListUsersAsync(session.TenantId, teamId: null, cancellationToken);
         var userMap = users.ToDictionary(u => u.Id, u => u.FullName);
 
         return MapDetail(rca, problem, links, actions, userMap);
@@ -376,7 +376,7 @@ public sealed class RcaService
             return;
         }
 
-        var users = await _admin.ListUsersAsync(tenantId, cancellationToken);
+        var users = await _admin.ListUsersAsync(tenantId, teamId: null, cancellationToken);
         var processOwner = users.FirstOrDefault(u => u.RoleId == (int)UserRole.ItManager)?.Id
             ?? users.FirstOrDefault(u => u.RoleId == (int)UserRole.TeamLead)?.Id
             ?? closedByUserId;

@@ -118,10 +118,13 @@ public static class DependencyInjection
         services.AddScoped<IRcaRepository, DapperRcaRepository>();
         services.AddScoped<IIntelligenceRepository, DapperIntelligenceRepository>();
         services.AddScoped<IApiKeyProtector, SimpleApiKeyProtector>();
+        services.AddScoped<AzureOpenAIProviders>();
         services.AddScoped<IEmbeddingProvider, AzureOpenAIProviders>();
-        services.AddScoped<IChatProvider, AzureOpenAIProviders>();
+        services.AddScoped<IChatProvider, RoutedChatProvider>();
+        services.AddScoped<IAiProviderValidator, AiProviderValidator>();
         services.AddScoped<ITeamsNotifier, TeamsWebhookNotifier>();
         services.AddHttpClient("azure-openai", c => c.Timeout = TimeSpan.FromSeconds(60));
+        services.AddHttpClient("ai-provider", c => c.Timeout = TimeSpan.FromSeconds(60));
         services.AddHttpClient("teams-webhook", c => c.Timeout = TimeSpan.FromSeconds(15));
 
         if (!services.Any(d => d.ServiceType == typeof(IConnectionMultiplexer)))

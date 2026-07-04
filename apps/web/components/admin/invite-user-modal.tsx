@@ -15,6 +15,8 @@ const ROLES = [
 interface Props {
   onClose: () => void;
   onSuccess: () => void;
+  teamLeadMode?: boolean;
+  defaultTeamId?: string;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -30,10 +32,15 @@ const labelStyle: React.CSSProperties = {
   color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.4px',
 };
 
-export function InviteUserModal({ onClose, onSuccess }: Props) {
-  const [form, setForm] = useState({ email: '', fullName: '', roleId: 5, teamId: '' });
+export function InviteUserModal({ onClose, onSuccess, teamLeadMode = false, defaultTeamId }: Props) {
+  const [form, setForm] = useState({
+    email: '',
+    fullName: '',
+    roleId: teamLeadMode ? 5 : 5,
+    teamId: defaultTeamId ?? '',
+  });
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
+  const [createdPassword, setCreatedPassword] = useState<string | null>(null);
 
   const teamsQ = useAdminTeams();
 
@@ -50,9 +57,9 @@ export function InviteUserModal({ onClose, onSuccess }: Props) {
         ...(form.teamId ? { teamId: form.teamId } : {}),
       },
       {
-        onSuccess: () => {
-          setSent(true);
-          onSuccess();
+        onSuccess: (result) => {
+          const temp = (result as { temporaryPassword?: string }).temporaryPassword;
+          if (temp) setCreatedPassword(temp);
         },
         onError: (e) => setError(e.message),
       },
@@ -67,29 +74,30 @@ export function InviteUserModal({ onClose, onSuccess }: Props) {
     }}>
       <div className="v2-card" style={{ width: '100%', maxWidth: 440, padding: 0, boxShadow: 'var(--shadow-lg)' }}>
         <div className="v2-card-header" style={{ padding: '16px 20px' }}>
-          <div className="v2-card-title">Invite User</div>
+          <div className="v2-card-title">{teamLeadMode ? 'Add Engineer' : 'Add User'}</div>
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 18, lineHeight: 1 }}>×</button>
         </div>
 
-        {sent ? (
-          /* ── Success state ── */
+        {createdPassword ? (
           <div style={{ padding: '32px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
             <CheckCircle2 size={40} color="var(--green)" strokeWidth={1.5} />
-            <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>Invitation sent!</div>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 300 }}>
-              An invite email was sent to <strong>{form.email}</strong>. Once they sign up, they'll appear in the users table with the assigned role and team.
+            <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>User created</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 320 }}>
+              Share this temporary password with <strong>{form.email}</strong>:
             </div>
+            <code style={{ padding: '8px 12px', background: 'var(--bg-subtle)', borderRadius: 6, fontSize: 13 }}>
+              {createdPassword}
+            </code>
             <button
               type="button"
               className="v2-btn v2-btn-primary v2-btn-sm"
               style={{ marginTop: 8, minWidth: 120, justifyContent: 'center' }}
-              onClick={onClose}
+              onClick={() => { onSuccess(); onClose(); }}
             >
               Done
             </button>
           </div>
         ) : (
-          /* ── Form state ── */
           <form onSubmit={handleSubmit} style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
               <span style={labelStyle}>Email</span>
@@ -111,25 +119,29 @@ export function InviteUserModal({ onClose, onSuccess }: Props) {
             </div>
             <div>
               <span style={labelStyle}>Role</span>
-              <select
-                value={form.roleId}
-                onChange={(e) => setForm({ ...form, roleId: Number(e.target.value) })}
-                style={inputStyle}
-              >
-                {ROLES.map((r) => (
-                  <option key={r.id} value={r.id}>{r.label}</option>
-                ))}
-              </select>
+              {teamLeadMode ? (
+                <input disabled style={{ ...inputStyle, opacity: 0.7 }} value="Engineer" />
+              ) : (
+                <select
+                  value={form.roleId}
+                  onChange={(e) => setForm({ ...form, roleId: Number(e.target.value) })}
+                  style={inputStyle}
+                >
+                  {ROLES.map((r) => (
+                    <option key={r.id} value={r.id}>{r.label}</option>
+                  ))}
+                </select>
+              )}
             </div>
             <div>
-              <span style={labelStyle}>Team <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></span>
+              <span style={labelStyle}>Team <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{teamLeadMode ? '' : '(optional)'}</span></span>
               <select
                 value={form.teamId}
                 onChange={(e) => setForm({ ...form, teamId: e.target.value })}
                 style={inputStyle}
-                disabled={teamsQ.isLoading}
+                disabled={teamsQ.isLoading || teamLeadMode}
               >
-                <option value="">— Assign later —</option>
+                {!teamLeadMode && <option value="">— Assign later —</option>}
                 {(teamsQ.data ?? [])
                   .filter((t) => Number(t.isActive) === 1)
                   .map((t) => (
@@ -146,7 +158,7 @@ export function InviteUserModal({ onClose, onSuccess }: Props) {
             <div style={{ padding: '8px 12px', background: 'var(--blue-bg)', borderRadius: 'var(--radius-sm)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <Mail size={14} color="var(--blue)" style={{ marginTop: 1, flexShrink: 0 }} />
               <span style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                Clerk will email an invite link. Their account is created in the system automatically once they sign up.
+                A Lotris account is created immediately. Share the generated temporary password so they can sign in.
               </span>
             </div>
 
@@ -168,7 +180,7 @@ export function InviteUserModal({ onClose, onSuccess }: Props) {
               >
                 {inviteMutation.isPending
                   ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Sending…</>
-                  : 'Send Invite'}
+                  : 'Create User'}
               </button>
             </div>
           </form>

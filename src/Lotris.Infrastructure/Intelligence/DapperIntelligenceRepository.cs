@@ -17,6 +17,7 @@ public sealed class DapperIntelligenceRepository : IIntelligenceRepository
                    entra_connected_at AS EntraConnectedAt, entra_connected_by_id AS EntraConnectedById,
                    azure_openai_endpoint AS AzureOpenaiEndpoint, azure_openai_deployment_chat AS AzureOpenaiDeploymentChat,
                    azure_openai_deployment_embed AS AzureOpenaiDeploymentEmbed, azure_openai_api_key AS AzureOpenaiApiKey,
+                   ai_username AS AiUsername, ai_connected_at AS AiConnectedAt, ai_connected_by_id AS AiConnectedById,
                    feature_rca_suggest AS FeatureRcaSuggest, feature_knowledge_copilot AS FeatureKnowledgeCopilot,
                    feature_report_narrative AS FeatureReportNarrative, teams_enabled AS TeamsEnabled,
                    teams_webhook_url AS TeamsWebhookUrl, monthly_query_quota AS MonthlyQueryQuota, updated_at AS UpdatedAt
@@ -59,6 +60,7 @@ public sealed class DapperIntelligenceRepository : IIntelligenceRepository
                 entra_connected_at = @EntraConnectedAt, entra_connected_by_id = @EntraConnectedById,
                 azure_openai_endpoint = @AzureOpenaiEndpoint, azure_openai_deployment_chat = @AzureOpenaiDeploymentChat,
                 azure_openai_deployment_embed = @AzureOpenaiDeploymentEmbed, azure_openai_api_key = @AzureOpenaiApiKey,
+                ai_username = @AiUsername, ai_connected_at = @AiConnectedAt, ai_connected_by_id = @AiConnectedById,
                 feature_rca_suggest = @FeatureRcaSuggest, feature_knowledge_copilot = @FeatureKnowledgeCopilot,
                 feature_report_narrative = @FeatureReportNarrative, teams_enabled = @TeamsEnabled,
                 teams_webhook_url = @TeamsWebhookUrl, monthly_query_quota = @MonthlyQueryQuota, updated_at = @UpdatedAt
@@ -76,6 +78,9 @@ public sealed class DapperIntelligenceRepository : IIntelligenceRepository
             config.AzureOpenaiDeploymentChat,
             config.AzureOpenaiDeploymentEmbed,
             config.AzureOpenaiApiKey,
+            config.AiUsername,
+            AiConnectedAt = config.AiConnectedAt,
+            AiConnectedById = config.AiConnectedById.HasValue ? SqlGuid.ToSql(config.AiConnectedById.Value) : null,
             config.FeatureRcaSuggest,
             config.FeatureKnowledgeCopilot,
             config.FeatureReportNarrative,
@@ -318,6 +323,9 @@ public sealed class DapperIntelligenceRepository : IIntelligenceRepository
         AzureOpenaiDeploymentChat = row.AzureOpenaiDeploymentChat,
         AzureOpenaiDeploymentEmbed = row.AzureOpenaiDeploymentEmbed,
         AzureOpenaiApiKey = row.AzureOpenaiApiKey,
+        AiUsername = row.AiUsername,
+        AiConnectedAt = row.AiConnectedAt,
+        AiConnectedById = row.AiConnectedById is null ? null : SqlGuid.FromSql(row.AiConnectedById),
         FeatureRcaSuggest = row.FeatureRcaSuggest,
         FeatureKnowledgeCopilot = row.FeatureKnowledgeCopilot,
         FeatureReportNarrative = row.FeatureReportNarrative,
@@ -352,6 +360,9 @@ public sealed class DapperIntelligenceRepository : IIntelligenceRepository
         public string? AzureOpenaiDeploymentChat { get; init; }
         public string? AzureOpenaiDeploymentEmbed { get; init; }
         public string? AzureOpenaiApiKey { get; init; }
+        public string? AiUsername { get; init; }
+        public DateTime? AiConnectedAt { get; init; }
+        public string? AiConnectedById { get; init; }
         public bool FeatureRcaSuggest { get; init; }
         public bool FeatureKnowledgeCopilot { get; init; }
         public bool FeatureReportNarrative { get; init; }

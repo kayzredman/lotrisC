@@ -6,6 +6,7 @@ import { ShieldCheck, Ticket, BarChart2 } from 'lucide-react';
 import { LotrisLogo } from '@/components/brand/lotris-mark';
 import { useLogin, useRegister } from '@/lib/api/hooks/useAuth';
 import { apiFetch } from '@/lib/api/client';
+import { buildMicrosoftLoginUrl, MicrosoftSignInButton } from '@/components/auth/microsoft-sign-in-button';
 import styles from './login.module.css';
 
 type Tab = 'login' | 'register';
@@ -28,7 +29,10 @@ export function LoginForm() {
   const registerMutation = useRegister();
   const isSubmitting = loginMutation.isPending || registerMutation.isPending;
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5100';
+  useEffect(() => {
+    const msError = searchParams.get('microsoft_error');
+    if (msError) setError(msError);
+  }, [searchParams]);
 
   useEffect(() => {
     void apiFetch<{ identity?: boolean; microsoft?: boolean }>('/api/v1/auth/providers')
@@ -37,8 +41,7 @@ export function LoginForm() {
   }, []);
 
   function handleMicrosoftLogin() {
-    const url = `${apiBase}/api/v1/auth/microsoft/login?returnUrl=${encodeURIComponent(redirect)}`;
-    window.location.href = url;
+    window.location.href = buildMicrosoftLoginUrl(redirect);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -163,27 +166,23 @@ export function LoginForm() {
         </button>
       </form>
 
-      {tab === 'login' && microsoftEnabled && (
+      {tab === 'login' && (
         <>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: 'var(--text-muted)', fontSize: 12 }}>
             <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             or
             <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
-          <button
-            type="button"
+          <MicrosoftSignInButton
+            fullWidth
             onClick={handleMicrosoftLogin}
-            className="v2-btn v2-btn-secondary"
-            style={{ width: '100%', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-          >
-            <svg width="16" height="16" viewBox="0 0 21 21" aria-hidden="true">
-              <rect x="1" y="1" width="9" height="9" fill="#f25022" />
-              <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
-              <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
-              <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
-            </svg>
-            Sign in with Microsoft
-          </button>
+            disabled={!microsoftEnabled}
+            hint={
+              microsoftEnabled
+                ? 'You will be redirected to Microsoft to enter your work email and password — the same sign-in used by Copilot and Microsoft 365.'
+                : 'Microsoft sign-in requires Entra configuration on the API (see docs/ENTRA-DEV-SETUP.md).'
+            }
+          />
         </>
       )}
 

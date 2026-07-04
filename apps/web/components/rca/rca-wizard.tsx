@@ -36,7 +36,7 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
 
   const { data: me } = useCurrentUser();
   const { data: users } = useUsersList();
-  const { data: rca, isLoading, refetch } = useRca(rcaId);
+  const { data: rca, isLoading, isError, error, refetch } = useRca(rcaId);
   const updateMutation = useUpdateRca();
   const submitMutation = useSubmitRca();
   const publishMutation = usePublishRca();
@@ -108,6 +108,15 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
 
   if (isLoading) {
     return <EmptyState title="Loading RCA…" />;
+  }
+
+  if (isError) {
+    return (
+      <EmptyState
+        title="Could not load RCA"
+        message={error instanceof Error ? error.message : 'The server returned an error. Try refreshing the page.'}
+      />
+    );
   }
 
   if (!r) {
@@ -226,7 +235,7 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
                       )
                     }
                   >
-                    <Sparkles size={12} /> {suggestMutation.isPending ? 'Suggesting…' : 'AI suggest (copilot)'}
+                    <Sparkles size={12} /> {suggestMutation.isPending ? 'Suggesting…' : 'AI suggest'}
                   </button>
                 )}
                 <div>

@@ -39,3 +39,8 @@ public interface IApiKeyProtector
     string Protect(string plainText);
     string Unprotect(string protectedText);
 }
+
+public interface IAiProviderValidator
+{
+    Task ValidateAsync(string provider, string username, string password, CancellationToken cancellationToken = default);
+}

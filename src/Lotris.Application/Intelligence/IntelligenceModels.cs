@@ -11,6 +11,9 @@ public sealed class IntelligenceConfigEntity
     public string? AzureOpenaiDeploymentChat { get; init; }
     public string? AzureOpenaiDeploymentEmbed { get; init; }
     public string? AzureOpenaiApiKey { get; init; }
+    public string? AiUsername { get; init; }
+    public DateTime? AiConnectedAt { get; init; }
+    public Guid? AiConnectedById { get; init; }
     public bool FeatureRcaSuggest { get; init; }
     public bool FeatureKnowledgeCopilot { get; init; }
     public bool FeatureReportNarrative { get; init; }

@@ -60,9 +60,9 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public IActionResult MicrosoftLogin([FromQuery] string? returnUrl)
     {
-        if (!_entraOptions.Enabled)
+        if (!IsMicrosoftOAuthReady())
         {
-            return BadRequest(new { message = "Microsoft sign-in is not enabled." });
+            return RedirectToWebWithError(returnUrl ?? "/login", "Microsoft sign-in is not configured on this server.");
         }
 
         var props = new AuthenticationProperties
@@ -72,6 +72,27 @@ public class AuthController : ControllerBase
         };
 
         return Challenge(props, EntraAuthenticationExtensions.MicrosoftScheme);
+    }
+
+    private bool IsMicrosoftOAuthReady() =>
+        _entraOptions.Enabled &&
+        !string.IsNullOrWhiteSpace(_entraOptions.ClientId) &&
+        !string.IsNullOrWhiteSpace(_entraOptions.ClientSecret) &&
+        !string.IsNullOrWhiteSpace(_entraOptions.TenantId);
+
+    private IActionResult RedirectToWebWithError(string returnUrl, string message)
+    {
+        var webUrl = (_configuration["App:WebUrl"] ?? _configuration["Cors:AllowedOrigins"] ?? "http://localhost:3000")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
+
+        var path = returnUrl.StartsWith('/') ? returnUrl : $"/{returnUrl}";
+        var redirect = new UriBuilder(webUrl)
+        {
+            Path = path.Split('?')[0],
+            Query = $"microsoft_error={Uri.EscapeDataString(message)}",
+        };
+
+        return Redirect(redirect.Uri.ToString());
     }
 
     [HttpGet("microsoft/complete")]
