@@ -4,12 +4,14 @@ using Hangfire;
 using Hangfire.Storage;
 using Lotris.Application.AuditLogs;
 using Lotris.Application.Health;
+using Lotris.Application.Intelligence;
 using Lotris.Contracts;
 using Lotris.Contracts.Health;
 using Lotris.Infrastructure.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 namespace Lotris.Infrastructure.Health;
@@ -35,6 +37,7 @@ public sealed class SystemHealthService : ISystemHealthService
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IAuditLogRepository _auditLogs;
     private readonly IConfiguration _configuration;
+    private readonly IntelligenceOptions _intelligenceOptions;
     private readonly IHostApplicationLifetime _lifetime;
     private readonly ILogger<SystemHealthService> _logger;
 
@@ -44,6 +47,7 @@ public sealed class SystemHealthService : ISystemHealthService
         IHttpClientFactory httpClientFactory,
         IAuditLogRepository auditLogs,
         IConfiguration configuration,
+        IOptions<IntelligenceOptions> intelligenceOptions,
         IHostApplicationLifetime lifetime,
         ILogger<SystemHealthService> logger)
     {
@@ -52,6 +56,7 @@ public sealed class SystemHealthService : ISystemHealthService
         _httpClientFactory = httpClientFactory;
         _auditLogs = auditLogs;
         _configuration = configuration;
+        _intelligenceOptions = intelligenceOptions.Value;
         _lifetime = lifetime;
         _logger = logger;
     }
@@ -65,10 +70,13 @@ public sealed class SystemHealthService : ISystemHealthService
         var workers = CheckHangfireWorkers();
         var queues = GetQueueDepths();
 
-        return new HealthSnapshotDto(
-            [api, web, mssql, redis, workers],
-            queues,
-            DateTime.UtcNow);
+        var services = new List<ServiceHealthEntryDto> { api, web, mssql, redis, workers };
+        if (_intelligenceOptions.IsQdrantEnabled)
+        {
+            services.Add(await CheckQdrantAsync(cancellationToken));
+        }
+
+        return new HealthSnapshotDto(services, queues, DateTime.UtcNow);
     }
 
     public async Task<IReadOnlyList<IncidentEntryDto>> GetIncidentsAsync(
@@ -307,6 +315,51 @@ public sealed class SystemHealthService : ISystemHealthService
         {
             _logger.LogWarning(ex, "Hangfire health check failed");
             return DownService("hangfire-workers", "Hangfire Workers", "jobs · no port", 512);
+        }
+    }
+
+    private async Task<ServiceHealthEntryDto> CheckQdrantAsync(CancellationToken cancellationToken)
+    {
+        var baseUrl = _intelligenceOptions.QdrantUrl!.TrimEnd('/');
+        var collection = _intelligenceOptions.CollectionName;
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            var client = _httpClientFactory.CreateClient("qdrant");
+            using var response = await client.GetAsync($"{baseUrl}/healthz", cancellationToken);
+            sw.Stop();
+            var ms = sw.Elapsed.TotalMilliseconds;
+            var status = response.IsSuccessStatusCode
+                ? ms > 500 ? "DEGRADED" : "UP"
+                : "DEGRADED";
+
+            return new ServiceHealthEntryDto(
+                "qdrant",
+                "Qdrant",
+                $"vector · {collection}",
+                status,
+                0,
+                0,
+                4096,
+                0,
+                ms,
+                DateTime.UtcNow);
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            _logger.LogDebug(ex, "Qdrant health probe failed for {QdrantUrl}", baseUrl);
+            return new ServiceHealthEntryDto(
+                "qdrant",
+                "Qdrant",
+                "vector · semantic search fallback active",
+                "DEGRADED",
+                0,
+                0,
+                4096,
+                0,
+                -1,
+                DateTime.UtcNow);
         }
     }
 

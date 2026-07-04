@@ -1,14 +1,71 @@
 # Phase 8 — Implementation updates (July 2026)
 
-> **Branch:** `dev` @ `45dc74c` (pushed to `origin/dev`)  
+> **Branch:** `dev` @ `607a8fd` (pushed to `origin/dev`)  
 > **Tenant (dev):** Lotris Digital Setup — `701fc546-342b-4b80-82e1-24b152044161`  
 > **Companion:** [PHASE-8-RESEARCH.md](PHASE-8-RESEARCH.md), [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md), [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md)
 
-This document captures what was built and fixed in the latest Phase 8 iteration: Intelligence & AI Setup, Knowledge Base, Reports UX, RCA fixes, and dev seed data.
+This document captures Phase 8 implementation: Intelligence & AI Setup, Knowledge Base + RAG, Reports, RCA workflow, on-prem entitlements, and parity fixes.
 
 ---
 
-## 1. Intelligence and AI Setup
+## Phase 8.2 — Qdrant, approvals, on-prem unlock (`607a8fd`)
+
+### On-prem: no payment gates
+
+| Setting | Effect |
+|---------|--------|
+| `Lotris:DeploymentMode=OnPrem` | All intelligence features unlocked |
+| `Lotris:DisablePaymentGates=true` | Same — skips feature flags + quota checks |
+
+On-prem compose (`docker/docker-compose.onprem.yml`) sets both. `IntelligenceService` treats deployment as fully entitled (1M query quota, all toggles on).
+
+### Qdrant vector store + semantic search
+
+| Component | Path / config |
+|-----------|---------------|
+| `IVectorStore` / `QdrantVectorStore` | `src/Lotris.Infrastructure/Intelligence/` |
+| `RoutedEmbeddingProvider` | OpenAI + Azure embeddings |
+| Dev URL | `Intelligence:QdrantUrl` → `http://localhost:6333` in `appsettings.Development.json` |
+| Docker | `qdrant` service in `docker/docker-compose.yml` and `docker-compose.onprem.yml` |
+| Ingestion | `KnowledgeIngestionService` upserts vectors on article ingest |
+| Search | `IntelligenceService.SearchAsync` — Qdrant first, keyword/SQL fallback |
+| Startup | `EnsureCollectionAsync` catches connection errors — API starts even if Qdrant is down |
+
+### RCA multi-stage approvals
+
+**Migration:** `packages/db/migrations/mssql/0015_rca_approvals.sql`
+
+**Flow:** DRAFT → IN_REVIEW → (process + technical owner approve) → APPROVED → PUBLISHED
+
+| Method | Route |
+|--------|-------|
+| `POST` | `/api/v1/rca/{id}/approve` |
+
+**UI:** `rca-wizard.tsx` — approval panel, per-role approve buttons, pipeline includes APPROVED step.
+
+### Minor parity
+
+| Item | Change |
+|------|--------|
+| Health RBAC | IT_MANAGER + TEAM_LEAD on `/health/snapshot`, `/health/sse`, `/health/incidents`; IT_MANAGER on restart |
+| Store health | `GET /health/store`, `POST /health/store/repair` — C# stubs (always healthy, no-op repair) |
+| Frontend | `useStoreHealth` / `useRepairStore` wired to real endpoints |
+
+---
+
+## Phase 8.1 — Email, similar incidents, auto-index, digest (`4027367`)
+
+| Area | What |
+|------|------|
+| **Scheduled report email** | Hangfire runner emails generated reports to schedule `DeliveryRecipients` |
+| **Similar incidents** | Ticket drawer queries intelligence search for related closed incidents |
+| **Auto-index closed tickets** | Tenant `FeatureAutoIndexTickets` wired; ingest on ticket close |
+| **Recurring incident digest** | `RegisterRecurringIncidentDigestJob` — periodic summary job |
+| **EF fix** | `DeliveryRecipients` column + migration `0014` / EF `Phase81ReportJobDeliveryRecipients` |
+
+---
+
+## Phase 8.0 — MVP baseline
 
 **Page:** `/admin/intelligence` (sidebar: **Intelligence and AI Setup**)
 
@@ -114,8 +171,7 @@ This document captures what was built and fixed in the latest Phase 8 iteration:
 
 - **Add Schedule** UI creates rows in `analytics.ReportSchedules` with `next_run_at`
 - **`ReportScheduleRunnerJob`** — Hangfire recurring job every 15 minutes; enqueues report jobs for due active schedules
-- **Schedule** button on generate panel opens the add-schedule form
-- Email delivery to `recipients` — **not yet wired** (jobs generate files only)
+- **Email delivery** — sends generated report to schedule `DeliveryRecipients` (Phase 8.1)
 
 ---
 
@@ -165,7 +221,8 @@ Optional env: `TENANT_ID=701fc546-342b-4b80-82e1-24b152044161`
 | Copilot | Requires Entra + Azure OpenAI endpoint/deployments for chat and embeddings |
 | Knowledge KEDB | Only populated when RCAs are **published** (not by knowledge sample script alone) |
 | Report narratives | Skipped silently if AI provider cannot chat; PDF/Excel still generates |
-| Scheduled report email | Jobs generate files; email to `recipients` not wired yet |
+| Qdrant | Optional — semantic search falls back to keyword/SQL if sidecar unavailable |
+| SaaS payment gates | Cloud-only; on-prem uses `DisablePaymentGates` to unlock all features |
 | Generated reports | `src/Lotris.Api/data/` — gitignored |
 
 ---
@@ -173,7 +230,10 @@ Optional env: `TENANT_ID=701fc546-342b-4b80-82e1-24b152044161`
 ## 9. Verification checklist
 
 ```bash
-# API + web running
+# Restart API (docker deps + health wait)
+pnpm api:restart
+
+# API health
 curl -s http://localhost:5153/health/live
 # Login
 curl -s -X POST http://localhost:5153/api/v1/auth/login \
@@ -214,7 +274,9 @@ curl -s -X POST http://localhost:5153/api/v1/auth/login \
 | Intelligence service | `src/Lotris.Application/Intelligence/IntelligenceService.cs` |
 | Routed chat | `src/Lotris.Infrastructure/Intelligence/RoutedChatProvider.cs` |
 | RCA repository | `src/Lotris.Infrastructure/ProblemManagement/DapperRcaRepository.cs` |
-| Reports download | `src/Lotris.Api/Controllers/ReportsController.cs` |
+| Qdrant | `src/Lotris.Infrastructure/Intelligence/QdrantVectorStore.cs` |
+| Deployment options | `src/Lotris.Application/Common/LotrisDeploymentOptions.cs` |
+| RCA approvals | `src/Lotris.Application/ProblemManagement/RcaService.cs`, migration `0015_rca_approvals.sql` |
 
 ---
 

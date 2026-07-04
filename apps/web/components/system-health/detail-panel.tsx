@@ -10,6 +10,7 @@ interface DetailPanelProps {
 }
 
 const DB_SERVICES = new Set(['mssql-db', 'postgres-analytics']);
+const NO_RESTART_SERVICES = new Set(['mssql-db', 'postgres-analytics', 'qdrant']);
 
 export function DetailPanel({ service, onRestart }: DetailPanelProps) {
   return (
@@ -44,6 +45,7 @@ function ServiceDetail({
   onRestart: (s: ServiceHealthEntry) => void;
 }) {
   const isDb    = DB_SERVICES.has(service.id);
+  const canRestart = !NO_RESTART_SERVICES.has(service.id);
   const memPct  = service.memTotalMb > 0 ? Math.round((service.memUsedMb / service.memTotalMb) * 100) : 0;
 
   return (
@@ -73,13 +75,18 @@ function ServiceDetail({
 
       {/* Actions */}
       <div className="flex flex-col gap-2">
-        {!isDb && (
+        {canRestart && (
           <button
             onClick={() => onRestart(service)}
             className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-md text-xs font-semibold border border-red-800 bg-red-950 text-red-400 hover:bg-red-900 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Restart {service.name}
           </button>
+        )}
+        {service.id === 'qdrant' && service.status === 'DEGRADED' && (
+          <p className="text-[11px] text-yellow-500/90 text-center">
+            Semantic search falls back to keyword/SQL while Qdrant is unavailable.
+          </p>
         )}
         {isDb && (
           <div className="grid grid-cols-2 gap-2">

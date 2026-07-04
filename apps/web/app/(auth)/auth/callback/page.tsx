@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { TOKEN_KEY } from '@/lib/auth/auth-context';
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
@@ -37,5 +37,17 @@ export default function AuthCallbackPage() {
     <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
       Completing Microsoft sign-in…
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
+        Completing Microsoft sign-in…
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

@@ -113,6 +113,7 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
   const nextStep = STEPS[step + 1];
 
   function renderReviewSummary() {
+    if (!r) return null;
     const incident = field('incidentSummary', r.incidentSummary);
     const rootCause = field('rootCauseStatement', r.rootCauseStatement);
     const items = [

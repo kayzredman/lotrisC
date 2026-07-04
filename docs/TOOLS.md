@@ -23,11 +23,11 @@ Living catalog of operational surfaces, scripts, and API probes in this repo. Up
 - Service table: CPU, memory, uptime, last ping, per-service detail panel
 - Queue depths (Hangfire/BullMQ-style job queues)
 - Incident log (last 20 `SERVICE_*` audit entries)
-- Package store health panel (pnpm store integrity — UI present; C# `/health/store` may be stubbed)
+- Package store health panel (pnpm store integrity — C# returns stub: always healthy)
 - **Restart service** — confirmation modal (type exact service id); 60s cooldown via Redis
 - Pause / resume live stream
 
-**Services monitored:** `lotris-api`, `nextjs-web`, `mssql-db`, `redis`, `hangfire-workers` (+ legacy names in allowlist)
+**Services monitored:** `lotris-api`, `nextjs-web`, `mssql-db`, `redis`, `hangfire-workers`, `qdrant` (when `Intelligence:QdrantUrl` is configured — shows **Degraded** if down; search falls back to keyword/SQL; no restart button)
 
 **Restart reality (today):**
 
@@ -130,10 +130,12 @@ Base: `http://localhost:5153` (or `LOTRIS_API_URL`)
 |----------|------|---------|
 | `GET /health` | Public | Liveness — API process up |
 | `GET /health/ready` | Public | Readiness — MSSQL, Redis, dependencies |
-| `GET /health/snapshot` | ADMIN JWT | Full snapshot: services + queues |
-| `GET /health/sse` | ADMIN JWT | SSE stream, ~1 snapshot/sec |
-| `GET /health/incidents?limit=20` | ADMIN JWT | Recent service incidents from audit log |
-| `POST /health/restart/{serviceName}` | ADMIN JWT | Request restart (cooldown, audit) |
+| `GET /health/snapshot` | ADMIN / IT_MANAGER / TEAM_LEAD JWT | Full snapshot: services + queues |
+| `GET /health/sse` | ADMIN / IT_MANAGER / TEAM_LEAD JWT | SSE stream, ~1 snapshot/sec |
+| `GET /health/incidents?limit=20` | ADMIN / IT_MANAGER / TEAM_LEAD JWT | Recent service incidents from audit log |
+| `POST /health/restart/{serviceName}` | ADMIN / IT_MANAGER JWT | Request restart (cooldown, audit) |
+| `GET /health/store` | ADMIN / IT_MANAGER JWT | Store health stub (always healthy in C# deploy) |
+| `POST /health/store/repair` | ADMIN / IT_MANAGER JWT | Store repair no-op stub |
 | `GET /api/v1/monitor/stats` | Public | NOC wall — open tickets, SLA breaches, team queue depth |
 
 **Probe when web is down:**
@@ -146,6 +148,27 @@ curl -s http://localhost:5153/health/ready
 ---
 
 ## Shell scripts (`scripts/`)
+
+### `restart-api.sh` — failsafe local API restart
+
+**When:** After pulling API changes, migration updates, or when `/ops` restart killed the dev process.
+
+```bash
+pnpm api:restart
+# foreground: bash scripts/restart-api.sh -f
+# skip docker: bash scripts/restart-api.sh --skip-docker
+```
+
+**What it does:**
+
+1. Starts docker deps if available: `mssql`, `redis`, `qdrant`
+2. Kills process on port `5153` (override with `LOTRIS_API_PORT`)
+3. Runs `dotnet run` in background (log: `.lotris-api.log`)
+4. Waits for `GET /health` (timeout 90s)
+
+Qdrant is optional — API starts even if vector sidecar is down (keyword/SQL search fallback).
+
+---
 
 ### `web-dev-reset.sh` — fix stale Next.js dev cache
 
@@ -257,6 +280,7 @@ Seeds 3 problems + RCAs (2 published) + 2 known errors.
 | Script | Command |
 |--------|---------|
 | Dev (all packages) | `pnpm dev` |
+| API restart | `pnpm api:restart` |
 | Web dev reset | `pnpm web:dev-reset` |
 | Seed Lotris Digital Setup | `pnpm seed:digital` |
 | Phase 5 smoke | `pnpm smoke:phase5` |
