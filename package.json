@@ -13,6 +13,8 @@
     "api:docs": "python3 scripts/generate-api-docs.py",
     "api:codegen": "pnpm --filter @lotris/web api:codegen",
     "api:sync": "pnpm api:export && pnpm api:docs && pnpm api:codegen",
+    "docs:release": "python3 scripts/generate-release-docs.py",
+    "docs:release:pdf": "python3 scripts/generate-release-docs.py --pdf",
     "web:dev-reset": "bash scripts/web-dev-reset.sh",
     "api:restart": "bash scripts/restart-api.sh",
     "smoke:phase5": "bash scripts/smoke-phase5.sh",

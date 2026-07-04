@@ -11,6 +11,7 @@
  * Idempotent: safe to re-run (skips existing teams/users; skips demo tickets if present).
  */
 
+import { existsSync } from 'node:fs';
 import sql from 'mssql';
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
@@ -19,7 +20,7 @@ import { randomUUID } from 'node:crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
-const XLSX_PATH = join(ROOT, 'docs/TEAMLIST.xlsx');
+const XLSX_PATH = process.env.LOTRIS_TEAM_LIST_XLSX ?? join(ROOT, 'docs/TEAMLIST.xlsx');
 
 const TENANT_NAME = 'Lotris Digital Setup';
 const TENANT_SLUG = 'lotris-digital-setup';
@@ -73,6 +74,12 @@ with zipfile.ZipFile(path) as z:
 `;
 
 function loadTeamlist() {
+  if (!existsSync(XLSX_PATH)) {
+    throw new Error(
+      `TEAMLIST.xlsx not found at ${XLSX_PATH}. ` +
+        'Place docs/TEAMLIST.xlsx locally (see docs/TEAMLIST.README.md) or set LOTRIS_TEAM_LIST_XLSX.',
+    );
+  }
   const raw = JSON.parse(execFileSync('python3', ['-c', PARSE_XLSX_PY, XLSX_PATH], { encoding: 'utf8' }));
   const header = raw[0].map((h) => h.trim().toLowerCase());
   const emailIdx = header.findIndex((h) => h.includes('email'));

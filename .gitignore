@@ -59,6 +59,13 @@ docker/volumes/
 # Generated report files (local dev)
 src/Lotris.Api/data/
 
+# Local org seed data (not committed — see docs/TEAMLIST.README.md)
+docs/TEAMLIST.xlsx
+docs/teamlist.xlsx
+
+# Generated release doc previews (optional local output)
+docs/dist/
+
 # Turborepo
 .turbo
 

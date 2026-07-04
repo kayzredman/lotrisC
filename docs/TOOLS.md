@@ -253,7 +253,7 @@ Idempotent; creates/updates Clerk users and DB rows.
 
 ### `seed-lotris-digital-setup.mjs` — Lotris Digital Setup tenant
 
-**When:** Local dev with teams/users from `docs/TEAMLIST.xlsx` and demo tickets.
+**When:** Local dev with teams/users from local `docs/TEAMLIST.xlsx` ([TEAMLIST.README.md](TEAMLIST.README.md)) and demo tickets.
 
 ```bash
 pnpm seed:digital
