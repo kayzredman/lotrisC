@@ -79,6 +79,7 @@ public sealed class ReportJobEntity
     public Guid? TeamId { get; init; }
     public string? ErrorMsg { get; init; }
     public string? InsightsJson { get; init; }
+    public string? DeliveryRecipients { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? CompletedAt { get; init; }
 }

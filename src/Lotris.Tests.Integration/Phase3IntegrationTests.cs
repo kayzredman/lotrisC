@@ -88,6 +88,8 @@ internal sealed class InMemoryReportRepository : IReportRepository
             DateTo = job.DateTo,
             TeamId = job.TeamId,
             ErrorMsg = updates.TryGetValue("error_msg", out var err) ? (string?)err : job.ErrorMsg,
+            InsightsJson = updates.TryGetValue("insights_json", out var insights) ? (string?)insights : job.InsightsJson,
+            DeliveryRecipients = job.DeliveryRecipients,
             CreatedAt = job.CreatedAt,
             CompletedAt = updates.TryGetValue("completed_at", out var completed) ? (DateTime?)completed : job.CompletedAt,
         };

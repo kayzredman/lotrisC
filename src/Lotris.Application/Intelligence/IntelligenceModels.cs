@@ -17,6 +17,7 @@ public sealed class IntelligenceConfigEntity
     public bool FeatureRcaSuggest { get; init; }
     public bool FeatureKnowledgeCopilot { get; init; }
     public bool FeatureReportNarrative { get; init; }
+    public bool FeatureAutoIndexTickets { get; init; }
     public bool TeamsEnabled { get; init; }
     public string? TeamsWebhookUrl { get; init; }
     public int MonthlyQueryQuota { get; init; } = 500;

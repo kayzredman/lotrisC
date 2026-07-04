@@ -34,6 +34,26 @@ public interface IRcaRepository
 
     Task<Guid> PublishKnownErrorAsync(Guid tenantId, Guid rcaId, KnownErrorCreateModel model, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<KnownErrorRow>> ListKnownErrorsAsync(Guid tenantId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Guid>> ListActiveTenantIdsAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<RecurringProblemDigestRow>> ListRecurringProblemsAsync(
+        Guid tenantId,
+        int minRecurrence,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed class RecurringProblemDigestRow
+{
+    public Guid Id { get; init; }
+    public string ProblemRef { get; init; } = "";
+    public string Title { get; init; } = "";
+    public int RecurrenceCount { get; init; }
+    public string Status { get; init; } = "";
+    public Guid? RcaId { get; init; }
+    public string? RcaRef { get; init; }
+    public string? RcaStatus { get; init; }
+    public int LinkedTicketCount { get; init; }
 }
 
 public sealed class UpdateRcaPatch

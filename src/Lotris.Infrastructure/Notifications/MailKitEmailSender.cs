@@ -30,11 +30,22 @@ public sealed class MailKitEmailSender : IEmailSender
         mime.From.Add(MailboxAddress.Parse(_options.From));
         mime.To.Add(MailboxAddress.Parse(message.To));
         mime.Subject = message.Subject;
-        mime.Body = new BodyBuilder
+        var bodyBuilder = new BodyBuilder
         {
             HtmlBody = message.HtmlBody,
             TextBody = message.TextBody ?? message.HtmlBody,
-        }.ToMessageBody();
+        };
+
+        if (!string.IsNullOrWhiteSpace(message.AttachmentPath) && File.Exists(message.AttachmentPath))
+        {
+            await bodyBuilder.Attachments.AddAsync(message.AttachmentPath, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(message.AttachmentName))
+            {
+                bodyBuilder.Attachments[bodyBuilder.Attachments.Count - 1].ContentDisposition!.FileName = message.AttachmentName;
+            }
+        }
+
+        mime.Body = bodyBuilder.ToMessageBody();
 
         if (_environment.IsDevelopment() || string.IsNullOrWhiteSpace(_options.Host))
         {

@@ -48,6 +48,7 @@ public sealed class ReportScheduleRunnerJob : IReportScheduleRunnerJob
                     DateTo = dateTo,
                     TeamId = schedule.TeamId,
                     CreatedAt = now,
+                    DeliveryRecipients = schedule.Recipients,
                 }, cancellationToken);
 
                 _enqueuer.EnqueueGeneration(jobId);

@@ -26,6 +26,8 @@ public class ReportJob
 
     public string? InsightsJson { get; set; }
 
+    public string? DeliveryRecipients { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? CompletedAt { get; set; }

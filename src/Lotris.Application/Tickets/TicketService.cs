@@ -1,6 +1,7 @@
 using Lotris.Application.Admin;
 using Lotris.Application.Analytics;
 using Lotris.Application.Common;
+using Lotris.Application.Intelligence;
 using Lotris.Application.Notifications;
 using Lotris.Application.ProblemManagement;
 using Lotris.Application.Tickets;
@@ -29,6 +30,7 @@ public class TicketService
     private readonly IDashboardCacheService _dashboardCache;
     private readonly IAdminRepository _admin;
     private readonly RcaService _rca;
+    private readonly ClosedTicketKnowledgeIndexer _ticketIndexer;
 
     public TicketService(
         ITicketRepository tickets,
@@ -38,7 +40,8 @@ public class TicketService
         INotificationEnqueuer notifications,
         IDashboardCacheService dashboardCache,
         IAdminRepository admin,
-        RcaService rca)
+        RcaService rca,
+        ClosedTicketKnowledgeIndexer ticketIndexer)
     {
         _tickets = tickets;
         _slaConfigs = slaConfigs;
@@ -48,6 +51,7 @@ public class TicketService
         _dashboardCache = dashboardCache;
         _admin = admin;
         _rca = rca;
+        _ticketIndexer = ticketIndexer;
     }
 
     public async Task<TicketDto> CreateAsync(
@@ -333,6 +337,13 @@ public class TicketService
                 ticket.AssigneeId,
                 ticket.Title,
                 session.UserId,
+                cancellationToken);
+
+            await _ticketIndexer.TryIngestAsync(
+                session.TenantId,
+                ticketId,
+                ticket.Title,
+                ticket.Description,
                 cancellationToken);
         }
 

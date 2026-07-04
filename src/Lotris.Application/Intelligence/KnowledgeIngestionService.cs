@@ -96,6 +96,89 @@ public sealed class KnowledgeIngestionService
         }
     }
 
+    public async Task IngestClosedTicketAsync(
+        Guid tenantId,
+        Guid ticketId,
+        string title,
+        string? description,
+        CancellationToken cancellationToken = default)
+    {
+        var runId = Guid.NewGuid();
+        await _repo.InsertIndexRunAsync(runId, tenantId, "TICKET", ticketId, "RUNNING", cancellationToken);
+
+        try
+        {
+            var config = await _repo.GetOrCreateConfigAsync(tenantId, cancellationToken);
+            var body = BuildTicketMarkdown(title, description);
+            var now = DateTime.UtcNow;
+            var articleId = await _repo.UpsertArticleAsync(new KnowledgeArticleEntity
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                SourceType = "TICKET",
+                SourceId = ticketId,
+                Title = title,
+                BodyMarkdown = body,
+                Tags = "ticket,incident",
+                Status = "ACTIVE",
+                PublishedAt = now,
+                UpdatedAt = now,
+            }, cancellationToken);
+
+            await _repo.DeleteChunksForArticleAsync(tenantId, articleId, cancellationToken);
+            var chunks = ChunkText(body, 1200);
+            var canEmbed = config.ProviderPath == "ENTERPRISE" &&
+                           !string.IsNullOrWhiteSpace(config.AzureOpenaiEndpoint) &&
+                           !string.IsNullOrWhiteSpace(config.AzureOpenaiDeploymentEmbed) &&
+                           !string.IsNullOrWhiteSpace(config.AzureOpenaiApiKey);
+
+            for (var i = 0; i < chunks.Count; i++)
+            {
+                string? embeddingJson = null;
+                if (canEmbed)
+                {
+                    try
+                    {
+                        var vec = await _embeddings.EmbedAsync(chunks[i], config, cancellationToken);
+                        embeddingJson = JsonSerializer.Serialize(vec);
+                    }
+                    catch
+                    {
+                        // Keyword search still works without embeddings.
+                    }
+                }
+
+                await _repo.InsertChunkAsync(new KnowledgeChunkEntity
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    ArticleId = articleId,
+                    ChunkIndex = i,
+                    ChunkText = chunks[i],
+                    TokenCount = EstimateTokens(chunks[i]),
+                    EmbeddingJson = embeddingJson,
+                    AclJson = """{"roles":["ENGINEER","TEAM_LEAD","IT_MANAGER","ADMIN","SUPERADMIN"]}""",
+                    CreatedAt = now,
+                }, cancellationToken);
+            }
+
+            await _repo.CompleteIndexRunAsync(runId, chunks.Count, null, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            await _repo.CompleteIndexRunAsync(runId, 0, ex.Message, cancellationToken);
+            throw;
+        }
+    }
+
+    private static string BuildTicketMarkdown(string title, string? description) =>
+        new StringBuilder()
+            .AppendLine($"# {title}")
+            .AppendLine()
+            .AppendLine("## Description")
+            .AppendLine(description ?? "—")
+            .ToString();
+
     private static string BuildRcaMarkdown(
         string title,
         string? incident,

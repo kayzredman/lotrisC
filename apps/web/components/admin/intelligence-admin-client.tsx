@@ -21,6 +21,7 @@ import {
   FileText,
   MessageSquare,
   PlugZap,
+  Ticket,
   Zap,
 } from 'lucide-react';
 
@@ -69,6 +70,7 @@ const CAPABILITY_ROWS = [
 const FEATURES = [
   { key: 'featureRcaSuggest', label: 'RCA AI suggest', desc: 'Draft RCA fields in the wizard', icon: Bot },
   { key: 'featureKnowledgeCopilot', label: 'Knowledge base Q&A', desc: 'Ask Knowledge Base on incidents', icon: BookOpen },
+  { key: 'featureAutoIndexTickets', label: 'Auto-index closed tickets', desc: 'Add closed tickets to the knowledge base', icon: Ticket },
   { key: 'featureReportNarrative', label: 'Report narratives', desc: 'AI summaries for reports', icon: FileText },
   { key: 'teamsEnabled', label: 'Teams alerts', desc: 'Webhook notifications to Teams', icon: MessageSquare },
 ] as const;
@@ -182,6 +184,7 @@ export default function IntelligenceAdminClient() {
     providerPath: 'DISABLED',
     featureRcaSuggest: true,
     featureKnowledgeCopilot: true,
+    featureAutoIndexTickets: false,
     featureReportNarrative: false,
     teamsEnabled: false,
     teamsWebhookUrl: '',
@@ -218,6 +221,7 @@ export default function IntelligenceAdminClient() {
       providerPath: provider,
       featureRcaSuggest: Boolean(c.featureRcaSuggest),
       featureKnowledgeCopilot: Boolean(c.featureKnowledgeCopilot),
+      featureAutoIndexTickets: Boolean(c.featureAutoIndexTickets),
       featureReportNarrative: Boolean(c.featureReportNarrative),
       teamsEnabled: Boolean(c.teamsEnabled),
       teamsWebhookUrl: String(c.teamsWebhookUrl ?? ''),

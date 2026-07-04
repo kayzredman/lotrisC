@@ -532,6 +532,42 @@ public sealed class DapperRcaRepository : IRcaRepository
         return rows.ToList();
     }
 
+    public async Task<IReadOnlyList<Guid>> ListActiveTenantIdsAsync(CancellationToken cancellationToken = default)
+    {
+        const string sql = "SELECT id FROM dbo.Tenants WHERE is_active = 1";
+        await using var connection = await _connections.OpenConnectionAsync(cancellationToken);
+        var rows = await connection.QueryAsync<string>(
+            new CommandDefinition(sql, cancellationToken: cancellationToken));
+        return rows.Select(SqlGuid.FromSql).ToList();
+    }
+
+    public async Task<IReadOnlyList<RecurringProblemDigestRow>> ListRecurringProblemsAsync(
+        Guid tenantId,
+        int minRecurrence,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            SELECT p.id AS Id, p.problem_ref AS ProblemRef, p.title AS Title,
+                   p.recurrence_count AS RecurrenceCount, p.status AS Status,
+                   r.id AS RcaId, r.rca_ref AS RcaRef, r.status AS RcaStatus,
+                   (SELECT COUNT(*) FROM dbo.RCA_Ticket_Links l WHERE l.problem_id = p.id) AS LinkedTicketCount
+            FROM dbo.Problem_Records p
+            LEFT JOIN dbo.RCA_Records r ON r.problem_id = p.id
+            WHERE p.tenant_id = @TenantId
+              AND p.recurrence_count >= @MinRecurrence
+              AND p.status <> 'CLOSED'
+            ORDER BY p.recurrence_count DESC, p.updated_at DESC
+            """;
+        await using var connection = await _connections.OpenConnectionAsync(cancellationToken);
+        var rows = await connection.QueryAsync<RecurringProblemDigestRow>(
+            new CommandDefinition(sql, new
+            {
+                TenantId = SqlGuid.ToSql(tenantId),
+                MinRecurrence = minRecurrence,
+            }, cancellationToken: cancellationToken));
+        return rows.ToList();
+    }
+
     private static ProblemEntity MapProblem(ProblemRow row) => new()
     {
         Id = SqlGuid.FromSql(row.Id)!,

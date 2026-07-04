@@ -19,7 +19,8 @@ public sealed class DapperIntelligenceRepository : IIntelligenceRepository
                    azure_openai_deployment_embed AS AzureOpenaiDeploymentEmbed, azure_openai_api_key AS AzureOpenaiApiKey,
                    ai_username AS AiUsername, ai_connected_at AS AiConnectedAt, ai_connected_by_id AS AiConnectedById,
                    feature_rca_suggest AS FeatureRcaSuggest, feature_knowledge_copilot AS FeatureKnowledgeCopilot,
-                   feature_report_narrative AS FeatureReportNarrative, teams_enabled AS TeamsEnabled,
+                   feature_report_narrative AS FeatureReportNarrative, feature_auto_index_tickets AS FeatureAutoIndexTickets,
+                   teams_enabled AS TeamsEnabled,
                    teams_webhook_url AS TeamsWebhookUrl, monthly_query_quota AS MonthlyQueryQuota, updated_at AS UpdatedAt
             FROM dbo.Tenant_Intelligence_Config WHERE tenant_id = @TenantId
             """;
@@ -62,7 +63,8 @@ public sealed class DapperIntelligenceRepository : IIntelligenceRepository
                 azure_openai_deployment_embed = @AzureOpenaiDeploymentEmbed, azure_openai_api_key = @AzureOpenaiApiKey,
                 ai_username = @AiUsername, ai_connected_at = @AiConnectedAt, ai_connected_by_id = @AiConnectedById,
                 feature_rca_suggest = @FeatureRcaSuggest, feature_knowledge_copilot = @FeatureKnowledgeCopilot,
-                feature_report_narrative = @FeatureReportNarrative, teams_enabled = @TeamsEnabled,
+                feature_report_narrative = @FeatureReportNarrative, feature_auto_index_tickets = @FeatureAutoIndexTickets,
+                teams_enabled = @TeamsEnabled,
                 teams_webhook_url = @TeamsWebhookUrl, monthly_query_quota = @MonthlyQueryQuota, updated_at = @UpdatedAt
             WHERE tenant_id = @TenantId
             """;
@@ -84,6 +86,7 @@ public sealed class DapperIntelligenceRepository : IIntelligenceRepository
             config.FeatureRcaSuggest,
             config.FeatureKnowledgeCopilot,
             config.FeatureReportNarrative,
+            config.FeatureAutoIndexTickets,
             config.TeamsEnabled,
             config.TeamsWebhookUrl,
             config.MonthlyQueryQuota,
@@ -329,6 +332,7 @@ public sealed class DapperIntelligenceRepository : IIntelligenceRepository
         FeatureRcaSuggest = row.FeatureRcaSuggest,
         FeatureKnowledgeCopilot = row.FeatureKnowledgeCopilot,
         FeatureReportNarrative = row.FeatureReportNarrative,
+        FeatureAutoIndexTickets = row.FeatureAutoIndexTickets,
         TeamsEnabled = row.TeamsEnabled,
         TeamsWebhookUrl = row.TeamsWebhookUrl,
         MonthlyQueryQuota = row.MonthlyQueryQuota,
@@ -366,6 +370,7 @@ public sealed class DapperIntelligenceRepository : IIntelligenceRepository
         public bool FeatureRcaSuggest { get; init; }
         public bool FeatureKnowledgeCopilot { get; init; }
         public bool FeatureReportNarrative { get; init; }
+        public bool FeatureAutoIndexTickets { get; init; }
         public bool TeamsEnabled { get; init; }
         public string? TeamsWebhookUrl { get; init; }
         public int MonthlyQueryQuota { get; init; }

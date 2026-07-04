@@ -12,6 +12,7 @@ import {
 } from '@/lib/api/hooks/useTickets';
 import Link from 'next/link';
 import { useTicketRcaSummary } from '@/lib/api/hooks/useRca';
+import { useKnowledgeSearch } from '@/lib/api/hooks/useIntelligence';
 import { SlaBadge } from './sla-badge';
 import { TicketStatusBar } from './ticket-status-bar';
 
@@ -57,6 +58,17 @@ export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
 
   const ticket = ticketQuery.data;
   const rcaSummary = rcaSummaryQuery.data as Record<string, unknown> | undefined;
+
+  const similarQuery = useKnowledgeSearch(
+    ticket ? String(ticket.title ?? '').slice(0, 120) : '',
+    { enabled: Boolean(ticket?.title) },
+  );
+  const similarIncidents = ((similarQuery.data as Array<Record<string, unknown>> | undefined) ?? [])
+    .filter((row) => {
+      if (row.sourceType === 'TICKET' && String(row.sourceId) === ticketId) return false;
+      return true;
+    })
+    .slice(0, 5);
 
   function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
@@ -128,6 +140,47 @@ export function TicketDrawer({ ticketId, onClose }: TicketDrawerProps) {
                 <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-2">Description</h3>
                 <p className="text-sm text-gray-300 whitespace-pre-wrap">{ticket.description as string}</p>
               </section>
+
+              {/* Similar incidents */}
+              {(similarQuery.isLoading || similarIncidents.length > 0) && (
+                <section className="rounded-lg border border-gray-700 bg-[#131c2e] p-4">
+                  <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-3">Similar incidents</h3>
+                  {similarQuery.isLoading ? (
+                    <p className="text-xs text-gray-500">Searching knowledge base…</p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {similarIncidents.map((row) => {
+                        const sourceType = String(row.sourceType ?? '');
+                        const sourceId = String(row.sourceId ?? '');
+                        const href =
+                          sourceType === 'RCA'
+                            ? `/rca/${sourceId}`
+                            : sourceType === 'TICKET'
+                              ? undefined
+                              : '/knowledge';
+                        const content = (
+                          <>
+                            <p className="text-sm font-medium text-gray-200 leading-snug">{String(row.title ?? '')}</p>
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{String(row.excerpt ?? '')}</p>
+                            <p className="text-[10px] uppercase tracking-wide text-indigo-400/80 mt-1">{sourceType}</p>
+                          </>
+                        );
+                        return (
+                          <li key={String(row.articleId ?? sourceId)}>
+                            {href ? (
+                              <Link href={href} className="block rounded-md p-2 -mx-2 hover:bg-gray-800/60 transition-colors">
+                                {content}
+                              </Link>
+                            ) : (
+                              <div className="rounded-md p-2 -mx-2">{content}</div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </section>
+              )}
 
               {/* Metadata */}
               <section className="grid grid-cols-2 gap-4 text-sm">

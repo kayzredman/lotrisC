@@ -93,6 +93,7 @@ if (!app.Environment.IsEnvironment("Testing"))
 
         await scope.ServiceProvider.InitializeAnalyticsJobsAsync();
         ReportScheduleStartupExtensions.RegisterReportScheduleJob();
+        ReportScheduleStartupExtensions.RegisterRecurringIncidentDigestJob();
     }
 }
 

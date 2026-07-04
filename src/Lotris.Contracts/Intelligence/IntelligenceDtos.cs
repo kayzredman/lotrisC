@@ -14,6 +14,7 @@ public record IntelligenceConfigDto(
     bool FeatureRcaSuggest,
     bool FeatureKnowledgeCopilot,
     bool FeatureReportNarrative,
+    bool FeatureAutoIndexTickets,
     bool TeamsEnabled,
     bool TeamsConfigured,
     int MonthlyQueryQuota,
@@ -40,6 +41,7 @@ public record UpdateIntelligenceConfigRequest(
     bool FeatureRcaSuggest,
     bool FeatureKnowledgeCopilot,
     bool FeatureReportNarrative,
+    bool FeatureAutoIndexTickets,
     bool TeamsEnabled,
     string? TeamsWebhookUrl,
     int MonthlyQueryQuota);

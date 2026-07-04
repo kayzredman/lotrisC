@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<RcaService>();
         services.AddScoped<IntelligenceService>();
         services.AddScoped<KnowledgeIngestionService>();
+        services.AddScoped<ClosedTicketKnowledgeIndexer>();
         return services;
     }
 }

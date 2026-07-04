@@ -3,6 +3,7 @@ using Lotris.Application.Notifications;
 using Lotris.Application.Tickets;
 using Lotris.Application.Analytics;
 using Lotris.Application.Reports;
+using Lotris.Application.ProblemManagement;
 using Lotris.Workers.Jobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,6 +41,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationJob, NotificationJob>();
         services.AddScoped<IReportGenerationJob, ReportGenerationJob>();
         services.AddScoped<IReportScheduleRunnerJob, ReportScheduleRunnerJob>();
+        services.AddScoped<IRecurringIncidentDigestJob, RecurringIncidentDigestJob>();
         services.AddScoped<IIncrementalRollupJob, IncrementalRollupJob>();
         services.AddScoped<IDailyBatchJob, DailyBatchJob>();
         services.AddScoped<IKpiTrendScanJob, KpiTrendScanJob>();

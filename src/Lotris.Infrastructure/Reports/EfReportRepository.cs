@@ -30,6 +30,7 @@ public sealed class EfReportRepository : IReportRepository
             TeamId = job.TeamId,
             ErrorMsg = job.ErrorMsg,
             InsightsJson = job.InsightsJson,
+            DeliveryRecipients = job.DeliveryRecipients,
             CreatedAt = job.CreatedAt,
             CompletedAt = job.CompletedAt,
         };
@@ -253,6 +254,7 @@ public sealed class EfReportRepository : IReportRepository
         TeamId = entity.TeamId,
         ErrorMsg = entity.ErrorMsg,
         InsightsJson = entity.InsightsJson,
+        DeliveryRecipients = entity.DeliveryRecipients,
         CreatedAt = entity.CreatedAt,
         CompletedAt = entity.CompletedAt,
     };
