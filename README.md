@@ -81,7 +81,20 @@ The system uses a **hybrid queue-based assignment model**: tickets are routed to
 | M14 — Landing Page Branding Sweep + KPI Agreement Section | 21 | ✅ Complete |
 | M15 — Tooling Hardening + Nav UX + Staging Infra | 22–23 | ✅ Complete |
 
-**Live on `dev` branch.**
+**Live on `dev` and `main`.**
+
+---
+
+## API documentation (C# backend)
+
+| Resource | Location |
+| -------- | -------- |
+| Human index | [docs/API.md](docs/API.md) — auth, RBAC, SSE, full endpoint index |
+| OpenAPI spec | [docs/openapi/v1.json](docs/openapi/v1.json) — committed contract (130 operations) |
+| Scalar UI (local) | [http://localhost:5153/openapi](http://localhost:5153/openapi) |
+| Run API | [src/README.md](src/README.md) — `pnpm api:restart` from repo root |
+
+After controller or DTO changes: start the API, then run `pnpm api:sync` (export spec → refresh `docs/API.md` → regenerate `apps/web/lib/api/generated/schema.d.ts`).
 
 ---
 
@@ -522,17 +535,18 @@ lotris/                          ← monorepo root
 
 | Doc | Description |
 | --- | ----------- |
+| [docs/API.md](docs/API.md) | **REST API reference** — Scalar UI, auth, endpoint index |
+| [docs/openapi/](docs/openapi/) | Committed OpenAPI 3.1 spec (`v1.json`) |
+| [src/README.md](src/README.md) | C# backend — local run, config, `pnpm api:sync` |
+| [docs/HANDOFF.md](docs/HANDOFF.md) | Current branch state, smoke gates, quick commands |
 | [docs/CONTEXT.md](docs/CONTEXT.md) | Full product brief, goals, users, KPIs, tech stack |
 | [docs/REFACTOR.md](docs/REFACTOR.md) | **C# backend refactor, on-prem roadmap, parity checklist** |
 | [docs/DATABASE-STRATEGY.md](docs/DATABASE-STRATEGY.md) | Analytics DB decision framework (Postgres vs MSSQL — open) |
-| Doc | Description |
-| --- | ----------- |
 | [docs/GIT-WORKFLOW.md](docs/GIT-WORKFLOW.md) | **Branch policy — `dev` → QA → `main` on [lotrisC](https://github.com/kayzredman/lotrisC.git)** |
 | [docs/ONBOARDING-REFACTOR.md](docs/ONBOARDING-REFACTOR.md) | Onboarding wizard decisions (accepted) |
 | [docs/STAGING.md](docs/STAGING.md) | Cloud staging setup (Vercel/Railway) |
 | [docs/SPRINTS.md](docs/SPRINTS.md) | Sprint tracker |
 | `docs/architecture/` | System design diagrams |
-| `docs/api/` | API endpoint documentation |
 
 ---
 

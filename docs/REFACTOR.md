@@ -183,7 +183,7 @@ Previously identified gaps (June 2026) and their resolution:
 | `POST /api/v1/tickets/batch-reassign` | `TicketsController` + `TicketService` | ✅ |
 | `GET /api/v1/monitor/stats` | `MonitorController` (public, no JWT) | ✅ |
 | `GET /api/v1/analytics/team-workload` | `WorkloadAnalyser` — engineers + suggestions | ✅ |
-| OpenAPI sync | `pnpm api:sync` | ✅ 98 operations / 78 paths |
+| OpenAPI sync | `pnpm api:sync` | ✅ 130 operations / 106 paths |
 | FSM + load + tenant tests | `dotnet test`, `pnpm gate:queue` | ✅ integration + mutex; formal load test optional |
 | Clean VM on-prem smoke | `pnpm onprem:smoke` (default `:9090`) | ✅ |
 | Decommission `apps/api` | Remove NestJS + tRPC client | ✅ |

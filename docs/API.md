@@ -2,7 +2,7 @@
 
 > **Status:** Active — C# backend (`src/Lotris.Api`)  
 > **Contract:** OpenAPI 3.1 at [`docs/openapi/v1.json`](openapi/v1.json)  
-> **Last indexed:** July 2026 (98 operations — P1 parity endpoints)
+> **Last indexed:** July 2026 (130 operations — Phase 8 intelligence, RCA, problems, knowledge)
 
 This is the **canonical human index** for the Lotris REST API. The machine-readable spec is the source of truth for request/response schemas.
 
@@ -123,7 +123,7 @@ Or one shot from repo root: `pnpm api:sync`
 
 <!-- API_ENDPOINTS:START -->
 
-_Auto-generated from `docs/openapi/v1.json` — **98 operations** across **78 paths**._
+_Auto-generated from `docs/openapi/v1.json` — **130 operations** across **106 paths**._
 
 ### Admin (14)
 
@@ -141,6 +141,18 @@ _Auto-generated from `docs/openapi/v1.json` — **98 operations** across **78 pa
 - `PATCH /api/v1/admin/users/{id}`
 - `DELETE /api/v1/admin/users/{id}`
 - `PATCH /api/v1/admin/users/{id}/role`
+
+### AdminIntelligence (9)
+
+- `GET /api/v1/admin/intelligence`
+- `PUT /api/v1/admin/intelligence`
+- `GET /api/v1/admin/intelligence/ai-providers`
+- `POST /api/v1/admin/intelligence/connect-entra`
+- `POST /api/v1/admin/intelligence/connect-entra/dev`
+- `POST /api/v1/admin/intelligence/connect-provider`
+- `GET /api/v1/admin/intelligence/microsoft/complete`
+- `GET /api/v1/admin/intelligence/microsoft/login`
+- `POST /api/v1/admin/intelligence/test-connection`
 
 ### Analytics (4)
 
@@ -160,9 +172,12 @@ _Auto-generated from `docs/openapi/v1.json` — **98 operations** across **78 pa
 
 - `GET /api/v1/audit-logs`
 
-### Auth (2)
+### Auth (5)
 
 - `POST /api/v1/auth/login`
+- `GET /api/v1/auth/microsoft/complete`
+- `GET /api/v1/auth/microsoft/login`
+- `GET /api/v1/auth/providers`
 - `POST /api/v1/auth/register`
 
 ### Dashboard (5)
@@ -173,7 +188,7 @@ _Auto-generated from `docs/openapi/v1.json` — **98 operations** across **78 pa
 - `GET /api/v1/dashboard/team-workload`
 - `GET /api/v1/dashboard/ticket-analytics`
 
-### Health (6)
+### Health (8)
 
 - `GET /health`
 - `GET /health/incidents`
@@ -181,10 +196,21 @@ _Auto-generated from `docs/openapi/v1.json` — **98 operations** across **78 pa
 - `POST /health/restart/{serviceName}`
 - `GET /health/snapshot`
 - `GET /health/sse`
+- `GET /health/store`
+- `POST /health/store/repair`
 
 ### Intake (1)
 
 - `POST /api/v1/request`
+
+### Intelligence (2)
+
+- `POST /api/v1/intelligence/knowledge/query`
+- `GET /api/v1/intelligence/knowledge/search`
+
+### Knowledge (1)
+
+- `GET /api/v1/knowledge/known-errors`
 
 ### Kpi (21)
 
@@ -226,6 +252,12 @@ _Auto-generated from `docs/openapi/v1.json` — **98 operations** across **78 pa
 - `POST /api/v1/onboarding/sla`
 - `GET /api/v1/onboarding/status`
 
+### Problems (3)
+
+- `GET /api/v1/problems`
+- `POST /api/v1/problems`
+- `GET /api/v1/problems/stats`
+
 ### Queue (5)
 
 - `GET /api/v1/queue`
@@ -233,6 +265,23 @@ _Auto-generated from `docs/openapi/v1.json` — **98 operations** across **78 pa
 - `GET /api/v1/queue/config`
 - `PATCH /api/v1/queue/config`
 - `GET /api/v1/queue/health`
+
+### Rca (9)
+
+- `GET /api/v1/rca/{id}`
+- `PATCH /api/v1/rca/{id}`
+- `POST /api/v1/rca/{id}/actions`
+- `POST /api/v1/rca/{id}/approve`
+- `POST /api/v1/rca/{id}/delegate`
+- `POST /api/v1/rca/{id}/link-ticket`
+- `POST /api/v1/rca/{id}/publish`
+- `POST /api/v1/rca/{id}/submit`
+- `POST /api/v1/rca/{id}/suggest`
+
+### RcaSettings (2)
+
+- `GET /api/v1/admin/rca-settings`
+- `PUT /api/v1/admin/rca-settings`
 
 ### Reports (9)
 
@@ -258,7 +307,7 @@ _Auto-generated from `docs/openapi/v1.json` — **98 operations** across **78 pa
 - `PATCH /api/v1/tasks/{id}/checklist/{itemId}/toggle`
 - `POST /api/v1/tasks/{id}/complete`
 
-### Tickets (9)
+### Tickets (10)
 
 - `POST /api/v1/tickets`
 - `GET /api/v1/tickets`
@@ -268,6 +317,7 @@ _Auto-generated from `docs/openapi/v1.json` — **98 operations** across **78 pa
 - `POST /api/v1/tickets/{id}/comments`
 - `GET /api/v1/tickets/{id}/comments`
 - `GET /api/v1/tickets/{id}/history`
+- `GET /api/v1/tickets/{id}/rca-summary`
 - `PATCH /api/v1/tickets/{id}/status`
 
 ### Users (1)

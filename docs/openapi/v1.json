@@ -751,6 +751,51 @@
         }
       }
     },
+    "/api/v1/auth/providers": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/microsoft/login": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/microsoft/complete": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "tags": [
@@ -1278,6 +1323,64 @@
         }
       }
     },
+    "/health/store": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreHealthDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreHealthDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreHealthDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/store/repair": {
+      "post": {
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreHealthDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreHealthDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreHealthDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/request": {
       "post": {
         "tags": [
@@ -1340,6 +1443,417 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/intelligence": {
+      "get": {
+        "tags": [
+          "AdminIntelligence"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntelligenceConfigDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntelligenceConfigDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntelligenceConfigDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AdminIntelligence"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateIntelligenceConfigRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateIntelligenceConfigRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateIntelligenceConfigRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntelligenceConfigDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntelligenceConfigDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntelligenceConfigDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/intelligence/ai-providers": {
+      "get": {
+        "tags": [
+          "AdminIntelligence"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiProviderOptionDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiProviderOptionDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiProviderOptionDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/intelligence/connect-provider": {
+      "post": {
+        "tags": [
+          "AdminIntelligence"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectAiProviderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectAiProviderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectAiProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectAiProviderResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectAiProviderResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectAiProviderResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/intelligence/test-connection": {
+      "post": {
+        "tags": [
+          "AdminIntelligence"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeQueryResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeQueryResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeQueryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/intelligence/connect-entra": {
+      "post": {
+        "tags": [
+          "AdminIntelligence"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectEntraRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectEntraRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectEntraRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntelligenceConfigDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntelligenceConfigDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntelligenceConfigDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/intelligence/microsoft/login": {
+      "get": {
+        "tags": [
+          "AdminIntelligence"
+        ],
+        "parameters": [
+          {
+            "name": "returnUrl",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/intelligence/microsoft/complete": {
+      "get": {
+        "tags": [
+          "AdminIntelligence"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/intelligence/connect-entra/dev": {
+      "post": {
+        "tags": [
+          "AdminIntelligence"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntelligenceConfigDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntelligenceConfigDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntelligenceConfigDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/intelligence/knowledge/query": {
+      "post": {
+        "tags": [
+          "Intelligence"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeQueryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeQueryRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeQueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeQueryResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeQueryResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeQueryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/intelligence/knowledge/search": {
+      "get": {
+        "tags": [
+          "Intelligence"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "topK",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KnowledgeSearchResultDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KnowledgeSearchResultDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KnowledgeSearchResultDto"
+                  }
                 }
               }
             }
@@ -2116,6 +2630,129 @@
         }
       }
     },
+    "/api/v1/problems": {
+      "get": {
+        "tags": [
+          "Problems"
+        ],
+        "parameters": [
+          {
+            "name": "filter",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProblemListItemDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProblemListItemDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProblemListItemDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Problems"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProblemRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProblemRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProblemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/problems/stats": {
+      "get": {
+        "tags": [
+          "Problems"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDashboardStatsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDashboardStatsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDashboardStatsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/queue": {
       "get": {
         "tags": [
@@ -2353,6 +2990,598 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/QueueConfigDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rca/{id}": {
+      "get": {
+        "tags": [
+          "Rca"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Rca"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRcaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRcaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRcaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rca/{id}/submit": {
+      "post": {
+        "tags": [
+          "Rca"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rca/{id}/approve": {
+      "post": {
+        "tags": [
+          "Rca"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRcaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRcaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRcaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rca/{id}/publish": {
+      "post": {
+        "tags": [
+          "Rca"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rca/{id}/delegate": {
+      "post": {
+        "tags": [
+          "Rca"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRcaDelegateRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRcaDelegateRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRcaDelegateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rca/{id}/link-ticket": {
+      "post": {
+        "tags": [
+          "Rca"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkTicketRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkTicketRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaDetailDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rca/{id}/actions": {
+      "post": {
+        "tags": [
+          "Rca"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RcaActionCreateRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RcaActionCreateRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RcaActionCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaActionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaActionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaActionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rca/{id}/suggest": {
+      "post": {
+        "tags": [
+          "Rca"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaSuggestResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaSuggestResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaSuggestResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge/known-errors": {
+      "get": {
+        "tags": [
+          "Knowledge"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KnownErrorDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KnownErrorDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KnownErrorDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rca-settings": {
+      "get": {
+        "tags": [
+          "RcaSettings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaTriggerRulesDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaTriggerRulesDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaTriggerRulesDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "RcaSettings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRcaTriggerRulesRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRcaTriggerRulesRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRcaTriggerRulesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaTriggerRulesDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaTriggerRulesDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RcaTriggerRulesDto"
                 }
               }
             }
@@ -3648,6 +4877,46 @@
         }
       }
     },
+    "/api/v1/tickets/{id}/rca-summary": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRcaSummaryDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRcaSummaryDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRcaSummaryDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/me": {
       "get": {
         "tags": [
@@ -3692,6 +4961,32 @@
               "type": "string",
               "format": "uuid"
             }
+          }
+        }
+      },
+      "AiProviderOptionDto": {
+        "required": [
+          "id",
+          "label",
+          "authType",
+          "hint"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "authType": {
+            "type": "string"
+          },
+          "hint": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -3840,6 +5135,32 @@
             "items": {
               "$ref": "#/components/schemas/AnalyticsJobStatusItem"
             }
+          }
+        }
+      },
+      "ApproveRcaRequest": {
+        "required": [
+          "comments"
+        ],
+        "type": "object",
+        "properties": {
+          "comments": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "AssignRcaDelegateRequest": {
+        "required": [
+          "delegateId"
+        ],
+        "type": "object",
+        "properties": {
+          "delegateId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -4038,6 +5359,73 @@
           },
           "ok": {
             "type": "boolean"
+          }
+        }
+      },
+      "ConnectAiProviderRequest": {
+        "required": [
+          "provider",
+          "username",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "ConnectAiProviderResponse": {
+        "required": [
+          "success",
+          "provider",
+          "username",
+          "connectedAt",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "username": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "connectedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ConnectEntraRequest": {
+        "required": [
+          "entraTenantId"
+        ],
+        "type": "object",
+        "properties": {
+          "entraTenantId": {
+            "type": "string"
           }
         }
       },
@@ -4265,6 +5653,32 @@
               "string"
             ],
             "format": "double"
+          }
+        }
+      },
+      "CreateProblemRequest": {
+        "required": [
+          "title",
+          "ticketId",
+          "technicalOwnerId",
+          "processOwnerId"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "ticketId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "technicalOwnerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "processOwnerId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -5003,6 +6417,293 @@
           }
         }
       },
+      "IntelligenceConfigDto": {
+        "required": [
+          "providerPath",
+          "aiUsername",
+          "aiConnectedAt",
+          "entraTenantId",
+          "entraConnectedAt",
+          "azureOpenaiEndpoint",
+          "azureOpenaiDeploymentChat",
+          "azureOpenaiDeploymentEmbed",
+          "hasApiKey",
+          "isConnected",
+          "featureRcaSuggest",
+          "featureKnowledgeCopilot",
+          "featureReportNarrative",
+          "featureAutoIndexTickets",
+          "teamsEnabled",
+          "teamsConfigured",
+          "monthlyQueryQuota",
+          "queriesThisMonth"
+        ],
+        "type": "object",
+        "properties": {
+          "providerPath": {
+            "type": "string"
+          },
+          "aiUsername": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "aiConnectedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "entraTenantId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "entraConnectedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "azureOpenaiEndpoint": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "azureOpenaiDeploymentChat": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "azureOpenaiDeploymentEmbed": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hasApiKey": {
+            "type": "boolean"
+          },
+          "isConnected": {
+            "type": "boolean"
+          },
+          "featureRcaSuggest": {
+            "type": "boolean"
+          },
+          "featureKnowledgeCopilot": {
+            "type": "boolean"
+          },
+          "featureReportNarrative": {
+            "type": "boolean"
+          },
+          "featureAutoIndexTickets": {
+            "type": "boolean"
+          },
+          "teamsEnabled": {
+            "type": "boolean"
+          },
+          "teamsConfigured": {
+            "type": "boolean"
+          },
+          "monthlyQueryQuota": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "queriesThisMonth": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "KnowledgeCitationDto": {
+        "required": [
+          "articleId",
+          "sourceType",
+          "sourceId",
+          "title",
+          "excerpt",
+          "score"
+        ],
+        "type": "object",
+        "properties": {
+          "articleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceType": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "excerpt": {
+            "type": "string"
+          },
+          "score": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "KnowledgeQueryRequest": {
+        "required": [
+          "query",
+          "topK"
+        ],
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "topK": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "KnowledgeQueryResponse": {
+        "required": [
+          "answer",
+          "citations",
+          "tokensUsed"
+        ],
+        "type": "object",
+        "properties": {
+          "answer": {
+            "type": "string"
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeCitationDto"
+            }
+          },
+          "tokensUsed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "KnowledgeSearchResultDto": {
+        "required": [
+          "articleId",
+          "sourceType",
+          "sourceId",
+          "title",
+          "excerpt",
+          "score"
+        ],
+        "type": "object",
+        "properties": {
+          "articleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceType": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "excerpt": {
+            "type": "string"
+          },
+          "score": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "KnownErrorDto": {
+        "required": [
+          "id",
+          "title",
+          "errorDescription",
+          "workaround",
+          "permanentFix",
+          "rcaId",
+          "rcaRef",
+          "publishedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "errorDescription": {
+            "type": "string"
+          },
+          "workaround": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "permanentFix": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rcaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rcaRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "KpiAreaRequest": {
         "required": [
           "name",
@@ -5159,6 +6860,22 @@
             "items": {
               "$ref": "#/components/schemas/KpiTrendItem"
             }
+          }
+        }
+      },
+      "LinkTicketRequest": {
+        "required": [
+          "ticketId"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "linkType": {
+            "type": "string",
+            "default": "RELATED"
           }
         }
       },
@@ -5508,6 +7225,113 @@
           }
         }
       },
+      "ProblemListItemDto": {
+        "required": [
+          "id",
+          "problemRef",
+          "title",
+          "status",
+          "priority",
+          "recurrenceCount",
+          "rcaStatus",
+          "rcaId",
+          "rcaRef",
+          "linkedTicketCount",
+          "processOwnerId",
+          "technicalOwnerId",
+          "processOwnerName",
+          "technicalOwnerName",
+          "reviewDueAt",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "problemRef": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "priority": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "recurrenceCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rcaStatus": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rcaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rcaRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "linkedTicketCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "processOwnerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "technicalOwnerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "processOwnerName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "technicalOwnerName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reviewDueAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "QueueConfigDto": {
         "required": [
           "maxCapacityPerEngineer",
@@ -5661,6 +7485,485 @@
             "format": "uuid"
           },
           "count": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "RcaActionCreateRequest": {
+        "required": [
+          "actionType",
+          "description",
+          "ownerId",
+          "dueAt"
+        ],
+        "type": "object",
+        "properties": {
+          "actionType": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dueAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "RcaActionDto": {
+        "required": [
+          "id",
+          "actionType",
+          "description",
+          "ownerId",
+          "ownerName",
+          "dueAt",
+          "status",
+          "verifiedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actionType": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dueAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          },
+          "verifiedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "RcaApprovalDto": {
+        "required": [
+          "approverRole",
+          "approverId",
+          "approverName",
+          "decision",
+          "comments",
+          "decidedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "approverRole": {
+            "type": "string"
+          },
+          "approverId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "approverName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "decision": {
+            "type": "string"
+          },
+          "comments": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "decidedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "RcaDashboardStatsDto": {
+        "required": [
+          "openRcas",
+          "overdueCapa",
+          "awaitingReview"
+        ],
+        "type": "object",
+        "properties": {
+          "openRcas": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "overdueCapa": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "awaitingReview": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "RcaDetailDto": {
+        "required": [
+          "id",
+          "rcaRef",
+          "problemId",
+          "problemRef",
+          "problemTitle",
+          "status",
+          "incidentSummary",
+          "businessImpact",
+          "detectionMethod",
+          "immediateCause",
+          "rootCauseStatement",
+          "contributingFactors",
+          "resolutionSummary",
+          "lessonsLearned",
+          "categoryId",
+          "categoryName",
+          "processOwnerId",
+          "technicalOwnerId",
+          "delegateId",
+          "processOwnerName",
+          "technicalOwnerName",
+          "delegateName",
+          "reviewDueAt",
+          "publishedAt",
+          "createdAt",
+          "updatedAt",
+          "linkedTickets",
+          "actions",
+          "approvals"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rcaRef": {
+            "type": "string"
+          },
+          "problemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "problemRef": {
+            "type": "string"
+          },
+          "problemTitle": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "incidentSummary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "businessImpact": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "detectionMethod": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "immediateCause": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rootCauseStatement": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contributingFactors": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "resolutionSummary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lessonsLearned": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "categoryName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "processOwnerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "technicalOwnerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "delegateId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "processOwnerName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "technicalOwnerName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "delegateName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reviewDueAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "publishedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "linkedTickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RcaTicketLinkDto"
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RcaActionDto"
+            }
+          },
+          "approvals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RcaApprovalDto"
+            }
+          }
+        }
+      },
+      "RcaSuggestResponse": {
+        "required": [
+          "incidentSummary",
+          "immediateCause",
+          "rootCauseStatement",
+          "contributingFactors",
+          "resolutionSummary",
+          "citations"
+        ],
+        "type": "object",
+        "properties": {
+          "incidentSummary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "immediateCause": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rootCauseStatement": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contributingFactors": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "resolutionSummary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeCitationDto"
+            }
+          }
+        }
+      },
+      "RcaTicketLinkDto": {
+        "required": [
+          "ticketId",
+          "ticketRef",
+          "linkType",
+          "ticketTitle",
+          "ticketPriority"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ticketRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "linkType": {
+            "type": "string"
+          },
+          "ticketTitle": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ticketPriority": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "RcaTriggerRulesDto": {
+        "required": [
+          "autoP1",
+          "autoP2",
+          "autoP2SlaBreach",
+          "autoSecurity",
+          "recurrenceThreshold",
+          "recurrenceWindowDays",
+          "rcaCompletionDays"
+        ],
+        "type": "object",
+        "properties": {
+          "autoP1": {
+            "type": "boolean"
+          },
+          "autoP2": {
+            "type": "boolean"
+          },
+          "autoP2SlaBreach": {
+            "type": "boolean"
+          },
+          "autoSecurity": {
+            "type": "boolean"
+          },
+          "recurrenceThreshold": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "recurrenceWindowDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rcaCompletionDays": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -6031,6 +8334,36 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "StoreHealthDto": {
+        "required": [
+          "healthy",
+          "corruptedPackages",
+          "repairState",
+          "startedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "healthy": {
+            "type": "boolean"
+          },
+          "corruptedPackages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "repairState": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -6637,6 +8970,147 @@
           }
         }
       },
+      "TicketRcaSummaryDto": {
+        "required": [
+          "rcaRequired",
+          "problemId",
+          "problemRef",
+          "rcaId",
+          "rcaRef",
+          "rcaStatus",
+          "overdueCapaCount",
+          "canEdit",
+          "canCreateOrLink"
+        ],
+        "type": "object",
+        "properties": {
+          "rcaRequired": {
+            "type": "boolean"
+          },
+          "problemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "problemRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rcaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rcaRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rcaStatus": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "overdueCapaCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canCreateOrLink": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateIntelligenceConfigRequest": {
+        "required": [
+          "providerPath",
+          "entraTenantId",
+          "azureOpenaiEndpoint",
+          "azureOpenaiDeploymentChat",
+          "azureOpenaiDeploymentEmbed",
+          "azureOpenaiApiKey",
+          "featureRcaSuggest",
+          "featureKnowledgeCopilot",
+          "featureReportNarrative",
+          "featureAutoIndexTickets",
+          "teamsEnabled",
+          "teamsWebhookUrl",
+          "monthlyQueryQuota"
+        ],
+        "type": "object",
+        "properties": {
+          "providerPath": {
+            "type": "string"
+          },
+          "entraTenantId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "azureOpenaiEndpoint": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "azureOpenaiDeploymentChat": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "azureOpenaiDeploymentEmbed": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "azureOpenaiApiKey": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "featureRcaSuggest": {
+            "type": "boolean"
+          },
+          "featureKnowledgeCopilot": {
+            "type": "boolean"
+          },
+          "featureReportNarrative": {
+            "type": "boolean"
+          },
+          "featureAutoIndexTickets": {
+            "type": "boolean"
+          },
+          "teamsEnabled": {
+            "type": "boolean"
+          },
+          "teamsWebhookUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "monthlyQueryQuota": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "UpdateKpiDefinitionRequest": {
         "required": [
           "name",
@@ -6745,6 +9219,124 @@
           "teamId": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "UpdateRcaRequest": {
+        "required": [
+          "incidentSummary",
+          "businessImpact",
+          "detectionMethod",
+          "immediateCause",
+          "rootCauseStatement",
+          "contributingFactors",
+          "resolutionSummary",
+          "lessonsLearned",
+          "categoryId"
+        ],
+        "type": "object",
+        "properties": {
+          "incidentSummary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "businessImpact": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "detectionMethod": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "immediateCause": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rootCauseStatement": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contributingFactors": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "resolutionSummary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lessonsLearned": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "UpdateRcaTriggerRulesRequest": {
+        "required": [
+          "autoP1",
+          "autoP2",
+          "autoP2SlaBreach",
+          "autoSecurity",
+          "recurrenceThreshold",
+          "recurrenceWindowDays",
+          "rcaCompletionDays"
+        ],
+        "type": "object",
+        "properties": {
+          "autoP1": {
+            "type": "boolean"
+          },
+          "autoP2": {
+            "type": "boolean"
+          },
+          "autoP2SlaBreach": {
+            "type": "boolean"
+          },
+          "autoSecurity": {
+            "type": "boolean"
+          },
+          "recurrenceThreshold": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "recurrenceWindowDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rcaCompletionDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -6903,6 +9495,12 @@
           "teamId": {
             "type": "string",
             "format": "uuid"
+          },
+          "isActive": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -7018,6 +9616,12 @@
       "name": "Intake"
     },
     {
+      "name": "AdminIntelligence"
+    },
+    {
+      "name": "Intelligence"
+    },
+    {
       "name": "Kpi"
     },
     {
@@ -7030,7 +9634,19 @@
       "name": "Onboarding"
     },
     {
+      "name": "Problems"
+    },
+    {
       "name": "Queue"
+    },
+    {
+      "name": "Rca"
+    },
+    {
+      "name": "Knowledge"
+    },
+    {
+      "name": "RcaSettings"
     },
     {
       "name": "Reports"
