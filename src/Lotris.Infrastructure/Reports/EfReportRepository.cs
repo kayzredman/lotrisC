@@ -156,6 +156,32 @@ public sealed class EfReportRepository : IReportRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<ReportScheduleEntity>> ListDueSchedulesAsync(
+        DateTime asOfUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await _db.ReportSchedules
+            .AsNoTracking()
+            .Where(s => s.IsActive && s.NextRunAt != null && s.NextRunAt <= asOfUtc)
+            .OrderBy(s => s.NextRunAt)
+            .ToListAsync(cancellationToken);
+        return rows.Select(MapSchedule).ToList();
+    }
+
+    public async Task UpdateScheduleRunAsync(
+        Guid scheduleId,
+        DateTime lastRunAt,
+        DateTime nextRunAt,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _db.ReportSchedules.FirstOrDefaultAsync(s => s.Id == scheduleId, cancellationToken)
+            ?? throw new InvalidOperationException($"Report schedule {scheduleId} not found");
+
+        entity.LastRunAt = lastRunAt;
+        entity.NextRunAt = nextRunAt;
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<ReportConfigEntity?> GetConfigAsync(
         Guid tenantId,
         CancellationToken cancellationToken = default)

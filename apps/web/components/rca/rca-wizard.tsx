@@ -13,7 +13,7 @@ import {
 } from '@/lib/api/hooks/useRca';
 import { useRcaSuggest } from '@/lib/api/hooks/useIntelligence';
 import { EmptyState } from '@/components/ui/empty-state';
-import { ArrowLeft, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronRight, ExternalLink, Sparkles } from 'lucide-react';
 
 const STEPS = [
   { id: 'incident', label: 'Incident', sub: 'Summary & impact' },
@@ -33,6 +33,7 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
   const [form, setForm] = useState<Record<string, string>>({});
   const [actionForm, setActionForm] = useState({ actionType: 'CORRECTIVE', description: '', ownerId: '', dueAt: '' });
   const [delegateId, setDelegateId] = useState('');
+  const [suggestMessage, setSuggestMessage] = useState<{ type: 'error' | 'info'; text: string } | null>(null);
 
   const { data: me } = useCurrentUser();
   const { data: users } = useUsersList();
@@ -105,6 +106,96 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
   }
 
   const actions = (r?.actions ?? []) as Array<Record<string, unknown>>;
+  const isLastStep = step === STEPS.length - 1;
+  const nextStep = STEPS[step + 1];
+
+  function renderReviewSummary() {
+    const incident = field('incidentSummary', r.incidentSummary);
+    const rootCause = field('rootCauseStatement', r.rootCauseStatement);
+    const items = [
+      { label: 'Incident summary', value: incident, ok: incident.trim().length > 0 },
+      { label: 'Root cause', value: rootCause, ok: rootCause.trim().length > 0 },
+      { label: 'CAPA actions', value: actions.length > 0 ? `${actions.length} action${actions.length === 1 ? '' : 's'}` : '', ok: actions.length > 0 },
+    ];
+
+    return (
+      <div style={{ display: 'grid', gap: 10 }}>
+        {items.map((item) => (
+          <div
+            key={item.label}
+            style={{
+              padding: '10px 12px',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--bg-subtle)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <CheckCircle2 size={13} color={item.ok ? 'var(--green)' : 'var(--text-muted)'} />
+              <span style={{ fontSize: 12, fontWeight: 600 }}>{item.label}</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.45 }}>
+              {item.value.trim() ? (item.value.length > 160 ? `${item.value.slice(0, 160)}…` : item.value) : 'Not filled in yet'}
+            </p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  function renderFooterPrimary() {
+    if (!isLastStep) {
+      return (
+        <button type="button" className="v2-btn v2-btn-primary v2-btn-sm" onClick={() => setStep((s) => s + 1)}>
+          Continue to {nextStep.label} <ChevronRight size={12} />
+        </button>
+      );
+    }
+
+    if (canEdit && status === 'DRAFT') {
+      return (
+        <button
+          type="button"
+          className="v2-btn v2-btn-primary v2-btn-sm"
+          disabled={submitMutation.isPending}
+          onClick={() => submitMutation.mutate({ id: rcaId }, { onSuccess: () => void refetch() })}
+        >
+          {submitMutation.isPending ? 'Submitting…' : 'Submit for review'}
+        </button>
+      );
+    }
+
+    if (isLead && status === 'IN_REVIEW') {
+      return (
+        <button
+          type="button"
+          className="v2-btn v2-btn-primary v2-btn-sm"
+          disabled={publishMutation.isPending}
+          onClick={() => publishMutation.mutate({ id: rcaId }, { onSuccess: () => void refetch() })}
+        >
+          {publishMutation.isPending ? 'Publishing…' : 'Publish to Knowledge Base'}
+        </button>
+      );
+    }
+
+    if (status === 'PUBLISHED') {
+      return (
+        <Link href="/knowledge" className="v2-btn v2-btn-primary v2-btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          View in Knowledge <ExternalLink size={12} />
+        </Link>
+      );
+    }
+
+    if (status === 'IN_REVIEW') {
+      return (
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          Submitted — awaiting lead review
+        </span>
+      );
+    }
+
+    return null;
+  }
 
   if (isLoading) {
     return <EmptyState title="Loading RCA…" />;
@@ -214,29 +305,56 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
             {step === 1 && (
               <div style={{ display: 'grid', gap: 14 }}>
                 {canEdit && (
-                  <button
-                    type="button"
-                    className="v2-btn v2-btn-secondary v2-btn-sm"
-                    style={{ width: 'fit-content', display: 'flex', alignItems: 'center', gap: 6 }}
-                    disabled={suggestMutation.isPending}
-                    onClick={() =>
-                      suggestMutation.mutate(
-                        { rcaId },
-                        {
-                          onSuccess: (s) => {
-                            const data = s as Record<string, unknown>;
-                            if (data.incidentSummary) setField('incidentSummary', String(data.incidentSummary));
-                            if (data.immediateCause) setField('immediateCause', String(data.immediateCause));
-                            if (data.rootCauseStatement) setField('rootCauseStatement', String(data.rootCauseStatement));
-                            if (data.contributingFactors) setField('contributingFactors', String(data.contributingFactors));
-                            if (data.resolutionSummary) setField('resolutionSummary', String(data.resolutionSummary));
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    <button
+                      type="button"
+                      className="v2-btn v2-btn-secondary v2-btn-sm"
+                      style={{ width: 'fit-content', display: 'flex', alignItems: 'center', gap: 6 }}
+                      disabled={suggestMutation.isPending}
+                      onClick={() => {
+                        setSuggestMessage(null);
+                        suggestMutation.mutate(
+                          { rcaId },
+                          {
+                            onSuccess: (s) => {
+                              const data = s as Record<string, unknown>;
+                              if (data.incidentSummary) setField('incidentSummary', String(data.incidentSummary));
+                              if (data.immediateCause) setField('immediateCause', String(data.immediateCause));
+                              if (data.rootCauseStatement) setField('rootCauseStatement', String(data.rootCauseStatement));
+                              if (data.contributingFactors) setField('contributingFactors', String(data.contributingFactors));
+                              if (data.resolutionSummary) setField('resolutionSummary', String(data.resolutionSummary));
+                              const citations = Array.isArray(data.citations) ? data.citations.length : 0;
+                              setSuggestMessage({
+                                type: 'info',
+                                text: citations > 0
+                                  ? `Applied suggestions from ${citations} knowledge article${citations === 1 ? '' : 's'}. Review and edit before saving.`
+                                  : 'Applied AI suggestions. Review and edit before saving.',
+                              });
+                            },
+                            onError: (err) => {
+                              setSuggestMessage({
+                                type: 'error',
+                                text: err instanceof Error ? err.message : 'AI suggest failed. Try again or connect ChatGPT/OpenAI in Intelligence setup.',
+                              });
+                            },
                           },
-                        },
-                      )
-                    }
-                  >
-                    <Sparkles size={12} /> {suggestMutation.isPending ? 'Suggesting…' : 'AI suggest'}
-                  </button>
+                        );
+                      }}
+                    >
+                      <Sparkles size={12} /> {suggestMutation.isPending ? 'Suggesting…' : 'AI suggest'}
+                    </button>
+                    {suggestMessage && (
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 12,
+                          color: suggestMessage.type === 'error' ? 'var(--danger)' : 'var(--text-muted)',
+                        }}
+                      >
+                        {suggestMessage.text}
+                      </p>
+                    )}
+                  </div>
                 )}
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5 }}>Immediate cause</label>
@@ -356,43 +474,33 @@ export default function RcaWizard({ rcaId }: RcaWizardProps) {
 
             {step === 3 && (
               <div style={{ display: 'grid', gap: 16 }}>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                  Submit for review when incident and root cause sections are complete. Publishing creates a Known Error entry in the knowledge base.
-                </p>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {canEdit && status === 'DRAFT' && (
-                    <button
-                      type="button"
-                      className="v2-btn v2-btn-secondary v2-btn-sm"
-                      disabled={submitMutation.isPending}
-                      onClick={() => submitMutation.mutate({ id: rcaId }, { onSuccess: () => void refetch() })}
-                    >
-                      Submit for review
-                    </button>
-                  )}
-                  {isLead && status === 'IN_REVIEW' && (
-                    <button
-                      type="button"
-                      className="v2-btn v2-btn-primary v2-btn-sm"
-                      disabled={publishMutation.isPending}
-                      onClick={() => publishMutation.mutate({ id: rcaId }, { onSuccess: () => void refetch() })}
-                    >
-                      Publish to Knowledge Base
-                    </button>
-                  )}
-                  {status === 'PUBLISHED' && (
+                {status === 'DRAFT' && (
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                    Check the summary below, then use <strong>Submit for review</strong> when incident and root cause are complete.
+                  </p>
+                )}
+                {status === 'IN_REVIEW' && (
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                    {isLead
+                      ? 'This RCA is ready for approval. Publishing creates a Known Error entry in the knowledge base.'
+                      : 'This RCA has been submitted. A lead will review and publish it to the knowledge base.'}
+                  </p>
+                )}
+                {status === 'PUBLISHED' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span className="v2-badge v2-badge-green">Published — visible in Knowledge</span>
-                  )}
-                </div>
+                  </div>
+                )}
+                {renderReviewSummary()}
               </div>
             )}
           </div>
 
-          <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', background: 'var(--bg-subtle)' }}>
-            <button type="button" className="v2-btn v2-btn-ghost v2-btn-sm" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>Previous</button>
-            <button type="button" className="v2-btn v2-btn-secondary v2-btn-sm" disabled={step >= STEPS.length - 1} onClick={() => setStep((s) => s + 1)}>
-              Next <ChevronRight size={12} />
+          <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-subtle)' }}>
+            <button type="button" className="v2-btn v2-btn-ghost v2-btn-sm" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>
+              Previous
             </button>
+            {renderFooterPrimary()}
           </div>
         </div>
 

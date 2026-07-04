@@ -283,7 +283,17 @@ export function ReportsLayout() {
               <button type="button" className="v2-btn v2-btn-primary" onClick={handleGenerate} disabled={generating}>
                 <BarChart2 size={13} /> {generating ? 'Generating…' : 'Generate Now'}
               </button>
-              <button type="button" className="v2-btn v2-btn-secondary"><Calendar size={13} /> Schedule</button>
+              <button
+                type="button"
+                className="v2-btn v2-btn-secondary"
+                onClick={() => {
+                  setShowGenerate(false);
+                  setActiveTab('history');
+                  setShowAddSchedule(true);
+                }}
+              >
+                <Calendar size={13} /> Schedule
+              </button>
             </div>
           </div>
         </div>
@@ -375,7 +385,7 @@ export function ReportsLayout() {
             </div>
           </div>
           {/* ── Scheduled Reports section (below history table) ── */}
-          <div className="v2-card" style={{ marginTop: 20 }}>
+          <div className="v2-card" id="scheduled-reports-section" style={{ marginTop: 20 }}>
             <div className="v2-card-header">
               <div>
                 <div className="v2-card-title"><Calendar size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle', color: 'var(--blue)' }} />Scheduled Reports</div>

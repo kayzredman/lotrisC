@@ -25,6 +25,16 @@ public interface IReportRepository
 
     Task DeleteScheduleAsync(Guid tenantId, Guid scheduleId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<ReportScheduleEntity>> ListDueSchedulesAsync(
+        DateTime asOfUtc,
+        CancellationToken cancellationToken = default);
+
+    Task UpdateScheduleRunAsync(
+        Guid scheduleId,
+        DateTime lastRunAt,
+        DateTime nextRunAt,
+        CancellationToken cancellationToken = default);
+
     Task<ReportConfigEntity?> GetConfigAsync(Guid tenantId, CancellationToken cancellationToken = default);
 
     Task UpsertConfigAsync(Guid tenantId, ReportConfigUpdate update, CancellationToken cancellationToken = default);
@@ -33,6 +43,11 @@ public interface IReportRepository
 public interface IReportJobEnqueuer
 {
     void EnqueueGeneration(Guid jobId);
+}
+
+public interface IReportScheduleRunnerJob
+{
+    Task ExecuteDueSchedulesAsync(CancellationToken cancellationToken = default);
 }
 
 public interface IReportGenerator

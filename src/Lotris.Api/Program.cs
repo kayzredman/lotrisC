@@ -10,6 +10,7 @@ using Lotris.Infrastructure;
 using Lotris.Infrastructure.Analytics;
 using Lotris.Infrastructure.Data;
 using Lotris.Infrastructure.Migrations;
+using Lotris.Infrastructure.Reports;
 using Lotris.Workers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -91,6 +92,7 @@ if (!app.Environment.IsEnvironment("Testing"))
         await db.Database.MigrateAsync();
 
         await scope.ServiceProvider.InitializeAnalyticsJobsAsync();
+        ReportScheduleStartupExtensions.RegisterReportScheduleJob();
     }
 }
 

@@ -76,6 +76,52 @@ Living catalog of operational surfaces, scripts, and API probes in this repo. Up
 
 ---
 
+### Intelligence and AI Setup — `/admin/intelligence`
+
+**Purpose:** Connect tenant AI provider and enable intelligence features.
+
+| | |
+|---|---|
+| **URL** | `http://localhost:3000/admin/intelligence` |
+| **Auth** | **ADMIN / SUPERADMIN** (leads can use intelligence features once connected) |
+
+**What it can do:**
+
+- Pick provider: Claude, Cursor, ChatGPT, Copilot (Microsoft), OpenAI
+- Connect credentials or Microsoft OAuth (Copilot)
+- Enable: RCA AI suggest, Knowledge Q&A, report narratives, Teams webhooks
+- Test connection
+
+**Docs:** [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md), [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md), [PHASE-8-UPDATES.md](PHASE-8-UPDATES.md)
+
+---
+
+### Knowledge Base — `/knowledge`
+
+**Purpose:** Known errors (KEDB) + Ask Knowledge Base Q&A.
+
+| | |
+|---|---|
+| **URL** | `http://localhost:3000/knowledge` |
+| **Auth** | Authenticated app users |
+
+**Data:** Known errors from published RCAs; Ask KB searches `knowledge.Knowledge_Articles`. Seed: `node scripts/seed-knowledge-samples.mjs`.
+
+---
+
+### Problems & RCA — `/problems`, `/rca/{id}`
+
+**Purpose:** ITIL problem records and root-cause investigation wizard.
+
+| | |
+|---|---|
+| **URLs** | `/problems`, `/rca/{id}` |
+| **Auth** | Authenticated; create/edit for leads |
+
+**Seed:** `node scripts/seed-problems-demo.mjs`
+
+---
+
 ## API health endpoints
 
 Base: `http://localhost:5153` (or `LOTRIS_API_URL`)
@@ -168,12 +214,51 @@ Idempotent; creates/updates Clerk users and DB rows.
 
 ---
 
+### `seed-lotris-digital-setup.mjs` — Lotris Digital Setup tenant
+
+**When:** Local dev with teams/users from `docs/TEAMLIST.xlsx` and demo tickets.
+
+```bash
+pnpm seed:digital
+# or: node scripts/seed-lotris-digital-setup.mjs
+```
+
+Idempotent; resolves tenant by slug `lotris-digital-setup`.
+
+---
+
+### `seed-knowledge-samples.mjs` — Knowledge articles (Ask Knowledge Base)
+
+**When:** Dev/demo for Knowledge Q&A without publishing RCAs.
+
+```bash
+node scripts/seed-knowledge-samples.mjs
+# optional: TENANT_ID=701fc546-342b-4b80-82e1-24b152044161
+```
+
+Seeds 3 `knowledge.Knowledge_Articles` + chunks. Does **not** populate Known Errors list (requires published RCAs).
+
+---
+
+### `seed-problems-demo.mjs` — Problems, RCAs, known errors
+
+**When:** Populate Problems page and KEDB for demos.
+
+```bash
+node scripts/seed-problems-demo.mjs
+```
+
+Seeds 3 problems + RCAs (2 published) + 2 known errors.
+
+---
+
 ## pnpm root scripts (quick reference)
 
 | Script | Command |
 |--------|---------|
 | Dev (all packages) | `pnpm dev` |
 | Web dev reset | `pnpm web:dev-reset` |
+| Seed Lotris Digital Setup | `pnpm seed:digital` |
 | Phase 5 smoke | `pnpm smoke:phase5` |
 | SSE gate | `pnpm gate:sse` |
 | Queue engine gate | `pnpm gate:queue` |

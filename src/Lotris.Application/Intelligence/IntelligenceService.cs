@@ -44,11 +44,11 @@ public sealed class IntelligenceService
     public IReadOnlyList<AiProviderOptionDto> ListAiProviders()
         =>
         [
+            new(AiProviders.ChatGpt, "ChatGPT", "credentials", "Recommended for local development — email + OpenAI API key (sk-…) as password"),
+            new(AiProviders.OpenAi, "OpenAI", "credentials", "Recommended for local development — email + OpenAI API key (sk-…) as password"),
             new(AiProviders.Claude, "Claude", "credentials", "Email + Anthropic API key as password"),
-            new(AiProviders.Cursor, "Cursor", "credentials", "Email + Cursor API key (crsr_…) from dashboard as password"),
-            new(AiProviders.ChatGpt, "ChatGPT", "credentials", "Email + OpenAI API key (sk-…) as password"),
-            new(AiProviders.Copilot, "Copilot", "microsoft", "Sign in with Microsoft (Entra + Azure OpenAI)"),
-            new(AiProviders.OpenAi, "OpenAI", "credentials", "Email + OpenAI API key (sk-…) as password"),
+            new(AiProviders.Cursor, "Cursor", "credentials", "Verification only — connect ChatGPT or OpenAI for AI chat. Email + Cursor API key (crsr_…) as password"),
+            new(AiProviders.Copilot, "Copilot", "microsoft", "Enterprise — requires your Azure tenant (see INTELLIGENCE-ENTERPRISE-SETUP.md)"),
         ];
 
     public async Task<ConnectAiProviderResponse> ConnectAiProviderAsync(
@@ -370,11 +370,21 @@ public sealed class IntelligenceService
             Current RCA status: {rca.Status}
             """;
 
-        var (raw, tokensIn, tokensOut) = await _chat.CompleteAsync(system, user, config, cancellationToken);
-        await RecordUsage(session, "RCA_AI_SUGGEST", tokensIn, tokensOut, cancellationToken);
-
         var citations = hits.Select(h => new KnowledgeCitationDto(
             h.ArticleId, "RCA", h.SourceId, h.Title, h.Excerpt, h.Score)).ToList();
+
+        string raw;
+        int tokensIn;
+        int tokensOut;
+        try
+        {
+            (raw, tokensIn, tokensOut) = await _chat.CompleteAsync(system, user, config, cancellationToken);
+            await RecordUsage(session, "RCA_AI_SUGGEST", tokensIn, tokensOut, cancellationToken);
+        }
+        catch (InvalidOperationException)
+        {
+            return BuildRcaSuggestFromKnowledge(rca, hits, citations);
+        }
 
         try
         {
@@ -612,6 +622,45 @@ public sealed class IntelligenceService
 
             Connect ChatGPT or OpenAI in Intelligence and AI Setup for full AI-generated answers.
             """;
+    }
+
+    private static RcaSuggestResponse BuildRcaSuggestFromKnowledge(
+        RcaEntity rca,
+        IReadOnlyList<KnowledgeSearchResultDto> hits,
+        IReadOnlyList<KnowledgeCitationDto> citations)
+    {
+        if (hits.Count == 0)
+        {
+            return new RcaSuggestResponse(
+                rca.IncidentSummary,
+                null,
+                "No similar knowledge articles were found. Connect ChatGPT or OpenAI in Intelligence and AI Setup for AI-generated RCA drafts.",
+                null,
+                null,
+                citations);
+        }
+
+        var primary = hits[0];
+        var incident = string.IsNullOrWhiteSpace(rca.IncidentSummary)
+            ? $"{primary.Title}: {primary.Excerpt}"
+            : rca.IncidentSummary;
+        var root = string.Join(
+            "\n\n",
+            hits.Select((h, i) => $"[{i + 1}] {h.Title}\n{h.Excerpt}"));
+        var contributing = hits.Count > 1
+            ? string.Join(", ", hits.Skip(1).Select(h => h.Title))
+            : null;
+        var resolution = hits.Count > 1
+            ? $"Review related incident [{2}] {hits[1].Title} for resolution patterns."
+            : null;
+
+        return new RcaSuggestResponse(
+            incident,
+            null,
+            root + "\n\n(Suggestions from knowledge base only — connect ChatGPT or OpenAI for full AI drafts.)",
+            contributing,
+            resolution,
+            citations);
     }
 
     private static string ExtractJson(string raw)

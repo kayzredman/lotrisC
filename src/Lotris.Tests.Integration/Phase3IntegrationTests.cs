@@ -117,6 +117,41 @@ internal sealed class InMemoryReportRepository : IReportRepository
         return Task.CompletedTask;
     }
 
+    public Task<IReadOnlyList<ReportScheduleEntity>> ListDueSchedulesAsync(
+        DateTime asOfUtc,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<ReportScheduleEntity>>(_schedules.Values
+            .Where(s => s.IsActive && s.NextRunAt.HasValue && s.NextRunAt <= asOfUtc)
+            .ToList());
+
+    public Task UpdateScheduleRunAsync(
+        Guid scheduleId,
+        DateTime lastRunAt,
+        DateTime nextRunAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (_schedules.TryGetValue(scheduleId, out var schedule))
+        {
+            _schedules[scheduleId] = new ReportScheduleEntity
+            {
+                Id = schedule.Id,
+                TenantId = schedule.TenantId,
+                ReportType = schedule.ReportType,
+                Format = schedule.Format,
+                Frequency = schedule.Frequency,
+                Recipients = schedule.Recipients,
+                TeamId = schedule.TeamId,
+                IsActive = schedule.IsActive,
+                CreatedBy = schedule.CreatedBy,
+                CreatedAt = schedule.CreatedAt,
+                LastRunAt = lastRunAt,
+                NextRunAt = nextRunAt,
+            };
+        }
+
+        return Task.CompletedTask;
+    }
+
     public Task<ReportConfigEntity?> GetConfigAsync(Guid tenantId, CancellationToken cancellationToken = default) =>
         Task.FromResult<ReportConfigEntity?>(null);
 

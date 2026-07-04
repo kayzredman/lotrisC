@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<IAutoAssignJob, AutoAssignJob>();
         services.AddScoped<INotificationJob, NotificationJob>();
         services.AddScoped<IReportGenerationJob, ReportGenerationJob>();
+        services.AddScoped<IReportScheduleRunnerJob, ReportScheduleRunnerJob>();
         services.AddScoped<IIncrementalRollupJob, IncrementalRollupJob>();
         services.AddScoped<IDailyBatchJob, DailyBatchJob>();
         services.AddScoped<IKpiTrendScanJob, KpiTrendScanJob>();

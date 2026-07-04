@@ -180,7 +180,7 @@ export function LoginForm() {
             hint={
               microsoftEnabled
                 ? 'You will be redirected to Microsoft to enter your work email and password — the same sign-in used by Copilot and Microsoft 365.'
-                : 'Microsoft sign-in requires Entra configuration on the API (see docs/ENTRA-DEV-SETUP.md).'
+                : 'Microsoft sign-in requires Entra on the deployment (see docs/INTELLIGENCE-ENTERPRISE-SETUP.md).'
             }
           />
         </>

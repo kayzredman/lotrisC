@@ -1,9 +1,10 @@
 # Lotris — Machine migration & session handoff
 
 > **Last updated:** July 2026  
-> **Branch:** `dev` @ `5deebc0` (pushed to `origin/dev`)  
+> **Branch:** `dev` (local — ahead of `origin/dev` with Phase 8 polish)  
+> **Last pushed:** `45dc74c`  
 > **Repo:** [github.com/kayzredman/lotrisC](https://github.com/kayzredman/lotrisC.git)  
-> **Purpose:** Pick up Phase 7 on a new machine without relying on Cursor chat history.
+> **Purpose:** Pick up Phase 8 on a new machine without relying on Cursor chat history.
 
 ---
 
@@ -53,11 +54,41 @@ If Next.js is stale after switching machines: `pnpm web:dev-reset`.
 
 ---
 
-## 3. Where we left off (Phase 7)
+## 3. Where we left off (Phase 8)
 
-**Status:** Phase 7 parity gate **complete** — REST parity shipped; NestJS/tRPC decommissioned July 2026.
+**Status:** Phase 8 **MVP complete** on local `dev` — RCA, Intelligence, Knowledge, Reports, and scheduled report runner shipped. Ready for QA cert + push.
 
-### Shipped in `5deebc0`
+### Shipped locally (since `45dc74c`, not yet pushed)
+
+| Area | What |
+|------|------|
+| **Intelligence UX** | Standard vs Enterprise split; [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md) + [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md) |
+| **RCA AI suggest** | Knowledge fallback when provider cannot chat (Cursor `crsr_`) |
+| **RCA wizard UX** | Review summary, contextual footer (Submit/Publish/View in Knowledge) |
+| **Scheduled reports** | Hangfire `ReportScheduleRunnerJob` runs due schedules every 15 min |
+| **Reports UX** | **Schedule** button opens add-schedule form |
+| **Hygiene** | `src/Lotris.Api/data/` gitignored |
+
+### Shipped in `45dc74c` (on `origin/dev`)
+
+| Area | What |
+|------|------|
+| **Intelligence & AI Setup** | Multi-provider connect (Claude, Cursor, ChatGPT, Copilot, OpenAI), official Copilot icon, feature toggles |
+| **Knowledge Base** | Ask Knowledge Base Q&A, seed script, retrieval fallback when provider cannot chat |
+| **Problems / RCA** | List + wizard; nullable GUID fixes for RCA detail API |
+| **Reports** | Generate polling, history highlight, authenticated download fix |
+| **Admin** | Team/user edit modals |
+| **Intelligence setup** | Local dev: [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md); enterprise: [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md) |
+| **Dev seeds** | `seed-lotris-digital-setup`, `seed-knowledge-samples`, `seed-problems-demo` |
+| **Migration** | `0012_ai_provider_credentials.sql` |
+
+**Full changelog:** [PHASE-8-UPDATES.md](PHASE-8-UPDATES.md)
+
+### Phase 7 (complete)
+
+Phase 7 parity gate **complete** — REST parity shipped; NestJS/tRPC decommissioned July 2026. See commits through `e953a4b`.
+
+### Shipped in `5deebc0` (Phase 7 reference)
 
 | Area | What |
 |------|------|
@@ -164,15 +195,30 @@ pnpm onprem:smoke   # defaults to http://localhost:9090
 
 **Recommended first prompt on new machine:**
 
-> Read `docs/HANDOFF.md` and `docs/REFACTOR.md`. Continue Phase 7 — on-prem smoke, then NestJS decommission discussion.
+> Read `docs/HANDOFF.md` and `docs/INTELLIGENCE-DEV-SETUP.md`. Continue Phase 8 — intelligence QA or on-prem smoke.
 
 ---
 
 ## 8. Recommended next steps
 
-1. **Green dev stack** — Docker infra, API `:5153`, web `:3000`, run `pnpm smoke:phase5`
-2. **On-prem smoke** on clean Docker or VM — `pnpm onprem:smoke`
-3. **Post–Phase 7** — merge `dev` → `main` per [GIT-WORKFLOW.md](GIT-WORKFLOW.md); tag release
+1. **Commit + push** local Phase 8 polish to `origin/dev`
+2. **Intelligence (local)** — Connect ChatGPT/OpenAI per [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md) for full AI chat
+3. **Phase 8 QA** — Problems → RCA wizard, Knowledge Ask, Reports generate/download/schedule, Intelligence connect
+4. **On-prem smoke** when ready — `pnpm onprem:smoke`
+5. **Release** — merge `dev` → `main` per [GIT-WORKFLOW.md](GIT-WORKFLOW.md) after QA certifies
+
+### Deferred (post–Phase 8 MVP)
+
+| Item | Notes |
+|------|-------|
+| Vector store sidecar (Qdrant/Redis Stack) | Keyword + SQL embeddings work today |
+| Ticket drawer “Similar incidents” | Phase 8b UX |
+| RCA multi-stage approvals table | Simpler DRAFT → IN REVIEW → PUBLISHED shipped |
+| Recurring incident digest (email/Teams) | Teams webhook hook exists |
+| Auto-index closed tickets | Tenant setting not wired |
+| Entra/Copilot | Customer deploy per enterprise doc — not Lotris local dev |
+| On-prem smoke validation | Config ready, not run on this machine |
+| ETL gate / ops service restart | Phase 7 deferred items |
 
 ---
 
@@ -180,6 +226,10 @@ pnpm onprem:smoke   # defaults to http://localhost:9090
 
 | Doc | Purpose |
 |-----|---------|
+| [PHASE-8-UPDATES.md](PHASE-8-UPDATES.md) | Latest Phase 8 implementation changelog |
+| [PHASE-8-RESEARCH.md](PHASE-8-RESEARCH.md) | RCA & intelligence research |
+| [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md) | Local dev AI setup (API keys) |
+| [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md) | Customer Entra + Copilot deploy |
 | [REFACTOR.md](REFACTOR.md) | C# refactor phases & gate checklist |
 | [PARITY-AUDIT.md](PARITY-AUDIT.md) | tRPC → REST mapping (~95%) |
 | [API.md](API.md) | REST endpoint index |
