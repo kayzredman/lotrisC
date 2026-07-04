@@ -782,6 +782,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/microsoft/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    returnUrl?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/microsoft/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -1310,6 +1411,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/health/store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StoreHealthDto"];
+                        "application/json": components["schemas"]["StoreHealthDto"];
+                        "text/json": components["schemas"]["StoreHealthDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health/store/repair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StoreHealthDto"];
+                        "application/json": components["schemas"]["StoreHealthDto"];
+                        "text/json": components["schemas"]["StoreHealthDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/request": {
         parameters: {
             query?: never;
@@ -1358,6 +1533,418 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["IntelligenceConfigDto"];
+                        "application/json": components["schemas"]["IntelligenceConfigDto"];
+                        "text/json": components["schemas"]["IntelligenceConfigDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateIntelligenceConfigRequest"];
+                    "text/json": components["schemas"]["UpdateIntelligenceConfigRequest"];
+                    "application/*+json": components["schemas"]["UpdateIntelligenceConfigRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["IntelligenceConfigDto"];
+                        "application/json": components["schemas"]["IntelligenceConfigDto"];
+                        "text/json": components["schemas"]["IntelligenceConfigDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/ai-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AiProviderOptionDto"][];
+                        "application/json": components["schemas"]["AiProviderOptionDto"][];
+                        "text/json": components["schemas"]["AiProviderOptionDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/connect-provider": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ConnectAiProviderRequest"];
+                    "text/json": components["schemas"]["ConnectAiProviderRequest"];
+                    "application/*+json": components["schemas"]["ConnectAiProviderRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ConnectAiProviderResponse"];
+                        "application/json": components["schemas"]["ConnectAiProviderResponse"];
+                        "text/json": components["schemas"]["ConnectAiProviderResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/test-connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["KnowledgeQueryResponse"];
+                        "application/json": components["schemas"]["KnowledgeQueryResponse"];
+                        "text/json": components["schemas"]["KnowledgeQueryResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/connect-entra": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ConnectEntraRequest"];
+                    "text/json": components["schemas"]["ConnectEntraRequest"];
+                    "application/*+json": components["schemas"]["ConnectEntraRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["IntelligenceConfigDto"];
+                        "application/json": components["schemas"]["IntelligenceConfigDto"];
+                        "text/json": components["schemas"]["IntelligenceConfigDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/microsoft/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    returnUrl?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/microsoft/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/connect-entra/dev": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["IntelligenceConfigDto"];
+                        "application/json": components["schemas"]["IntelligenceConfigDto"];
+                        "text/json": components["schemas"]["IntelligenceConfigDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/intelligence/knowledge/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["KnowledgeQueryRequest"];
+                    "text/json": components["schemas"]["KnowledgeQueryRequest"];
+                    "application/*+json": components["schemas"]["KnowledgeQueryRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["KnowledgeQueryResponse"];
+                        "application/json": components["schemas"]["KnowledgeQueryResponse"];
+                        "text/json": components["schemas"]["KnowledgeQueryResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/intelligence/knowledge/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    topK?: number | string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["KnowledgeSearchResultDto"][];
+                        "application/json": components["schemas"]["KnowledgeSearchResultDto"][];
+                        "text/json": components["schemas"]["KnowledgeSearchResultDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2287,6 +2874,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/problems": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    filter?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemListItemDto"][];
+                        "application/json": components["schemas"]["ProblemListItemDto"][];
+                        "text/json": components["schemas"]["ProblemListItemDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateProblemRequest"];
+                    "text/json": components["schemas"]["CreateProblemRequest"];
+                    "application/*+json": components["schemas"]["CreateProblemRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaDetailDto"];
+                        "application/json": components["schemas"]["RcaDetailDto"];
+                        "text/json": components["schemas"]["RcaDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/problems/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaDashboardStatsDto"];
+                        "application/json": components["schemas"]["RcaDashboardStatsDto"];
+                        "text/json": components["schemas"]["RcaDashboardStatsDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/queue": {
         parameters: {
             query?: never;
@@ -2493,6 +3183,483 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/api/v1/rca/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaDetailDto"];
+                        "application/json": components["schemas"]["RcaDetailDto"];
+                        "text/json": components["schemas"]["RcaDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateRcaRequest"];
+                    "text/json": components["schemas"]["UpdateRcaRequest"];
+                    "application/*+json": components["schemas"]["UpdateRcaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaDetailDto"];
+                        "application/json": components["schemas"]["RcaDetailDto"];
+                        "text/json": components["schemas"]["RcaDetailDto"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/rca/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaDetailDto"];
+                        "application/json": components["schemas"]["RcaDetailDto"];
+                        "text/json": components["schemas"]["RcaDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rca/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ApproveRcaRequest"];
+                    "text/json": components["schemas"]["ApproveRcaRequest"];
+                    "application/*+json": components["schemas"]["ApproveRcaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaDetailDto"];
+                        "application/json": components["schemas"]["RcaDetailDto"];
+                        "text/json": components["schemas"]["RcaDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rca/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaDetailDto"];
+                        "application/json": components["schemas"]["RcaDetailDto"];
+                        "text/json": components["schemas"]["RcaDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rca/{id}/delegate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AssignRcaDelegateRequest"];
+                    "text/json": components["schemas"]["AssignRcaDelegateRequest"];
+                    "application/*+json": components["schemas"]["AssignRcaDelegateRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaDetailDto"];
+                        "application/json": components["schemas"]["RcaDetailDto"];
+                        "text/json": components["schemas"]["RcaDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rca/{id}/link-ticket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LinkTicketRequest"];
+                    "text/json": components["schemas"]["LinkTicketRequest"];
+                    "application/*+json": components["schemas"]["LinkTicketRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaDetailDto"];
+                        "application/json": components["schemas"]["RcaDetailDto"];
+                        "text/json": components["schemas"]["RcaDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rca/{id}/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RcaActionCreateRequest"];
+                    "text/json": components["schemas"]["RcaActionCreateRequest"];
+                    "application/*+json": components["schemas"]["RcaActionCreateRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaActionDto"];
+                        "application/json": components["schemas"]["RcaActionDto"];
+                        "text/json": components["schemas"]["RcaActionDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rca/{id}/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaSuggestResponse"];
+                        "application/json": components["schemas"]["RcaSuggestResponse"];
+                        "text/json": components["schemas"]["RcaSuggestResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/known-errors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["KnownErrorDto"][];
+                        "application/json": components["schemas"]["KnownErrorDto"][];
+                        "text/json": components["schemas"]["KnownErrorDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/rca-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaTriggerRulesDto"];
+                        "application/json": components["schemas"]["RcaTriggerRulesDto"];
+                        "text/json": components["schemas"]["RcaTriggerRulesDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateRcaTriggerRulesRequest"];
+                    "text/json": components["schemas"]["UpdateRcaTriggerRulesRequest"];
+                    "application/*+json": components["schemas"]["UpdateRcaTriggerRulesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RcaTriggerRulesDto"];
+                        "application/json": components["schemas"]["RcaTriggerRulesDto"];
+                        "text/json": components["schemas"]["RcaTriggerRulesDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/reports/generate": {
@@ -3529,6 +4696,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tickets/{id}/rca-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TicketRcaSummaryDto"];
+                        "application/json": components["schemas"]["TicketRcaSummaryDto"];
+                        "text/json": components["schemas"]["TicketRcaSummaryDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me": {
         parameters: {
             query?: never;
@@ -3573,6 +4779,12 @@ export interface components {
         AddAssigneesRequest: {
             assigneeIds: string[];
         };
+        AiProviderOptionDto: {
+            id: string;
+            label: string;
+            authType: string;
+            hint: null | string;
+        };
         AnalyticsJobConfigDto: {
             /** Format: uuid */
             id: string;
@@ -3609,6 +4821,13 @@ export interface components {
         };
         AnalyticsJobStatusResponse: {
             jobs: components["schemas"]["AnalyticsJobStatusItem"][];
+        };
+        ApproveRcaRequest: {
+            comments: null | string;
+        };
+        AssignRcaDelegateRequest: {
+            /** Format: uuid */
+            delegateId: string;
         };
         AssignRoleRequest: {
             /** Format: int32 */
@@ -3659,6 +4878,22 @@ export interface components {
             /** Format: uuid */
             ticketId: string;
             ok: boolean;
+        };
+        ConnectAiProviderRequest: {
+            provider: string;
+            username: string;
+            password: string;
+        };
+        ConnectAiProviderResponse: {
+            success: boolean;
+            provider: string;
+            username: null | string;
+            /** Format: date-time */
+            connectedAt: null | string;
+            message: null | string;
+        };
+        ConnectEntraRequest: {
+            entraTenantId: string;
         };
         CreateActualRequest: {
             /** Format: uuid */
@@ -3721,6 +4956,15 @@ export interface components {
             defaultTarget: number | string;
             /** Format: double */
             weight: number | string;
+        };
+        CreateProblemRequest: {
+            title: string;
+            /** Format: uuid */
+            ticketId: string;
+            /** Format: uuid */
+            technicalOwnerId: string;
+            /** Format: uuid */
+            processOwnerId: string;
         };
         CreatePublicRequest: {
             /** Format: uuid */
@@ -3918,6 +5162,76 @@ export interface components {
             createdAt: string;
             details: null | string;
         };
+        IntelligenceConfigDto: {
+            providerPath: string;
+            aiUsername: null | string;
+            /** Format: date-time */
+            aiConnectedAt: null | string;
+            entraTenantId: null | string;
+            /** Format: date-time */
+            entraConnectedAt: null | string;
+            azureOpenaiEndpoint: null | string;
+            azureOpenaiDeploymentChat: null | string;
+            azureOpenaiDeploymentEmbed: null | string;
+            hasApiKey: boolean;
+            isConnected: boolean;
+            featureRcaSuggest: boolean;
+            featureKnowledgeCopilot: boolean;
+            featureReportNarrative: boolean;
+            featureAutoIndexTickets: boolean;
+            teamsEnabled: boolean;
+            teamsConfigured: boolean;
+            /** Format: int32 */
+            monthlyQueryQuota: number | string;
+            /** Format: int32 */
+            queriesThisMonth: number | string;
+        };
+        KnowledgeCitationDto: {
+            /** Format: uuid */
+            articleId: string;
+            sourceType: string;
+            /** Format: uuid */
+            sourceId: string;
+            title: string;
+            excerpt: string;
+            /** Format: double */
+            score: number | string;
+        };
+        KnowledgeQueryRequest: {
+            query: string;
+            /** Format: int32 */
+            topK: null | number | string;
+        };
+        KnowledgeQueryResponse: {
+            answer: string;
+            citations: components["schemas"]["KnowledgeCitationDto"][];
+            /** Format: int32 */
+            tokensUsed: number | string;
+        };
+        KnowledgeSearchResultDto: {
+            /** Format: uuid */
+            articleId: string;
+            sourceType: string;
+            /** Format: uuid */
+            sourceId: string;
+            title: string;
+            excerpt: string;
+            /** Format: double */
+            score: number | string;
+        };
+        KnownErrorDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            errorDescription: string;
+            workaround: null | string;
+            permanentFix: null | string;
+            /** Format: uuid */
+            rcaId: string;
+            rcaRef: null | string;
+            /** Format: date-time */
+            publishedAt: string;
+        };
         KpiAreaRequest: {
             name: string;
             /** Format: double */
@@ -3956,6 +5270,12 @@ export interface components {
         };
         KpiTrendsResponse: {
             trends: components["schemas"]["KpiTrendItem"][];
+        };
+        LinkTicketRequest: {
+            /** Format: uuid */
+            ticketId: string;
+            /** @default RELATED */
+            linkType: string;
         };
         LivenessResponse: {
             status: string;
@@ -4039,6 +5359,33 @@ export interface components {
             detail?: null | string;
             instance?: null | string;
         };
+        ProblemListItemDto: {
+            /** Format: uuid */
+            id: string;
+            problemRef: string;
+            title: string;
+            status: string;
+            /** Format: int32 */
+            priority: number | string;
+            /** Format: int32 */
+            recurrenceCount: number | string;
+            rcaStatus: null | string;
+            /** Format: uuid */
+            rcaId: string;
+            rcaRef: null | string;
+            /** Format: int32 */
+            linkedTicketCount: number | string;
+            /** Format: uuid */
+            processOwnerId: string;
+            /** Format: uuid */
+            technicalOwnerId: string;
+            processOwnerName: null | string;
+            technicalOwnerName: null | string;
+            /** Format: date-time */
+            reviewDueAt: null | string;
+            /** Format: date-time */
+            createdAt: string;
+        };
         QueueConfigDto: {
             /** Format: int32 */
             maxCapacityPerEngineer: number | string;
@@ -4076,6 +5423,116 @@ export interface components {
             teamId: string;
             /** Format: int32 */
             count: number | string;
+        };
+        RcaActionCreateRequest: {
+            actionType: string;
+            description: string;
+            /** Format: uuid */
+            ownerId: string;
+            /** Format: date-time */
+            dueAt: null | string;
+        };
+        RcaActionDto: {
+            /** Format: uuid */
+            id: string;
+            actionType: string;
+            description: string;
+            /** Format: uuid */
+            ownerId: string;
+            ownerName: null | string;
+            /** Format: date-time */
+            dueAt: null | string;
+            status: string;
+            /** Format: date-time */
+            verifiedAt: null | string;
+        };
+        RcaApprovalDto: {
+            approverRole: string;
+            /** Format: uuid */
+            approverId: string;
+            approverName: null | string;
+            decision: string;
+            comments: null | string;
+            /** Format: date-time */
+            decidedAt: null | string;
+        };
+        RcaDashboardStatsDto: {
+            /** Format: int32 */
+            openRcas: number | string;
+            /** Format: int32 */
+            overdueCapa: number | string;
+            /** Format: int32 */
+            awaitingReview: number | string;
+        };
+        RcaDetailDto: {
+            /** Format: uuid */
+            id: string;
+            rcaRef: string;
+            /** Format: uuid */
+            problemId: string;
+            problemRef: string;
+            problemTitle: string;
+            status: string;
+            incidentSummary: null | string;
+            businessImpact: null | string;
+            detectionMethod: null | string;
+            immediateCause: null | string;
+            rootCauseStatement: null | string;
+            contributingFactors: null | string;
+            resolutionSummary: null | string;
+            lessonsLearned: null | string;
+            /** Format: uuid */
+            categoryId: string;
+            categoryName: null | string;
+            /** Format: uuid */
+            processOwnerId: string;
+            /** Format: uuid */
+            technicalOwnerId: string;
+            /** Format: uuid */
+            delegateId: string;
+            processOwnerName: null | string;
+            technicalOwnerName: null | string;
+            delegateName: null | string;
+            /** Format: date-time */
+            reviewDueAt: null | string;
+            /** Format: date-time */
+            publishedAt: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            linkedTickets: components["schemas"]["RcaTicketLinkDto"][];
+            actions: components["schemas"]["RcaActionDto"][];
+            approvals: components["schemas"]["RcaApprovalDto"][];
+        };
+        RcaSuggestResponse: {
+            incidentSummary: null | string;
+            immediateCause: null | string;
+            rootCauseStatement: null | string;
+            contributingFactors: null | string;
+            resolutionSummary: null | string;
+            citations: components["schemas"]["KnowledgeCitationDto"][];
+        };
+        RcaTicketLinkDto: {
+            /** Format: uuid */
+            ticketId: string;
+            ticketRef: null | string;
+            linkType: string;
+            ticketTitle: null | string;
+            /** Format: int32 */
+            ticketPriority: null | number | string;
+        };
+        RcaTriggerRulesDto: {
+            autoP1: boolean;
+            autoP2: boolean;
+            autoP2SlaBreach: boolean;
+            autoSecurity: boolean;
+            /** Format: int32 */
+            recurrenceThreshold: number | string;
+            /** Format: int32 */
+            recurrenceWindowDays: number | string;
+            /** Format: int32 */
+            rcaCompletionDays: number | string;
         };
         ReadinessResponse: {
             status: string;
@@ -4168,6 +5625,13 @@ export interface components {
             slaResolutionDeadline: null | string;
             /** Format: int32 */
             minutesRemaining: null | number | string;
+        };
+        StoreHealthDto: {
+            healthy: boolean;
+            corruptedPackages: string[];
+            repairState: string;
+            /** Format: date-time */
+            startedAt: null | string;
         };
         TaskAssignmentDto: {
             /** Format: uuid */
@@ -4328,6 +5792,36 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        TicketRcaSummaryDto: {
+            rcaRequired: boolean;
+            /** Format: uuid */
+            problemId: string;
+            problemRef: null | string;
+            /** Format: uuid */
+            rcaId: string;
+            rcaRef: null | string;
+            rcaStatus: null | string;
+            /** Format: int32 */
+            overdueCapaCount: number | string;
+            canEdit: boolean;
+            canCreateOrLink: boolean;
+        };
+        UpdateIntelligenceConfigRequest: {
+            providerPath: string;
+            entraTenantId: null | string;
+            azureOpenaiEndpoint: null | string;
+            azureOpenaiDeploymentChat: null | string;
+            azureOpenaiDeploymentEmbed: null | string;
+            azureOpenaiApiKey: null | string;
+            featureRcaSuggest: boolean;
+            featureKnowledgeCopilot: boolean;
+            featureReportNarrative: boolean;
+            featureAutoIndexTickets: boolean;
+            teamsEnabled: boolean;
+            teamsWebhookUrl: null | string;
+            /** Format: int32 */
+            monthlyQueryQuota: number | string;
+        };
         UpdateKpiDefinitionRequest: {
             name: null | string;
             description: null | string;
@@ -4350,6 +5844,30 @@ export interface components {
             autoAssignEnabled?: null | boolean;
             /** Format: uuid */
             teamId?: string;
+        };
+        UpdateRcaRequest: {
+            incidentSummary: null | string;
+            businessImpact: null | string;
+            detectionMethod: null | string;
+            immediateCause: null | string;
+            rootCauseStatement: null | string;
+            contributingFactors: null | string;
+            resolutionSummary: null | string;
+            lessonsLearned: null | string;
+            /** Format: uuid */
+            categoryId: string;
+        };
+        UpdateRcaTriggerRulesRequest: {
+            autoP1: boolean;
+            autoP2: boolean;
+            autoP2SlaBreach: boolean;
+            autoSecurity: boolean;
+            /** Format: int32 */
+            recurrenceThreshold: number | string;
+            /** Format: int32 */
+            recurrenceWindowDays: number | string;
+            /** Format: int32 */
+            rcaCompletionDays: number | string;
         };
         UpdateReportConfigRequest: {
             brandName?: null | string;
@@ -4389,6 +5907,7 @@ export interface components {
             fullName?: null | string;
             /** Format: uuid */
             teamId?: string;
+            isActive?: null | boolean;
         };
         UpsertAgreementAreasRequest: {
             areas: components["schemas"]["KpiAreaRequest"][];

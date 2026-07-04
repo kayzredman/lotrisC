@@ -2,14 +2,12 @@
 
 | File | Purpose |
 |------|---------|
-| [`v1.json`](v1.json) | Committed snapshot — **98 operations / 78 paths** (July 2026, incl. P1 parity) |
+| [`v1.json`](v1.json) | Committed snapshot — **130 operations / 106 paths** (July 2026, incl. Phase 8) |
 
-**Refresh:**
+**Refresh** (API must be running on `:5153`):
 
 ```bash
-./scripts/export-openapi.sh   # API must be running on :5153
-python3 scripts/generate-api-docs.py
-pnpm --filter @lotris/web api:codegen
+pnpm api:sync   # export spec → update docs/API.md → regenerate TS types
 ```
 
 **Browse live:** [Scalar UI](http://localhost:5153/openapi) when the API is running.
