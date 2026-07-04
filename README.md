@@ -90,11 +90,30 @@ The system uses a **hybrid queue-based assignment model**: tickets are routed to
 | Resource | Location |
 | -------- | -------- |
 | Human index | [docs/API.md](docs/API.md) — auth, RBAC, SSE, full endpoint index |
+| Business requirements | [docs/BRD.md](docs/BRD.md) — as-built scope and sign-off |
+| IT handover | [docs/IT-HANDOVER.md](docs/IT-HANDOVER.md) — install, ops, security for CIO/IT |
 | OpenAPI spec | [docs/openapi/v1.json](docs/openapi/v1.json) — committed contract (130 operations) |
 | Scalar UI (local) | [http://localhost:5153/openapi](http://localhost:5153/openapi) |
 | Run API | [src/README.md](src/README.md) — `pnpm api:restart` from repo root |
 
 After controller or DTO changes: start the API, then run `pnpm api:sync` (export spec → refresh `docs/API.md` → regenerate `apps/web/lib/api/generated/schema.d.ts`).
+
+**Release documentation (preview):** `pnpm docs:release` → open `docs/dist/index.html` (BRD, IT handover, closeout).
+
+---
+
+## Current stack (July 2026 release)
+
+| Layer | Technology |
+| ----- | ---------- |
+| Frontend | Next.js 15 (`apps/web`) |
+| API | ASP.NET Core 9 (`src/Lotris.Api`) — REST, OpenAPI, Hangfire |
+| Database | MSSQL (operational + analytics) |
+| Cache / jobs | Redis + Hangfire on MSSQL |
+| Intelligence | Qdrant (optional), multi-provider AI |
+| On-prem | `docker/docker-compose.onprem.yml` — see [docs/IT-HANDOVER.md](docs/IT-HANDOVER.md) |
+
+> Sections below describing NestJS, tRPC, Clerk, and Railway staging are **historical** (Sprints 1–23). Active development uses the C# backend on `dev` / `main`.
 
 ---
 
@@ -535,6 +554,8 @@ lotris/                          ← monorepo root
 
 | Doc | Description |
 | --- | ----------- |
+| [docs/BRD.md](docs/BRD.md) | **Business requirements** — delivered scope (Phases 0–8) |
+| [docs/IT-HANDOVER.md](docs/IT-HANDOVER.md) | **CIO/IT handover** — on-prem install and operations |
 | [docs/API.md](docs/API.md) | **REST API reference** — Scalar UI, auth, endpoint index |
 | [docs/openapi/](docs/openapi/) | Committed OpenAPI 3.1 spec (`v1.json`) |
 | [src/README.md](src/README.md) | C# backend — local run, config, `pnpm api:sync` |

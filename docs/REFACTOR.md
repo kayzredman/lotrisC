@@ -1,8 +1,8 @@
 # Lotris — C# Backend Refactor & On-Prem Roadmap
 
 > Last updated: July 2026  
-> Status: **Phase 7 complete** — C# REST parity + on-prem smoke green; NestJS/tRPC removed  
-> Default branch: `dev` (NestJS stack remains active until parity gate)
+> Status: **Phases 0–8 complete** — C# REST parity, on-prem smoke green, intelligence platform shipped; NestJS/tRPC removed  
+> Release branch: `main` · active development: `dev`
 
 This document is the **single entry point** for the next major phase of Lotris: migrating the backend to **ASP.NET Core**, preparing **on-prem deployment**, and evolving the **agent workflow** and **UI/UX standards**.
 
@@ -16,6 +16,8 @@ Related docs:
 | [API.md](API.md) | **Canonical REST API index** + links to Scalar UI and OpenAPI JSON |
 | [PARITY-AUDIT.md](PARITY-AUDIT.md) | tRPC → REST parity audit and Phase 7 gap tracker |
 | [HANDOFF.md](HANDOFF.md) | **Machine migration** — clone, gate status, deferred items, Cursor context |
+| [BRD.md](BRD.md) | **Business requirements** — as-built delivery sign-off |
+| [IT-HANDOVER.md](IT-HANDOVER.md) | **CIO/IT handover** — production install and ops |
 | [ONBOARDING-REFACTOR.md](ONBOARDING-REFACTOR.md) | Onboarding wizard API + on-prem bootstrap |
 | [STAGING.md](STAGING.md) | Current cloud staging (Vercel/Railway) — superseded for on-prem by `docker-compose.onprem.yml` (Phase 6) |
 | [SPRINTS.md](SPRINTS.md) | Sprint history (Sprints 1–23 complete on NestJS stack) |

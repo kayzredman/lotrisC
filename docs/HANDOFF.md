@@ -1,9 +1,9 @@
 # Lotris — Machine migration & session handoff
 
 > **Last updated:** July 2026  
-> **Branch:** `dev` @ `607a8fd` (synced with `origin/dev`)  
+> **Branch:** `dev` @ `7b913d1` · **`main` merged** (release complete)  
 > **Repo:** [github.com/kayzredman/lotrisC](https://github.com/kayzredman/lotrisC.git)  
-> **Purpose:** Pick up Phase 8 on a new machine without relying on Cursor chat history.
+> **Purpose:** Developer machine migration. For customer IT use [IT-HANDOVER.md](IT-HANDOVER.md); for business sign-off use [BRD.md](BRD.md).
 
 ---
 
@@ -56,7 +56,7 @@ If Next.js is stale after switching machines: `pnpm web:dev-reset`.
 
 ## 3. Where we left off (Phase 8)
 
-**Status:** Phase 8 **MVP + 8.1 + 8.2 complete**; **ETL gate complete** on local `dev`. Ready for merge to `main`.
+**Status:** Phase 8 **MVP + 8.1 + 8.2 complete**; **ETL gate complete**; **merged to `main`**. OpenAPI synced (130 operations).
 
 ### ETL & analytics jobs (July 2026)
 
@@ -204,7 +204,7 @@ See [deploy/INSTALL.md](../deploy/INSTALL.md).
 1. **Smoke** — `pnpm smoke:phase5` (local), then `pnpm onprem:smoke` when on-prem stack is up
 2. **Intelligence (local)** — Connect ChatGPT/OpenAI per [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md); optional Qdrant for semantic search
 3. **Phase 8 QA** — RCA approvals, Knowledge semantic search, scheduled reports + email, on-prem all-features-unlocked
-4. **Release** — merge `dev` → `main` per [GIT-WORKFLOW.md](GIT-WORKFLOW.md) after QA certifies
+4. **Release** — ✅ merged to `main`; see [BRD.md](BRD.md) and [IT-HANDOVER.md](IT-HANDOVER.md)
 
 ### Deferred (post–Phase 8.2)
 
@@ -220,8 +220,10 @@ See [deploy/INSTALL.md](../deploy/INSTALL.md).
 
 | Doc | Purpose |
 |-----|---------|
+| [BRD.md](BRD.md) | **Business requirements** — as-built scope & sign-off |
+| [IT-HANDOVER.md](IT-HANDOVER.md) | **CIO/IT handover** — install, ops, security |
+| [PROJECT-CLOSEOUT.md](PROJECT-CLOSEOUT.md) | Repo hygiene checklist before closeout |
 | [PHASE-8-UPDATES.md](PHASE-8-UPDATES.md) | Phase 8 implementation changelog (8.0–8.2) |
-| [PHASE-8-RESEARCH.md](PHASE-8-RESEARCH.md) | RCA & intelligence research |
 | [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md) | Local dev AI + Qdrant setup |
 | [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md) | Customer Entra + Copilot deploy |
 | [PARITY-AUDIT.md](PARITY-AUDIT.md) | tRPC → REST mapping (~100%) |

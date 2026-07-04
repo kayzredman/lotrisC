@@ -2,7 +2,7 @@
 
 > **Branch:** `dev` @ `607a8fd` (pushed to `origin/dev`)  
 > **Tenant (dev):** Lotris Digital Setup — `701fc546-342b-4b80-82e1-24b152044161`  
-> **Companion:** [PHASE-8-RESEARCH.md](PHASE-8-RESEARCH.md), [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md), [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md)
+> **Companion:** [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md), [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md), [BRD.md](BRD.md)
 
 This document captures Phase 8 implementation: Intelligence & AI Setup, Knowledge Base + RAG, Reports, RCA workflow, on-prem entitlements, and parity fixes.
 
@@ -203,7 +203,7 @@ Run against local MSSQL (`lotris` / `sa` / `Lotris@Dev2024!`) unless env overrid
 
 | Script | Command | Seeds |
 |--------|---------|-------|
-| Digital setup | `pnpm seed:digital` | Tenant, teams, users from `docs/TEAMLIST.xlsx`, demo tickets |
+| Digital setup | `pnpm seed:digital` | Tenant, teams, users from local `docs/TEAMLIST.xlsx`, demo tickets — see [TEAMLIST.README.md](TEAMLIST.README.md) |
 | Knowledge samples | `node scripts/seed-knowledge-samples.mjs` | 3 `Knowledge_Articles` + chunks (Ask Knowledge Base) |
 | Problems demo | `node scripts/seed-problems-demo.mjs` | 3 problems + RCAs + 2 known errors |
 
