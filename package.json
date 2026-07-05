@@ -22,6 +22,10 @@
     "gate:queue": "dotnet test src/Lotris.Tests.Integration/Lotris.Tests.Integration.csproj --filter QueueEngineGateTests -m:1",
     "gate:etl": "bash scripts/gate-etl.sh",
     "onprem:smoke": "bash scripts/onprem-smoke.sh",
+    "mobile:check": "bash scripts/mobile-dev-prep.sh",
+    "mobile:phase0": "bash scripts/mobile-phase0.sh --ensure-api",
+    "mobile:start": "pnpm --filter @lotris/mobile start",
+    "mobile:android": "pnpm --filter @lotris/mobile android",
     "seed:digital": "node scripts/seed-lotris-digital-setup.mjs"
   },
   "devDependencies": {

@@ -220,6 +220,7 @@ See [deploy/INSTALL.md](../deploy/INSTALL.md).
 
 | Doc | Purpose |
 |-----|---------|
+| [GLOSSARY.md](GLOSSARY.md) | **Abbreviations & terms** — SSE, JWT, SLA, ETL, etc. |
 | [BRD.md](BRD.md) | **Business requirements** — as-built scope & sign-off |
 | [IT-HANDOVER.md](IT-HANDOVER.md) | **CIO/IT handover** — install, ops, security |
 | [PROJECT-CLOSEOUT.md](PROJECT-CLOSEOUT.md) | Repo hygiene checklist before closeout |
@@ -228,6 +229,7 @@ See [deploy/INSTALL.md](../deploy/INSTALL.md).
 | [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md) | Customer Entra + Copilot deploy |
 | [PARITY-AUDIT.md](PARITY-AUDIT.md) | tRPC → REST mapping (~100%) |
 | [MOBILE-PAGER-SCOPE.md](MOBILE-PAGER-SCOPE.md) | **Mobile Pager** — management pitch / change board (proposed) |
+| [MOBILE-IMPLEMENTATION-PHASES.md](MOBILE-IMPLEMENTATION-PHASES.md) | **Mobile Pager** — phased build plan + prerequisites |
 | Shareable HTML/PDF | `pnpm docs:release:pdf` → `docs/dist/index.html` |
 | [REFACTOR.md](REFACTOR.md) | C# refactor phases & gate checklist |
 | [API.md](API.md) | REST endpoint index |

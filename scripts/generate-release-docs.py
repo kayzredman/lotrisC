@@ -12,7 +12,9 @@ OUT = ROOT / "docs" / "dist"
 MOCKUP_SRC = ROOT / "mockups" / "12-mobile-pager-pitch.html"
 
 DOCS = [
+    ("GLOSSARY.md", "Lotris — Glossary & Abbreviations"),
     ("MOBILE-PAGER-SCOPE.md", "Lotris Pager — Scope & Investment Proposal"),
+    ("MOBILE-IMPLEMENTATION-PHASES.md", "Lotris Pager — Phased Implementation Plan"),
     ("BRD.md", "Lotris — Business Requirements Document"),
     ("IT-HANDOVER.md", "Lotris — IT Handover Document"),
     ("PROJECT-CLOSEOUT.md", "Lotris — Project Closeout"),
@@ -91,6 +93,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <div class="toolbar">
     <strong>Lotris docs</strong>
     <a href="index.html">Index</a>
+    <a href="GLOSSARY.html">Glossary</a>
     <span class="sep">|</span>
     <a href="MOBILE-PAGER-SCOPE.html">Pager scope</a>
     <a href="mobile-pager-mockups.html">Mockups</a>
@@ -126,10 +129,16 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
   <h1>Lotris — Documentation pack</h1>
   <p>Generated for sharing (HTML + PDF). Regenerate: <code>pnpm docs:release:pdf</code></p>
 
-  <h2>Mobile Pager — management pitch <span class="badge">NEW</span></h2>
+  <h2>Reference</h2>
   <ul>
-    <li><a href="MOBILE-PAGER-SCOPE.html">Mobile Pager Scope &amp; Investment Proposal</a> <span class="desc">— change board / executive pitch (PDF available)</span></li>
-    <li><a href="mobile-pager-mockups.html">Interactive UI mockups</a> <span class="desc">— 6 phone screens for presentation</span></li>
+    <li><a href="GLOSSARY.html">Glossary &amp; Abbreviations</a> <span class="desc">— SSE, JWT, SLA, RCA, FCM, Entra, ETL, and all terms used in these docs (PDF available)</span></li>
+  </ul>
+
+  <h2>Mobile Pager <span class="badge">PROPOSED</span></h2>
+  <ul>
+    <li><a href="MOBILE-PAGER-SCOPE.html">Scope &amp; Investment Proposal</a> <span class="desc">— management / change board pitch</span></li>
+    <li><a href="MOBILE-IMPLEMENTATION-PHASES.html">Phased Implementation Plan</a> <span class="desc">— prerequisites, scaffold, build phases 0–5</span></li>
+    <li><a href="mobile-pager-mockups.html">Interactive UI mockups</a></li>
   </ul>
 
   <h2>Release &amp; operations</h2>

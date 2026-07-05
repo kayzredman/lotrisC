@@ -250,6 +250,7 @@ This document describes **the capabilities delivered and accepted** for producti
 
 | Document | Purpose |
 |----------|---------|
+| [GLOSSARY.md](GLOSSARY.md) | Abbreviations & terms (SSE, SLA, JWT, etc.) |
 | [IT-HANDOVER.md](IT-HANDOVER.md) | CIO / IT team — install, operations, security |
 | [deploy/INSTALL.md](../deploy/INSTALL.md) | On-prem installation |
 | [API.md](API.md) | REST API reference |

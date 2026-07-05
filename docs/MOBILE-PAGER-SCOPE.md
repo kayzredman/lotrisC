@@ -376,10 +376,12 @@ Both supported; documented in IT handover addendum on approval.
 
 | Document | Purpose |
 |----------|---------|
+| [GLOSSARY.md](GLOSSARY.md) | Abbreviations & terms used in this proposal |
 | [BRD.md](BRD.md) | Current platform business requirements |
 | [IT-HANDOVER.md](IT-HANDOVER.md) | Production architecture & on-prem install |
 | [API.md](API.md) | REST API index (130 operations) |
-| [mockups/12-mobile-pager-pitch.html](../mockups/12-mobile-pager-pitch.html) | Interactive UI mockups — open in browser for pitch |
+| [MOBILE-IMPLEMENTATION-PHASES.md](MOBILE-IMPLEMENTATION-PHASES.md) | Phased build plan (prerequisites → rollout) |
+| [mockups/12-mobile-pager-pitch.html](../mockups/12-mobile-pager-pitch.html) | Interactive UI mockups |
 | Shareable pack | Run `pnpm docs:release:pdf` → `docs/dist/` (HTML + PDF) |
 | [.cursor/plans/mobile_pager_app.plan.md](../.cursor/plans/mobile_pager_app.plan.md) | Technical planning notes |
 

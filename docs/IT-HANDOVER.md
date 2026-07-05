@@ -339,6 +339,7 @@ After API changes in development: `pnpm api:sync` refreshes spec and docs.
 
 | Need | Where to look |
 |------|---------------|
+| Abbreviations (SSE, JWT, ETL, …) | [GLOSSARY.md](GLOSSARY.md) |
 | Install | [deploy/INSTALL.md](../deploy/INSTALL.md) |
 | Business scope | [BRD.md](BRD.md) |
 | Entra / Copilot | [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md) |
