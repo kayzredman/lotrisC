@@ -9,17 +9,20 @@ public sealed class NotificationJob : INotificationJob
 {
     private readonly IEmailSender _email;
     private readonly INotificationPublisher _publisher;
+    private readonly IPushNotificationService _push;
     private readonly ITeamsNotifier _teams;
     private readonly ILogger<NotificationJob> _logger;
 
     public NotificationJob(
         IEmailSender email,
         INotificationPublisher publisher,
+        IPushNotificationService push,
         ITeamsNotifier teams,
         ILogger<NotificationJob> logger)
     {
         _email = email;
         _publisher = publisher;
+        _push = push;
         _teams = teams;
         _logger = logger;
     }
@@ -51,6 +54,10 @@ public sealed class NotificationJob : INotificationJob
                 if (payload.RecipientId.HasValue)
                 {
                     await PublishSseAsync(payload.RecipientId, payload, cancellationToken);
+                    if (payload.Type is "TICKET_ASSIGNED" or "TICKET_ESCALATED")
+                    {
+                        await SendPagerPushAsync(payload.RecipientId.Value, payload, cancellationToken);
+                    }
                 }
 
                 break;
@@ -154,12 +161,28 @@ public sealed class NotificationJob : INotificationJob
         if (payload.AssigneeId.HasValue)
         {
             await _publisher.PublishAsync(payload.AssigneeId.Value, ssePayload, cancellationToken);
+            await SendPagerPushAsync(payload.AssigneeId.Value, payload, cancellationToken);
         }
 
         if (payload.LeadId.HasValue)
         {
             await _publisher.PublishAsync(payload.LeadId.Value, ssePayload, cancellationToken);
+            await SendPagerPushAsync(payload.LeadId.Value, payload, cancellationToken);
         }
+    }
+
+    private async Task SendPagerPushAsync(
+        Guid userId,
+        NotificationPayload payload,
+        CancellationToken cancellationToken)
+    {
+        await _push.SendPagerAsync(new PagerPushMessage
+        {
+            UserId = userId,
+            EventType = payload.Type,
+            TicketRef = payload.TicketRef,
+            TicketId = payload.TicketId,
+        }, cancellationToken);
     }
 
     private Task PublishSseAsync(Guid? userId, NotificationPayload payload, CancellationToken cancellationToken)

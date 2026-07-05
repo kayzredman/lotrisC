@@ -26,10 +26,23 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#388bfd",
+          "defaultChannel": "lotris-pager-alerts"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c4e8f1a2-9b3d-4e5f-a6b7-8c9d0e1f2a3b"
+      }
     }
   }
 }

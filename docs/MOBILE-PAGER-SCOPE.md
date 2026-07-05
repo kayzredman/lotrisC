@@ -139,13 +139,15 @@ OpenAPI contract today: **130 operations** — mobile adds ~4.
 
 **Mockups:** Interactive HTML pitch deck at [`mockups/12-mobile-pager-pitch.html`](../mockups/12-mobile-pager-pitch.html)
 
-### 4.4 Push events (v1)
+### 4.4 Push events (v1) — pager-style delivery
 
-| Event | Push title (example) | Deep link |
-|-------|---------------------|-----------|
-| `TICKET_ASSIGNED` | "Ticket assigned — INC-1042" | Ticket detail |
-| `TICKET_ESCALATED` | "Escalated — INC-1042" | Ticket detail |
-| `SLA_WARNING` | "SLA warning — 15 min left" | Ticket detail |
+Alerts behave like a **traditional pager**: sound, vibration, and on-screen urgency — not a silent badge update.
+
+| Event | Push title (example) | Deep link | Pager behaviour |
+|-------|---------------------|-----------|-----------------|
+| `TICKET_ASSIGNED` | "Ticket assigned — INC-1042" | Ticket detail | Sound + vibrate + full-screen overlay (foreground) |
+| `TICKET_ESCALATED` | "Escalated — INC-1042" | Ticket detail | Same |
+| `SLA_WARNING` | "SLA warning — 15 min left" | Ticket detail | Same |
 
 Push body contains **reference only** — no sensitive description text until user unlocks app.
 

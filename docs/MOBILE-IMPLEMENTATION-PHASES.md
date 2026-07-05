@@ -271,33 +271,45 @@ Match mockups: [`mockups/12-mobile-pager-pitch.html`](../mockups/12-mobile-pager
 
 ---
 
-## Phase 3 — Push notifications
+## Phase 3 — Push notifications (pager-style)
 
-**Goal:** Phone wakes on assign / escalate / SLA warning.
+**Goal:** Phone wakes on assign / escalate / SLA warning — **sound, vibration, and on-screen alert** like a traditional pager.
 
-### 3.1 Backend
+### 3.1 Pager UX (engineer experience)
+
+| State | Behaviour |
+|-------|-----------|
+| **App in background / locked** | System notification: sound + vibration pattern + lock-screen banner (Android channel `lotris-pager-alerts`, iOS default sound) |
+| **App in foreground** | Full-screen **Pager Alert** overlay + vibration; optional system banner |
+| **Alerts tab** | In-app history of received alerts (tap → ticket detail) |
+| **Payload security** | Push body = ticket reference only; detail fetched after unlock |
+
+### 3.2 Backend
 
 | Deliverable | Details |
 |-------------|---------|
-| `device_tokens` table | user_id, platform, token, created_at |
+| `Device_Tokens` table | user_id, platform, token, created_at |
 | `POST /api/v1/devices/register` | Body: `{ platform, token }` |
 | `DELETE /api/v1/devices/{id}` | Logout / revoke |
-| `PushNotificationService` | FCM (Android) + APNs (iOS) |
-| Hook `NotificationJob` | After SSE, call push for `RecipientId` |
+| `ExpoPushNotificationService` | Expo push in dev; FCM/APNs path for production builds |
+| Hook `NotificationJob` | After SSE, dispatch push for assign / escalate / SLA |
 
 **Events:** `TICKET_ASSIGNED`, `TICKET_ESCALATED`, `SLA_WARNING`
 
-### 3.2 Mobile
+### 3.3 Mobile
 
 ```bash
 npx expo install expo-notifications expo-device
 ```
 
-- Request permission on first launch  
-- Register token after login → `POST /devices/register`  
-- Handle notification tap → deep link to ticket detail  
+- Request permission (sound + alerts) on login  
+- Android high-importance channel with vibration pattern  
+- Register Expo push token → `POST /devices/register`  
+- Foreground: `PagerAlertOverlay` + `Vibration.vibrate()`  
+- Notification tap → deep link to ticket detail  
+- **Me → Test pager alert (dev)** for UX verification without backend event  
 
-### 3.3 Customer IT prep (parallel)
+### 3.4 Customer IT prep (parallel)
 
 | Secret | Owner |
 |--------|-------|
@@ -305,14 +317,15 @@ npx expo install expo-notifications expo-device
 | APNs key (.p8) + Key ID + Team ID | Customer IT |
 | Env vars on Lotris API host | Platform team |
 
-### 3.4 Phase 3 exit checklist
+### 3.5 Phase 3 exit checklist
 
-- [ ] Assign ticket → push on physical device within 60s  
+- [ ] Assign ticket → push on physical device within 60s (sound + vibrate)  
+- [ ] Foreground alert shows full-screen pager overlay  
 - [ ] Tap notification opens correct ticket  
 - [ ] Push body has ref only (no sensitive description)  
 - [ ] Logout unregisters device token  
 
-**Note:** Push does **not** work in Expo Go for production FCM/APNs — use **development build**:
+**Note:** Remote push in **Expo Go** uses Expo push tokens. Production FCM/APNs uses a **development build**:
 
 ```bash
 npx expo install expo-dev-client
