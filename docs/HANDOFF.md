@@ -227,7 +227,8 @@ See [deploy/INSTALL.md](../deploy/INSTALL.md).
 | [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md) | Local dev AI + Qdrant setup |
 | [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md) | Customer Entra + Copilot deploy |
 | [PARITY-AUDIT.md](PARITY-AUDIT.md) | tRPC → REST mapping (~100%) |
-| [TOOLS.md](TOOLS.md) | `/ops`, scripts, `pnpm api:restart` |
+| [MOBILE-PAGER-SCOPE.md](MOBILE-PAGER-SCOPE.md) | **Mobile Pager** — management pitch / change board (proposed) |
+| Shareable HTML/PDF | `pnpm docs:release:pdf` → `docs/dist/index.html` |
 | [REFACTOR.md](REFACTOR.md) | C# refactor phases & gate checklist |
 | [API.md](API.md) | REST endpoint index |
 | [deploy/INSTALL.md](../deploy/INSTALL.md) | On-prem install |
