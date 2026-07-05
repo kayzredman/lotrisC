@@ -26,7 +26,7 @@ export default function LoginScreen() {
     setSubmitting(true);
     try {
       await login(email.trim(), password);
-      router.replace('/home');
+      router.replace('/(tabs)/my-work');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

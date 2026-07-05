@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '@/lib/auth-context';
 import { colors } from '@/lib/theme';
@@ -13,7 +13,11 @@ export default function RootLayout() {
           headerTintColor: colors.text,
           contentStyle: { backgroundColor: colors.bg },
         }}
-      />
+      >
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="ticket/[id]" options={{ title: 'Ticket' }} />
+      </Stack>
     </AuthProvider>
   );
 }
