@@ -106,6 +106,10 @@ public static class DependencyInjection
         services.AddScoped<IAdminRepository, DapperAdminRepository>();
         services.AddScoped<IOnboardingRepository, DapperOnboardingRepository>();
         services.AddScoped<IAuditLogRepository, DapperAuditLogRepository>();
+        services.AddScoped<IDeviceTokenRepository, DapperDeviceTokenRepository>();
+        services.AddScoped<IRefreshTokenRepository, DapperRefreshTokenRepository>();
+        services.AddScoped<IPushNotificationService, ExpoPushNotificationService>();
+        services.Configure<PushOptions>(configuration.GetSection(PushOptions.SectionName));
         services.AddScoped<ISystemHealthService, SystemHealthService>();
         services.AddHttpClient("health-probes", client =>
         {
@@ -141,6 +145,7 @@ public static class DependencyInjection
         services.AddHttpClient("ai-provider", c => c.Timeout = TimeSpan.FromSeconds(60));
         services.AddHttpClient("teams-webhook", c => c.Timeout = TimeSpan.FromSeconds(15));
         services.AddHttpClient("qdrant", c => c.Timeout = TimeSpan.FromSeconds(30));
+        services.AddHttpClient("expo-push", c => c.Timeout = TimeSpan.FromSeconds(15));
 
         if (!services.Any(d => d.ServiceType == typeof(IConnectionMultiplexer)))
         {

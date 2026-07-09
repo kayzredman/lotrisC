@@ -1,3 +1,3 @@
 namespace Lotris.Contracts.Auth;
 
-public record AuthResponse(string AccessToken, DateTime ExpiresAt, LotrisSession Session);
+public record AuthResponse(string AccessToken, string RefreshToken, DateTime ExpiresAt, LotrisSession Session);

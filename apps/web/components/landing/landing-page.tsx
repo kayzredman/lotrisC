@@ -259,7 +259,8 @@ function ReportsMockup() {
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
-  { label: 'Features', href: '#features' },
+  { label: 'Platform', href: '#platform' },
+  { label: 'Intelligence', href: '#intelligence' },
   { label: 'How it works', href: '#how-it-works' },
   { label: 'Security', href: '#security' },
 ] as const;
@@ -551,7 +552,7 @@ function HeroSection() {
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(79,70,229,0.15)', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 100, padding: '5px 14px', fontSize: 12, color: '#a5b4fc', fontWeight: 600, marginBottom: 20 }}
           >
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4f46e5', display: 'inline-block' }} />
-            On-prem ITSM · Private beta
+            On-prem ITSM · Production-ready
           </motion.div>
 
           <motion.h1
@@ -569,7 +570,7 @@ function HeroSection() {
             transition={{ duration: 0.6, delay: 0.22 }}
             style={{ fontSize: 'clamp(16px, 2vw, 17px)', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 28px', maxWidth: 480 }}
           >
-            Lotris structures tickets, SLAs, KPI agreements, and workload balancing for regulated IT teams.
+            Lotris structures tickets, SLAs, KPI agreements, workload balancing, and root-cause intelligence for regulated IT teams.
             Deploy on MSSQL with Entra ID, LDAP, or local identity — no cloud lock-in.
           </motion.p>
 
@@ -586,7 +587,7 @@ function HeroSection() {
             >
               Request access →
             </Link>
-            <a href="#features"
+            <a href="#platform"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', textDecoration: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600, border: '1px solid rgba(255,255,255,0.12)', transition: 'all 0.2s' }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
@@ -601,7 +602,7 @@ function HeroSection() {
             transition={{ delay: 0.45, duration: 0.6 }}
             className="flex flex-wrap gap-2 justify-center md:justify-start mb-4"
           >
-            {['MSSQL + Redis', 'Entra ID / LDAP', 'Docker on-prem', 'OpenAPI contract'].map((c) => (
+            {['MSSQL + Redis', 'Entra ID / LDAP', 'Docker on-prem', 'OpenAPI 3.1'].map((c) => (
               <TrustChip key={c}>{c}</TrustChip>
             ))}
           </motion.div>
@@ -612,7 +613,7 @@ function HeroSection() {
             transition={{ delay: 0.52, duration: 0.6 }}
             className="flex flex-wrap gap-2 justify-center md:justify-start mb-3"
           >
-            {['SLA queue engine', 'KPI agreements', 'Automated reports', 'System health'].map((c) => (
+            {['SLA queue engine', 'RCA & knowledge', 'KPI agreements', 'Ops & analytics'].map((c) => (
               <CapabilityPill key={c}>{c}</CapabilityPill>
             ))}
           </motion.div>
@@ -672,7 +673,7 @@ const painPoints = [
 
 function PainPointsSection() {
   return (
-    <section id="features" style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: '#fff' }}>
+    <section id="pain-points" style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: '#fff' }}>
       <div style={{ maxWidth: 1140, margin: '0 auto' }}>
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 64 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#4f46e5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Sound familiar?</div>
@@ -716,7 +717,7 @@ function PainPointsSection() {
             </div>
             <div style={{ padding: '22px 24px 26px' }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#4f46e5', margin: '0 0 8px', lineHeight: 1.3 }}>Lotris solves all of this.</h3>
-              <p style={{ fontSize: 13.5, color: '#6366f1', margin: '0 0 18px', lineHeight: 1.65 }}>One platform. Every ticket, every SLA, every KPI — structured, automated, and reported.</p>
+              <p style={{ fontSize: 13.5, color: '#6366f1', margin: '0 0 18px', lineHeight: 1.65 }}>One platform — tickets, SLAs, KPIs, RCA, and knowledge — structured, automated, and reported.</p>
               <Link href="/request-access" style={{ fontSize: 13, fontWeight: 600, color: '#4f46e5', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 Request access →
               </Link>
@@ -734,32 +735,32 @@ const features = [
   {
     tag: 'Ticket Management',
     title: 'Every ticket in its place. Every SLA tracked.',
-    body: 'From the moment a ticket arrives — via form, email, or API — it\'s automatically categorised, routed to the right team queue, and SLA timers start running. No ticket falls through the cracks.',
-    bullets: ['Priority-based queue ordering', 'Auto-assignment on SLA breach', 'Full audit trail & escalation flow'],
+    body: 'From the moment a ticket arrives — via web form, email-to-ticket, or API — it\'s categorised, routed to the right team queue, and SLA timers start running. Similar incidents surface automatically in the drawer.',
+    bullets: ['Priority-based queue ordering', 'Auto-assignment on SLA breach', 'Full audit trail, tasks & escalation'],
     mockup: <TicketQueueMockup />,
     flip: false,
   },
   {
     tag: 'KPI Dashboard',
     title: 'Real-time performance. No spreadsheets.',
-    body: 'Live KPI dashboards give every engineer, team lead, and executive exactly the metrics they need — SLA compliance, resolution rate, CSAT — updated in real time, not at month-end.',
-    bullets: ['Per-engineer & team-level metrics', 'Custom KPI targets with alerts', 'Historical trend charts built-in'],
+    body: 'Live KPI dashboards give every engineer, team lead, and executive the metrics they need — SLA compliance, resolution rate, MTTR — updated from MSSQL analytics rollups, not month-end exports.',
+    bullets: ['Per-engineer & team-level metrics', 'Custom KPI targets & trend alerts', 'Historical trend charts built-in'],
     mockup: <KpiDashboardMockup />,
     flip: true,
   },
   {
     tag: 'Workload Balancing',
     title: 'No engineer drowning, none sitting idle.',
-    body: 'Lotris enforces workload caps, visualises each engineer\'s capacity in real time, and automatically reassigns tickets when someone is overloaded — before you even notice.',
-    bullets: ['Max-ticket-per-engineer enforcement', 'Auto-reassign on overload', 'Visual capacity bars per team'],
+    body: 'Lotris enforces workload caps, visualises each engineer\'s capacity in real time, and surfaces rebalance suggestions — apply batch reassignment in one click before queues tip over.',
+    bullets: ['Max-ticket-per-engineer enforcement', 'One-click rebalance suggestions', 'Visual capacity bars per team'],
     mockup: <WorkloadMockup />,
     flip: false,
   },
   {
     tag: 'Automated Reports',
     title: 'Reports that write themselves.',
-    body: 'Quarterly performance reports, weekly SLA summaries, and on-demand exports — generated automatically and delivered to your inbox. No more manual compilation.',
-    bullets: ['Scheduled email delivery', 'PDF & CSV export', 'Multi-tenant isolation per org'],
+    body: 'Quarterly performance reports, weekly SLA summaries, and on-demand exports — generated automatically with optional AI narratives and delivered to your inbox. No more manual compilation.',
+    bullets: ['Scheduled email delivery (Hangfire)', 'PDF & Excel export', 'Multi-tenant isolation per org'],
     mockup: <ReportsMockup />,
     flip: true,
   },
@@ -767,7 +768,7 @@ const features = [
 
 function FeaturesSection() {
   return (
-    <section style={{ padding: 'clamp(48px,6vw,80px) clamp(20px,5vw,40px)', background: '#f8fafc' }}>
+    <section id="platform" style={{ padding: 'clamp(48px,6vw,80px) clamp(20px,5vw,40px)', background: '#f8fafc' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 80 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#4f46e5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>The Platform</div>
@@ -809,6 +810,318 @@ function FeaturesSection() {
             </motion.div>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+// ─── Intelligence Platform (Phase 8) ─────────────────────────────────────────
+
+const intelligenceFeatures = [
+  {
+    title: 'Problems register',
+    body: 'Track active investigations with draft → review → approve workflow. Link multiple tickets to one problem — not every ticket needs an RCA.',
+  },
+  {
+    title: 'RCA wizard',
+    body: 'Six-step guided root-cause analysis with taxonomy, CAPA tracking, and lead sign-off. AI-assisted suggestions when your provider is connected.',
+  },
+  {
+    title: 'Knowledge base & Q&A',
+    body: 'Published RCAs and articles become searchable knowledge. Ask questions in natural language — grounded answers from your own content via semantic search.',
+  },
+  {
+    title: 'AI report narratives',
+    body: 'Optional AI summaries on scheduled and on-demand reports. Connect OpenAI, Claude, Azure OpenAI, or Copilot — tenant-configurable with usage controls.',
+  },
+  {
+    title: 'Teams webhook alerts',
+    body: 'Route critical problem and SLA events to Microsoft Teams channels alongside email and in-app SSE notifications.',
+  },
+  {
+    title: 'Tenant feature toggles',
+    body: 'Enable intelligence capabilities per organisation. On-prem deployments can run without external AI — or connect providers when ready.',
+  },
+];
+
+function IntelligenceSection() {
+  return (
+    <section id="intelligence" style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: '#0c0e1a', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: '20%', right: '-10%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 64 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 14px', borderRadius: 20, border: '1px solid rgba(139,92,246,0.35)', background: 'rgba(139,92,246,0.1)', marginBottom: 18 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#c4b5fd', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Intelligence Platform</span>
+          </div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, color: '#fff', lineHeight: 1.15, letterSpacing: '-0.02em', margin: '0 0 16px' }}>
+            From repeat incidents<br />to published knowledge.
+          </h2>
+          <p style={{ fontSize: 15, color: '#64748b', margin: 0, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.65 }}>
+            Lotris doesn&apos;t stop at closing tickets. Critical and fatal incidents trigger structured problem management — investigations become searchable knowledge your team owns.
+          </p>
+        </motion.div>
+
+        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}
+        >
+          {intelligenceFeatures.map((f) => (
+            <motion.div key={f.title} variants={fadeUp}
+              whileHover={{ y: -4, borderColor: 'rgba(139,92,246,0.35)' }}
+              style={{ padding: '24px 22px', borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>{f.title}</div>
+              <p style={{ fontSize: 13.5, color: '#64748b', margin: 0, lineHeight: 1.65 }}>{f.body}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Beyond Tickets (ops surfaces) ────────────────────────────────────────────
+
+const opsFeatures = [
+  { title: 'Tasks', body: 'Non-ticket work items alongside your queue — assign, track, and close operational tasks without polluting the ticket backlog.' },
+  { title: 'Public intake', body: 'External requesters submit via /request — categorised, acknowledged by email, and routed into the right team queue automatically.' },
+  { title: 'Email-to-ticket', body: 'IMAP ingestion turns inbound support mail into structured tickets with category routing and SLA timers from the first message.' },
+  { title: 'Monitor wall', body: 'Unauthenticated NOC display at /monitor — live queue stats, SLA health, and breach counts for the ops floor or executive lobby.' },
+  { title: 'Ops dashboard', body: 'System health, Redis/MSSQL/Qdrant status, Analytics ETL job controls, and SSE live updates — all in one admin surface.' },
+  { title: 'Mobile pager', body: 'Expo-based iOS/Android thin client for push alerts, queue claim, and lead batch assign — extends Lotris beyond the desk (rolling out).' },
+];
+
+function OpsSurfacesSection() {
+  return (
+    <section style={{ padding: 'clamp(56px,8vw,100px) clamp(20px,5vw,40px)', background: '#fff' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 64 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#4f46e5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Beyond the ticket queue</div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, color: '#0f172a', lineHeight: 1.15, letterSpacing: '-0.02em', margin: '0 0 12px' }}>
+            Every surface your IT ops team needs.
+          </h2>
+          <p style={{ fontSize: 15, color: '#64748b', margin: 0, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+            Intake, monitoring, tasks, and mobile — not bolted on, built into the same MSSQL tenant and RBAC model.
+          </p>
+        </motion.div>
+
+        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}
+        >
+          {opsFeatures.map((f) => (
+            <motion.div key={f.title} variants={fadeUp}
+              style={{ padding: '22px 20px', borderRadius: 14, background: '#fafafa', border: '1px solid #f1f5f9' }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>{f.title}</div>
+              <p style={{ fontSize: 13, color: '#64748b', margin: 0, lineHeight: 1.65 }}>{f.body}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Mobile Pager ─────────────────────────────────────────────────────────────
+
+const pagerCapabilities = [
+  'Push alerts for assignment, escalation, and SLA warnings',
+  'Alerts inbox with full-screen in-app pager overlay',
+  'My Work tab sorted for fast ticket response',
+  'Queue claim and ticket detail updates from phone',
+  'Lead tab for workload-based batch assign',
+  'Biometric lock on app resume for shared/mobile environments',
+] as const;
+
+function PhoneShell({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ flex: '1 1 220px', minWidth: 220 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>
+        {label}
+      </div>
+      <div
+        style={{
+          borderRadius: 28,
+          background: '#0b1120',
+          padding: 10,
+          boxShadow: '0 24px 70px rgba(15,23,42,0.22)',
+          border: '1px solid rgba(148,163,184,0.22)',
+          maxWidth: 250,
+          margin: '0 auto',
+        }}
+      >
+        <div style={{ height: 18, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ width: 80, height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.10)' }} />
+        </div>
+        <div
+          style={{
+            background: 'linear-gradient(180deg, #111827 0%, #0f172a 100%)',
+            borderRadius: 22,
+            minHeight: 430,
+            padding: 14,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PagerAlertsMockup() {
+  return (
+    <PhoneShell label="Screen 1 · Alerts">
+      <div style={{ padding: '10px 12px', borderRadius: 14, background: 'rgba(79,70,229,0.16)', border: '1px solid rgba(99,102,241,0.26)' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#c4b5fd', marginBottom: 4 }}>PUSH ALERT</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>Ticket assigned</div>
+        <div style={{ fontSize: 12, color: '#cbd5e1', marginTop: 2 }}>INC-1042 · VPN disconnects after update</div>
+      </div>
+      <div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>Alerts</div>
+        <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Assignments, escalations, SLA warnings</div>
+      </div>
+      {[
+        ['Assigned to you', 'INC-1042', '2 min ago'],
+        ['SLA warning · 15 min', 'INC-1038', '8 min ago'],
+        ['Escalated', 'INC-1029', '1 hr ago'],
+      ].map(([type, ref, when], i) => (
+        <div
+          key={`${ref}-${when}`}
+          style={{
+            padding: '12px 12px',
+            borderRadius: 14,
+            background: i === 0 ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.04)',
+            border: i === 0 ? '1px solid rgba(99,102,241,0.25)' : '1px solid rgba(255,255,255,0.07)',
+          }}
+        >
+          <div style={{ fontSize: 10, fontWeight: 700, color: i === 0 ? '#a5b4fc' : '#94a3b8', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{type}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginTop: 4 }}>{ref}</div>
+          <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>{when}</div>
+        </div>
+      ))}
+      <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-around', fontSize: 11, color: '#94a3b8', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <span style={{ color: '#fff', fontWeight: 700 }}>Alerts</span>
+        <span>My Work</span>
+        <span>Queue</span>
+        <span>Me</span>
+      </div>
+    </PhoneShell>
+  );
+}
+
+function PagerMyWorkMockup() {
+  return (
+    <PhoneShell label="Screen 2 · My Work">
+      <div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>My Work</div>
+        <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>SLA-first triage on the move</div>
+      </div>
+      {[
+        ['INC-1042', 'HIGH', 'VPN disconnects after update', 'SLA 14m', '#ef4444'],
+        ['INC-1038', 'MED', 'Mailbox quota exceeded', 'SLA 22m', '#f59e0b'],
+        ['REQ-0881', 'LOW', 'New laptop setup', 'SLA 2h', '#22c55e'],
+      ].map(([ref, pri, title, sla, color]) => (
+        <div key={ref} style={{ padding: '12px 12px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{ref}</div>
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: color, borderRadius: 999, padding: '3px 8px' }}>{pri}</span>
+          </div>
+          <div style={{ fontSize: 13, color: '#e2e8f0', marginTop: 8, lineHeight: 1.45 }}>{title}</div>
+          <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 8 }}>{sla}</div>
+        </div>
+      ))}
+      <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
+        <div style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 10, background: '#4f46e5', color: '#fff', fontSize: 12, fontWeight: 700 }}>Open ticket</div>
+        <div style={{ flex: 1, textAlign: 'center', padding: '10px 0', borderRadius: 10, background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontSize: 12, fontWeight: 600, border: '1px solid rgba(255,255,255,0.08)' }}>Add comment</div>
+      </div>
+    </PhoneShell>
+  );
+}
+
+function PagerLeadMockup() {
+  return (
+    <PhoneShell label="Screen 3 · Lead">
+      <div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>Lead</div>
+        <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Workload-based rebalance suggestions</div>
+      </div>
+      <div style={{ padding: '12px 12px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#a5b4fc', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>TEAM LOAD</div>
+        {[
+          ['Ada Okafor', '7/8', '#f59e0b'],
+          ['Moses Bello', '3/8', '#22c55e'],
+          ['Tobi Cole', '9/8', '#ef4444'],
+        ].map(([name, load, color]) => (
+          <div key={name} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12 }}>
+            <span style={{ color: '#e2e8f0' }}>{name}</span>
+            <span style={{ color }}>{load}</span>
+          </div>
+        ))}
+      </div>
+      {[
+        'INC-1018 · Tobi Cole → Moses Bello',
+        'INC-1021 · Tobi Cole → Ada Okafor',
+      ].map((text) => (
+        <div key={text} style={{ padding: '12px 12px', borderRadius: 14, background: 'rgba(79,70,229,0.10)', border: '1px solid rgba(99,102,241,0.18)', fontSize: 12.5, color: '#e2e8f0' }}>
+          {text}
+        </div>
+      ))}
+      <div style={{ marginTop: 'auto', textAlign: 'center', padding: '11px 0', borderRadius: 10, background: '#4f46e5', color: '#fff', fontSize: 12, fontWeight: 700 }}>
+        Apply all
+      </div>
+    </PhoneShell>
+  );
+}
+
+function MobilePagerSection() {
+  return (
+    <section style={{ padding: 'clamp(64px,9vw,110px) clamp(20px,5vw,40px)', background: 'linear-gradient(135deg, #111827 0%, #0f172a 45%, #1e1b4b 100%)' }}>
+      <div style={{ maxWidth: 1140, margin: '0 auto' }}>
+        <div style={{ display: 'flex', gap: 48, alignItems: 'center', flexWrap: 'wrap', marginBottom: 52 }}>
+          <motion.div variants={fadeLeft} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ flex: '1 1 320px', minWidth: 280 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 14px', borderRadius: 20, border: '1px solid rgba(99,102,241,0.32)', background: 'rgba(99,102,241,0.10)', marginBottom: 18 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#c4b5fd', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Lotris Pager</span>
+            </div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, color: '#fff', lineHeight: 1.12, letterSpacing: '-0.02em', margin: '0 0 14px' }}>
+              Respond from anywhere,<br />not just from the desk.
+            </h2>
+            <p style={{ fontSize: 15, color: '#94a3b8', lineHeight: 1.7, margin: '0 0 24px', maxWidth: 520 }}>
+              Lotris Pager is the thin mobile client for engineers and team leads. It reuses the existing API, keeps the workflow focused, and surfaces the actions that matter most when a ticket cannot wait.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, marginBottom: 24 }}>
+              {pagerCapabilities.map((capability) => (
+                <div key={capability} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(99,102,241,0.18)', color: '#c4b5fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0, marginTop: 1 }}>✓</span>
+                  <span style={{ fontSize: 13.5, color: '#cbd5e1', lineHeight: 1.55 }}>{capability}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <Link href="/request-access" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#4f46e5', color: '#fff', textDecoration: 'none', padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 700 }}>
+                Request access
+              </Link>
+              <a href="/mockups/12-mobile-pager-pitch.html" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#e2e8f0', textDecoration: 'none', padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)' }}>
+                View full mobile mock
+              </a>
+            </div>
+          </motion.div>
+
+          <motion.div variants={fadeRight} initial="hidden" whileInView="visible" viewport={{ once: true }} style={{ flex: '1 1 420px', minWidth: 300 }}>
+            <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <PagerAlertsMockup />
+              <PagerMyWorkMockup />
+              <PagerLeadMockup />
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );
@@ -1055,21 +1368,28 @@ const steps = [
     img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&h=320&q=80',
     alt: 'Person submitting IT support ticket on laptop',
     title: 'Ticket Arrives',
-    body: 'Via web form, email, or API. Auto-categorised, routed to the right team queue, SLA timer starts.',
+    body: 'Via web form, email-to-ticket, or API. Auto-categorised, routed to the right team queue, SLA timer starts.',
   },
   {
     n: '02',
     img: 'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?auto=format&fit=crop&w=600&h=320&q=80',
     alt: 'IT professionals routing and assigning tickets on screens',
-    title: 'Auto-Routed & Assigned',
-    body: 'Lotris applies your routing rules, assigns the right engineer based on workload, and notifies them instantly.',
+    title: 'Routed & Worked',
+    body: 'Routing rules apply, engineers claim or get auto-assigned on SLA breach. Workload suggestions keep capacity balanced.',
   },
   {
     n: '03',
     img: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&h=320&q=80',
     alt: 'Team reviewing resolved tickets and KPI reports together',
-    title: 'Resolved & Reported',
-    body: 'Ticket resolved, KPIs updated in real time. Reports generated automatically and delivered to stakeholders.',
+    title: 'Resolved & Measured',
+    body: 'Ticket closed, KPIs updated from analytics rollups. Reports generated automatically — with optional AI narratives.',
+  },
+  {
+    n: '04',
+    img: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&h=320&q=80',
+    alt: 'Knowledge base and root cause documentation',
+    title: 'Learned & Published',
+    body: 'Critical incidents open a problem investigation. Approved RCAs publish to the knowledge base — searchable for the next time.',
   },
 ];
 
@@ -1127,7 +1447,7 @@ function PlatformPillarsSection() {
   const pillars = [
     {
       title: 'Structured ticketing',
-      body: 'Every ticket is categorised, routed, and tracked from intake to resolution — with SLA timers and a full audit trail.',
+      body: 'Every ticket is categorised, routed, and tracked from intake to resolution — with SLA timers, tasks, and a full audit trail.',
     },
     {
       title: 'Provable KPI performance',
@@ -1135,11 +1455,19 @@ function PlatformPillarsSection() {
     },
     {
       title: 'Balanced workloads',
-      body: 'Capacity limits and auto-reassignment keep queues fair so no engineer is overloaded while others sit idle.',
+      body: 'Capacity limits and rebalance suggestions keep queues fair — batch reassignment when engineers are overloaded.',
+    },
+    {
+      title: 'Root-cause intelligence',
+      body: 'Problems register, RCA wizard, and semantic knowledge search turn repeat incidents into published organisational learning.',
     },
     {
       title: 'On your infrastructure',
       body: 'Deploy with Docker on MSSQL and Redis. Integrate Entra ID, LDAP, or local identity — data stays in your environment.',
+    },
+    {
+      title: 'API-first integrations',
+      body: '130-operation OpenAPI 3.1 contract. Webhooks, email intake, Teams alerts, and SSE — extend without rewriting core logic.',
     },
   ];
 
@@ -1223,9 +1551,9 @@ function UseCasesSection() {
 
 function SecuritySection() {
   const items = [
-    { title: 'Self-hosted deployment', body: 'Run Lotris on your servers or private cloud — MSSQL, Redis, Docker.' },
-    { title: 'Enterprise identity', body: 'Entra ID, LDAP, or ASP.NET Identity with role-based access control.' },
-    { title: 'Audit & compliance', body: 'Full audit log, TLS in transit, and structured access policies.' },
+    { title: 'Self-hosted deployment', body: 'Run Lotris on your servers or private cloud — MSSQL, Redis, Docker. Optional Qdrant sidecar for semantic search.' },
+    { title: 'Enterprise identity', body: 'Entra ID OIDC, LDAP, or ASP.NET Identity with role-based access control across all modules.' },
+    { title: 'Audit & multi-tenancy', body: 'Immutable audit log, tenant isolation per organisation, TLS in transit, and structured access policies.' },
     { title: 'SOC 2 Type II', body: 'Certification in progress — we publish status updates as the program advances.' },
   ];
 
@@ -1282,7 +1610,7 @@ function CtaSection() {
             Ready to surface your performance?
           </h2>
           <p style={{ fontSize: 17, color: '#a5b4fc', margin: '0 0 40px', lineHeight: 1.6 }}>
-            Request access to the private beta. We&apos;ll walk you through deployment on your infrastructure and a product tour tailored to your team.
+            Request access to Lotris. We&apos;ll walk you through deployment on your infrastructure and a product tour tailored to your team.
           </p>
 
           {/* Email + CTA */}
@@ -1353,11 +1681,11 @@ function Footer() {
               <LotrisMark height={22} uid="footer" />
               <span style={{ fontSize: 15, fontWeight: 800, color: '#F8FAFC', letterSpacing: '-0.03em' }}>Lotris</span>
             </div>
-            <p style={{ fontSize: 12.5, color: '#475569', margin: 0, maxWidth: 240, lineHeight: 1.6 }}>Where performance surfaces. Enterprise IT Help Desk & KPI Management.</p>
+            <p style={{ fontSize: 12.5, color: '#475569', margin: 0, maxWidth: 240, lineHeight: 1.6 }}>Where performance surfaces. On-prem ITSM, KPI management, and root-cause intelligence.</p>
           </div>
           {/* Links */}
           {[
-            { label: 'Product', links: [{ text: 'Features', href: '#features' }, { text: 'How it works', href: '#how-it-works' }, { text: 'Security', href: '#security' }] },
+            { label: 'Product', links: [{ text: 'Platform', href: '#platform' }, { text: 'Intelligence', href: '#intelligence' }, { text: 'How it works', href: '#how-it-works' }, { text: 'Security', href: '#security' }, { text: 'Submit a ticket', href: '/request' }] },
             { label: 'Company', links: [{ text: 'About', href: '#' }, { text: 'Contact', href: '/request-access' }] },
             { label: 'Legal', links: [{ text: 'Privacy Policy', href: '#' }, { text: 'Terms of Service', href: '#' }] },
           ].map((col) => (
@@ -1375,7 +1703,7 @@ function Footer() {
           ))}
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 20, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontSize: 12, color: '#334155' }}>© 2026 Lotris · Private beta</span>
+          <span style={{ fontSize: 12, color: '#334155' }}>© 2026 Lotris · On-prem ITSM</span>
           <span style={{ fontSize: 12, color: '#334155' }}>TLS in transit · SOC 2 Type II in progress</span>
         </div>
       </div>
@@ -1393,6 +1721,9 @@ export function LandingPage() {
       <TrustStrip />
       <PainPointsSection />
       <FeaturesSection />
+      <IntelligenceSection />
+      <OpsSurfacesSection />
+      <MobilePagerSection />
       <KpiAgreementSection />
       <HowItWorksSection />
       <SecuritySection />

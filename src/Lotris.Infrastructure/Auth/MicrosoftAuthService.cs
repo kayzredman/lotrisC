@@ -62,7 +62,7 @@ public sealed class MicrosoftAuthService
             await EnsureMicrosoftLoginAsync(user, oid);
         }
 
-        return _tokenService.IssueToken(ToSession(user));
+        return await _tokenService.IssueTokenAsync(ToSession(user), cancellationToken);
     }
 
     private async Task<LotrisIdentityUser> ProvisionMicrosoftUserAsync(

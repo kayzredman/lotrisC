@@ -12,7 +12,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 API_DIR="$ROOT/src/Lotris.Api"
 PORT="${LOTRIS_API_PORT:-5153}"
+BIND="${LOTRIS_API_BIND:-0.0.0.0}"
 BASE_URL="${LOTRIS_API_URL:-http://localhost:$PORT}"
+LISTEN_URL="http://${BIND}:${PORT}"
 COMPOSE_FILE="$ROOT/docker/docker-compose.yml"
 LOG_FILE="${LOTRIS_API_LOG:-$ROOT/.lotris-api.log}"
 FOREGROUND=false
@@ -30,6 +32,7 @@ Options:
 
 Env:
   LOTRIS_API_PORT    API port (default: 5153)
+  LOTRIS_API_BIND    Listen address (default: 0.0.0.0 — use 127.0.0.1 for localhost-only)
   LOTRIS_API_URL     Health probe base URL (default: http://localhost:\$PORT)
   LOTRIS_API_LOG     Background log file (default: \$ROOT/.lotris-api.log)
   LOTRIS_API_WAIT_SEC  Health wait timeout seconds (default: 90)
@@ -46,7 +49,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo "=== Lotris API restart ==="
-echo "Port: $PORT"
+echo "Port: $PORT (bind: $BIND)"
 echo ""
 
 if [[ "$SKIP_DOCKER" != true ]]; then
@@ -77,12 +80,12 @@ cd "$API_DIR"
 
 if [[ "$FOREGROUND" == true ]]; then
   echo "Starting API in foreground…"
-  exec dotnet run --urls "http://localhost:$PORT" --no-launch-profile
+  exec dotnet run --urls "$LISTEN_URL" --no-launch-profile
 fi
 
 echo "Starting API in background (log: $LOG_FILE)…"
 : >"$LOG_FILE"
-nohup dotnet run --urls "http://localhost:$PORT" --no-launch-profile >>"$LOG_FILE" 2>&1 &
+nohup dotnet run --urls "$LISTEN_URL" --no-launch-profile >>"$LOG_FILE" 2>&1 &
 API_PID=$!
 echo "PID: $API_PID"
 

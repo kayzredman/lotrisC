@@ -5,5 +5,7 @@ namespace Lotris.Application.Auth;
 
 public interface IAuthTokenService
 {
-    AuthResponse IssueToken(LotrisSession session);
+    Task<AuthResponse> IssueTokenAsync(LotrisSession session, CancellationToken cancellationToken = default);
+    Task<AuthResponse?> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default);
+    Task RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
 }

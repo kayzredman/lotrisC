@@ -9,4 +9,6 @@ public class JwtOptions
     public string Audience { get; set; } = "lotris-api";
 
     public int ExpirationMinutes { get; set; } = 480;
+
+    public int RefreshExpirationDays { get; set; } = 30;
 }

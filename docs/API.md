@@ -123,7 +123,7 @@ Or one shot from repo root: `pnpm api:sync`
 
 <!-- API_ENDPOINTS:START -->
 
-_Auto-generated from `docs/openapi/v1.json` — **130 operations** across **106 paths**._
+_Auto-generated from `docs/openapi/v1.json` — **136 operations** across **112 paths**._
 
 ### Admin (14)
 
@@ -172,12 +172,14 @@ _Auto-generated from `docs/openapi/v1.json` — **130 operations** across **106 
 
 - `GET /api/v1/audit-logs`
 
-### Auth (5)
+### Auth (7)
 
 - `POST /api/v1/auth/login`
+- `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/microsoft/complete`
 - `GET /api/v1/auth/microsoft/login`
 - `GET /api/v1/auth/providers`
+- `POST /api/v1/auth/refresh`
 - `POST /api/v1/auth/register`
 
 ### Dashboard (5)
@@ -187,6 +189,13 @@ _Auto-generated from `docs/openapi/v1.json` — **130 operations** across **106 
 - `GET /api/v1/dashboard/summary`
 - `GET /api/v1/dashboard/team-workload`
 - `GET /api/v1/dashboard/ticket-analytics`
+
+### Devices (4)
+
+- `GET /api/v1/devices`
+- `POST /api/v1/devices/register`
+- `POST /api/v1/devices/test-push`
+- `DELETE /api/v1/devices/{id}`
 
 ### Health (8)
 

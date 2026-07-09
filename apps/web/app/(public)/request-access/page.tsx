@@ -17,8 +17,13 @@ const FEATURES = [
   },
   {
     dot: '#6366f1',
+    label: 'RCA & knowledge platform',
+    desc: 'Problems register, guided RCA wizard, and semantic knowledge search.',
+  },
+  {
+    dot: '#8b5cf6',
     label: 'Auto-assign & queue routing',
-    desc: 'BullMQ-powered routing puts the right ticket in the right hands.',
+    desc: 'Hangfire-powered routing with Redis mutex — right ticket, right engineer.',
   },
 ];
 

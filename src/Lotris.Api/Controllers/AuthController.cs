@@ -62,7 +62,7 @@ public class AuthController : ControllerBase
     {
         if (!IsMicrosoftOAuthReady())
         {
-            return RedirectToWebWithError(returnUrl ?? "/login", "Microsoft sign-in is not configured on this server.");
+            return RedirectWithOutcome(returnUrl ?? "/login", ("microsoft_error", "Microsoft sign-in is not configured on this server."));
         }
 
         var props = new AuthenticationProperties
@@ -80,18 +80,30 @@ public class AuthController : ControllerBase
         !string.IsNullOrWhiteSpace(_entraOptions.ClientSecret) &&
         !string.IsNullOrWhiteSpace(_entraOptions.TenantId);
 
-    private IActionResult RedirectToWebWithError(string returnUrl, string message)
+    private IActionResult RedirectWithOutcome(string returnUrl, params (string Key, string Value)[] parameters)
     {
         var webUrl = (_configuration["App:WebUrl"] ?? _configuration["Cors:AllowedOrigins"] ?? "http://localhost:3000")
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
+        var mobileScheme = _configuration["App:MobileScheme"] ?? "lotris-pager";
 
-        var path = returnUrl.StartsWith('/') ? returnUrl : $"/{returnUrl}";
-        var redirect = new UriBuilder(webUrl)
+        Uri target;
+        if (Uri.TryCreate(returnUrl, UriKind.Absolute, out var absolute)
+            && string.Equals(absolute.Scheme, mobileScheme, StringComparison.OrdinalIgnoreCase))
         {
-            Path = path.Split('?')[0],
-            Query = $"microsoft_error={Uri.EscapeDataString(message)}",
-        };
+            target = absolute;
+        }
+        else
+        {
+            var path = returnUrl.StartsWith('/') ? returnUrl : $"/{returnUrl}";
+            target = new Uri(new Uri(webUrl), path);
+        }
 
+        var queryPairs = parameters
+            .Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}");
+        var redirect = new UriBuilder(target)
+        {
+            Query = string.Join("&", queryPairs),
+        };
         return Redirect(redirect.Uri.ToString());
     }
 
@@ -117,14 +129,16 @@ public class AuthController : ControllerBase
 
         var webUrl = (_configuration["App:WebUrl"] ?? _configuration["Cors:AllowedOrigins"] ?? "http://localhost:3000")
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
+        var finalReturnUrl = returnUrl.StartsWith('/')
+            ? new Uri(new Uri(webUrl), "/auth/callback").ToString()
+            : returnUrl;
 
-        var redirect = new UriBuilder(webUrl)
-        {
-            Path = "/auth/callback",
-            Query = $"access_token={Uri.EscapeDataString(auth.AccessToken)}&expires_at={Uri.EscapeDataString(auth.ExpiresAt.ToString("O"))}&returnUrl={Uri.EscapeDataString(returnUrl)}",
-        };
-
-        return Redirect(redirect.Uri.ToString());
+        return RedirectWithOutcome(
+            finalReturnUrl,
+            ("access_token", auth.AccessToken),
+            ("refresh_token", auth.RefreshToken),
+            ("expires_at", auth.ExpiresAt.ToString("O")),
+            ("returnUrl", returnUrl));
     }
 
     [HttpPost("login")]
@@ -145,7 +159,7 @@ public class AuthController : ControllerBase
         }
 
         var session = ToSession(user);
-        return Ok(_tokenService.IssueToken(session));
+        return Ok(await _tokenService.IssueTokenAsync(session, cancellationToken));
     }
 
     [HttpPost("register")]
@@ -226,7 +240,32 @@ public class AuthController : ControllerBase
         }
 
         var session = ToSession(user);
-        return CreatedAtAction(nameof(Login), _tokenService.IssueToken(session));
+        return CreatedAtAction(nameof(Login), await _tokenService.IssueTokenAsync(session, cancellationToken));
+    }
+
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Refresh([FromBody] RefreshRequest request, CancellationToken cancellationToken)
+    {
+        var auth = await _tokenService.RefreshAsync(request.RefreshToken, cancellationToken);
+        return auth is null
+            ? Unauthorized(new { message = "Refresh token is invalid or expired." })
+            : Ok(auth);
+    }
+
+    [HttpPost("logout")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest? request, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(request?.RefreshToken))
+        {
+            await _tokenService.RevokeRefreshTokenAsync(request.RefreshToken, cancellationToken);
+        }
+
+        return NoContent();
     }
 
     private static LotrisSession ToSession(LotrisIdentityUser user) =>

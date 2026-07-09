@@ -15,6 +15,7 @@
     "api:sync": "pnpm api:export && pnpm api:docs && pnpm api:codegen",
     "docs:release": "python3 scripts/generate-release-docs.py",
     "docs:release:pdf": "python3 scripts/generate-release-docs.py --pdf",
+    "docs:marketing:ppt": "node scripts/generate-lotris-marketing-ppt.mjs",
     "web:dev-reset": "bash scripts/web-dev-reset.sh",
     "api:restart": "bash scripts/restart-api.sh",
     "smoke:phase5": "bash scripts/smoke-phase5.sh",
@@ -22,13 +23,25 @@
     "gate:queue": "dotnet test src/Lotris.Tests.Integration/Lotris.Tests.Integration.csproj --filter QueueEngineGateTests -m:1",
     "gate:etl": "bash scripts/gate-etl.sh",
     "onprem:smoke": "bash scripts/onprem-smoke.sh",
+    "mobile:check": "bash scripts/mobile-dev-prep.sh",
+    "mobile:phase0": "bash scripts/mobile-phase0.sh --ensure-api",
+    "mobile:start": "bash scripts/mobile-start.sh",
+    "mobile:start:clear": "bash scripts/mobile-start.sh --clear",
+    "mobile:start:tunnel": "bash scripts/mobile-start.sh --tunnel",
+    "mobile:url": "bash scripts/mobile-tunnel-url.sh --wait 5",
+    "mobile:logs": "bash scripts/mobile-logs.sh all",
+    "mobile:push:verify": "bash scripts/mobile-push-verify.sh",
+    "mobile:push:setup": "bash scripts/mobile-eas-setup.sh",
+    "mobile:smoke": "bash scripts/mobile-smoke.sh",
+    "mobile:android": "pnpm --filter @lotris/mobile android",
     "seed:digital": "node scripts/seed-lotris-digital-setup.mjs"
   },
   "devDependencies": {
-    "turbo": "^2.3.0",
-    "typescript": "^5.5.0",
+    "mssql": "^11.0.0",
+    "pptxgenjs": "^4.0.1",
     "prettier": "^3.3.0",
-    "mssql": "^11.0.0"
+    "turbo": "^2.3.0",
+    "typescript": "^5.5.0"
   },
   "packageManager": "pnpm@9.12.0",
   "engines": {

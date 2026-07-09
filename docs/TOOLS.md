@@ -289,6 +289,23 @@ Seeds 3 problems + RCAs (2 published) + 2 known errors.
 
 ---
 
+## Mobile Pager (`apps/mobile`)
+
+**Purpose:** Expo React Native engineer pager — alerts, tickets, queue, lead tools.
+
+| | |
+|---|---|
+| **Dev start** | `pnpm mobile:start` (LAN) or `pnpm mobile:start:tunnel` |
+| **API smoke** | `pnpm mobile:smoke` |
+| **EAS setup** | `pnpm mobile:push:setup` |
+| **Store handoff** | [MOBILE-ROLLOUT-HANDOFF.md](MOBILE-ROLLOUT-HANDOFF.md) |
+
+**Env:** `apps/mobile/.env` — `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_EAS_PROJECT_ID`.
+
+**Note:** Expo Go is fine for UI dev; real push needs an EAS build. Run Expo from **repo root**, not `apps/mobile` alone.
+
+---
+
 ## pnpm root scripts (quick reference)
 
 | Script | Command |
@@ -296,6 +313,10 @@ Seeds 3 problems + RCAs (2 published) + 2 known errors.
 | Dev (all packages) | `pnpm dev` |
 | API restart | `pnpm api:restart` |
 | Web dev reset | `pnpm web:dev-reset` |
+| Mobile start (LAN) | `pnpm mobile:start` |
+| Mobile start (tunnel) | `pnpm mobile:start:tunnel` |
+| Mobile API smoke | `pnpm mobile:smoke` |
+| Mobile EAS setup | `pnpm mobile:push:setup` |
 | Seed Lotris Digital Setup | `pnpm seed:digital` |
 | Phase 5 smoke | `pnpm smoke:phase5` |
 | ETL gate | `pnpm gate:etl` |
@@ -303,6 +324,7 @@ Seeds 3 problems + RCAs (2 published) + 2 known errors.
 | Queue engine gate | `pnpm gate:queue` |
 | OpenAPI export + docs + codegen | `pnpm api:sync` |
 | DB migrate | `pnpm db:migrate` |
+| Marketing PPT decks | `pnpm docs:marketing:ppt` |
 
 ---
 

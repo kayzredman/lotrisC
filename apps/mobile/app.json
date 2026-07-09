@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Lotris Pager",
+    "slug": "lotris-pager",
+    "version": "0.1.0",
+    "scheme": "lotris-pager",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.lotris.pager",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Unlock Lotris Pager when returning to the app."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#080A14",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.lotris.pager",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#4F46E5",
+          "defaultChannel": "lotris-pager-alerts"
+        }
+      ],
+      "expo-font",
+      "expo-asset",
+      "expo-local-authentication"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

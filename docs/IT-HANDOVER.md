@@ -164,6 +164,80 @@ All successful logins issue a **Lotris JWT** (`Authorization: Bearer …`) with 
 
 ---
 
+## 5.1 Mobile pager addendum
+
+The Expo mobile app lives in `apps/mobile` and targets the `Lotris.Api` REST surface directly.
+
+### Mobile auth model
+
+| Item | Detail |
+|------|--------|
+| Identity login | `POST /api/v1/auth/login` for local/on-prem users |
+| Microsoft login | `GET /api/v1/auth/microsoft/login?returnUrl=lotris-pager://...` |
+| Session model | Short-lived Lotris JWT + refresh token pair |
+| Secure storage | Expo SecureStore / OS keychain |
+| Logout | Revoke push device + `POST /api/v1/auth/logout` |
+
+**Refresh endpoint:** `POST /api/v1/auth/refresh`
+
+**Mobile deep-link scheme:** `lotris-pager://`
+
+### Required mobile configuration
+
+| Area | Requirement |
+|------|-------------|
+| API base URL | `EXPO_PUBLIC_API_URL=https://<public-lotris-host>` |
+| Mobile scheme | `App:MobileScheme=lotris-pager` on API host |
+| Entra callback on API | `Auth:Providers:Entra:CallbackPath=/api/v1/auth/microsoft/callback` |
+| Entra app registration | Add the API-hosted Microsoft callback plus the mobile deep link return URI flow used by Lotris |
+| TLS | Required for any off-LAN phone access and Microsoft sign-in |
+
+### Build and distribution
+
+Use **EAS development build** for device validation before handover, then **EAS production build** for MDM/TestFlight rollout.
+
+```bash
+pnpm mobile:push:setup
+pnpm mobile:start:tunnel
+
+# from apps/mobile when ready for distributable binaries
+npx eas build --profile preview --platform ios
+npx eas build --profile preview --platform android
+npx eas build --profile production --platform ios
+npx eas build --profile production --platform android
+```
+
+### Push prerequisites
+
+| Platform | Requirement |
+|----------|-------------|
+| iOS | APNs key/certificate in Expo/EAS project |
+| Android | FCM server credentials in Expo/EAS project |
+| API | `Device_Tokens` and `Refresh_Tokens` migrations applied |
+| App | User must allow notifications and complete sign-in |
+
+**Important:** Expo Go is acceptable for early UI work, but pre-handover validation must use an **EAS development or production build** so auth redirects, push, and device registration match the deployed app.
+
+### Mobile smoke gate before handover
+
+Run the API smoke first:
+
+```bash
+pnpm mobile:smoke
+```
+
+Then complete the device smoke on the target build:
+
+1. Sign in with identity login and, if enabled for the tenant, Microsoft sign-in.
+2. Background and resume the app with biometric lock enabled.
+3. Confirm the device appears under `GET /api/v1/devices`.
+4. Send a test push and verify sound, vibration, and pager overlay.
+5. Open the pushed ticket from the alert and verify authenticated detail fetch.
+6. If signed in as lead/admin, batch reassign from the Lead tab.
+7. Sign out and confirm device revoke plus refresh token invalidation.
+
+---
+
 ## 6. Data architecture
 
 ### 6.1 MSSQL schemas
@@ -296,6 +370,14 @@ bash scripts/onprem-smoke.sh
 
 Validates health, login, and analytics jobs API (9 checks).
 
+### 10.4.1 Mobile smoke test
+
+```bash
+pnpm mobile:smoke
+```
+
+Validates mobile-facing auth lifecycle, queue/ticket/device APIs, refresh-token rotation, and logout invalidation before mobile handover.
+
 ### 10.5 Upgrade procedure
 
 1. Backup MSSQL
@@ -303,7 +385,8 @@ Validates health, login, and analytics jobs API (9 checks).
 3. `docker compose … up -d --build`
 4. Watch API logs for migration completion
 5. Run smoke test
-6. Spot-check `/ops` and login
+6. Run mobile smoke if pager support is enabled
+7. Spot-check `/ops`, web login, and mobile login
 
 ---
 
@@ -316,6 +399,8 @@ Validates health, login, and analytics jobs API (9 checks).
 | Interactive docs | `/openapi` (Scalar) when enabled |
 | Public intake | `POST /api/v1/request` |
 | Public monitor stats | `GET /api/v1/monitor/stats` |
+| Mobile auth lifecycle | `/api/v1/auth/login`, `/refresh`, `/logout`, `/providers` |
+| Mobile push devices | `/api/v1/devices` |
 
 **Auth for integrations:** `POST /api/v1/auth/login` → use JWT on subsequent calls.
 
@@ -332,6 +417,7 @@ After API changes in development: `pnpm api:sync` refreshes spec and docs.
 | Load testing | No formal load test report; integration gates pass |
 | SaaS billing UI | Not included in on-prem build |
 | Offline LLM | Not supported |
+| Mobile MDM ownership | Customer IT must own APNs/FCM/EAS credentials for production rollout |
 
 ---
 
@@ -339,10 +425,13 @@ After API changes in development: `pnpm api:sync` refreshes spec and docs.
 
 | Need | Where to look |
 |------|---------------|
+| Abbreviations (SSE, JWT, ETL, …) | [GLOSSARY.md](GLOSSARY.md) |
 | Install | [deploy/INSTALL.md](../deploy/INSTALL.md) |
 | Business scope | [BRD.md](BRD.md) |
 | Entra / Copilot | [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md) |
 | Scripts & gates | [TOOLS.md](TOOLS.md) |
+| Mobile scope and rollout intent | [MOBILE-PAGER-SCOPE.md](MOBILE-PAGER-SCOPE.md) |
+| Mobile store / MDM continuation (internal teams) | [MOBILE-ROLLOUT-HANDOFF.md](MOBILE-ROLLOUT-HANDOFF.md) |
 | Repository | [github.com/kayzredman/lotrisC](https://github.com/kayzredman/lotrisC.git) |
 
 **Verification suite (for release QA):**
@@ -352,6 +441,7 @@ cd src && dotnet test
 pnpm smoke:phase5
 pnpm gate:etl
 pnpm onprem:smoke
+pnpm mobile:smoke
 ```
 
 ---
@@ -372,6 +462,11 @@ pnpm onprem:smoke
 | 10 | Monitor wall network access reviewed | Security | ☐ |
 | 11 | Runbook shared with on-call team | IT | ☐ |
 | 12 | BRD signed off by product owner | Business | ☐ |
+| 13 | EAS preview build installed on target devices | IT | ☐ |
+| 14 | APNs / FCM credentials configured for production project | IT | ☐ |
+| 15 | Mobile smoke passed on target build | IT / QA | ☐ |
+| 16 | Entra mobile sign-in tested with customer tenant (if enabled) | Identity team | ☐ |
+| 17 | MDM/TestFlight distribution steps documented for support desk | IT | ☐ |
 
 ---
 
