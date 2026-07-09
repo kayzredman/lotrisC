@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   action: {
-    backgroundColor: colors.accentMuted,
+    backgroundColor: colors.accent,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,

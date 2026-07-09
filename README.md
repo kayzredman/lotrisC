@@ -54,6 +54,7 @@ The system uses a **hybrid queue-based assignment model**: tickets are routed to
 - **Multi-Tenancy** — Each organisation is an isolated tenant with its own SLA and KPI config; `tenantId` filter on every query
 - **Operational & Performance Reports** — Ticket summaries, SLA compliance, queue reports, KPI reports
 - **Responsive Design + PWA** — Fully responsive across desktop, tablet, and mobile; installable as a Progressive Web App
+- **Mobile Pager (Expo)** — Engineer field app: alerts, my work, queue, lead assign, push, biometric lock (`apps/mobile`)
 - **System Health Monitoring** — Real-time SysAdmin ops dashboard showing live process status, queue depths, CPU/memory, and restart controls
 - **Monitor Wall** — Public ops screen (`/monitor`) with live ticket stats, animated priority ticker (top-20 tickets), and light/dark theme toggle; no authentication required
 - **Cross-Team Access Grants** — Admins can grant read access across team boundaries without role changes
@@ -560,6 +561,9 @@ lotris/                          ← monorepo root
 | [docs/openapi/](docs/openapi/) | Committed OpenAPI 3.1 spec (`v1.json`) |
 | [src/README.md](src/README.md) | C# backend — local run, config, `pnpm api:sync` |
 | [docs/HANDOFF.md](docs/HANDOFF.md) | Current branch state, smoke gates, quick commands |
+| [docs/MOBILE-PAGER-SCOPE.md](docs/MOBILE-PAGER-SCOPE.md) | Mobile pager product scope |
+| [docs/MOBILE-IMPLEMENTATION-PHASES.md](docs/MOBILE-IMPLEMENTATION-PHASES.md) | Mobile phased build plan |
+| [docs/MOBILE-ROLLOUT-HANDOFF.md](docs/MOBILE-ROLLOUT-HANDOFF.md) | Mobile store/MDM continuation (internal teams) |
 | [docs/CONTEXT.md](docs/CONTEXT.md) | Full product brief, goals, users, KPIs, tech stack |
 | [docs/REFACTOR.md](docs/REFACTOR.md) | **C# backend refactor, on-prem roadmap, parity checklist** |
 | [docs/DATABASE-STRATEGY.md](docs/DATABASE-STRATEGY.md) | Analytics DB decision framework (Postgres vs MSSQL — open) |

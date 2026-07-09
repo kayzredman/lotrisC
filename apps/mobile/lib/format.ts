@@ -1,11 +1,11 @@
 import { colors } from './theme';
 
 const STATUS_COLORS: Record<string, string> = {
-  NEW: colors.muted,
-  TEAM_ASSIGNED: colors.accent,
-  UNASSIGNED: '#d29922',
-  ASSIGNED: colors.accent,
-  IN_PROGRESS: '#a371f7',
+  NEW: colors.mutedLight,
+  TEAM_ASSIGNED: colors.accentLight,
+  UNASSIGNED: colors.warning,
+  ASSIGNED: colors.accentLight,
+  IN_PROGRESS: colors.inProgress,
   ESCALATED: colors.danger,
   RESOLVED: colors.success,
   CLOSED: colors.muted,

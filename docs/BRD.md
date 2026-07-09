@@ -176,6 +176,18 @@ This document describes **the capabilities delivered and accepted** for producti
 | FR-O-04 | Analytics & ETL Jobs panel on `/ops` | ✅ |
 | FR-O-05 | In-app notification SSE | ✅ |
 
+### 5.9 Mobile pager
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| FR-M-01 | Expo mobile app for Alerts, My Work, Queue, Lead, and Me surfaces | ✅ |
+| FR-M-02 | Secure sign-in with Lotris JWT plus refresh-token rotation | ✅ |
+| FR-M-03 | Optional Microsoft Entra mobile sign-in via API-hosted OAuth callback and app deep link | ✅ |
+| FR-M-04 | Push device registration, revoke on logout, and test push support | ✅ |
+| FR-M-05 | Team lead batch reassignment from mobile | ✅ |
+| FR-M-06 | Biometric lock on app resume | ✅ |
+| FR-M-07 | Pre-handover mobile smoke covering auth lifecycle and mobile-facing APIs | ✅ |
+
 ---
 
 ## 6. Non-functional requirements
@@ -198,6 +210,7 @@ This document describes **the capabilities delivered and accepted** for producti
 | Journey | Steps | Acceptance |
 |---------|-------|------------|
 | **Daily engineer** | Login → queue → claim ticket → work → resolve → close | Ticket FSM and notifications work |
+| **Mobile engineer** | Sign in on phone → receive alert → open ticket → update status → sign out | Push, auth, and secure storage work |
 | **Team lead** | Review workload → batch reassign → monitor SLA warnings | Analytics and queue tools available |
 | **IT manager** | Define KPI → assign → run report → schedule email | KPI + reports end-to-end |
 | **Admin install** | Configure `.env` → Compose up → bootstrap → smoke | `pnpm onprem:smoke` 9/9 |
@@ -217,6 +230,7 @@ This document describes **the capabilities delivered and accepted** for producti
 | SSE gate | `pnpm gate:sse` | ✅ |
 | ETL gate | `pnpm gate:etl` | ✅ 7 checks |
 | On-prem smoke | `pnpm onprem:smoke` (clean rebuild) | ✅ 9 checks incl. analytics |
+| Mobile smoke | `pnpm mobile:smoke` | ✅ Auth + queue + device lifecycle |
 | OpenAPI sync | `pnpm api:sync` | ✅ 130 operations |
 
 ---

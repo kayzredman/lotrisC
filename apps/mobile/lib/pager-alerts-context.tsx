@@ -23,6 +23,8 @@ interface PagerAlertsContextValue {
   alerts: PagerAlert[];
   activeAlert: PagerAlert | null;
   pushEnabled: boolean;
+  pushError: string | null;
+  retryPushRegistration: () => void;
   dismissActive: () => void;
   markRead: (id: string) => void;
   testPagerAlert: () => void;
@@ -35,6 +37,34 @@ export function PagerAlertsProvider({ children }: { children: ReactNode }) {
   const [alerts, setAlerts] = useState<PagerAlert[]>([]);
   const [activeAlert, setActiveAlert] = useState<PagerAlert | null>(null);
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushError, setPushError] = useState<string | null>(null);
+
+  const registerPush = useCallback(async (token: string) => {
+    setPushError(null);
+    const granted = await setupPagerNotifications();
+    if (!granted) {
+      setPushEnabled(false);
+      setPushError('Notification permission denied');
+      return;
+    }
+
+    const pushResult = await getExpoPushToken();
+    if (!pushResult.ok) {
+      setPushEnabled(false);
+      setPushError(pushResult.reason);
+      return;
+    }
+
+    try {
+      const device = await registerDevice(pushResult.token, token, 'Lotris Pager');
+      await SecureStore.setItemAsync(DEVICE_ID_KEY, device.id);
+      setPushEnabled(true);
+      setPushError(null);
+    } catch (err) {
+      setPushEnabled(false);
+      setPushError(err instanceof Error ? err.message : 'Device registration failed');
+    }
+  }, []);
 
   const handleIncoming = useCallback((title: string, body: string, data: Record<string, unknown>) => {
     const alert = alertFromNotification(data, title, body);
@@ -44,40 +74,13 @@ export function PagerAlertsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void setupPagerNotifications().then(setPushEnabled);
+    void setupPagerNotifications();
   }, []);
 
   useEffect(() => {
     if (!accessToken) return;
-
-    let cancelled = false;
-
-    (async () => {
-      const granted = await setupPagerNotifications();
-      if (!granted || cancelled) return;
-
-      const pushToken = await getExpoPushToken();
-      if (!pushToken || cancelled) return;
-
-      try {
-        const device = await registerDevice(
-          pushToken,
-          accessToken,
-          'Lotris Pager',
-        );
-        if (!cancelled) {
-          await SecureStore.setItemAsync(DEVICE_ID_KEY, device.id);
-          setPushEnabled(true);
-        }
-      } catch {
-        // push registration optional in dev
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken]);
+    void registerPush(accessToken);
+  }, [accessToken, registerPush]);
 
   useEffect(() => {
     const received = Notifications.addNotificationReceivedListener((n) => {
@@ -116,16 +119,22 @@ export function PagerAlertsProvider({ children }: { children: ReactNode }) {
     });
   }, [handleIncoming]);
 
+  const retryPushRegistration = useCallback(() => {
+    if (accessToken) void registerPush(accessToken);
+  }, [accessToken, registerPush]);
+
   const value = useMemo(
     () => ({
       alerts,
       activeAlert,
       pushEnabled,
+      pushError,
+      retryPushRegistration,
       dismissActive,
       markRead,
       testPagerAlert,
     }),
-    [alerts, activeAlert, pushEnabled, dismissActive, markRead, testPagerAlert],
+    [alerts, activeAlert, pushEnabled, pushError, retryPushRegistration, dismissActive, markRead, testPagerAlert],
   );
 
   return (

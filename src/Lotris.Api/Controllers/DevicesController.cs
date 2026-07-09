@@ -12,10 +12,14 @@ namespace Lotris.Api.Controllers;
 public sealed class DevicesController : ControllerBase
 {
     private readonly IDeviceTokenRepository _devices;
+    private readonly IPushNotificationService _push;
 
-    public DevicesController(IDeviceTokenRepository devices)
+    public DevicesController(
+        IDeviceTokenRepository devices,
+        IPushNotificationService push)
     {
         _devices = devices;
+        _push = push;
     }
 
     /// <summary>Register Expo / FCM / APNs token for pager push.</summary>
@@ -56,6 +60,30 @@ public sealed class DevicesController : ControllerBase
         var session = HttpContext.GetLotrisSession();
         var ok = await _devices.RevokeAsync(id, session.UserId, cancellationToken);
         return ok ? NoContent() : NotFound(new { message = "Device not found." });
+    }
+
+    /// <summary>Send a test pager push to all registered devices (dev verification).</summary>
+    [HttpPost("test-push")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> TestPush(CancellationToken cancellationToken)
+    {
+        var session = HttpContext.GetLotrisSession();
+        var devices = await _devices.ListActiveForUserAsync(session.UserId, cancellationToken);
+        if (devices.Count == 0)
+        {
+            return NotFound(new { message = "No registered devices. Open the app, allow notifications, and sign in." });
+        }
+
+        await _push.SendPagerAsync(new PagerPushMessage
+        {
+            UserId = session.UserId,
+            EventType = "TICKET_ASSIGNED",
+            TicketRef = "PUSH-TEST",
+            Title = "Lotris Pager test",
+        }, cancellationToken);
+
+        return Ok(new { message = $"Test push sent to {devices.Count} device(s)." });
     }
 
     /// <summary>List active devices for current user.</summary>

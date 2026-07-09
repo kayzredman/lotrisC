@@ -103,6 +103,13 @@ if [[ -n "$LAN_IP" ]]; then
   else
     note "LAN IP $LAN_IP — API not reachable (pnpm api:restart)"
   fi
+  if curl -sf --connect-timeout 3 "http://${LAN_IP}:8081/status" >/dev/null 2>&1; then
+    ok "Metro reachable http://${LAN_IP}:8081 (Expo Go LAN mode)"
+  elif ss -tlnp 2>/dev/null | grep -q ':8081'; then
+    note "Metro on :8081 but LAN probe failed — try pnpm mobile:start:tunnel"
+  else
+    note "Metro not running — pnpm mobile:start"
+  fi
 else
   note "Could not detect LAN IP — phone must reach PC API over Wi-Fi"
 fi

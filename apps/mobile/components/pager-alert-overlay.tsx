@@ -1,5 +1,6 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { LotrisMark } from '@/components/lotris-mark';
 import type { PagerAlert } from '@/lib/pager-types';
 import { colors } from '@/lib/theme';
 
@@ -22,7 +23,10 @@ export default function PagerAlertOverlay({ alert, onDismiss }: Props) {
     <Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.badge}>PAGER ALERT</Text>
+          <View style={styles.brandRow}>
+            <LotrisMark size="sm" />
+            <Text style={styles.badge}>PAGER ALERT</Text>
+          </View>
           <Text style={styles.title}>{alert.title}</Text>
           <Text style={styles.body}>{alert.body}</Text>
           <Text style={styles.meta}>{alert.eventType.replace(/_/g, ' ')}</Text>
@@ -58,8 +62,13 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 10,
   },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   badge: {
-    color: colors.accent,
+    color: colors.accentLight,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.5,
@@ -83,7 +92,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   primary: {
-    backgroundColor: colors.accentMuted,
+    backgroundColor: colors.accent,
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',

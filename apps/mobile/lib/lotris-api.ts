@@ -21,13 +21,21 @@ export interface ApiFetchOptions {
   method?: string;
   body?: unknown;
   token?: string | null;
+  skipAuthRefresh?: boolean;
+  _retryWithFreshToken?: boolean;
+}
+
+let authRefreshHandler: (() => Promise<string | null>) | null = null;
+
+export function setAuthRefreshHandler(handler: (() => Promise<string | null>) | null) {
+  authRefreshHandler = handler;
 }
 
 export async function apiFetch<T>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
-  const { method = 'GET', body, token } = options;
+  const { method = 'GET', body, token, skipAuthRefresh = false, _retryWithFreshToken = false } = options;
   const headers: Record<string, string> = {};
 
   if (body !== undefined) {
@@ -42,6 +50,19 @@ export async function apiFetch<T>(
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+
+  if (
+    res.status === 401 &&
+    token &&
+    !skipAuthRefresh &&
+    !_retryWithFreshToken &&
+    authRefreshHandler
+  ) {
+    const freshToken = await authRefreshHandler();
+    if (freshToken && freshToken !== token) {
+      return apiFetch<T>(path, { ...options, token: freshToken, _retryWithFreshToken: true });
+    }
+  }
 
   if (!res.ok) {
     const text = await res.text();

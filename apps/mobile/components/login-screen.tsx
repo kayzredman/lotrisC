@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -10,16 +10,34 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
+import { LotrisMark } from '@/components/lotris-mark';
 import { useAuth } from '@/lib/auth-context';
-import { API_BASE } from '@/lib/lotris-api';
+import { apiFetch, API_BASE } from '@/lib/lotris-api';
 import { colors } from '@/lib/theme';
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, loginWithMicrosoft } = useAuth();
   const [email, setEmail] = useState('admin-loose@test.local');
   const [password, setPassword] = useState('Test1234!');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [microsoftEnabled, setMicrosoftEnabled] = useState(false);
+  const [microsoftSubmitting, setMicrosoftSubmitting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void apiFetch<{ microsoft?: boolean }>('/api/v1/auth/providers', { skipAuthRefresh: true })
+      .then((providers) => {
+        if (!cancelled) setMicrosoftEnabled(Boolean(providers.microsoft));
+      })
+      .catch(() => {
+        if (!cancelled) setMicrosoftEnabled(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function onSubmit() {
     setError(null);
@@ -34,15 +52,30 @@ export default function LoginScreen() {
     }
   }
 
+  async function onMicrosoftSubmit() {
+    setError(null);
+    setMicrosoftSubmitting(true);
+    try {
+      await loginWithMicrosoft();
+      router.replace('/(tabs)/my-work');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Microsoft sign-in failed');
+    } finally {
+      setMicrosoftSubmitting(false);
+    }
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.card}>
-        <Text style={styles.badge}>LOTRIS PAGER</Text>
+        <View style={styles.brandRow}>
+          <LotrisMark size="lg" showWordmark />
+        </View>
         <Text style={styles.title}>Sign in</Text>
-        <Text style={styles.subtitle}>Engineer field response · Phase 1 spike</Text>
+        <Text style={styles.subtitle}>Engineer field response for Lotris mobile pager</Text>
         <Text style={styles.apiHint}>API: {API_BASE}</Text>
 
         <Text style={styles.label}>Email</Text>
@@ -78,6 +111,27 @@ export default function LoginScreen() {
             <Text style={styles.buttonText}>Sign in</Text>
           )}
         </Pressable>
+
+        {microsoftEnabled ? (
+          <>
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+            <Pressable
+              style={[styles.microsoftButton, microsoftSubmitting && styles.buttonDisabled]}
+              onPress={onMicrosoftSubmit}
+              disabled={microsoftSubmitting}
+            >
+              {microsoftSubmitting ? (
+                <ActivityIndicator color={colors.text} />
+              ) : (
+                <Text style={styles.microsoftButtonText}>Sign in with Microsoft</Text>
+              )}
+            </Pressable>
+          </>
+        ) : null}
       </View>
     </KeyboardAvoidingView>
   );
@@ -98,11 +152,9 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 8,
   },
-  badge: {
-    color: colors.accent,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.2,
+  brandRow: {
+    alignItems: 'center',
+    marginBottom: 8,
   },
   title: {
     color: colors.text,
@@ -141,7 +193,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   button: {
-    backgroundColor: colors.accentMuted,
+    backgroundColor: colors.accent,
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
@@ -153,6 +205,35 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 8,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    color: colors.muted,
+    fontSize: 12,
+    textTransform: 'uppercase',
+  },
+  microsoftButton: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  microsoftButtonText: {
+    color: colors.text,
+    fontSize: 15,
     fontWeight: '600',
   },
 });

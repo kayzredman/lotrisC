@@ -162,9 +162,10 @@ public class LegacyMssqlMigrator
                 continue;
             }
 
-            // Database was provisioned before tracking existed — mark older scripts as applied.
-            if (migrationId.StartsWith("0010_", StringComparison.Ordinal) ||
-                migrationId.StartsWith("0011_", StringComparison.Ordinal))
+            // Only backfill foundational scripts (0001–0009) from pre-tracking DBs.
+            // Newer migrations must run through the normal apply loop.
+            var prefix = migrationId.Length >= 4 ? migrationId[..4] : "";
+            if (!int.TryParse(prefix, out var num) || num > 9)
             {
                 continue;
             }

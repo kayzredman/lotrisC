@@ -224,7 +224,7 @@ export function LoginBrandingPanel() {
           </div>
           <div className={styles.featureText}>
             <h4>Real-Time KPI Dashboards</h4>
-            <p>Monitor resolution rates, CSAT, and agent performance with live data.</p>
+            <p>Monitor SLA compliance, resolution rates, and agent performance with live data.</p>
           </div>
         </div>
         <div className={styles.panelFeature}>
@@ -248,8 +248,8 @@ export function LoginBrandingPanel() {
           <div className={styles.panelStatLbl}>SLA rate</div>
         </div>
         <div className={styles.panelStat}>
-          <div className={styles.panelStatVal}>4.7</div>
-          <div className={styles.panelStatLbl}>Avg CSAT</div>
+          <div className={styles.panelStatVal}>2.4h</div>
+          <div className={styles.panelStatLbl}>Avg MTTR</div>
         </div>
       </div>
 

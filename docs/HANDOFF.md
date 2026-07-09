@@ -1,7 +1,8 @@
 # Lotris — Machine migration & session handoff
 
 > **Last updated:** July 2026  
-> **Branch:** `dev` @ `7b913d1` · **`main` merged** (release complete)  
+> **Branch:** `dev` — mobile pager Phases 0–4 dev-complete; store rollout deferred  
+> **`main`:** merge from `dev` after certification (see [GIT-WORKFLOW.md](GIT-WORKFLOW.md))  
 > **Repo:** [github.com/kayzredman/lotrisC](https://github.com/kayzredman/lotrisC.git)  
 > **Purpose:** Developer machine migration. For customer IT use [IT-HANDOVER.md](IT-HANDOVER.md); for business sign-off use [BRD.md](BRD.md).
 
@@ -54,9 +55,31 @@ If Next.js is stale after switching machines: `pnpm web:dev-reset`.
 
 ---
 
-## 3. Where we left off (Phase 8)
+## 3. Where we left off
 
-**Status:** Phase 8 **MVP + 8.1 + 8.2 complete**; **ETL gate complete**; **merged to `main`**. OpenAPI synced (130 operations).
+### Mobile Pager (`apps/mobile`) — July 2026
+
+**Status:** **Dev-complete** for internal pilot. **App Store / Play / MDM deferred** to internal teams with proprietary credentials.
+
+| Area | Status |
+|------|--------|
+| Expo app (Alerts, My Work, Queue, Lead, Me) | Done |
+| Refresh tokens + Entra mobile login | Done |
+| Push registration, biometric lock, lead batch assign | Done |
+| My Work `Work \| Today` stats + Lotris branding | Done |
+| API smoke | `pnpm mobile:smoke` |
+| EAS / store upload | See [MOBILE-ROLLOUT-HANDOFF.md](MOBILE-ROLLOUT-HANDOFF.md) |
+
+```bash
+pnpm api:restart
+pnpm mobile:start          # LAN — from repo root
+pnpm mobile:start:tunnel   # if LAN fails
+pnpm mobile:smoke
+```
+
+### Phase 8 (web/API)
+
+**Status:** Phase 8 **MVP + 8.1 + 8.2 complete**; **ETL gate complete**; **merged to `main`**. OpenAPI synced (130+ operations).
 
 ### ETL & analytics jobs (July 2026)
 
@@ -228,8 +251,9 @@ See [deploy/INSTALL.md](../deploy/INSTALL.md).
 | [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md) | Local dev AI + Qdrant setup |
 | [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md) | Customer Entra + Copilot deploy |
 | [PARITY-AUDIT.md](PARITY-AUDIT.md) | tRPC → REST mapping (~100%) |
-| [MOBILE-PAGER-SCOPE.md](MOBILE-PAGER-SCOPE.md) | **Mobile Pager** — management pitch / change board (proposed) |
-| [MOBILE-IMPLEMENTATION-PHASES.md](MOBILE-IMPLEMENTATION-PHASES.md) | **Mobile Pager** — phased build plan + prerequisites |
+| [MOBILE-PAGER-SCOPE.md](MOBILE-PAGER-SCOPE.md) | **Mobile Pager** — product scope |
+| [MOBILE-IMPLEMENTATION-PHASES.md](MOBILE-IMPLEMENTATION-PHASES.md) | **Mobile Pager** — phased build plan |
+| [MOBILE-ROLLOUT-HANDOFF.md](MOBILE-ROLLOUT-HANDOFF.md) | **Mobile Pager** — store/MDM handoff for internal teams |
 | Shareable HTML/PDF | `pnpm docs:release:pdf` → `docs/dist/index.html` |
 | [REFACTOR.md](REFACTOR.md) | C# refactor phases & gate checklist |
 | [API.md](API.md) | REST endpoint index |

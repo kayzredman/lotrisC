@@ -107,6 +107,7 @@ public static class DependencyInjection
         services.AddScoped<IOnboardingRepository, DapperOnboardingRepository>();
         services.AddScoped<IAuditLogRepository, DapperAuditLogRepository>();
         services.AddScoped<IDeviceTokenRepository, DapperDeviceTokenRepository>();
+        services.AddScoped<IRefreshTokenRepository, DapperRefreshTokenRepository>();
         services.AddScoped<IPushNotificationService, ExpoPushNotificationService>();
         services.Configure<PushOptions>(configuration.GetSection(PushOptions.SectionName));
         services.AddScoped<ISystemHealthService, SystemHealthService>();

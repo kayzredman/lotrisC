@@ -39,3 +39,21 @@ export function addTicketComment(token: string, ticketId: string, body: string) 
 export function fetchTicketComments(token: string, ticketId: string) {
   return apiFetch<TicketComment[]>(`/api/v1/tickets/${ticketId}/comments`, { token });
 }
+
+export interface BatchReassignItem {
+  ticketId: string;
+  toEngineerId: string;
+}
+
+export interface BatchReassignResponse {
+  results: { ticketId: string; ok: boolean }[];
+  reassigned: number;
+}
+
+export function batchReassignTickets(token: string, reassignments: BatchReassignItem[]) {
+  return apiFetch<BatchReassignResponse>('/api/v1/tickets/batch-reassign', {
+    method: 'POST',
+    token,
+    body: { reassignments },
+  });
+}

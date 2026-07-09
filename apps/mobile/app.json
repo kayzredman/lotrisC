@@ -9,11 +9,14 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.lotris.pager"
+      "bundleIdentifier": "com.lotris.pager",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Unlock Lotris Pager when returning to the app."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0d1117",
+        "backgroundColor": "#080A14",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -31,18 +34,16 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#388bfd",
+          "color": "#4F46E5",
           "defaultChannel": "lotris-pager-alerts"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-asset",
+      "expo-local-authentication"
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "extra": {
-      "eas": {
-        "projectId": "c4e8f1a2-9b3d-4e5f-a6b7-8c9d0e1f2a3b"
-      }
     }
   }
 }

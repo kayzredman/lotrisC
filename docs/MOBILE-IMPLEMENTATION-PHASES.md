@@ -379,7 +379,7 @@ bash scripts/mobile-smoke.sh   # API-level: login, list, claim (future)
 | OpenAPI sync | Any new device/refresh endpoints |
 | Pilot | 5–10 engineers, 2 weeks feedback |
 
----
+**Continuation pack (deferred):** Internal teams pick up store/MDM rollout using proprietary credentials — see [`MOBILE-ROLLOUT-HANDOFF.md`](MOBILE-ROLLOUT-HANDOFF.md).
 
 ## Quick reference commands
 

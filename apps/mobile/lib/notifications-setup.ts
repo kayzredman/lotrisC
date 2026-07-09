@@ -21,7 +21,6 @@ export async function setupPagerNotifications(): Promise<boolean> {
     await Notifications.setNotificationChannelAsync(PAGER_CHANNEL_ID, {
       name: 'Lotris Pager Alerts',
       description: 'Urgent ticket assign, escalate, and SLA warnings',
-      importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 400, 200, 400, 200, 600],
       lightColor: '#388bfd',
       sound: 'default',
@@ -52,21 +51,55 @@ export async function setupPagerNotifications(): Promise<boolean> {
   return finalStatus === 'granted';
 }
 
-export async function getExpoPushToken(): Promise<string | null> {
+export type PushTokenResult =
+  | { ok: true; token: string }
+  | { ok: false; reason: string };
+
+function resolveProjectId(): string | undefined {
+  return (
+    process.env.EXPO_PUBLIC_EAS_PROJECT_ID ??
+    Constants.expoConfig?.extra?.eas?.projectId ??
+    Constants.easConfig?.projectId
+  );
+}
+
+export async function getExpoPushToken(): Promise<PushTokenResult> {
   if (!Device.isDevice) {
-    return null;
+    return { ok: false, reason: 'Push requires a physical phone (not a simulator).' };
   }
 
-  const projectId =
-    Constants.expoConfig?.extra?.eas?.projectId ??
-    Constants.easConfig?.projectId;
+  // Expo Go on Android SDK 53+ cannot obtain remote push tokens.
+  if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
+    return {
+      ok: false,
+      reason:
+        'Expo Go on Android cannot receive remote push (SDK 53+). Use an iPhone with Expo Go, or install a dev build.',
+    };
+  }
+
+  const projectId = resolveProjectId();
+  if (!projectId) {
+    return {
+      ok: false,
+      reason:
+        'Missing EAS project ID. On PC run: cd apps/mobile && npx eas-cli login && npx eas-cli init — then set EXPO_PUBLIC_EAS_PROJECT_ID in apps/mobile/.env and restart Expo.',
+    };
+  }
+
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') {
+    return {
+      ok: false,
+      reason:
+        'Notification permission not granted. iOS: Settings → Expo Go → Notifications → Allow.',
+    };
+  }
 
   try {
-    const result = projectId
-      ? await Notifications.getExpoPushTokenAsync({ projectId })
-      : await Notifications.getExpoPushTokenAsync();
-    return result.data;
-  } catch {
-    return null;
+    const result = await Notifications.getExpoPushTokenAsync({ projectId });
+    return { ok: true, token: result.data };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { ok: false, reason: message };
   }
 }

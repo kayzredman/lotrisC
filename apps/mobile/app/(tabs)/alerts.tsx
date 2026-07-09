@@ -44,7 +44,15 @@ export default function AlertsScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 16, gap: 10, paddingBottom: 32 },
-  hint: { color: colors.muted, fontSize: 13, lineHeight: 18, marginBottom: 4 },
+  hint: {
+    color: colors.mutedLight,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 4,
+    paddingLeft: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.accent,
+  },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 12,
