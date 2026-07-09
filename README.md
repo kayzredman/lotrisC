@@ -555,6 +555,7 @@ lotris/                          ← monorepo root
 
 | Doc | Description |
 | --- | ----------- |
+| [docs/CONTINUOUS-BUILD.md](docs/CONTINUOUS-BUILD.md) | **Ongoing development** — bootstrap, QA gates, agent workflow |
 | [docs/BRD.md](docs/BRD.md) | **Business requirements** — delivered scope (Phases 0–8) |
 | [docs/IT-HANDOVER.md](docs/IT-HANDOVER.md) | **CIO/IT handover** — on-prem install and operations |
 | [docs/API.md](docs/API.md) | **REST API reference** — Scalar UI, auth, endpoint index |

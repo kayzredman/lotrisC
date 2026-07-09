@@ -243,11 +243,13 @@ See [deploy/INSTALL.md](../deploy/INSTALL.md).
 
 | Doc | Purpose |
 |-----|---------|
+| [CONTINUOUS-BUILD.md](CONTINUOUS-BUILD.md) | **Ongoing development** — bootstrap, gates, agent workflow, active workstreams |
 | [GLOSSARY.md](GLOSSARY.md) | **Abbreviations & terms** — SSE, JWT, SLA, ETL, etc. |
 | [BRD.md](BRD.md) | **Business requirements** — as-built scope & sign-off |
 | [IT-HANDOVER.md](IT-HANDOVER.md) | **CIO/IT handover** — install, ops, security |
 | [PROJECT-CLOSEOUT.md](PROJECT-CLOSEOUT.md) | Repo hygiene checklist before closeout |
 | [PHASE-8-UPDATES.md](PHASE-8-UPDATES.md) | Phase 8 implementation changelog (8.0–8.2) |
+| [PHASE-8-PLAN.md](PHASE-8-PLAN.md) | Phase 8 architecture plan (reference) |
 | [INTELLIGENCE-DEV-SETUP.md](INTELLIGENCE-DEV-SETUP.md) | Local dev AI + Qdrant setup |
 | [INTELLIGENCE-ENTERPRISE-SETUP.md](INTELLIGENCE-ENTERPRISE-SETUP.md) | Customer Entra + Copilot deploy |
 | [PARITY-AUDIT.md](PARITY-AUDIT.md) | tRPC → REST mapping (~100%) |
